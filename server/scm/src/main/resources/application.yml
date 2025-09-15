@@ -1,0 +1,26 @@
+server:
+  port: 80
+
+spring:
+  datasource:
+    driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
+    url: jdbc:log4jdbc:oracle:thin:@localhost:1521/xe
+    username: jsp
+    password: 1234
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+    jdbc-type-for-null: VARCHAR
+  type-aliases-package: com.yedam.scm
+  # mapper-locations: classpath:mappers/*.xml
+  
+logging:
+  level:
+    jdbc:
+      resultset: off
+      sqltiming: info
+    com:
+      example:
+        demo: debug
+    root: warn
