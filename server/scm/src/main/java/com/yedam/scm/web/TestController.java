@@ -1,5 +1,6 @@
 package com.yedam.scm.web;
 
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -11,12 +12,6 @@ public class TestController {
 
   // @Autowired
   // TestService svc;
-
-  @GetMapping("/test")
-  public String test() {
-
-    return "<h1>test</h1>";
-  }
 
   @GetMapping("/test2")
   public String test2() {

@@ -23,6 +23,13 @@
 
     <dependencies>
 
+        <!-- Jasypt -->
+        <dependency>
+            <groupId>com.github.ulisesbocchio</groupId>
+            <artifactId>jasypt-spring-boot-starter</artifactId>
+            <version>3.0.5</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
@@ -33,6 +40,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+        <!-- JPA -->
+        <!-- <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency> -->
 
         <!-- MyBatis -->
         <dependency>
@@ -59,7 +72,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.34</version> <!-- 최신 버전 예시 -->
+            <version>1.18.34</version>
             <scope>provided</scope>
         </dependency>
 
@@ -83,6 +96,7 @@
             <version>3.0.5</version>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>

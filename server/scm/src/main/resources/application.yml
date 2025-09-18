@@ -1,12 +1,20 @@
 server:
-  port: 80
+  port: 8080
 
 spring:
   datasource:
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-    url: jdbc:log4jdbc:oracle:thin:@localhost:1521/xe
-    username: jsp
-    password: 1234
+    url: jdbc:oracle:thin:@192.168.0.37:1521/xe
+    username: ENC(+lq0h68ay/lVnja2fzgZOXFw3FJZerRd)
+    password: ENC(6hF3NHbh9t71GYf+Bf1FTRFRRP34aXcu)
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+        format-sql: true
+    hibernate:
+      ddl-auto: create
+    show-sql: true
 
 mybatis:
   configuration:
