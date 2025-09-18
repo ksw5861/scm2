@@ -18,4 +18,10 @@ public class TestController {
     return "<h1>test</h1>";
   }
 
+  @GetMapping("/test2")
+  public String test2() {
+
+    return "<h1>test</h1>";
+  }
+
 }

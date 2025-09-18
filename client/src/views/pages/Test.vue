@@ -1,5 +1,6 @@
 <script setup>
 import { DataTable } from 'primevue';
+
 </script>
 
 <template>
