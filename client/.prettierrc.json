@@ -1,10 +1,8 @@
 {
-  "useTabs": false,
-  "tabWidth": 4,
-  "trailingComma": "none",
   "semi": true,
   "singleQuote": true,
-  "vueIndentScriptAndStyle": false,
-  "printWidth": 250,
-  "bracketSameLine": false
+  "trailingComma": "none",
+  "printWidth": 1000,
+  "tabWidth": 2,
+  "endOfLine": "lf"
 }
