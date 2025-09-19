@@ -1,5 +1,7 @@
 import AppLayout from '@/layout/AppLayout.vue';
 import dh from '@/router/routes/dh';
+import eg from '@/router/routes/eg';
+
 import { createRouter, createWebHistory } from 'vue-router';
 
 const router = createRouter({
@@ -133,7 +135,8 @@ const router = createRouter({
             name: 'error',
             component: () => import('@/views/pages/auth/Error.vue')
         },
-        dh
+        dh,
+        eg
     ]
 });
 
