@@ -1,7 +1,7 @@
-import MenuTest from './menu/menuTest'
+import master from './menu/master'
 
 const sideBar = [
-    MenuTest
+    master
 ];
 
 export default sideBar;
