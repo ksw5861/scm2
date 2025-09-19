@@ -1,13 +1,12 @@
 import AppLayout from "@/layout/AppLayout.vue";
 
-const Test = {
-    path: '/',
+const dh = {
     component: AppLayout,
     children: [
         {
             path: '/warehouse',
             name: '창고',
-            component: () => import('@/views/pages/Warehouse.vue'),
+            component: () => import('@/views/pages/dh/Warehouse.vue'),
             meta: {
                 requiresAuth: true,
                 roles: ['admin', 'employee']
@@ -16,4 +15,4 @@ const Test = {
     ]
 };
 
-export default Test;
+export default dh;
