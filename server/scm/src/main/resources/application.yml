@@ -4,9 +4,10 @@ server:
 spring:
   datasource:
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
-    url: jdbc:oracle:thin:@192.168.0.37:1521/xe
+    url: jdbc:log4jdbc:oracle:thin:@localhost:1521/xe
     username: ENC(+lq0h68ay/lVnja2fzgZOXFw3FJZerRd)
     password: ENC(6hF3NHbh9t71GYf+Bf1FTRFRRP34aXcu)
+
   jpa:
     properties:
       hibernate:
@@ -21,8 +22,8 @@ mybatis:
     map-underscore-to-camel-case: true
     jdbc-type-for-null: VARCHAR
   type-aliases-package: com.yedam.scm
-  # mapper-locations: classpath:mappers/*.xml
-  
+  mapper-locations: classpath:mappers/*.xml
+
 logging:
   level:
     jdbc:
