@@ -2,8 +2,8 @@ package com.yedam.scm.web;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.yedam.scm.service.WarehouseService;
-import com.yedam.scm.vo.WarehouseVO;
+import com.yedam.scm.master.service.WareHouseService;
+import com.yedam.scm.vo.WareHouseVO;
 
 import java.util.List;
 
@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class DhController {
 
   @Autowired
-  WarehouseService svc;
+  WareHouseService svc;
 
   @GetMapping("/warehouse")
-  public List<WarehouseVO> getMethodName() {
-      return svc.getWarehouseList();
+  public List<WareHouseVO> getWareHouseList() {
+    return svc.getWareHouseList();
   }
 
 }

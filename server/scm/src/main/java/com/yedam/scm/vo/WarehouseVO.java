@@ -1,17 +1,15 @@
 package com.yedam.scm.vo;
 
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-public class WarehouseVO {
+public class WareHouseVO {
 
-  String whId;
-  String whName;
-  String whAddress;
-  String whOwner;
-  String ownerTel;
-  String status;
+  public String whId;
+  public String whName;
+  public String whAddress;
+  public String whOwner;
+  public String ownerTel;
+  public String status;
 
 }
