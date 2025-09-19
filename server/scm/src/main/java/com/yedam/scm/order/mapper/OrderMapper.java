@@ -1,4 +1,4 @@
-package com.yedam.scm.mapper;
+package com.yedam.scm.order.mapper;
 
 import java.util.List;
 

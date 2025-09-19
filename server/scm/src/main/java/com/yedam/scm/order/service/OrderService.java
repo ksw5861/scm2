@@ -1,4 +1,4 @@
-package com.yedam.scm.service;
+package com.yedam.scm.order.service;
 
 import java.util.List;
 
