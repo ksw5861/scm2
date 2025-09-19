@@ -6,7 +6,6 @@ import DTable from '@/components/common/DTable.vue';
 import Modal from '@/components/common/Modal.vue';
 import axios from 'axios';
 
-
 const { toast } = useAppToast();
 
 const isShowModal = ref(false);
@@ -18,18 +17,17 @@ const columns = [
 ];
 
 const data = [
-  { whId: 'WH001', whName: '창고1'},
-  { whId: 'WH002', whName: '창고2'},
-  { whId: 'WH003', whName: '창고3'},
-  { whId: 'WH004', whName: '창고4'},
-  { whId: 'WH005', whName: '창고5'},
-  { whId: 'WH006', whName: '창고6'},
-  { whId: 'WH007', whName: '창고7'},
-  { whId: 'WH008', whName: '창고8'},
-  { whId: 'WH009', whName: '창고9'},
-  { whId: 'WH010', whName: '창고10'}
+  { whId: 'WH001', whName: '창고1' },
+  { whId: 'WH002', whName: '창고2' },
+  { whId: 'WH003', whName: '창고3' },
+  { whId: 'WH004', whName: '창고4' },
+  { whId: 'WH005', whName: '창고5' },
+  { whId: 'WH006', whName: '창고6' },
+  { whId: 'WH007', whName: '창고7' },
+  { whId: 'WH008', whName: '창고8' },
+  { whId: 'WH009', whName: '창고9' },
+  { whId: 'WH010', whName: '창고10' }
 ];
-
 
 const fetchWarehouseData = async () => {
   const result = await axios.get('/api/warehouse');
@@ -39,9 +37,8 @@ const fetchWarehouseData = async () => {
 const handleSelect = (item) => {
   selectedItem.value = item;
   isShowModal.value = false;
-}
+};
 </script>
-
 
 <template>
   <Fluid>
