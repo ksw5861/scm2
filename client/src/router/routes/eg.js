@@ -1,6 +1,6 @@
 import AppLayout from "@/layout/AppLayout.vue";
 
-const Test = {
+const eg = {
     path: '/',
     component: AppLayout,
     children: [
@@ -16,4 +16,4 @@ const Test = {
     ]
 };
 
-export default Test;
+export default eg;
