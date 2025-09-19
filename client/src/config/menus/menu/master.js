@@ -1,10 +1,10 @@
-import warehouse from './dh/warehouse';
+import wareHouse from './dh/wareHouse';
 
 const master =
     {
         label: '기준정보',
         items: [
-            warehouse
+            wareHouse
         ]
     };
 
