@@ -9,11 +9,9 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
 
 @RestController
-public class WarehouseController {
+public class DhController {
 
   @Autowired
   WarehouseService svc;
@@ -22,5 +20,5 @@ public class WarehouseController {
   public List<WarehouseVO> getMethodName() {
       return svc.getWarehouseList();
   }
-  
+
 }
