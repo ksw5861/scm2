@@ -1,4 +1,4 @@
-const warehouse =
+const wareHouse =
 
       {
         label: '창고 관리',
@@ -7,4 +7,4 @@ const warehouse =
         roles: ['admin', 'employee']
       }
 
-export default warehouse;
+export default wareHouse;
