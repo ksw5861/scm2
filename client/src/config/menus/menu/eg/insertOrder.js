@@ -5,6 +5,6 @@ const insertOrder =
         icon: 'pi pi-fw pi-home',
         to: '/insertorder',
         roles: ['admin', 'employee']
-      }
+      };
 
 export default insertOrder;
