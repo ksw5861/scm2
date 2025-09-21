@@ -1,9 +1,179 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.yedam.scm.mapper.OrderMapper">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-  <select id="selectAll" resultType="Map">
-    select *
-    from employees
+<mapper namespace="com.yedam.scm.order.mapper.OrderMapper">
+
+  <!-- ==================================== -->
+  <!-- 1. 주문 등록 (sales_order) -->
+  <!-- ==================================== -->
+  <insert id="insertOrder" parameterType="SalesOrderVO">
+    INSERT INTO SALES_ORDER
+    (
+      order_id,
+      order_date,
+      total_price,
+      vendor_id,
+      status,
+      delivery_date,
+      pay_status,
+      pay_date,
+      return_price
+    )
+    VALUES
+    (
+      #{orderId},
+      SYSDATE,
+      #{totalPrice},
+      #{vendorId},
+      #{status},
+      #{deliveryDate},
+      #{payStatus},
+      #{payDate},
+      NVL(#{returnPrice}, 0)
+    )
+  </insert>
+
+  <!-- ==================================== -->
+  <!-- 2. 주문 상세 등록 (sales_order_detail) -->
+  <!-- ==================================== -->
+  <insert id="insertOrderDetail" parameterType="SalesOrderDetailVO">
+    INSERT INTO SALES_ORDER_DETAIL
+    (
+      odetail_id,
+      order_id,
+      prod_id,
+      prod_name,
+      prod_spec,
+      prod_unit,
+      order_qty,
+      prod_price,
+      total_price,
+      prod_status
+    )
+    VALUES
+    (
+      #{odetailId},
+      #{orderId},
+      #{prodId},
+      #{prodName},
+      #{prodSpec},
+      #{prodUnit},
+      #{orderQty},
+      #{prodPrice},
+      #{totalPrice},
+      #{prodStatus}
+    )
+  </insert>
+
+  <!-- ==================================== -->
+  <!-- 3. 주문 목록 조회 (주문 마스터 기준) -->
+  <!-- ==================================== -->
+  <select id="getOrderList" parameterType="map" resultType="SalesOrderVO">
+    SELECT 
+      so.order_id,
+      so.order_date,
+      so.total_price,
+      so.vendor_id,
+      so.status,
+      so.delivery_date,
+      so.pay_status,
+      so.pay_date,
+      so.return_price
+    FROM SALES_ORDER so
+    WHERE 1 = 1
+      <if test="startDate != null and startDate != ''">
+        AND so.order_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+      </if>
+      <if test="endDate != null and endDate != ''">
+        AND so.order_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+      </if>
+      <if test="status != null and status != ''">
+        AND so.status = #{status}
+      </if>
+    ORDER BY so.order_date DESC
   </select>
+
+  <!-- ==================================== -->
+  <!-- 4. 특정 주문의 상세 내역 조회 -->
+  <!-- ==================================== -->
+  <select id="getOrderDetailList" parameterType="string" resultType="SalesOrderDetailVO">
+    SELECT 
+      sod.odetail_id,
+      sod.order_id,
+      sod.prod_id,
+      sod.prod_name,
+      sod.prod_spec,
+      sod.prod_unit,
+      sod.order_qty,
+      sod.prod_price,
+      sod.total_price,
+      sod.prod_status
+    FROM SALES_ORDER_DETAIL sod
+    WHERE sod.order_id = #{orderId}
+    ORDER BY sod.odetail_id
+  </select>
+
+  <!-- ==================================== -->
+  <!-- 5. 주문 상태 업데이트 -->
+  <!-- ==================================== -->
+  <update id="updateOrderStatus" parameterType="map">
+    UPDATE sales_order
+    SET status = #{status}
+    WHERE order_id = #{orderId}
+  </update>
+
+  <!-- ==================================== -->
+  <!-- 6. 주문 상세 상태 업데이트 -->
+  <!-- ==================================== -->
+  <update id="updateOrderDetailStatus" parameterType="map">
+    UPDATE SALES_ORDER_DETAIL
+    SET prod_status = #{prodStatus}
+    WHERE odetail_id = #{odetailId}
+  </update>
+
+  <!-- ==================================== -->
+  <!-- 7. 주문 삭제 (마스터 및 상세) -->
+  <!-- ==================================== -->
+  <delete id="deleteOrder" parameterType="string">
+    DELETE FROM sales_order WHERE order_id = #{orderId}
+  </delete>
+
+  <delete id="deleteOrderDetail" parameterType="string">
+    DELETE FROM SALES_ORDER_DETAIL WHERE order_id = #{orderId}
+  </delete>
+
+
+
+
+
+
+ <!-- 주문 목록 조회 -->
+    <select id="getOrderListForView" resultType="SalesOrderVO">
+        SELECT
+          *
+        FROM sales_order
+        WHERE 1=1
+        <if test="startDate != null and startDate != ''">
+            AND order_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND order_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+
+    </select>
+
+    <!-- 대시보드 데이터 -->
+    <select id="getBranchDashData" resultType="map">
+        SELECT COUNT(*) AS total_orders,
+               SUM(total_price) AS total_revenue
+        FROM SALES_ORDER
+    </select>
+
+
+
+    
 </mapper>

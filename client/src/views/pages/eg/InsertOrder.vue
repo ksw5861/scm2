@@ -76,12 +76,16 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import axios from 'axios'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
+import { useAppToast } from '@/composables/useAppToast';
 
-// 주문 상세 데이터
+const { toast } = useAppToast();
+
+// 주문 상세 데이터 (예시 데이터)
 const orderDetailList = ref([
   { prod_id: 'AB-012', prod_name: '아라비카원두', prod_spec: '1 kg 팩', prod_unit: 'Box(24팩)', prod_price: 480000, order_qty: 2, total: 960000 },
   { prod_id: 'AB-013', prod_name: '온컵300미리', prod_spec: '100ea 줄', prod_unit: 'Box(30줄)', prod_price: 50000, order_qty: 4, total: 200000 },
@@ -110,16 +114,38 @@ const calculateRowTotal = (row) => {
   row.total = row.order_qty * row.prod_price
 }
 
-// API 연동 함수 (추후 구현 예정)
-const fetchProducts = () => console.log('제품 조회 API 호출')
+// 제품 조회 (API 연동)
+const fetchProducts = () => {
+  console.log('제품 조회 API 호출')
+  // axios.get('http://localhost:8080/api/products').then(res => {
+  //   orderDetailList.value = res.data
+  // })
+}
 
-const saveOrder = () => {
-  console.log('주문 저장 API 호출', {
+// 주문 등록 (API 호출)
+const saveOrder = async () => {
+  const orderPayload = {
     order_date: new Date().toISOString().slice(0, 10),
     delivery_date: deliveryDate.value,
     total_price: totalAmount.value,
     details: orderDetailList.value
-  })
+  }
+
+  try {
+    const response = await axios.post('http://localhost:8080/api/insertorder', orderPayload)
+    console.log('주문 저장 API 응답:', response.data)
+
+    if (response.data.result === 'success') {
+      return toast("success","주문 등록 성공","주문 등록 성공하였습니다.");
+    } else {
+      return toast("error","주문 등록 실패","주문 등록 실패하였습니다.");
+
+    }
+  } catch (error) {
+    console.error('API 호출 오류:', error)
+      return toast("error","주문 등록 오류","오류 발생하였습니다.");
+
+  }
 }
 </script>
 

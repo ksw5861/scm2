@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yedam.scm.mapper.PayMapper">
+
+  <!-- ==================================== -->
+  <!-- 1. 결제 등록 (payment 테이블) -->
+  <!-- ==================================== -->
+  <insert id="insertPay" parameterType="com.yedam.scm.vo.PaymentVO">
+    INSERT INTO payment (
+      pay_id,
+      pay_rmk,
+      pay_amount,
+      vendor_id,
+      pay_date,
+      pay_type
+    ) VALUES (
+      #{payId},
+      #{payRmk},
+      #{payAmount},
+      #{vendorId},
+      SYSDATE,
+      #{payType}
+    )
+  </insert>
+
+  <!-- ==================================== -->
+  <!-- 2. 결제 상세 등록 (payment_detail 테이블) -->
+  <!-- ==================================== -->
+  <insert id="insertPayDetail" parameterType="com.yedam.scm.vo.PaymentDetailVO">
+    INSERT INTO payment_detail (
+      key,
+      field,
+      order_id,
+      total_price
+    ) VALUES (
+      #{key},
+      #{field},
+      #{orderId},
+      #{totalPrice}
+    )
+  </insert>
+
+  <!-- ==================================== -->
+  <!-- 3. 결제 목록 조회 -->
+  <!-- ==================================== -->
+  <select id="getPayList" parameterType="map" resultType="com.yedam.scm.vo.PaymentVO">
+    SELECT
+      p.pay_id,
+      p.pay_rmk,
+      p.pay_amount,
+      p.vendor_id,
+      TO_CHAR(p.pay_date, 'YYYY-MM-DD') AS pay_date,
+      p.pay_type
+    FROM payment p
+    WHERE 1=1
+      <if test="payNo != null and payNo != ''">
+        AND p.pay_id = #{payNo}
+      </if>
+      <if test="startDate != null and startDate != ''">
+        AND p.pay_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+      </if>
+      <if test="endDate != null and endDate != ''">
+        AND p.pay_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+      </if>
+    ORDER BY p.pay_date DESC
+  </select>
+
+  <!-- ==================================== -->
+  <!-- 4. 결제 상세 조회 -->
+  <!-- ==================================== -->
+  <select id="getPayDetail" parameterType="string" resultType="com.yedam.scm.vo.PaymentDetailVO">
+    SELECT
+      pd.key,
+      pd.field,
+      pd.order_id,
+      pd.total_price,
+      so.total_price AS order_total_price,
+      so.order_date,
+      v.vendor_name
+    FROM payment_detail pd
+      JOIN sales_order so ON pd.order_id = so.order_id
+      JOIN vendor v ON so.vendor_id = v.vendor_id
+    WHERE pd.field = #{payId}
+    ORDER BY pd.order_id
+  </select>
+
+  <!-- ==================================== -->
+  <!-- 5. 결제 내역 삭제 (취소) -->
+  <!-- ==================================== -->
+  <delete id="deletePay" parameterType="string">
+    DELETE FROM payment
+    WHERE pay_id = #{payId}
+  </delete>
+
+  <delete id="deletePayDetail" parameterType="string">
+    DELETE FROM payment_detail
+    WHERE field = #{payId}
+  </delete>
+
+</mapper>
