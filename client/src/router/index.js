@@ -7,6 +7,7 @@ import ms from '@/router/routes/ms';
 import sw from '@/router/routes/sw';
 import eg from '@/router/routes/eg';
 import dw from '@/router/routes/dw';
+import  supplier from '@/router/routes/supplier';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -148,7 +149,8 @@ const router = createRouter({
     ms,
     sw,
     eg,
-    dw
+    dw,
+    supplier
   ]
 });
 
