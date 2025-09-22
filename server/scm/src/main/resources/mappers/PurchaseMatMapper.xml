@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yedam.scm.purchaseMat.mapper.PurchaseMatMapper">
+
+    <!-- 1. 생산계획 등록 -->
+    <insert id="insertProductionPlan" parameterType="ProductionPlanVO">
+    INSERT INTO procduct_plan (
+        pl_id,
+        start_date,
+        end_date,
+        plan_no,
+        emp_name
+    )
+    VALUES (
+        seq_procduct_plan.NEXTVAL,       
+        #{startDate},                    
+        #{endDate},                      
+        NEXT_DATE_CODE('PP'),            
+        #{empName}                                      
+    )
+</insert>
+
+
+</mapper>
+
+
