@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <title>거래처원장(8컬럼)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        font-family:
+          Inter,
+          system-ui,
+          Segoe UI,
+          Arial,
+          sans-serif;
+        background: #f6f8fb;
+        margin: 20px;
+      }
+      h2 {
+        margin: 4px 0 16px;
+      }
+      /* ===== 검색 ===== */
+      .search {
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        margin-bottom: 16px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .search label {
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .search input {
+        padding: 6px 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+      }
+      .search button {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .btn-green {
+        background: #22c55e;
+        color: #fff;
+      }
+      .btn-ghost {
+        background: #fff;
+        border: 1px solid #22c55e;
+        color: #22c55e;
+      }
+
+      /* ===== KPI 카드 ===== */
+      .summary {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+      .card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        text-align: center;
+      }
+      .card h4 {
+        margin: 0;
+        color: #6b7280;
+        font-size: 13px;
+      }
+      .card p {
+        margin: 6px 0 0;
+        font-size: 20px;
+        font-weight: 800;
+      }
+
+      /* ===== 테이블 ===== */
+      .table-wrap {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        overflow: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        table-layout: fixed;
+        min-width: 1000px;
+      }
+      th,
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #edf0f3;
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      thead th {
+        position: sticky;
+        top: 0;
+        background: #fafafa;
+        font-weight: 700;
+      }
+      tbody tr:hover {
+        background: #f9fcff;
+      }
+      .left {
+        text-align: left;
+      }
+      .center {
+        text-align: center;
+      }
+      .right {
+        text-align: right;
+      }
+
+      /* ===== 차트 ===== */
+      .charts {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 16px;
+      }
+      .chart-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        padding: 18px;
+        min-height: 360px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #pieChart {
+        width: 360px !important;
+        height: 360px !important;
+      }
+      #barChart {
+        width: 100% !important;
+        height: 300px !important;
+      }
+
+      @media (max-width: 1100px) {
+        .summary {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .charts {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h2>거래처원장</h2>
+
+    <!-- 검색 (기간 조건) -->
+    <div class="search">
+      <label>기간</label>
+      <input type="date" id="from" /> ~
+      <input type="date" id="to" />
+      <button class="btn-ghost" onclick="resetPeriod()">초기화</button>
+      <button class="btn-green" onclick="applyPeriod()">조회</button>
+    </div>
+
+    <!-- KPI -->
+    <div class="summary">
+      <div class="card">
+        <h4>총 매출액</h4>
+        <p id="sumSales">-</p>
+      </div>
+      <div class="card">
+        <h4>총 수금액</h4>
+        <p id="sumReceipt">-</p>
+      </div>
+      <div class="card">
+        <h4>총 반품액</h4>
+        <p id="sumReturn">-</p>
+      </div>
+      <div class="card">
+        <h4>총 미수금</h4>
+        <p id="sumAR">-</p>
+      </div>
+    </div>
+
+    <!-- 표 -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th class="left">거래처명</th>
+            <th class="center">주문건수</th>
+            <th class="right">매출액</th>
+            <th class="right">수금액</th>
+            <th class="center">반품건수</th>
+            <th class="right">반품액</th>
+            <th class="right">미수금</th>
+            <th class="center">최근거래일자</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <!-- 차트 -->
+    <section class="charts">
+      <div class="chart-card"><canvas id="pieChart"></canvas></div>
+      <div class="chart-card"><canvas id="barChart"></canvas></div>
+    </section>
+
+    <script>
+      const rows = [
+        { vendor: '스타벅스 종로점', orders: 12, sales: 500000, receipts: 300000, rtnCnt: 1, returns: 50000, last: '2025-09-07' },
+        { vendor: '스타벅스 강남점', orders: 8, sales: 300000, receipts: 200000, rtnCnt: 0, returns: 0, last: '2025-09-03' },
+        { vendor: '스타벅스 신촌점', orders: 10, sales: 400000, receipts: 300000, rtnCnt: 1, returns: 30000, last: '2025-09-01' },
+        { vendor: '스타벅스 송도달점', orders: 9, sales: 400000, receipts: 300000, rtnCnt: 1, returns: 20000, last: '2025-08-29' }
+      ];
+      const fmt = (n) => n.toLocaleString('ko-KR');
+
+      const tbody = document.getElementById('tbody');
+      let sumSales = 0,
+        sumReceipts = 0,
+        sumReturns = 0,
+        sumAR = 0;
+
+      rows.forEach((r) => {
+        const ar = r.sales - r.receipts - r.returns;
+        sumSales += r.sales;
+        sumReceipts += r.receipts;
+        sumReturns += r.returns;
+        sumAR += ar;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="left">${r.vendor}</td>
+          <td class="center">${r.orders}</td>
+          <td class="right">${fmt(r.sales)}</td>
+          <td class="right">${fmt(r.receipts)}</td>
+          <td class="center">${r.rtnCnt}</td>
+          <td class="right">${fmt(r.returns)}</td>
+          <td class="right"><b>${fmt(ar)}</b></td>
+          <td class="center">${r.last}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById('sumSales').innerText = fmt(sumSales) + '원';
+      document.getElementById('sumReceipt').innerText = fmt(sumReceipts) + '원';
+      document.getElementById('sumReturn').innerText = fmt(sumReturns) + '원';
+      document.getElementById('sumAR').innerText = fmt(sumAR) + '원';
+
+      // 파이차트
+      new Chart(document.getElementById('pieChart'), {
+        type: 'pie',
+        data: {
+          labels: ['매출', '수금', '반품', '미수금'],
+          datasets: [{ data: [sumSales, sumReceipts, sumReturns, sumAR], backgroundColor: ['#3b82f6', '#10b981', '#ef4444', '#f59e0b'] }]
+        },
+        options: { plugins: { legend: { position: 'bottom' } } }
+      });
+
+      // 막대차트
+      const barColors = ['#58ACFF', '#2E86FF', '#8EC5FF', '#1F6FE5'];
+      const arData = rows.map((r) => r.sales - r.receipts - r.returns);
+      new Chart(document.getElementById('barChart'), {
+        type: 'bar',
+        data: {
+          labels: rows.map((r) => r.vendor),
+          datasets: [{ label: '미수금', data: arData, backgroundColor: barColors, borderRadius: 6 }]
+        },
+        options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+      });
+
+      // 기간 조회/초기화 (더미 동작)
+      function applyPeriod() {
+        alert('선택한 기간 데이터 조회 (추후 API 연동)');
+      }
+      function resetPeriod() {
+        document.getElementById('from').value = '';
+        document.getElementById('to').value = '';
+      }
+    </script>
+  </body>
+</html>
