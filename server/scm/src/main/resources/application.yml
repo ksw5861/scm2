@@ -32,4 +32,4 @@ logging:
     com:
       example:
         demo: debug
-    root: warn
+    root: info
