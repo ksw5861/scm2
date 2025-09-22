@@ -5,22 +5,24 @@ import DTable from '@/components/common/DTable.vue';
 import selectTable from '@/components/common/checkBoxTable.vue';
 import btn from '@/components/common/Btn.vue';
 
-const openWarehouseeModal = () => {
-  console.log('창고 모달 오픈');
+
+const openModal = () => {
+  console.log('모달 열기');
 };
 
 const productionPlans = ref([
-  { id: 1, product: '제품 A', quantity: 100, startDate: '2024-07-01', endDate: '2024-07-10', status: '진행중' },
-  { id: 2, product: '제품 B', quantity: 200, startDate: '2024-07-05', endDate: '2024-07-15', status: '대기중' },
-  { id: 3, product: '제품 C', quantity: 150, startDate: '2024-07-10', endDate: '2024-07-20', status: '완료' }
-]);
+    { id: '', empName: '', age: null, dept: '', unit: '', planDate: '' }
+])
 
 const detailColumns = [
-  { field: 'prdCode', header: '제품코드', headerStyle: 'width: 20rem', inputTextWM: true, onClick: openWarehouseeModal },
-  { field: 'comm', header: '비고', inputText: true },
-  { field: 'purch_qty', header: '수량', inputNumber: true },
-  { field: 'purch_qty', header: '수량', inputNumber: true }
+  { field: 'prdCod', label: '제품코드', style: 'width: 15rem'},
+  { field: 'prdName', label: '제품명', inputText: true, style: 'width: 30rem', onClick: openModal },
+  { field: 'qty', label: '생산수량', inputNumber: true, style: 'width: 10rem' },
+  { field: 'unit', label: '단위', style: 'width: 9rem' },
+  { field: 'planDate', label: '생산예정일', datePicker: true, style: 'width: 20rem' }
 ];
+
+
 </script>
 
 <template>
