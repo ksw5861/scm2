@@ -11,11 +11,11 @@
           class="p-button-outlined" 
           @click="openProductModal" 
         />
-        <Button 
-          label="등록" 
-          icon="pi pi-plus" 
-          class="p-button-success" 
-          @click="saveOrder" 
+        <Button
+          label="등록"
+          icon="pi pi-plus"
+          class="p-button-success"
+          @click="saveOrder"
         />
       </div>
     </div>
