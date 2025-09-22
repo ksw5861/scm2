@@ -8,11 +8,12 @@ import com.yedam.scm.vo.SalesOrderVO;
 public interface OrderService {
     int insertOrder(SalesOrderVO orderVO);
     int insertOrderDetail(SalesOrderDetailVO detailVO);
-    List<SalesOrderVO> getOrderList(String startDate, String endDate, String status);
+    
     List<SalesOrderDetailVO> getOrderDetails(String orderId);
 
-    List<SalesOrderVO> getOrderListForView(String startDate, String endDate, String status);
+    List<SalesOrderVO> getOrderListForView(String startDate, String endDate, String prodName,  String status, String orderId);
     Object getBranchDashData();
 
-    
+    // 주문 상세 조회
+    List<SalesOrderVO> getOrderDetailList(String orderId);
 }

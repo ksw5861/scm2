@@ -6,21 +6,43 @@
       <div class="header-actions">
         <Button label="초기화" icon="pi pi-refresh" class="p-button-outlined" @click="resetFilters" />
         <Button label="조회" icon="pi pi-search" class="p-button-primary" @click="fetchOrders" />
+        <!-- 엑셀 다운로드 버튼 -->
+        <Button label="엑셀 다운로드" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel" />
+
+        <!-- PDF 다운로드 버튼 -->
+        <Button label="PDF 출력" icon="pi pi-file-pdf" class="p-button-danger" @click="exportPDF" />
       </div>
     </div>
+    
+    
+    
+    <Modal
+    :visible="isShowModal"
+    title="창고 검색"
+    idField="whId"
+    :columns="[
+      { key: 'whId', label: '창고번호' },
+      { key: 'whName', label: '창고명' }
+    ]"
+    :fetchData="fetchWarehouseData"
+    :page-size="5"
+    @select="handleSelect"
+    @close="isShowModal = false"
+    />
+
 
     <!-- 검색 영역 -->
     <div class="filter-section">
       <div class="filter-group">
         <span class="filter-label">주문일자</span>
-        <Calendar v-model="filters.startDate" placeholder="시작일" dateFormat="yy-mm-dd" showIcon />
+        <DatePicker v-model="filters.startDate" placeholder="시작일" dateFormat="yy-mm-dd" showIcon />
         <span>~</span>
-        <Calendar v-model="filters.endDate" placeholder="종료일" dateFormat="yy-mm-dd" showIcon />
+        <DatePicker v-model="filters.endDate" placeholder="종료일" dateFormat="yy-mm-dd" showIcon />
       </div>
 
       <div class="filter-group">
         <span class="filter-label">제품명</span>
-        <InputText v-model="filters.productName" placeholder="제품명 검색" />
+        <InputText v-model="filters.prodName" placeholder="제품명 검색" />
       </div>
 
       <div class="filter-group">
@@ -47,7 +69,6 @@
           :value="orders"
           selectionMode="single"
           v-model:selection="selectedOrder"
-          @rowSelect="onOrderSelect"
           paginator
           :rows="10"
           responsiveLayout="scroll"
@@ -55,15 +76,15 @@
           columnResizeMode="fit"
           class="custom-table"
         >
-          <Column field="order_id" header="주문번호" style="width:120px; text-align:center;" />
-          <Column field="order_date" header="주문일자" style="width:140px; text-align:center;" />
-          <Column field="prod_name" header="제품명" style="width:200px;" />
-          <Column field="total_price" header="주문총액(원)" style="width:150px; text-align:right;">
+          <Column field="orderId" header="주문번호" style="width:140px; text-align:center;" />
+          <Column field="orderDate" header="주문일자" style="width:140px; text-align:center;" />
+          <Column field="prodName" header="대표 제품명" style="width:200px;" />
+          <Column field="totalPrice" header="주문총액(원)" style="width:150px; text-align:right;">
             <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.total_price) }}
+              {{ formatCurrency(slotProps.data.totalPrice) }}
             </template>
           </Column>
-          <Column field="delivery_date" header="배송예정일" style="width:140px; text-align:center;" />
+          <Column field="deliveryDate" header="배송예정일" style="width:140px; text-align:center;" />
           <Column field="status" header="상태" style="width:120px; text-align:center;" />
         </DataTable>
       </div>
@@ -77,16 +98,16 @@
           columnResizeMode="fit"
           class="custom-table"
         >
-          <Column field="prod_id" header="제품코드" style="width:120px; text-align:center;" />
-          <Column field="prod_name" header="제품명" style="width:150px;" />
-          <Column field="prod_spec" header="규격" style="width:100px; text-align:center;" />
-          <Column field="prod_unit" header="단위" style="width:80px; text-align:center;" />
-          <Column field="prod_price" header="제품가격" style="width:120px; text-align:right;">
+          <Column field="prodId" header="제품코드" style="width:120px; text-align:center;" />
+          <Column field="prodName" header="제품명" style="width:150px;" />
+          <Column field="prodSpec" header="규격" style="width:100px; text-align:center;" />
+          <Column field="prodUnit" header="단위" style="width:80px; text-align:center;" />
+          <Column field="prodPrice" header="제품가격" style="width:120px; text-align:right;">
             <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.prod_price) }}
+              {{ formatCurrency(slotProps.data.prodPrice) }}
             </template>
           </Column>
-          <Column field="order_qty" header="주문수량" style="width:80px; text-align:center;" />
+          <Column field="orderQty" header="주문수량" style="width:80px; text-align:center;" />
           <Column field="total" header="합계" style="width:120px; text-align:right;">
             <template #body="slotProps">
               {{ formatCurrency(slotProps.data.total) }}
@@ -104,80 +125,207 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import axios from 'axios'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
-import Calendar from 'primevue/calendar'
+import DatePicker from 'primevue/datepicker'
+// import * as XLSX from 'xlsx'
+// import * as FileSaver from 'file-saver'  // ✅ 핵심
+// import jsPDF from 'jspdf'
+// import 'jspdf-autotable'
 
-// 검색 필터
+// ===== 검색 조건 =====
 const filters = ref({
   startDate: null,
   endDate: null,
-  productName: '',
+  prodName: '',
   status: '',
   orderId: ''
 })
 
-// 주문 목록 데이터
-const orders = ref([
-  { order_id: 'AB-001', order_date: '2025-09-11', prod_name: '아라비카원두 더블', total_price: 2160000, delivery_date: '2025-09-20', status: '대기' },
-  { order_id: 'AB-002', order_date: '2025-09-10', prod_name: '리베리카 원두', total_price: 500000, delivery_date: '2025-09-19', status: '대기' },
-  { order_id: 'AB-003', order_date: '2025-09-10', prod_name: '로부스타 원두', total_price: 1000000, delivery_date: '2025-09-19', status: '승인' },
-  { order_id: 'AB-004', order_date: '2025-09-05', prod_name: '로부스타 원두', total_price: 1000000, delivery_date: '2025-09-19', status: '배송중' },
-  { order_id: 'AB-005', order_date: '2025-09-04', prod_name: '로부스타 원두', total_price: 1000000, delivery_date: '2025-09-19', status: '배송완료' }
-])
+// ===== 주문 목록 =====
+const orders = ref([])
 
-// 선택된 주문
+// ===== 선택된 주문 (좌측 목록 → 우측 상세) =====
 const selectedOrder = ref(null)
 
-// 주문 상세 데이터
+// ===== 주문 상세 =====
 const orderDetails = ref([])
 
-// 합계 계산
+// ===== 합계 =====
 const detailTotal = computed(() => {
-  return orderDetails.value.reduce((acc, item) => acc + item.total, 0)
+  return orderDetails.value.reduce((acc, item) => acc + (item.total || 0), 0)
 })
 
-// 금액 포맷팅
+// ===== 금액 포맷 =====
 const formatCurrency = (value) => {
+  if (!value) return '0 원'
   return value.toLocaleString('ko-KR') + ' 원'
 }
 
-// 주문 선택 시 상세 조회
-const onOrderSelect = () => {
-  if (!selectedOrder.value) return
-
-  // 실제 API 호출을 통해 상세내역 로딩 예정
-  orderDetails.value = [
-    { prod_id: 'AB-012', prod_name: '아라비카원두', prod_spec: '1 kg 팩', prod_unit: 'Box(24팩)', prod_price: 480000, order_qty: 2, total: 960000 },
-    { prod_id: 'AB-013', prod_name: '온컵300미리', prod_spec: '100ea 줄', prod_unit: 'Box(30줄)', prod_price: 50000, order_qty: 4, total: 200000 },
-    { prod_id: 'AB-014', prod_name: '냉컵300미리', prod_spec: '100ea 줄', prod_unit: 'Box(30줄)', prod_price: 50000, order_qty: 4, total: 200000 },
-    { prod_id: 'AB-015', prod_name: '냉컵500미리', prod_spec: '100ea 줄', prod_unit: 'Box(30줄)', prod_price: 50000, order_qty: 4, total: 200000 },
-    { prod_id: 'AB-016', prod_name: '냅킨', prod_spec: '100ea 팩', prod_unit: 'Box(60팩)', prod_price: 30000, order_qty: 5, total: 150000 },
-    { prod_id: 'AB-017', prod_name: '설탕시럽', prod_spec: '500ml 병', prod_unit: 'Box(12병)', prod_price: 120000, order_qty: 1, total: 120000 },
-    { prod_id: 'AB-018', prod_name: '녹차 파우더', prod_spec: '1 kg 팩', prod_unit: '팩(1kg)', prod_price: 30000, order_qty: 1, total: 30000 }
-  ]
+// ===== 날짜 포맷 (YYYY-MM-DD로 변환) =====
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
-// 초기화
+// ===== API 전달용 날짜 포맷 함수 =====
+const formatDateForAPI = (date) => {
+  if (!date) return null
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}` // YYYY-MM-DD
+}
+
+// ===== 주문 목록 조회 =====
+const fetchOrders = async () => {
+  try {
+    const { data } = await axios.get('/api/orderlist', {
+      params: {
+        startDate: formatDateForAPI(filters.value.startDate),
+        endDate: formatDateForAPI(filters.value.endDate),
+        prodName: filters.value.prodName,
+        status: filters.value.status,
+        orderId: filters.value.orderId
+      }
+    })
+
+    console.log('API 요청 파라미터:', {
+      startDate: formatDateForAPI(filters.value.startDate),
+      endDate: formatDateForAPI(filters.value.endDate)
+    })
+
+    // 서버 데이터를 화면 출력용으로 가공
+    orders.value = data.map(item => ({
+      orderId: item.orderId,
+      orderDate: formatDate(item.orderDate),
+      prodName: item.prodName || '-',
+      totalPrice: item.totalPrice || 0,
+      deliveryDate: formatDate(item.deliveryDate),
+      status: item.status || '-'
+    }))
+
+    console.log('주문 목록:', data)
+  } catch (error) {
+    console.error('주문 목록 조회 오류:', error)
+    alert('주문 목록 조회 중 오류가 발생했습니다.')
+  }
+}
+
+// ===== 주문 상세 조회 =====
+const fetchOrderDetail = async (orderId) => {
+  console.log("요청한 주문번호:", orderId)
+
+  try {
+    const { data } = await axios.get('/api/orderdetail', {
+      params: { orderId }
+    })
+
+    console.log('서버에서 받은 주문 상세 데이터:', data)
+
+    orderDetails.value = data.map(item => ({
+      ...item,
+      total: item.prodPrice * item.orderQty
+    }))
+
+    console.log('주문 상세:', orderDetails.value)
+  } catch (error) {
+    console.error('주문 상세 조회 오류:', error)
+    alert('주문 상세 조회 중 오류가 발생했습니다.')
+  }
+}
+
+// ===== 선택된 주문 감시 =====
+watch(selectedOrder, (newOrder) => {
+  if (newOrder && newOrder.orderId) {
+    fetchOrderDetail(newOrder.orderId)
+  } else {
+    orderDetails.value = []
+  }
+})
+
+// ===== 초기화 =====
 const resetFilters = () => {
   filters.value = {
     startDate: null,
     endDate: null,
-    productName: '',
+    prodName: '',
     status: '',
     orderId: ''
   }
+  fetchOrders()
 }
 
-// 조회
-const fetchOrders = () => {
-  console.log('조회 조건:', filters.value)
-  // 실제 API 연동 예정
-}
+
+// ===== 엑셀 다운로드 =====
+// const exportExcel = () => {
+//   if (!orders.value.length) {
+//     alert('다운로드할 데이터가 없습니다.')
+//     return
+//   }
+
+//   // JSON → 시트 변환
+//   const ws = XLSX.utils.json_to_sheet(orders.value)
+
+//   // 워크북 생성
+//   const wb = XLSX.utils.book_new()
+//   XLSX.utils.book_append_sheet(wb, ws, "주문목록")
+
+//   // 엑셀 파일로 변환
+//   const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+//   const data = new Blob([excelBuffer], { type: 'application/octet-stream' })
+
+//   // ✅ FileSaver.saveAs 로 호출
+//   FileSaver.saveAs(data, `주문목록_${new Date().toISOString().slice(0, 10)}.xlsx`)
+// }
+
+
+// // ===== PDF 다운로드 =====
+// const exportPDF = () => {
+//   if (!orders.value.length) {
+//     alert('출력할 데이터가 없습니다.')
+//     return
+//   }
+
+//   const doc = new jsPDF()
+
+//   // 타이틀
+//   doc.setFontSize(18)
+//   doc.text('주문 목록 보고서', 14, 20)
+
+//   // 테이블 생성
+//   const tableData = orders.value.map(item => [
+//     item.orderId,
+//     item.orderDate,
+//     item.prodName,
+//     formatCurrency(item.totalPrice),
+//     item.status
+//   ])
+
+//   doc.autoTable({
+//     head: [['주문번호', '주문일자', '대표 제품명', '총액', '상태']],
+//     body: tableData,
+//     startY: 30
+//   })
+
+//   // PDF 저장
+//   doc.save(`주문목록_${new Date().toISOString().slice(0, 10)}.pdf`)
+// }
+
+// ===== 페이지 로드 시 전체 주문 자동 조회 =====
+onMounted(() => {
+  fetchOrders()
+})
 </script>
+
 
 <style scoped>
 .order-list {
@@ -230,14 +378,12 @@ const fetchOrders = () => {
   gap: 15px;
 }
 
-/* 좌측/우측 테이블 */
 .order-list-table,
 .order-detail-table {
   flex: 1;
   min-width: 400px;
 }
 
-/* 합계 */
 .total-footer {
   margin-top: 10px;
   text-align: right;
@@ -246,7 +392,6 @@ const fetchOrders = () => {
   color: #333;
 }
 
-/* ===== 공통 테이블 스타일 ===== */
 .custom-table {
   width: 100%;
   font-size: 0.95rem;
@@ -270,7 +415,6 @@ const fetchOrders = () => {
   overflow-x: auto;
 }
 
-/* ===== 반응형 ===== */
 @media (max-width: 768px) {
   .filter-section {
     flex-direction: column;
@@ -281,5 +425,14 @@ const fetchOrders = () => {
   .order-detail-table {
     min-width: 100%;
   }
+}
+.header-actions .p-button-success {
+  background-color: #28a745;
+  border: none;
+}
+
+.header-actions .p-button-danger {
+  background-color: #dc3545;
+  border: none;
 }
 </style>

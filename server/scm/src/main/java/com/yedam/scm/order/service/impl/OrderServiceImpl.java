@@ -27,10 +27,7 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.insertOrderDetail(detailVO);
     }
 
-    @Override
-    public List<SalesOrderVO> getOrderList(String startDate, String endDate, String status) {
-        return orderMapper.getOrderList(startDate, endDate, status);
-    }
+   
 
     @Override
     public List<SalesOrderDetailVO> getOrderDetails(String orderId) {
@@ -39,14 +36,19 @@ public class OrderServiceImpl implements OrderService {
 
 
     @Override
-    public List<SalesOrderVO> getOrderListForView(String startDate, String endDate, String status) {
-        return orderMapper.getOrderListForView(startDate, endDate, status);
+    public List<SalesOrderVO> getOrderListForView(String startDate, String endDate, String prodName,  String status, String orderId) {
+        return orderMapper.getOrderListForView(startDate, endDate, prodName, status, orderId);
     }
 
     @Override
     public Object getBranchDashData() {
         return orderMapper.getBranchDashData();
     }
+
+    @Override
+    public List<SalesOrderVO> getOrderDetailList(String orderId) {
+    return orderMapper.getOrderDetailList(orderId);
+}
 
 
     

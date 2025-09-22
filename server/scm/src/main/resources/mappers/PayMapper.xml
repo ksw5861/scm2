@@ -16,7 +16,7 @@
       pay_date,
       pay_type
     ) VALUES (
-      #{payId},
+      next_date_code('PM'),
       #{payRmk},
       #{payAmount},
       #{vendorId},

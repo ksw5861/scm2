@@ -17,9 +17,7 @@ public interface OrderMapper {
     // 주문 상세 등록
     int insertOrderDetail(SalesOrderDetailVO detailVO);
 
-    // 주문 목록 조회
-    List<SalesOrderVO> getOrderList(String startDate, String endDate, String status);
-
+    
     // 특정 주문 상세 내역 조회
     List<SalesOrderDetailVO> getOrderDetails(String orderId);
 
@@ -28,9 +26,13 @@ public interface OrderMapper {
     List<SalesOrderVO> getOrderListForView(
         @Param("startDate") String startDate,
         @Param("endDate") String endDate,
-        @Param("status") String status
+        @Param("prodName") String prodName,
+        @Param("status") String status,
+        @Param("orderId") String orderId
     );
 
+    // 주문 상세 조회
+    List<SalesOrderVO> getOrderDetailList(String orderId);
 
      // 지점 대시보드
     Object getBranchDashData();
