@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yedam.scm.master.mapper.MaterialMapper">
+  <!-- ==================================== -->
+  <!-- 1. 자재 목록 조회 (materialList) -->
+  <!-- ==================================== -->
+  <select id="getMaterialList" parameterType="map" resultType="MaterialVO">
+  SELECT 
+      MAT_ID,
+      MAT_NAME
+  FROM MATERIAL
+  <where>
+    <if test="matId != null and matId != ''">
+      AND MAT_ID = #{matId}
+    </if>
+    <if test="matName != null and matName != ''">
+      AND MAT_NAME LIKE '%' || #{matName} || '%'
+    </if>
+    <if test="matType != null and matType != ''">
+      AND MAT_TYPE = #{matType}
+    </if>
+    <if test="matStoreCond != null and matStoreCond != ''">
+      AND MAT_STORE_COND = #{matStoreCond}
+    </if>
+  </where>
+  ORDER BY MAT_ID DESC
+</select>
+
+  <!-- ==================================== -->
+  <!-- 2. 특정 자재의 상세 정보 조회 -->
+  <!-- ==================================== -->
+  <select id="getMaterialDetail" parameterType="string" resultType="MaterialVO">
+    SELECT *
+    FROM MATERIAL
+    WHERE MAT_ID = #{matId}
+  </select>
+
+  <!-- ==================================== -->
+  <!-- 3. 선택된 자재 삭제 -->
+  <!-- ==================================== -->
+  <delete id="deleteMaterial" parameterType="string">
+    DELETE FROM MATERIAL WHERE MAT_ID = #{matId}
+  </delete>
+
+  <!-- ==================================== -->
+  <!-- 4. 자재 정보 등록 -->
+  <!-- ==================================== -->
+  <insert id="insertMaterial" parameterType="MaterialVO">
+  INSERT INTO MATERIAL (
+    MAT_ID,
+    MAT_NAME,
+    MAT_TYPE,
+    MAT_STORE_COND,
+    MAT_UNIT_CONV,
+    MAT_EXPIRE_DATE,
+    MAT_UNIT_PRICE,
+    LEAD_TIME,
+    SAFE_STOCK,
+    STATUS,
+    SPEC,
+    UNIT
+  )
+  VALUES (
+    next_code('MAT'),
+    #{matName},
+    #{matType},
+    #{matStoreCond},
+    #{matUnitConv},
+    #{matExpireDate},
+    #{matUnitPrice},
+    #{leadTime},
+    #{safeStock},
+    #{status},
+    #{spec},
+    #{unit}
+  )
+</insert>
+
+  <!-- ==================================== -->
+  <!-- 5. 자재 정보 수정 -->
+  <!-- ==================================== -->
+  <update id="updateMaterial" parameterType="MaterialVO">
+    UPDATE MATERIAL
+    SET MAT_NAME = #{matName},
+    MAT_TYPE = #{matType},
+    MAT_STORE_COND = #{matStoreCond},
+    MAT_UNIT_CONV = #{matUnitConv},
+    MAT_EXPIRE_DATE = #{matExpireDate},
+    MAT_UNIT_PRICE = #{matUnitPrice},
+    LEAD_TIME = #{leadTime},
+    SAFE_STOCK = #{safeStock},
+    STATUS = #{status},
+    SPEC = #{spec},
+    UNIT = #{unit}
+    WHERE MAT_ID = #{matId}
+</update>
+</mapper>
