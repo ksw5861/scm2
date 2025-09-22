@@ -4,17 +4,17 @@
     <div class="header">
       <h2>주문 등록 (판매처)</h2>
       <div class="header-actions">
-        <Button 
-          label="제품 조회" 
-          icon="pi pi-search" 
-          class="p-button-outlined" 
-          @click="fetchProducts" 
+        <Button
+          label="제품 조회"
+          icon="pi pi-search"
+          class="p-button-outlined"
+          @click="fetchProducts"
         />
-        <Button 
-          label="등록" 
-          icon="pi pi-plus" 
-          class="p-button-success" 
-          @click="saveOrder" 
+        <Button
+          label="등록"
+          icon="pi pi-plus"
+          class="p-button-success"
+          @click="saveOrder"
         />
       </div>
     </div>
@@ -132,7 +132,7 @@ const saveOrder = async () => {
   }
 
   try {
-    const response = await axios.post('http://localhost:8080/api/insertorder', orderPayload)
+    const response = await axios.post('/api/insertorder', orderPayload)
     console.log('주문 저장 API 응답:', response.data)
 
     if (response.data.result === 'success') {

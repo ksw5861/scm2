@@ -1,8 +1,10 @@
+import { useIcon } from '@/composables/useIcon';
+
 const wareHouse =
 
       {
         label: '창고 관리',
-        icon: 'pi pi-fw pi-home',
+        icon: useIcon('home'),
         to: '/warehouse',
         roles: ['admin', 'employee']
       }

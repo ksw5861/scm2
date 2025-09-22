@@ -12,7 +12,15 @@ const iconMap = {
   login: 'pi pi-sign-in',
   save: 'pi pi-save',
   key: 'pi pi-key',
-  check: 'pi pi-check'
+  check: 'pi pi-check',
+  employees: 'pi pi-users',
+  employee: 'pi pi-user',
+  home: 'pi pi-home',
+  list: 'pi pi-list',
+  info: 'pi pi-info-circle',
+  email: 'pi pi-envelope',
+  phone: 'pi pi-phone',
+  id: 'pi pi-id-card'
 };
 
 export const useIcon = (name) => {

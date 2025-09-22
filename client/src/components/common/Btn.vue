@@ -18,7 +18,21 @@ const icon = computed(() => (props.icon ? useIcon(props.icon) : null));
 </template>
 
 <style scoped>
+.btn-bold .p-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .btn-bold .p-button-label {
-    font-weight: bold;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-bold .p-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

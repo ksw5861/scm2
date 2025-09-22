@@ -54,7 +54,7 @@ const handleSelect = (item) => {
       <div class="font-semibold text-xl">창고목록</div>
       <Btn @click="isShowModal = true">모달</Btn>
       <div class="flex flex-col gap-2">
-        <DTable :columns="columns" :data="data" :paginator="true" :rows="15" />
+        <DTable :columns="columns" :data="data" :paginator="true" :rows="10" />
       </div>
     </div>
   </Fluid>
