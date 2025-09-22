@@ -17,7 +17,7 @@
       return_date,
       return_status
     ) VALUES (
-      #{returnId},
+      next_date_code('RT'),
       #{odetailId},
       #{returnQty},
       #{returnWhy},

@@ -12,6 +12,8 @@ import com.yedam.scm.order.service.PayService;
 import com.yedam.scm.vo.SalesOrderVO;
 import com.yedam.scm.vo.PaymentVO;
 import com.yedam.scm.vo.ReturnVO;
+import com.yedam.scm.vo.SalesOrderDetailVO;
+
 
 /**
  * EgController
@@ -37,20 +39,31 @@ public class EgController {
     public int insertOrder(@RequestBody SalesOrderVO orderVO) {
         return orderSvc.insertOrder(orderVO);
     }
+    
 
     // ==========================
     // 2. 주문 목록 조회
     // ==========================
     @GetMapping("/orderlist")
     public List<SalesOrderVO> getOrderListForView(
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String status) {
+        @RequestParam(required = false) String startDate,
+        @RequestParam(required = false) String endDate,
+        @RequestParam(required = false) String prodName,
+        @RequestParam(required = false) String status,
+        @RequestParam(required = false) String orderId) {
 
-        return orderSvc.getOrderListForView(startDate, endDate, status);
+    return orderSvc.getOrderListForView(startDate, endDate, prodName, status, orderId);
+    }
+    
+    // ==========================
+    // 2-1. 주문 상세 조회
+    // ==========================
+    @GetMapping("/orderdetail")
+    public List<SalesOrderVO> getOrderDetailList(@RequestParam String orderId) {
+    return orderSvc.getOrderDetailList(orderId);
     }
 
-    // ==========================
+
     // 3. 반품 등록
     // ==========================
     @PostMapping("/insertreturn")

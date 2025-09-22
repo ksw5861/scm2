@@ -4,11 +4,12 @@
     <div class="header">
       <h2>주문 등록 (판매처)</h2>
       <div class="header-actions">
-        <Button
-          label="제품 조회"
-          icon="pi pi-search"
-          class="p-button-outlined"
-          @click="fetchProducts"
+        <!-- 🔹 제품 조회 버튼 -->
+        <Button 
+          label="제품 조회" 
+          icon="pi pi-search" 
+          class="p-button-outlined" 
+          @click="openProductModal" 
         />
         <Button
           label="등록"
@@ -71,6 +72,21 @@
         </template>
       </Column>
     </DataTable>
+
+    <!-- 🔹 제품 검색 모달 추가 -->
+    <Modal
+      :visible="isShowModal"
+      title="제품 검색"
+      idField="prodId"
+      :columns="[
+        { key: 'prodId', label: '제품번호' },
+        { key: 'prodName', label: '제품명' }
+      ]"
+      :fetchData="fetchWarehouseData"
+      :page-size="5"
+      @select="handleSelect"
+      @close="isShowModal = false"
+    />
   </div>
 </template>
 
@@ -85,44 +101,70 @@ import { useAppToast } from '@/composables/useAppToast';
 
 const { toast } = useAppToast();
 
-// 주문 상세 데이터 (예시 데이터)
+// ===== 모달 상태 관리 =====
+const isShowModal = ref(false)
+const openProductModal = () => {
+  isShowModal.value = true
+}
+
+// ===== 주문 상세 데이터 (예시 데이터) =====
 const orderDetailList = ref([
-  { prod_id: 'AB-012', prod_name: '아라비카원두', prod_spec: '1 kg 팩', prod_unit: 'Box(24팩)', prod_price: 480000, order_qty: 2, total: 960000 },
-  { prod_id: 'AB-013', prod_name: '온컵300미리', prod_spec: '100ea 줄', prod_unit: 'Box(30줄)', prod_price: 50000, order_qty: 4, total: 200000 },
-  { prod_id: 'AB-014', prod_name: '냉컵300미리', prod_spec: '100ea 줄', prod_unit: 'Box(30줄)', prod_price: 50000, order_qty: 4, total: 200000 },
-  { prod_id: 'AB-015', prod_name: '냉컵500미리', prod_spec: '100ea 줄', prod_unit: 'Box(30줄)', prod_price: 50000, order_qty: 4, total: 200000 },
-  { prod_id: 'AB-016', prod_name: '냅킨', prod_spec: '100ea 팩', prod_unit: 'Box(60팩)', prod_price: 30000, order_qty: 5, total: 150000 },
-  { prod_id: 'AB-017', prod_name: '설탕시럽', prod_spec: '500ml 병', prod_unit: 'Box(12병)', prod_price: 120000, order_qty: 1, total: 120000 },
-  { prod_id: 'AB-018', prod_name: '녹차 파우더', prod_spec: '1 kg 팩', prod_unit: '팩(1kg)', prod_price: 30000, order_qty: 1, total: 30000 }
+  { prod_id: 'AB-012', prod_name: '아라비카원두', prod_spec: '1 kg 팩', prod_unit: 'Box(24팩)', prod_price: 480000, order_qty: 2, total: 960000 }
 ])
 
-// 납기일자
+// ===== 납기일자 =====
 const deliveryDate = ref('2025-11-15')
 
-// 총 주문 금액
+// ===== 총 주문 금액 =====
 const totalAmount = computed(() => {
   return orderDetailList.value.reduce((acc, item) => acc + (item.total || 0), 0)
 })
 
-// 금액 포맷팅
+// ===== 금액 포맷팅 =====
 const formatCurrency = (value) => {
   return value.toLocaleString('ko-KR') + ' 원'
 }
 
-// 수량 변경 시 자동 합계 계산
+// ===== 수량 변경 시 자동 합계 계산 =====
 const calculateRowTotal = (row) => {
   row.total = row.order_qty * row.prod_price
 }
 
-// 제품 조회 (API 연동)
-const fetchProducts = () => {
-  console.log('제품 조회 API 호출')
-  // axios.get('http://localhost:8080/api/products').then(res => {
-  //   orderDetailList.value = res.data
-  // })
+// ===== 제품 목록 조회 (모달에서 사용) =====
+const fetchWarehouseData = async (page, pageSize) => {
+  try {
+    const { data } = await axios.get('/api/products', {
+      params: {
+        page,
+        pageSize
+      }
+    })
+    return {
+      total: data.totalCount,
+      data: data.items
+    }
+  } catch (error) {
+    console.error('제품 목록 조회 오류:', error)
+    return { total: 0, data: [] }
+  }
 }
 
-// 주문 등록 (API 호출)
+// ===== 모달에서 제품 선택 시 실행 =====
+const handleSelect = (selectedProduct) => {
+  // 주문 테이블에 추가
+  orderDetailList.value.push({
+    prod_id: selectedProduct.prodId,
+    prod_name: selectedProduct.prodName,
+    prod_spec: selectedProduct.prodSpec || '-',
+    prod_unit: selectedProduct.prodUnit || '-',
+    prod_price: selectedProduct.prodPrice || 0,
+    order_qty: 1,
+    total: selectedProduct.prodPrice || 0
+  })
+  isShowModal.value = false
+}
+
+// ===== 주문 등록 (API 호출) =====
 const saveOrder = async () => {
   const orderPayload = {
     order_date: new Date().toISOString().slice(0, 10),
@@ -136,15 +178,13 @@ const saveOrder = async () => {
     console.log('주문 저장 API 응답:', response.data)
 
     if (response.data.result === 'success') {
-      return toast("success","주문 등록 성공","주문 등록 성공하였습니다.");
+      toast("success", "주문 등록 성공", "주문 등록 성공하였습니다.")
     } else {
-      return toast("error","주문 등록 실패","주문 등록 실패하였습니다.");
-
+      toast("error", "주문 등록 실패", "주문 등록 실패하였습니다.")
     }
   } catch (error) {
     console.error('API 호출 오류:', error)
-      return toast("error","주문 등록 오류","오류 발생하였습니다.");
-
+    toast("error", "주문 등록 오류", "오류 발생하였습니다.")
   }
 }
 </script>

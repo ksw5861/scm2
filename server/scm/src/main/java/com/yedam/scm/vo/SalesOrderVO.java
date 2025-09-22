@@ -12,12 +12,23 @@ public class SalesOrderVO {
   Long totalPrice;
   String vendorId;
   String status;
-  Date deleveryDate;
+  Date deliveryDate;
   String payStatus;
   Date sendDate;
   Date paydueDate;
   Long returnPrice;
   
+  // 추가된 대표 제품명 필드
+    private String prodName;
+
+    // Getter / Setter
+    public String getProdName() {
+        return prodName;
+    }
+
+    public void setProdName(String prodName) {
+        this.prodName = prodName;
+    }
 
 
 }
