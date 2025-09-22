@@ -1,19 +1,21 @@
 package com.yedam.scm.web;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import com.yedam.scm.order.mapper.OrderMapper;
 import com.yedam.scm.order.service.OrderService;
 import com.yedam.scm.order.service.ReturnService;
 import com.yedam.scm.order.service.PayService;
-
 import com.yedam.scm.vo.SalesOrderVO;
 import com.yedam.scm.vo.PaymentVO;
 import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
-
+import com.yedam.scm.vo.ProductVO;
 
 /**
  * EgController
@@ -32,6 +34,28 @@ public class EgController {
     @Autowired
     private PayService paySvc;
 
+    @Autowired
+    private OrderMapper orderMapper; // ✅ 제품 조회용 매퍼 주입
+
+// ==========================
+// 🔹 제품 목록 조회 (모달용)
+// ==========================
+@GetMapping("/products")
+public Map<String, Object> getProducts(
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "10") int pageSize) {
+
+    int offset = (page - 1) * pageSize;
+    int totalCount = orderSvc.getProductCount();
+    List<ProductVO> items = orderSvc.getProductList(offset, pageSize);
+
+    Map<String, Object> result = new HashMap<>();
+    result.put("totalCount", totalCount);
+    result.put("items", items);
+    return result;
+}
+
+
     // ==========================
     // 1. 주문 등록 (판매처)
     // ==========================
@@ -39,7 +63,6 @@ public class EgController {
     public int insertOrder(@RequestBody SalesOrderVO orderVO) {
         return orderSvc.insertOrder(orderVO);
     }
-    
 
     // ==========================
     // 2. 주문 목록 조회
@@ -50,20 +73,20 @@ public class EgController {
         @RequestParam(required = false) String endDate,
         @RequestParam(required = false) String prodName,
         @RequestParam(required = false) String status,
-        @RequestParam(required = false) String orderId) {
-
-    return orderSvc.getOrderListForView(startDate, endDate, prodName, status, orderId);
+        @RequestParam(required = false) String orderId
+    ) {
+        return orderSvc.getOrderListForView(startDate, endDate, prodName, status, orderId);
     }
-    
+
     // ==========================
     // 2-1. 주문 상세 조회
     // ==========================
     @GetMapping("/orderdetail")
     public List<SalesOrderVO> getOrderDetailList(@RequestParam String orderId) {
-    return orderSvc.getOrderDetailList(orderId);
+        return orderSvc.getOrderDetailList(orderId);
     }
 
-
+    // ==========================
     // 3. 반품 등록
     // ==========================
     @PostMapping("/insertreturn")
@@ -76,10 +99,10 @@ public class EgController {
     // ==========================
     @GetMapping("/returnlist")
     public List<ReturnVO> getReturnList(
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String status) {
-
+        @RequestParam(required = false) String startDate,
+        @RequestParam(required = false) String endDate,
+        @RequestParam(required = false) String status
+    ) {
         return returnSvc.getReturnList(startDate, endDate, status);
     }
 
@@ -96,10 +119,10 @@ public class EgController {
     // ==========================
     @GetMapping("/paylist")
     public List<PaymentVO> getPayList(
-            @RequestParam(required = false) String payNo,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) {
-
+        @RequestParam(required = false) String payNo,
+        @RequestParam(required = false) String startDate,
+        @RequestParam(required = false) String endDate
+    ) {
         return paySvc.getPayList(payNo, startDate, endDate);
     }
 

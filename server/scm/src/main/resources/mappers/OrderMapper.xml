@@ -147,6 +147,7 @@ ORDER BY so.order_date DESC
 
   </select>
 
+
   <!-- ==================================== -->
   <!-- 5. 주문 상태 업데이트 -->
   <!-- ==================================== -->
@@ -184,6 +185,36 @@ ORDER BY so.order_date DESC
                SUM(total_price) AS total_revenue
         FROM SALES_ORDER
     </select>
+
+<!-- modal -->
+  <select id="getProductList" resultType="com.yedam.scm.vo.ProductVO">
+    SELECT * 
+    FROM (
+        SELECT a.*, ROWNUM rnum
+        FROM (
+            SELECT 
+                prod_id,
+                prod_name,
+                prod_expire_date,
+                PROD_STORE_COND,
+                safe_stock,
+                status,
+                spec,
+                unit
+            FROM product
+            WHERE status = 'ACTIVE'
+            ORDER BY prod_id DESC
+        ) a
+        WHERE ROWNUM &lt;= #{offset} + #{limit}
+    )
+    WHERE rnum &gt; #{offset}
+</select>
+
+<select id="getProductCount" resultType="int">
+    SELECT COUNT(*) FROM product WHERE status = 'ACTIVE'
+</select>
+
+    
 
 
 
