@@ -67,24 +67,10 @@ const onSort = (event) => {
     @sort="onSort"
   >
     <template v-for="col in columns" :key="col.field">
-      <Column
-        v-if="!col.input"
-        :field="col.field"
-        :header="col.label"
-        :sortable="col.sortable ?? false"
-      />
-      <Column
-        v-else
-        :field="col.field"
-        :header="col.label"
-        :sortable="col.sortable ?? false"
-      >
+      <Column v-if="!col.input" :field="col.field" :header="col.label" :sortable="col.sortable ?? false" />
+      <Column v-else :field="col.field" :header="col.label" :sortable="col.sortable ?? false">
         <template #body="slotProps">
-          <InputText
-            v-model="slotProps.data[col.field]"
-            class="w-full"
-            :placeholder="col.placeholder || ''"
-          />
+          <InputText v-model="slotProps.data[col.field]" class="w-full" :placeholder="col.placeholder || ''" />
         </template>
       </Column>
     </template>
