@@ -3,10 +3,14 @@ import { useRoute } from 'vue-router';
 import { computed, ref, reactive, onMounted } from 'vue';
 import { useIcon } from '@/composables/useIcon';
 import axios from 'axios';
+import { useAppToast } from '@/composables/useAppToast';
 
 const route = useRoute();
+const { toast } = useAppToast();
 
 const iconInfo = useIcon('info');
+const iconAdd = useIcon('add');
+const iconEdit = useIcon('edit');
 const iconList = useIcon('list');
 const iconEmployee = useIcon('employee');
 const iconPhone = useIcon('phone');
@@ -27,37 +31,43 @@ const breadcrumbItems = computed(() => {
 });
 
 const employeeColumns = [
-  { label: '사원명', field: 'name' },
+  { label: '사원명', field: 'name', sortable: true },
   { label: '연락처', field: 'phone' },
-  { label: '사원 번호', field: 'employeeId' }
+  { label: '사원 번호', field: 'employeeId', sortable: true }
 ];
 
 const searchParams = reactive({
   empName: '',
   phone: '',
   empId: '',
-  status: [],      // 재직 상태 다중 선택 (숫자 배열)
-  isActive: []     // 사용 여부 다중 선택 (문자 배열)
+  status: [0],
+  isActive: ['Y'],
+  startHireDate: null,
+  endHireDate: null,
+  sortField: null,
+  sortOrder: null
 });
 
-// 재직 상태 체크박스 목록 (DB 값과 라벨)
+const cardMode = ref('create');
+
 const statusOptions = [
-  { label: '재직', value: 1 },
-  { label: '퇴사', value: 2 },
-  { label: '휴직', value: 3 }
+  { label: '재직', value: 0 },
+  { label: '휴직', value: 1 },
+  { label: '퇴사', value: 2 }
 ];
 
-// 사용 여부 체크박스 목록
 const isActiveOptions = [
   { label: '사용', value: 'Y' },
   { label: '미사용', value: 'N' }
 ];
 
 const employees = ref([]);
+const employeeDetail = ref(null);
 const loading = ref(false);
+const detailLoading = ref(false);
 const page = ref({
   page: 1,
-  size: 10,
+  size: 8,
   totalElements: 0
 });
 
@@ -69,7 +79,7 @@ const fetchEmployeeList = async () => {
       size: page.value.size,
       ...searchParams
     };
-    const { data } = await axios.get('/api/employeelist', { params });
+    const { data } = await axios.get('/api/employee', { params });
 
     employees.value = data.data ?? data.items;
     page.value = data.page ?? {
@@ -84,8 +94,22 @@ const fetchEmployeeList = async () => {
   }
 };
 
+const fetchEmployeeDetail = async (employeeId) => {
+  if (!employeeId) return;
+  detailLoading.value = true;
+  try {
+    const { data } = await axios.get(`/api/employee/${employeeId}`);
+    employeeDetail.value = data;
+  } catch (e) {
+    console.error(e);
+  } finally {
+    detailLoading.value = false;
+  }
+};
+
 const handleSearch = () => {
-  page.value.page = 1;  // 검색 시 페이지 1로 초기화
+  page.value.page = 1;
+  employeeDetail.value = null;
   fetchEmployeeList();
 };
 
@@ -95,7 +119,41 @@ const handlePageChange = ({ page: newPage, size }) => {
   fetchEmployeeList();
 };
 
-// 초기 로딩
+const handleSortChange = ({ sortField, sortOrder }) => {
+  searchParams.sortField = sortField;
+  searchParams.sortOrder = sortOrder;
+  fetchEmployeeList();
+};
+
+const handleRowSelect = (employee) => {
+  cardMode.value = 'view';
+  fetchEmployeeDetail(employee.employeeId);
+};
+
+const handleRowUnSelect = () => {
+  cardMode.value = 'create';
+  employeeDetail.value = null;
+};
+
+const removeEmployee = async () => {
+  if (!employeeDetail.value || !employeeDetail.value.employeeId) return;
+  if (!confirm('정말로 삭제하시겠습니까?')) return;
+  try {
+    const result = await axios.delete(`/api/employee/${employeeDetail.value.employeeId}`);
+    if (result.status === 200) {
+      employeeDetail.value = null;
+      cardMode.value = 'create';
+      fetchEmployeeList();
+      return toast('success','삭제 성공', '성공적으로 삭제되었습니다.');
+    } else {
+      return toast('error','삭제 실패', '삭제에 실패하였습니다.');
+    }
+  } catch (e) {
+    console.error(e);
+    return toast('error','삭제 실패', '오류가 발생하여 삭제에 실패하였습니다.');
+  }
+};
+
 onMounted(() => {
   fetchEmployeeList();
 });
@@ -114,12 +172,14 @@ onMounted(() => {
         searchParams.empId = '';
         searchParams.status = [];
         searchParams.isActive = [];
+        searchParams.startHireDate = null;
+        searchParams.endHireDate = null;
         page.page = 1;
         fetchEmployeeList();
       }"
     >
       <div class="flex flex-wrap w-full">
-        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/6 lg:w-1/2">
+        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
           <InputGroup>
             <InputGroupAddon><i :class="iconEmployee" /></InputGroupAddon>
             <IftaLabel>
@@ -129,7 +189,7 @@ onMounted(() => {
           </InputGroup>
         </div>
 
-        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/6 lg:w-1/2">
+        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
           <InputGroup>
             <InputGroupAddon><i :class="iconPhone" /></InputGroupAddon>
             <IftaLabel>
@@ -139,7 +199,7 @@ onMounted(() => {
           </InputGroup>
         </div>
 
-        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/6 lg:w-1/2">
+        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
           <InputGroup>
             <InputGroupAddon><i :class="iconId" /></InputGroupAddon>
             <IftaLabel>
@@ -149,31 +209,49 @@ onMounted(() => {
           </InputGroup>
         </div>
 
-        <!-- 재직 상태 체크박스 그룹 -->
-        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/6 lg:w-1/2">
+        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
           <label class="font-semibold mb-1">재직 상태</label>
-          <div v-for="opt in statusOptions" :key="opt.value" class="flex items-center gap-2">
-            <input
-              type="checkbox"
-              :id="'status-' + opt.value"
-              :value="opt.value"
-              v-model="searchParams.status"
-            />
-            <label :for="'status-' + opt.value">{{ opt.label }}</label>
+          <div class="flex flex-wrap gap-4">
+            <div
+              v-for="opt in statusOptions"
+              :key="opt.value"
+              class="flex items-center gap-2"
+            >
+              <Checkbox
+                v-model="searchParams.status"
+                :inputId="'status-' + opt.value"
+                :value="opt.value"
+              />
+              <label
+                :for="'status-' + opt.value"
+                class="select-none cursor-pointer"
+              >
+                {{ opt.label }}
+              </label>
+            </div>
           </div>
         </div>
 
-        <!-- 사용 여부 체크박스 그룹 -->
-        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/6 lg:w-1/2">
+        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
           <label class="font-semibold mb-1">사용 여부</label>
-          <div v-for="opt in isActiveOptions" :key="opt.value" class="flex items-center gap-2">
-            <input
-              type="checkbox"
-              :id="'isActive-' + opt.value"
-              :value="opt.value"
-              v-model="searchParams.isActive"
-            />
-            <label :for="'isActive-' + opt.value">{{ opt.label }}</label>
+          <div class="flex flex-wrap gap-4">
+            <div
+              v-for="opt in isActiveOptions"
+              :key="opt.value"
+              class="flex items-center gap-2"
+            >
+              <Checkbox
+                v-model="searchParams.isActive"
+                :inputId="'isActive-' + opt.value"
+                :value="opt.value"
+              />
+              <label
+                :for="'isActive-' + opt.value"
+                class="select-none cursor-pointer"
+              >
+                {{ opt.label }}
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -182,9 +260,21 @@ onMounted(() => {
     <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
       <div class="w-full xl:w-5/12">
         <div class="card flex flex-col">
-          <div class="font-semibold text-xl flex items-center gap-4">
-            <span :class="[iconList, 'text-xl']"></span>
-            사원 목록
+          <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+            <div class="flex items-center gap-4">
+              <span :class="[iconList, 'text-xl']"></span>
+              사원 목록
+            </div>
+            <div class="text-sm text-gray-400">
+              총 <span class="font-semibold text-sm text-gray-700">
+                
+                <span v-if="page.totalElements > 0" class="font-semibold text-sm text-gray-700">
+                  <CountUp :end-val="page.totalElements" />
+                </span>
+                <span v-else class="font-semibold text-sm text-gray-700">0</span>
+                
+              </span>건
+            </div>
           </div>
           <Divider />
           <DTable
@@ -194,20 +284,52 @@ onMounted(() => {
             :loading="loading"
             dataKey="employeeId"
             @page-change="handlePageChange"
+            @sort-change="handleSortChange"
+            @row-select="handleRowSelect"
+            @row-unselect="handleRowUnSelect"
           />
         </div>
       </div>
 
       <div class="w-full xl:w-7/12">
         <div class="card flex flex-col">
-          <div class="font-semibold text-xl flex items-center gap-4">
-            <span :class="[iconInfo, 'text-xl']"></span>
-            사원 상세 정보
+          
+          <div class="flex items-center justify-between h-10">
+            <div class="font-semibold text-xl flex items-center gap-4">
+              <span :class="[
+                cardMode === 'create'
+                  ? iconAdd
+                  : cardMode === 'edit'
+                  ? iconEdit
+                  : iconInfo, 
+                'text-xl'
+              ]"></span>
+              {{
+                cardMode === 'create'
+                  ? '신규 사원 등록'
+                  : cardMode === 'edit'
+                  ? '사원 정보 수정'
+                  : '사원 상세 정보'
+              }}
+            </div>
+
+            <div class="flex gap-2">
+              <Btn v-if="cardMode === 'view'" icon="delete" color="danger" @click="removeEmployee" outlined>삭제</Btn>
+              <Btn v-if="cardMode === 'view'" icon="edit" color="warn" @click="cardMode = 'edit'" outlined>수정</Btn>
+              <Btn v-if="cardMode === 'create'" icon="add" outlined>등록</Btn>
+              <Btn v-if="cardMode === 'edit'" icon="save" @click="cardMode = 'view'" outlined>저장</Btn>
+            </div>
           </div>
+
           <Divider />
-          <!-- 상세 정보 내용 -->
+
+          <div v-if="cardMode === 'view'"
+              class="text-center text-gray-400 py-20">
+            {{ employeeDetail }}
+          </div>
         </div>
       </div>
+
     </div>
   </Fluid>
 </template>

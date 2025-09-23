@@ -20,7 +20,8 @@ const iconMap = {
   info: 'pi pi-info-circle',
   email: 'pi pi-envelope',
   phone: 'pi pi-phone',
-  id: 'pi pi-id-card'
+  id: 'pi pi-id-card',
+  cancel: 'pi pi-times'
 };
 
 export const useIcon = (name) => {

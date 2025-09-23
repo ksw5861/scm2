@@ -26,4 +26,8 @@ public class EmployeeSearchDTO {
   private String startHireDate;
   private String endHireDate;
 
+  // 정렬 조건
+  private String sortField;
+  private String sortOrder;
+
 }
