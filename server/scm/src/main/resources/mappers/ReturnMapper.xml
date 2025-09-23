@@ -7,7 +7,7 @@
   <!-- ==================================== -->
   <!-- 1. 반품 등록 -->
   <!-- ==================================== -->
-  <insert id="insertReturn" parameterType="com.yedam.scm.vo.ReturnVO">
+  <insert id="insertReturn" parameterType="ReturnVO">
     INSERT INTO "RETURN" (
         return_id,
         odetail_id,
@@ -21,16 +21,16 @@
         #{odetailId},
         #{returnQty},
         #{returnWhy,jdbcType=VARCHAR},
-        #{returnPrice},
+        NVL(#{returnPrice}, 1),
         SYSDATE,
-        NVL(#{returnStatus}, 'REQUESTED')
+        NVL(#{returnStatus}, '대기')  <!-- 기본값 WAIT 대신 한글 '대기' -->
     )
   </insert>
 
   <!-- ==================================== -->
   <!-- 2. 반품 목록 조회 -->
   <!-- ==================================== -->
-  <select id="getReturnList" parameterType="map" resultType="com.yedam.scm.vo.ReturnVO">
+  <select id="getReturnList" parameterType="map" resultType="ReturnVO">
     SELECT 
       r.return_id,
       r.odetail_id,
@@ -41,8 +41,8 @@
       r.return_status,
       sod.prod_id,
       sod.prod_name,
-      sod.prod_spec,
-      sod.prod_unit,
+      sod.spec,
+      sod.unit,
       sod.order_qty,
       sod.prod_price,
       so.order_id,
@@ -53,22 +53,37 @@
       JOIN sales_order so
         ON sod.order_id = so.order_id
     WHERE 1 = 1
+
+      <!-- 날짜 조건 -->
       <if test="startDate != null and startDate != ''">
         AND r.return_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
       </if>
       <if test="endDate != null and endDate != ''">
         AND r.return_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
       </if>
-      <if test="status != null and status != ''">
-        AND r.return_status = #{status}
+
+      <!-- 반품 상태 -->
+      <if test="returnStatus != null and returnStatus != ''">
+        AND r.return_status = #{returnStatus}
       </if>
-    ORDER BY r.return_date DESC
+
+      <!-- 제품명 검색 -->
+      <if test="prodName != null and prodName != ''">
+        AND sod.prod_name LIKE '%' || #{prodName} || '%'
+      </if>
+
+      <!-- 반품번호 검색 -->
+      <if test="returnNo != null and returnNo != ''">
+        AND r.return_id LIKE '%' || #{returnNo} || '%'
+      </if>
+
+    ORDER BY r.return_date DESC, r.return_id DESC
   </select>
 
   <!-- ==================================== -->
-  <!-- 3. 반품 상세 조회 (반품 단건) -->
+  <!-- 3. 반품 상세 조회 -->
   <!-- ==================================== -->
-  <select id="getReturnDetail" parameterType="string" resultType="com.yedam.scm.vo.ReturnVO">
+  <select id="getReturnDetail" parameterType="string" resultType="ReturnVO">
     SELECT 
       r.return_id,
       r.odetail_id,
@@ -79,8 +94,8 @@
       r.return_status,
       sod.prod_id,
       sod.prod_name,
-      sod.prod_spec,
-      sod.prod_unit,
+      sod.spec,
+      sod.unit,
       sod.order_qty,
       sod.prod_price
     FROM "RETURN" r

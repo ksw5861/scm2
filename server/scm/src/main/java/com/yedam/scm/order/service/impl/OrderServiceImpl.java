@@ -1,6 +1,8 @@
 package com.yedam.scm.order.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -106,9 +108,13 @@ public class OrderServiceImpl implements OrderService {
     // 7. 제품 목록 조회 (모달용)
     // ===============================================================
     @Override
-    public List<ProductVO> getProductList(String prodName, int offset, int limit) {
-        System.out.println(prodName + ", " + offset + ", " + limit );
-        return orderMapper.getProductList(prodName, offset, limit);
+    public List<ProductVO> getProductList(String prodName, int offset, int pageSize) {
+    Map<String, Object> params = new HashMap<>();
+    params.put("prodName", prodName);   // ✅ 다시 넣기
+    params.put("offset", offset);
+    params.put("pageSize", pageSize);
+    params.put("status", null);
+    return orderMapper.getProductList(params);
     }
 
     // ===============================================================

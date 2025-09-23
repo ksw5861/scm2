@@ -1,6 +1,8 @@
 package com.yedam.scm.order.mapper;
 
 import java.util.List;
+import java.util.Map;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import com.yedam.scm.vo.ProductVO;
@@ -55,9 +57,7 @@ public interface OrderMapper {
     // --------------------------
     // 7. 제품 목록 조회 (모달용)
     // --------------------------
-    List<ProductVO> getProductList(@Param("prodName") String prodName,
-                                   @Param("offset") int offset,
-                                   @Param("limit") int limit);
+    List<ProductVO> getProductList(Map<String, Object> params);
 
     // --------------------------
     // 8. 제품 전체 개수 조회

@@ -153,8 +153,10 @@ const fetchProducts = async () => {
     const { data } = await axios.get('/api/products', {
       params: { page: 1, pageSize: 50 }
     })
-    console.log(data)
-    productList.value = Array.isArray(data) ? data : data.items || []
+    console.log('제품 목록 API 응답:', data)
+
+    // ✅ 항상 data.items를 직접 참조하도록 수정
+    productList.value = data.items || []
   } catch (err) {
     console.error('제품 목록 조회 오류:', err)
     productList.value = []
@@ -168,13 +170,14 @@ const handleSelect = () => {
   const product = selectedProduct.value
 
   orderDetailList.value.push({
+    odetailId: null,
     prodId: product.prodId,
     prodName: product.prodName,
     spec: product.spec || '-',
     unit: product.unit || '-',
     prodPrice: product.prodPrice || 0,
     orderQty: 1,
-   
+    prodStatus: '대기'
   })
 
   // 선택 초기화 및 모달 닫기
@@ -182,17 +185,22 @@ const handleSelect = () => {
   isShowModal.value = false
 }
 
+
 // 주문 저장
+const returnPrice = ref(1);       // 기본값 1
+const returnStatus = ref('대기'); // 기본값 '대기'
+
 const saveOrder = async () => {
   const payload = {
-  orderDate: new Date().toISOString().slice(0, 10),
-  deliveryDate: deliveryDate.value,
-  totalPrice: totalAmount.value,
-  status: 'NEW',         // 주문 기본 상태
-  payStatus: 'UNPAID',   // <-- 추가
-  details: JSON.parse(JSON.stringify(orderDetailList.value))
-};
-
+    orderDate: new Date().toISOString().slice(0, 10),
+    deliveryDate: deliveryDate.value,
+    totalPrice: totalAmount.value,
+    status: '대기',           // 주문 기본 상태
+    payStatus: '대기',        // 결제 상태 기본값
+    returnPrice: returnPrice.value ? returnPrice.value : 1,    // 없으면 1
+    returnStatus: returnStatus.value ? returnStatus.value : '대기', // 없으면 '대기'
+    details: JSON.parse(JSON.stringify(orderDetailList.value))
+  };
 
   console.log('전송되는 데이터:', payload);
 
@@ -203,6 +211,9 @@ const saveOrder = async () => {
     console.error('API 오류:', err);
   }
 };
+
+
+
 
 
 onMounted(fetchProducts)

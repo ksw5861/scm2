@@ -25,7 +25,7 @@ import com.yedam.scm.vo.ProductVO;
  * ============================================================
  */
 @RestController
-@RequestMapping
+
 public class EgController {
 
     // ==============================
@@ -40,8 +40,7 @@ public class EgController {
     @Autowired
     private PayService paySvc;
 
-    @Autowired
-    private OrderMapper orderMapper; 
+  
     // =================================================================
     // 1. 제품 목록 조회 (모달용)
     // -----------------------------------------------------------------
@@ -52,7 +51,7 @@ public class EgController {
     public Map<String, Object> getProducts(
             @RequestParam(required = false) String prodName,
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int pageSize) {
+            @RequestParam(defaultValue = "50") int pageSize) {
 
         int offset = (page - 1) * pageSize;
         int totalCount = orderSvc.getProductCount();
@@ -127,9 +126,11 @@ public class EgController {
     public List<ReturnVO> getReturnList(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
-            @RequestParam(required = false) String status
+            @RequestParam(required = false) String returnStatus,
+            @RequestParam(required = false) String prodName,
+            @RequestParam(required = false) String returnNo
     ) {
-        return returnSvc.getReturnList(startDate, endDate, status);
+        return returnSvc.getReturnList(startDate, endDate, returnStatus, prodName, returnNo);
     }
 
     // =================================================================
