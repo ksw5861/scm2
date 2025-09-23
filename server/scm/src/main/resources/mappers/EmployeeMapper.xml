@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.yedam.scm.master.mapper.EmployeeMapper">
 
   <select id="selectEmployeeSimpleListByCondition" resultType="EmployeeSimpleVO">
@@ -12,7 +13,33 @@
         employee_id,
         name,
         phone,
-        ROW_NUMBER() OVER (ORDER BY employee_id DESC) AS rn
+
+        <choose>
+          <when test="condition.sortField == 'employeeId'">
+            ROW_NUMBER() OVER (
+              ORDER BY employee_id
+              <choose>
+                <when test="condition.sortOrder == 1">ASC</when>
+                <when test="condition.sortOrder == -1">DESC</when>
+                <otherwise>ASC</otherwise>
+              </choose>
+            ) AS rn
+          </when>
+          <when test="condition.sortField == 'name'">
+            ROW_NUMBER() OVER (
+              ORDER BY name
+              <choose>
+                <when test="condition.sortOrder == 1">ASC</when>
+                <when test="condition.sortOrder == -1">DESC</when>
+                <otherwise>ASC</otherwise>
+              </choose>
+            ) AS rn
+          </when>
+          <otherwise>
+            ROW_NUMBER() OVER (ORDER BY employee_id DESC) AS rn
+          </otherwise>
+        </choose>
+
       FROM employee
       WHERE 1 = 1
 
@@ -56,7 +83,7 @@
   <select id="selectEmployeeCountByCondition" resultType="long">
     SELECT COUNT(*)
     FROM employee
-    WHERE 1=1
+    WHERE 1 = 1
 
     <if test="condition.empName != null and condition.empName != ''">
       AND name LIKE '%' || #{condition.empName} || '%'
@@ -93,4 +120,22 @@
     </if>
   </select>
 
+  <select id="selectEmployeeById" resultType="EmployeeVO">
+    SELECT 
+      employee_id,
+      name,
+      email,
+      phone,
+      hire_date,
+      resign_date,
+      status,
+      is_active
+    FROM employee
+    WHERE employee_id = #{empId}
+  </select>
+
+  <delete id="deleteEmployeeById">
+    DELETE FROM employee
+    WHERE employee_id = #{empId}
+  </delete>
 </mapper>
