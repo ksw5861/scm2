@@ -52,22 +52,21 @@
 
       <!-- 주문수량 -->
       <Column header="주문수량" style="text-align: center;">
-  <template #body="{ data }">
-    <div>
-      <InputNumber
-        v-model="data.orderQty"
-        :min="0"
-        @input="calculateRowTotal(data)"
-        showButtons
-        buttonLayout="horizontal"
-        decrementButtonClass="p-button-outlined p-button-sm"
-        incrementButtonClass="p-button-outlined p-button-sm"
-        :inputStyle="{ width: '20px', textAlign: 'center', padding: '4px' }"
-      />
-    </div>
-  </template>
-</Column>
-
+        <template #body="{ data }">
+          <div>
+            <InputNumber
+              v-model="data.orderQty"
+              :min="0"
+              @input="calculateRowTotal(data)"
+              showButtons
+              buttonLayout="horizontal"
+              decrementButtonClass="p-button-outlined p-button-sm"
+              incrementButtonClass="p-button-outlined p-button-sm"
+              :inputStyle="{ width: '20px', textAlign: 'center', padding: '4px' }"
+            />
+          </div>
+        </template>
+      </Column>
 
       <Column header="합계">
         <template #body="{ data }">
@@ -76,7 +75,13 @@
       </Column>
     </DataTable>
 
-    <!-- 🔹 PrimeVue Dialog 기반 모달 -->
+    <!-- <Column field="status" header="주문상태">
+      <template #body="{ data }">
+        {{ data.status || '미지정' }}
+      </template>
+    </Column> -->
+
+    
     <Dialog
       v-model:visible="isShowModal"
       header="제품 검색"
@@ -90,7 +95,7 @@
         responsiveLayout="scroll"
         selectionMode="single"
         v-model:selection="selectedProduct"
-        @rowDblclick="handleSelect"
+        @rowClick="handleSelect" 
       >
         <Column field="prodId" header="제품번호" />
         <Column field="prodName" header="제품명" />
@@ -113,35 +118,36 @@ import { useAppToast } from '@/composables/useAppToast'
 
 const { toast } = useAppToast()
 
+// 모달 표시 여부
 const isShowModal = ref(false)
+
+// 제품 목록 및 선택된 제품
 const productList = ref([])
 const selectedProduct = ref(null)
 
-const orderDetailList = ref([
-  {
-    prodId: 'AB-012',
-    prodName: '아라비카원두',
-    prodSpec: '1 kg 팩',
-    prodUnit: 'Box(24팩)',
-    prodPrice: 480000,
-    orderQty: 2,
-    total: 960000
-  }
-])
+// 주문 상세 목록
+const orderDetailList = ref([])
 
+// 납기일자
 const deliveryDate = ref('2025-11-15')
 
+// 총 주문합계
 const totalAmount = computed(() =>
   orderDetailList.value.reduce((sum, item) => sum + (item.total || 0), 0)
-)
+);
 
+// 금액 포맷
 const formatCurrency = (value) =>
   (value || 0).toLocaleString('ko-KR') + ' 원'
 
+// 행별 합계 계산
 const calculateRowTotal = (row) => {
-  row.total = row.orderQty * row.prodPrice
-}
+  row.total = row.orderQty * row.prodPrice;
+  console.log('합계 계산:', row.total);
+};
 
+
+// 제품 목록 조회
 const fetchProducts = async () => {
   try {
     const { data } = await axios.get('/api/products', {
@@ -155,9 +161,12 @@ const fetchProducts = async () => {
   }
 }
 
+// 제품 선택 시 주문 상세 목록에 추가
 const handleSelect = () => {
   if (!selectedProduct.value) return
+
   const product = selectedProduct.value
+
   orderDetailList.value.push({
     prodId: product.prodId,
     prodName: product.prodName,
@@ -165,30 +174,36 @@ const handleSelect = () => {
     unit: product.unit || '-',
     prodPrice: product.prodPrice || 0,
     orderQty: 1,
-    total: product.prodPrice || 0
+   
   })
+
+  // 선택 초기화 및 모달 닫기
+  selectedProduct.value = null
   isShowModal.value = false
 }
 
+// 주문 저장
 const saveOrder = async () => {
   const payload = {
-    orderDate: new Date().toISOString().slice(0, 10),
-    deliveryDate: deliveryDate.value,
-    totalPrice: totalAmount.value,
-    details: orderDetailList.value
-  }
+  orderDate: new Date().toISOString().slice(0, 10),
+  deliveryDate: deliveryDate.value,
+  totalPrice: totalAmount.value,
+  status: 'NEW',         // 주문 기본 상태
+  payStatus: 'UNPAID',   // <-- 추가
+  details: JSON.parse(JSON.stringify(orderDetailList.value))
+};
+
+
+  console.log('전송되는 데이터:', payload);
+
   try {
-    const { data } = await axios.post('/api/insertorder', payload)
-    if (data.result === 'success') {
-      toast('success', '주문 등록 성공', '주문 등록 성공하였습니다.')
-    } else {
-      toast('error', '주문 등록 실패', '주문 등록 실패하였습니다.')
-    }
+    const { data } = await axios.post('/api/insertorder', payload);
+    console.log('응답 데이터:', data);
   } catch (err) {
-    console.error('API 오류:', err)
-    toast('error', '주문 등록 오류', '오류 발생하였습니다.')
+    console.error('API 오류:', err);
   }
-}
+};
+
 
 onMounted(fetchProducts)
 </script>
@@ -238,7 +253,7 @@ onMounted(fetchProducts)
   padding-right: 6px;
 }
 
-/* InputNumber 박스 크기 */
+
 .p-inputnumber {
   display: flex;
   align-items: center;
@@ -251,6 +266,4 @@ onMounted(fetchProducts)
   height: 28px !important;
   padding: 0 !important;
 }
-
-
 </style>

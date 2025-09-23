@@ -1,27 +1,34 @@
 package com.yedam.scm.order.mapper;
 
 import java.util.List;
-
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 
+/**
+ * OrderMapper
+ * ===========================
+ * 주문 및 주문 상세 테이블 연동 Mapper
+ * - MyBatis XML 매핑 파일과 1:1 매칭
+ */
 @Mapper
 public interface OrderMapper {
-  
-    // 주문 등록
+
+    // --------------------------
+    // 1. 주문 등록
+    // --------------------------
     int insertOrder(SalesOrderVO orderVO);
 
-    // 주문 상세 등록
+    // --------------------------
+    // 2. 주문 상세 등록
+    // --------------------------
     int insertOrderDetail(SalesOrderDetailVO detailVO);
 
-    // 특정 주문 상세 내역 조회
-    List<SalesOrderDetailVO> getOrderDetails(String orderId);
-
-    // 주문 목록 조회
+    // --------------------------
+    // 3. 주문 목록 조회 (검색조건 포함)
+    // --------------------------
     List<SalesOrderVO> getOrderListForView(
         @Param("startDate") String startDate,
         @Param("endDate") String endDate,
@@ -30,23 +37,30 @@ public interface OrderMapper {
         @Param("orderId") String orderId
     );
 
-    // 주문 상세 조회
-    List<SalesOrderVO> getOrderDetailList(String orderId);
+    // --------------------------
+    // 4. 주문 상세 조회 (order_id 기준 전체)
+    // --------------------------
+    List<SalesOrderDetailVO> getOrderDetailList(@Param("orderId") String orderId);
 
-    // 지점 대시보드
+    // --------------------------
+    // 5. 주문 상세 조회 (개별)
+    // --------------------------
+    // List<SalesOrderDetailVO> getOrderDetails(String orderId);
+
+    // --------------------------
+    // 6. 지점 대시보드
+    // --------------------------
     Object getBranchDashData();
 
-    // 제품 목록 조회 (페이징)
-List<ProductVO> getProductList(
-    @Param("offset") int offset,
-    @Param("limit") int limit
-);
+    // --------------------------
+    // 7. 제품 목록 조회 (모달용)
+    // --------------------------
+    List<ProductVO> getProductList(@Param("prodName") String prodName,
+                                   @Param("offset") int offset,
+                                   @Param("limit") int limit);
 
-// 제품 전체 개수
-int getProductCount();
-
-
-
-
-
-  }
+    // --------------------------
+    // 8. 제품 전체 개수 조회
+    // --------------------------
+    int getProductCount();
+}

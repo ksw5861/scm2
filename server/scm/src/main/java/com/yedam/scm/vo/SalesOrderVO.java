@@ -1,6 +1,7 @@
 package com.yedam.scm.vo;
 
 import java.util.Date;
+import java.util.List;
 
 import lombok.Data;
 
@@ -30,5 +31,6 @@ public class SalesOrderVO {
         this.prodName = prodName;
     }
 
+    private List<SalesOrderDetailVO> details;
 
 }
