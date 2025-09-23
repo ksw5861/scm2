@@ -21,6 +21,15 @@ public class ReturnServiceImpl implements ReturnService {
     }
 
     @Override
+    public int insertReturnList(List<ReturnVO> returnList) {
+        int count = 0;
+        for (ReturnVO vo : returnList) {
+            count += returnMapper.insertReturn(vo);
+        }
+        return count;
+    }
+
+    @Override
     public List<ReturnVO> getReturnList(String startDate, String endDate, String status) {
         return returnMapper.getReturnList(startDate, endDate, status);
     }

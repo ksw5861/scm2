@@ -4,219 +4,157 @@
 
 <mapper namespace="com.yedam.scm.order.mapper.OrderMapper">
 
-  <!-- ==================================== -->
-  <!-- 1. 주문 등록 (sales_order) -->
-  <!-- ==================================== -->
-  <insert id="insertOrder" parameterType="SalesOrderVO">
-    INSERT INTO SALES_ORDER
-    (
-      order_id,
-      order_date,
-      total_price,
-      vendor_id,
-      status,
-      delivery_date,
-      pay_status,
-      paydue_date,
-      return_price
-    )
-    VALUES
-    (
-      next_date_code('SO'),
-      SYSDATE,
-      #{totalPrice},
-      #{vendorId},
-      #{status},
-      #{deliveryDate},
-      #{payStatus},
-      #{paydueDate},
-      NVL(#{returnPrice}, 0)
-    )
-  </insert>
+    <!-- ============================= -->
+    <!-- 1. 주문 등록 -->
+    <!-- ============================= -->
+    <insert id="insertOrder" parameterType="SalesOrderVO">
+        <selectKey keyProperty="orderId" resultType="string" order="BEFORE">
+            SELECT next_date_code('SO') FROM dual
+        </selectKey>
 
-  <!-- ==================================== -->
-  <!-- 2. 주문 상세 등록 (sales_order_detail) -->
-  <!-- ==================================== -->
-  <insert id="insertOrderDetail" parameterType="SalesOrderDetailVO">
-    INSERT INTO SALES_ORDER_DETAIL
-    (
-      odetail_id,
-      order_id,
-      prod_id,
-      prod_name,
-      prod_spec,
-      prod_unit,
-      order_qty,
-      prod_price,
-      total_price,
-      prod_status
-    )
-    VALUES
-    (
-      #{odetailId},
-      #{orderId},
-      #{prodId},
-      #{prodName},
-      #{prodSpec},
-      #{prodUnit},
-      #{orderQty},
-      #{prodPrice},
-      #{totalPrice},
-      #{prodStatus}
-    )
-  </insert>
-
-  <!-- ==================================== -->
-    <!-- 주문 목록 조회 (대표 제품명 포함) -->
-  <!-- ==================================== -->
-<select id="getOrderListForView" parameterType="map" resultType="SalesOrderVO">
-SELECT 
-    so.order_id,
-    so.order_date,
-
-    -- 대표 제품명: 첫 번째 제품명 + "외 X건"
-    (
-      SELECT CASE 
-               WHEN COUNT(*) = 1 THEN MIN(sod2.prod_name)
-               ELSE MIN(sod2.prod_name) || ' 외 ' || (COUNT(*) - 1) || '건'
-             END
-      FROM sales_order_detail sod2
-      WHERE sod2.order_id = so.order_id
-    ) AS prod_name,
-
-    so.total_price,
-    so.delivery_date,
-    so.status
-FROM sales_order so
-WHERE 1=1
-
-    <!-- 시작일 -->
-    <if test="startDate != null and startDate != ''">
-        AND so.order_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
-    </if>
-
-    <!-- 종료일 -->
-    <if test="endDate != null and endDate != ''">
-        AND so.order_date &lt; TO_DATE(#{endDate}, 'YYYY-MM-DD') + 1
-    </if>
-
-    <!-- 상태 -->
-    <if test="status != null and status != ''">
-        AND so.status = #{status}
-    </if>
-
-    <!-- 주문번호 (부분 검색 가능) -->
-    <if test="orderId != null and orderId != ''">
-        AND so.order_id LIKE '%' || #{orderId} || '%'
-    </if>
-
-    <!-- 제품명 검색 (서브쿼리로 검색) -->
-    <if test="prodName != null and prodName != ''">
-        AND EXISTS (
-            SELECT 1 
-            FROM sales_order_detail sod2
-            WHERE sod2.order_id = so.order_id
-            AND sod2.prod_name LIKE '%' || #{prodName} || '%'
+        INSERT INTO SALES_ORDER (
+            order_id,
+            order_date,
+            -- total_price,
+            vendor_id,
+            status,
+            delivery_date,
+            pay_status,
+            paydue_date,
+            return_price
+        ) VALUES (
+            #{orderId},
+            SYSDATE,
+            -- #{totalPrice},
+            #{vendorId},
+            NVL(#{status}, 'ORDER'),
+            #{deliveryDate},
+            NVL(#{payStatus}, 'UNPAID'),
+            #{paydueDate},
+            NVL(#{returnPrice}, 0)
         )
-    </if>
+    </insert>
 
-ORDER BY so.order_date DESC
-</select>
+    <!-- ============================= -->
+    <!-- 2. 주문 상세 등록 -->
+    <!-- ============================= -->
+    <insert id="insertOrderDetail" parameterType="SalesOrderDetailVO">
+        INSERT INTO SALES_ORDER_DETAIL (
+            odetail_id,
+            order_id,
+            prod_id,
+            prod_name,
+            spec,
+            unit,
+            order_qty,
+            prod_price,
+            prod_status
+        ) VALUES (
+            #{odetailId},
+            #{orderId},
+            #{prodId},
+            #{prodName},
+            #{spec},
+            #{unit},
+            #{orderQty},
+            #{prodPrice},
+            #{prodStatus}
+        )
+    </insert>
 
+    <!-- ============================= -->
+    <!-- 3. 주문 목록 조회 -->
+    <!-- ============================= -->
+    <select id="getOrderListForView" parameterType="map" resultType="SalesOrderVO">
+        SELECT 
+            so.order_id,
+            so.order_date,
+            so.total_price,
+            so.delivery_date,
+            so.status,
+            
+            (
+                SELECT CASE 
+                        WHEN COUNT(*) = 1 THEN MIN(sod2.prod_name)
+                        ELSE MIN(sod2.prod_name) || ' 외 ' || (COUNT(*) - 1) || '건'
+                       END
+                FROM sales_order_detail sod2
+                WHERE sod2.order_id = so.order_id
+            ) AS prod_name
+        FROM sales_order so
+        WHERE 1=1
 
+        <if test="startDate != null and startDate != ''">
+            AND so.order_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND so.order_date &lt; TO_DATE(#{endDate}, 'YYYY-MM-DD') + 1
+        </if>
+        <if test="status != null and status != ''">
+            AND so.status = #{status}
+        </if>
+        <if test="orderId != null and orderId != ''">
+            AND so.order_id LIKE '%' || #{orderId} || '%'
+        </if>
+        <if test="prodName != null and prodName != ''">
+            AND EXISTS (
+                SELECT 1
+                FROM sales_order_detail sod2
+                WHERE sod2.order_id = so.order_id
+                  AND sod2.prod_name LIKE '%' || #{prodName} || '%'
+            )
+        </if>
 
-
-
-  <!-- ==================================== -->
-  <!-- 4. 특정 주문의 상세 내역 조회 -->
-  <!-- ==================================== -->
-  <select id="getOrderDetailList" parameterType="string" resultType="SalesOrderDetailVO">
-    SELECT
-    sod.odetail_id,
-    sod.order_id,
-    sod.prod_id,
-    sod.prod_name,
-    sod.prod_spec,
-    sod.prod_unit,
-    sod.order_qty,
-    sod.prod_price,
-    sod.prod_status
-    FROM SALES_ORDER_DETAIL sod
-    WHERE sod.order_id = #{orderId}
-    ORDER BY sod.odetail_id
-
-  </select>
-
-
-  <!-- ==================================== -->
-  <!-- 5. 주문 상태 업데이트 -->
-  <!-- ==================================== -->
-  <update id="updateOrderStatus" parameterType="map">
-    UPDATE sales_order
-    SET status = #{status}
-    WHERE order_id = #{orderId}
-  </update>
-
-  <!-- ==================================== -->
-  <!-- 6. 주문 상세 상태 업데이트 -->
-  <!-- ==================================== -->
-  <update id="updateOrderDetailStatus" parameterType="map">
-    UPDATE SALES_ORDER_DETAIL
-    SET prod_status = #{prodStatus}
-    WHERE odetail_id = #{odetailId}
-  </update>
-
-  <!-- ==================================== -->
-  <!-- 7. 주문 삭제 (마스터 및 상세) -->
-  <!-- ==================================== -->
-  <delete id="deleteOrder" parameterType="string">
-    DELETE FROM sales_order WHERE order_id = #{orderId}
-  </delete>
-
-  <delete id="deleteOrderDetail" parameterType="string">
-    DELETE FROM SALES_ORDER_DETAIL WHERE order_id = #{orderId}
-  </delete>
-
-
-
-    <!-- 대시보드 데이터 -->
-    <select id="getBranchDashData" resultType="map">
-        SELECT COUNT(*) AS total_orders,
-               SUM(total_price) AS total_revenue
-        FROM SALES_ORDER
+        ORDER BY so.order_date DESC
     </select>
 
-<!-- modal -->
-  <select id="getProductList" resultType="com.yedam.scm.vo.ProductVO">
-    SELECT * 
-    FROM (
-        SELECT a.*, ROWNUM rnum
-        FROM (
-            SELECT 
-                prod_id,
-                prod_name,
-                prod_expire_date,
-                PROD_STORE_COND,
-                safe_stock,
-                status,
-                spec,
-                unit
-            FROM product
-            WHERE status = 'ACTIVE'
-            ORDER BY prod_id DESC
-        ) a
-        WHERE ROWNUM &lt;= #{offset} + #{limit}
-    )
-    WHERE rnum &gt; #{offset}
-</select>
-
-<select id="getProductCount" resultType="int">
-    SELECT COUNT(*) FROM product WHERE status = 'ACTIVE'
-</select>
-
-    
+    <!-- ============================= -->
+    <!-- 4. 주문 상세 조회 -->
+    <!-- ============================= -->
+    <select id="getOrderDetailList" parameterType="java.lang.String" resultType="SalesOrderDetailVO">
+        SELECT
+            sod.odetail_id,
+            sod.order_id,
+            sod.prod_id,
+            sod.prod_name,
+            sod.spec,
+            sod.unit,
+            sod.order_qty,
+            sod.prod_price,
+            sod.prod_status
+        FROM SALES_ORDER_DETAIL sod
+        WHERE sod.order_id = #{orderId}
+        ORDER BY sod.odetail_id
+    </select>
 
 
+    <!-- ============================= -->
+    <!-- 8. 제품 총 개수 조회 -->
+    <!-- ============================= -->
+    <select id="getProductCount" resultType="int">
+        SELECT COUNT(*) 
+        FROM PRODUCT
+    </select>
 
-    
+    <!-- 2. 제품 목록 조회 -->
+    <select id="getProductList" parameterType="map" resultType="ProductVO">
+        SELECT 
+            PROD_ID,
+            PROD_NAME,
+            SPEC,
+            UNIT,
+            PROD_PRICE
+        FROM PRODUCT
+        <where>
+            <if test="prodName != null and prodName != ''">
+                AND PROD_NAME LIKE '%' || #{prodName} || '%'
+            </if>
+            <if test="status != null and status != ''">
+                AND STATUS = #{status}
+            </if>
+        </where>
+        ORDER BY PROD_ID
+        OFFSET #{offset} ROWS FETCH NEXT #{pageSize} ROWS ONLY
+    </select>
+
 </mapper>
