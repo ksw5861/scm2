@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yedam.scm.master.mapper.WareHouseMapper1">
+
+  <!-- 1. 창고 목록 조회 -->
+  <select id="getWareHouseList" parameterType="map" resultType="WareHouseVO">
+    SELECT *
+    FROM WAREHOUSE
+    <where>
+      <if test="whId != null and whId != ''">
+        AND WH_ID = #{whId}
+      </if>
+      <if test="whName != null and whName != ''">
+        AND WH_NAME LIKE '%' || #{whName} || '%'
+      </if>
+      <if test="status != null and status != ''">
+        AND STATUS = #{status}
+      </if>
+    </where>
+    ORDER BY WH_ID DESC
+  </select>
+
+  <!-- 2. 창고 상세 조회 -->
+  <select id="getWareHouseDetail" parameterType="string" resultType="WareHouseVO">
+    SELECT *
+    FROM WAREHOUSE
+    WHERE WH_ID = #{whId}
+  </select>
+
+  <!-- 3. 창고 삭제 -->
+  <delete id="deleteWareHouse" parameterType="string">
+    DELETE FROM WAREHOUSE WHERE WH_ID = #{whId}
+  </delete>
+
+  <!-- 4. 창고 등록 -->
+  <insert id="insertWareHouse" parameterType="WareHouseVO">
+    INSERT INTO WAREHOUSE (WH_ID, WH_NAME, WH_ADDRESS, WH_OWNER, OWNER_TEL, STATUS)
+    VALUES (next_code('WH'), #{whName}, #{whAddress}, #{whOwner}, #{ownerTel}, #{status})
+  </insert>
+
+  <!-- 5. 창고 수정 -->
+  <update id="updateWareHouse" parameterType="WareHouseVO">
+    UPDATE WAREHOUSE
+    SET WH_NAME = #{whName},
+        WH_ADDRESS = #{whAddress},
+        WH_OWNER = #{whOwner},
+        OWNER_TEL = #{ownerTel},
+        STATUS = #{status}
+    WHERE WH_ID = #{whId}
+  </update>
+
+</mapper>

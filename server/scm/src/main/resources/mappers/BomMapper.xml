@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yedam.scm.mapper.BomMapper">
+
+    <resultMap id="BomResultMap" type="com.yedam.scm.vo.BomVO">
+        <id property="bomId" column="BOM_ID"/>
+        <result property="bomVersion" column="BOM_VERSION"/>
+        <result property="effectiveDate" column="EFFECTIVE_DATE"/>
+        <result property="expireDate" column="EXPIRE_DATE"/>
+        <result property="prodId" column="PROD_ID"/>
+        <result property="matId" column="MAT_ID"/>
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="qty" column="QTY"/>
+    </resultMap>
+
+    <select id="getBomList" resultMap="BomResultMap">
+        SELECT * FROM BOM
+    </select>
+
+    <select id="getBom" parameterType="string" resultMap="BomResultMap">
+        SELECT * FROM BOM WHERE BOM_ID = #{bomId}
+    </select>
+
+    <insert id="insertBom" parameterType="com.yedam.scm.vo.BomVO">
+        INSERT INTO BOM (BOM_ID, BOM_VERSION, EFFECTIVE_DATE, EXPIRE_DATE, PROD_ID, MAT_ID, CREATED_AT, QTY)
+        VALUES (#{bomId}, #{bomVersion}, #{effectiveDate}, #{expireDate}, #{prodId}, #{matId}, #{createdAt}, #{qty})
+    </insert>
+
+    <update id="updateBom" parameterType="com.yedam.scm.vo.BomVO">
+        UPDATE BOM
+        SET BOM_VERSION = #{bomVersion},
+            EFFECTIVE_DATE = #{effectiveDate},
+            EXPIRE_DATE = #{expireDate},
+            PROD_ID = #{prodId},
+            MAT_ID = #{matId},
+            QTY = #{qty}
+        WHERE BOM_ID = #{bomId}
+    </update>
+
+    <delete id="deleteBom" parameterType="string">
+        DELETE FROM BOM WHERE BOM_ID = #{bomId}
+    </delete>
+
+    <select id="getBomByProdId" parameterType="string" resultMap="BomResultMap">
+        SELECT * FROM BOM WHERE PROD_ID = #{prodId}
+    </select>
+
+</mapper>
