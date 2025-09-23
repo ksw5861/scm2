@@ -2,28 +2,28 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.yedam.scm.mapper.ReturnMapper">
+<mapper namespace="com.yedam.scm.order.mapper.ReturnMapper">
 
   <!-- ==================================== -->
   <!-- 1. 반품 등록 -->
   <!-- ==================================== -->
   <insert id="insertReturn" parameterType="com.yedam.scm.vo.ReturnVO">
-    INSERT INTO return (
-      return_id,
-      odetail_id,
-      return_qty,
-      return_why,
-      return_price,
-      return_date,
-      return_status
+    INSERT INTO "RETURN" (
+        return_id,
+        odetail_id,
+        return_qty,
+        return_why,
+        return_price,
+        return_date,
+        return_status
     ) VALUES (
-      next_date_code('RT'),
-      #{odetailId},
-      #{returnQty},
-      #{returnWhy},
-      #{returnPrice},
-      SYSDATE,
-      #{returnStatus}
+        next_date_code('RT'),
+        #{odetailId},
+        #{returnQty},
+        #{returnWhy,jdbcType=VARCHAR},
+        #{returnPrice},
+        SYSDATE,
+        NVL(#{returnStatus}, 'REQUESTED')
     )
   </insert>
 
@@ -37,7 +37,7 @@
       r.return_qty,
       r.return_why,
       r.return_price,
-      TO_CHAR(r.return_date, 'YYYY-MM-DD') AS return_date,
+      r.return_date,
       r.return_status,
       sod.prod_id,
       sod.prod_name,
@@ -47,7 +47,7 @@
       sod.prod_price,
       so.order_id,
       so.vendor_id
-    FROM return r
+    FROM "RETURN" r
       JOIN sales_order_detail sod
         ON r.odetail_id = sod.odetail_id
       JOIN sales_order so
@@ -75,7 +75,7 @@
       r.return_qty,
       r.return_why,
       r.return_price,
-      TO_CHAR(r.return_date, 'YYYY-MM-DD') AS return_date,
+      r.return_date,
       r.return_status,
       sod.prod_id,
       sod.prod_name,
@@ -83,7 +83,7 @@
       sod.prod_unit,
       sod.order_qty,
       sod.prod_price
-    FROM return r
+    FROM "RETURN" r
       JOIN sales_order_detail sod
         ON r.odetail_id = sod.odetail_id
     WHERE r.return_id = #{returnId}
@@ -93,16 +93,16 @@
   <!-- 4. 반품 상태 업데이트 -->
   <!-- ==================================== -->
   <update id="updateReturnStatus" parameterType="map">
-    UPDATE return
+    UPDATE "RETURN"
     SET return_status = #{returnStatus}
     WHERE return_id = #{returnId}
   </update>
 
   <!-- ==================================== -->
-  <!-- 5. 반품 삭제 (필요 시 사용) -->
+  <!-- 5. 반품 삭제 -->
   <!-- ==================================== -->
   <delete id="deleteReturn" parameterType="string">
-    DELETE FROM return
+    DELETE FROM "RETURN"
     WHERE return_id = #{returnId}
   </delete>
 

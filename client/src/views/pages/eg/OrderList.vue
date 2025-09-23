@@ -14,22 +14,7 @@
       </div>
     </div>
     
-    
-    
-    <Modal
-    :visible="isShowModal"
-    title="창고 검색"
-    idField="whId"
-    :columns="[
-      { key: 'whId', label: '창고번호' },
-      { key: 'whName', label: '창고명' }
-    ]"
-    :fetchData="fetchWarehouseData"
-    :page-size="5"
-    @select="handleSelect"
-    @close="isShowModal = false"
-    />
-
+ 
 
     <!-- 검색 영역 -->
     <div class="filter-section">

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yedam.scm.master.mapper.ProductMapper">
+  <!-- ==================================== -->
+  <!-- 1. 제품 목록 조회 (productList) -->
+  <!-- ==================================== -->
+  <select id="getProductList" parameterType="map" resultType="ProductVO">
+    SELECT 
+      PROD_ID,
+      PROD_NAME,
+      STATUS,
+      UNIT
+    FROM PRODUCT
+    <where>
+      <if test="prodId != null and prodId != ''">
+        AND PROD_ID = #{prodId}
+      </if>
+      <if test="prodName != null and prodName != ''">
+        AND PROD_NAME LIKE '%' || #{prodName} || '%'
+      </if>
+      <if test="status != null and status != ''">
+        AND STATUS = #{status}
+      </if>
+      <if test="unit != null and unit != ''">
+        AND UNIT = #{unit}
+      </if>
+    </where>
+    ORDER BY PROD_ID DESC
+  </select>
+
+  <!-- ==================================== -->
+  <!-- 2. 특정 제품의 상세 정보 조회 -->
+  <!-- ==================================== -->
+  <select id="getProductDetail" parameterType="string" resultType="ProductVO">
+    SELECT *
+    FROM PRODUCT
+    WHERE PROD_ID = #{prodId}
+  </select>
+
+  <!-- ==================================== -->
+  <!-- 3. 선택된 제품 삭제 -->
+  <!-- ==================================== -->
+  <delete id="deleteProduct" parameterType="string">
+    DELETE FROM PRODUCT WHERE PROD_ID = #{prodId}
+  </delete>
+
+  <!-- ==================================== -->
+  <!-- 4. 제품 정보 등록 -->
+  <!-- ==================================== -->
+  <insert id="insertProduct" parameterType="ProductVO">
+    INSERT INTO PRODUCT (
+      PROD_ID,
+      PROD_NAME,
+      PROD_EXPIRE_DATE,
+      SAFE_STOCK,
+      STATUS,
+      SPEC,
+      UNIT
+    )
+    VALUES (
+      next_code('PROD'),
+      #{prodName},
+      #{prodExpireDate},
+      #{safeStock},
+      #{status},
+      #{spec},
+      #{unit}
+    )
+  </insert>
+
+  <!-- ==================================== -->
+  <!-- 5. 제품 정보 수정 -->
+  <!-- ==================================== -->
+  <update id="updateProduct" parameterType="ProductVO">
+    UPDATE PRODUCT
+    SET 
+      PROD_NAME = #{prodName},
+      PROD_EXPIRE_DATE = #{prodExpireDate},
+      SAFE_STOCK = #{safeStock},
+      STATUS = #{status},
+      SPEC = #{spec},
+      UNIT = #{unit}
+    WHERE PROD_ID = #{prodId}
+  </update>
+</mapper>

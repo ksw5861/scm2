@@ -26,10 +26,10 @@ mybatis:
 
 logging:
   level:
+    root: INFO             
+    log4jdbc.log4j2: WARN  
     jdbc:
-      resultset: off
-      sqltiming: info
-    com:
-      example:
-        demo: debug
-    root: info
+      resultset: OFF       
+      sqltiming: WARN      
+    com.zaxxer.hikari: WARN 
+
