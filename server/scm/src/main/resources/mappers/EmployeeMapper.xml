@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yedam.scm.master.mapper.EmployeeMapper">
+
+  <select id="selectEmployeeSimpleListByCondition" resultType="EmployeeSimpleVO">
+    SELECT 
+      e.employee_id,
+      e.name,
+      e.phone
+    FROM (
+      SELECT 
+        employee_id,
+        name,
+        phone,
+        ROW_NUMBER() OVER (ORDER BY employee_id DESC) AS rn
+      FROM employee
+      WHERE 1 = 1
+
+      <if test="condition.empName != null and condition.empName != ''">
+        AND name LIKE '%' || #{condition.empName} || '%'
+      </if>
+
+      <if test="condition.phone != null and condition.phone != ''">
+        AND phone LIKE '%' || #{condition.phone} || '%'
+      </if>
+
+      <if test="condition.empId != null and condition.empId != ''">
+        AND employee_id LIKE '%' || #{condition.empId} || '%'
+      </if>
+
+      <if test="condition.status != null and condition.status.size() > 0">
+        AND status IN
+        <foreach item="st" collection="condition.status" open="(" separator="," close=")">
+          #{st}
+        </foreach>
+      </if>
+
+      <if test="condition.isActive != null and condition.isActive.size() > 0">
+        AND is_active IN
+        <foreach item="active" collection="condition.isActive" open="(" separator="," close=")">
+          #{active}
+        </foreach>
+      </if>
+
+      <if test="condition.startHireDate != null and condition.startHireDate != ''">
+        AND hire_date &gt;= TO_DATE(#{condition.startHireDate}, 'YYYY-MM-DD')
+      </if>
+
+      <if test="condition.endHireDate != null and condition.endHireDate != ''">
+        AND hire_date &lt;= TO_DATE(#{condition.endHireDate}, 'YYYY-MM-DD')
+      </if>
+    ) e
+    WHERE e.rn BETWEEN #{paging.startRow} AND #{paging.endRow}
+  </select>
+
+  <select id="selectEmployeeCountByCondition" resultType="long">
+    SELECT COUNT(*)
+    FROM employee
+    WHERE 1=1
+
+    <if test="condition.empName != null and condition.empName != ''">
+      AND name LIKE '%' || #{condition.empName} || '%'
+    </if>
+
+    <if test="condition.phone != null and condition.phone != ''">
+      AND phone LIKE '%' || #{condition.phone} || '%'
+    </if>
+
+    <if test="condition.empId != null and condition.empId != ''">
+      AND employee_id LIKE '%' || #{condition.empId} || '%'
+    </if>
+
+    <if test="condition.status != null and condition.status.size() > 0">
+      AND status IN
+      <foreach item="st" collection="condition.status" open="(" separator="," close=")">
+        #{st}
+      </foreach>
+    </if>
+
+    <if test="condition.isActive != null and condition.isActive.size() > 0">
+      AND is_active IN
+      <foreach item="active" collection="condition.isActive" open="(" separator="," close=")">
+        #{active}
+      </foreach>
+    </if>
+
+    <if test="condition.startHireDate != null and condition.startHireDate != ''">
+      AND hire_date &gt;= TO_DATE(#{condition.startHireDate}, 'YYYY-MM-DD')
+    </if>
+
+    <if test="condition.endHireDate != null and condition.endHireDate != ''">
+      AND hire_date &lt;= TO_DATE(#{condition.endHireDate}, 'YYYY-MM-DD')
+    </if>
+  </select>
+
+</mapper>

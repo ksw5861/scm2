@@ -1,20 +1,20 @@
 <script setup>
-import { useAppToast } from '@/composables/useAppToast';
-import InputText from 'primevue/inputtext';
-import { ref } from 'vue';
-import DTable from '@/components/common/DTable.vue';
-import Modal from '@/components/common/Modal.vue';
-import axios from 'axios';
+import { useAppToast } from '@/composables/useAppToast'
+import InputText from 'primevue/inputtext'
+import { ref } from 'vue'
+import DTable from '@/components/common/DTable.vue'
+import Modal from '@/components/common/Modal.vue'
+import axios from 'axios'
 
-const { toast } = useAppToast();
+const { toast } = useAppToast()
 
-const isShowModal = ref(false);
-const selectedItem = ref(null);
+const isShowModal = ref(false)
+const selectedItem = ref(null)
 
 const columns = [
   { label: '창고코드', field: 'whId', sortable: true },
   { label: '창고명', field: 'whName', sortable: true }
-];
+]
 
 const data = [
   { whId: 'WH001', whName: '창고1' },
@@ -27,17 +27,28 @@ const data = [
   { whId: 'WH008', whName: '창고8' },
   { whId: 'WH009', whName: '창고9' },
   { whId: 'WH010', whName: '창고10' }
-];
+]
 
-const fetchWarehouseData = async () => {
-  const result = await axios.get('/api/warehouse');
-  return result.data;
-};
+const fetchWarehouseData = async ({ page, size, search, sortField, sortOrder }) => {
+  const response = await axios.get('/api/warehouse', {
+    params: {
+      page,
+      size,
+      search,
+      sortField,
+      sortOrder
+    }
+  })
+  return {
+    items: response.data.items,
+    total: response.data.total
+  }
+}
 
 const handleSelect = (item) => {
-  selectedItem.value = item;
-  isShowModal.value = false;
-};
+  selectedItem.value = item
+  isShowModal.value = false
+}
 </script>
 
 <template>

@@ -2,23 +2,36 @@ package com.yedam.scm.web;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.yedam.scm.master.service.WareHouseService;
-import com.yedam.scm.vo.WareHouseVO;
+import com.yedam.scm.dto.EmployeeListRes;
+import com.yedam.scm.dto.EmployeeSearchDTO;
+import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.master.service.EmployeeService;
+import com.yedam.scm.vo.EmployeeSimpleVO;
+import com.yedam.scm.vo.EmployeeVO;
+
+import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+
 
 @RestController
+@RequiredArgsConstructor
 public class DhController {
 
-  @Autowired
-  WareHouseService svc;
+  private final EmployeeService employeeSvc;
 
-  @GetMapping("/warehouse")
-  public List<WareHouseVO> getWareHouseList() {
-    return svc.getWareHouseList();
+  @GetMapping("/employeelist")
+  public EmployeeListRes getEmployeeListByCondition(
+    @ModelAttribute EmployeeSearchDTO condition, 
+    @ModelAttribute PageDTO paging
+  ) {
+
+    return employeeSvc.getEmployeeSimpleListByCondition(condition, paging);
+
   }
+  
 
 }
