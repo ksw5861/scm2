@@ -62,6 +62,7 @@ const isActiveOptions = [
 ];
 
 const employees = ref([]);
+const selectedEmployee = ref(null);
 const employeeDetail = ref(null);
 const loading = ref(false);
 const detailLoading = ref(false);
@@ -109,7 +110,9 @@ const fetchEmployeeDetail = async (employeeId) => {
 
 const handleSearch = () => {
   page.value.page = 1;
+  selectedEmployee.value = null;
   employeeDetail.value = null;
+  cardMode.value = 'create';
   fetchEmployeeList();
 };
 
@@ -133,6 +136,25 @@ const handleRowSelect = (employee) => {
 const handleRowUnSelect = () => {
   cardMode.value = 'create';
   employeeDetail.value = null;
+};
+
+const handleReset = () => {
+  Object.assign(searchParams, {
+    empName: '',
+    phone: '',
+    empId: '',
+    status: [0],
+    isActive: ['Y'],
+    startHireDate: null,
+    endHireDate: null,
+    sortField: null,
+    sortOrder: null
+  });
+  page.value.page = 1;
+  selectedEmployee.value = null;
+  employeeDetail.value = null;
+  cardMode.value = 'create';
+  fetchEmployeeList();
 };
 
 const removeEmployee = async () => {
@@ -166,17 +188,7 @@ onMounted(() => {
     <SearchCard
       title="사원 검색"
       @search="handleSearch"
-      @reset="() => {
-        searchParams.empName = '';
-        searchParams.phone = '';
-        searchParams.empId = '';
-        searchParams.status = [];
-        searchParams.isActive = [];
-        searchParams.startHireDate = null;
-        searchParams.endHireDate = null;
-        page.page = 1;
-        fetchEmployeeList();
-      }"
+      @reset="handleReset"
     >
       <div class="flex flex-wrap w-full">
         <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
@@ -283,6 +295,7 @@ onMounted(() => {
             :page="page"
             :loading="loading"
             dataKey="employeeId"
+            v-model:selected="selectedEmployee"
             @page-change="handlePageChange"
             @sort-change="handleSortChange"
             @row-select="handleRowSelect"
