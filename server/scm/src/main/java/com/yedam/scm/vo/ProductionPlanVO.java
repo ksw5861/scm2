@@ -4,10 +4,11 @@
  *  
  */
 
-
 package com.yedam.scm.vo;
 
 import java.util.Date;
+import java.util.List;
+
 import lombok.Data;
 
 @Data
@@ -20,6 +21,6 @@ public class ProductionPlanVO {
     private String empName;
     private Date reDate;
 
-    
+    List<PrdPlanDetailVO> prdPlanDetailList;
 
 }

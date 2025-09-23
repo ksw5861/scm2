@@ -1,5 +1,10 @@
 package com.yedam.scm.purchaseMat.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
+
+import com.yedam.scm.vo.PrdPlanDetailVO;
+import com.yedam.scm.vo.ProductionPlanVO;
+
 /*
  * Mapper Interface
  * - 생산계획 등록
@@ -10,7 +15,8 @@ package com.yedam.scm.purchaseMat.mapper;
  *  
  */
 
-
+@Mapper
 public interface PurchaseMatMapper {
-    
+    int insertProductionPlan(ProductionPlanVO master);
+    int insertProductionPlanDetail(PrdPlanDetailVO detail);
 }

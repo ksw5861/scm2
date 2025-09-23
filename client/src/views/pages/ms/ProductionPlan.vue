@@ -57,6 +57,28 @@ const deleteRow = () => {
     productionPlans.value.pop();
   }
 };
+
+// 등록 함수
+const submitForm = async () => {
+  // 마스터 + 디테일 묶기
+  const payload = {
+    empName: empName.value,
+    startDate: dateRange.value.start,
+    endDate: dateRange.value.end,
+    regDate: resDate.value,
+    details: productionPlans.value
+  };
+
+  try {
+    const response = await axios.post('/api/plan', payload);
+    console.log('등록 성공:', response.data);
+    alert('등록 성공!');
+  } catch (error) {
+    console.error('등록 실패:', error);
+    alert('등록 실패!');
+  }
+};
+
 </script>
 
 <template>
