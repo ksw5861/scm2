@@ -1,4 +1,3 @@
-<!-- DTable.vue -->
 <script setup>
 import { ref, watch, defineProps, defineEmits, computed } from 'vue';
 import DataTable from 'primevue/datatable';
@@ -18,40 +17,48 @@ const props = defineProps({
     })
   },
   loading: { type: Boolean, default: false },
-  dataKey: { type: String, default: 'id' }
+  dataKey: { type: String, default: 'id' },
+  selected: { type: Object, default: null }
 });
 
-const emit = defineEmits(['page-change', 'sort-change', 'row-select']);
+const emit = defineEmits([
+  'page-change',
+  'sort-change',
+  'row-select',
+  'row-unselect',
+  'update:selected'
+]);
 
 const localData = ref([...props.data]);
 
 watch(() => props.data, (newData) => {
-  localData.value = [...newData]
+  localData.value = [...newData];
 });
 
-const selectedRow = ref(null);
+const selectedRow = computed({
+  get: () => props.selected,
+  set: (val) => emit('update:selected', val)
+});
 
 const rows = computed(() => props.page.size);
 const totalRecords = computed(() => props.page.totalElements);
 const currentPage = computed(() => props.page.page);
 
 const onRowSelect = (event) => {
-  selectedRow.value = event.data
-  emit('row-select', event.data)
+  emit('row-select', event.data);
 };
 
 const onRowUnselect = (event) => {
-  selectedRow.value = null;
-  emit('row-unselect', event.data)
+  emit('row-unselect', event.data);
 };
 
 const onPage = (event) => {
-  const newPage = Math.floor(event.first / event.rows) + 1
-  emit('page-change', { page: newPage, size: event.rows })
+  const newPage = Math.floor(event.first / event.rows) + 1;
+  emit('page-change', { page: newPage, size: event.rows });
 };
 
 const onSort = (event) => {
-  emit('sort-change', event)
+  emit('sort-change', event);
 };
 </script>
 
@@ -74,48 +81,28 @@ const onSort = (event) => {
     @row-unselect="onRowUnselect"
     @page="onPage"
     @sort="onSort"
-    >
+  >
     <template v-for="col in columns" :key="col.field">
-        <Column
+      <Column
         v-if="!col.input"
         :field="col.field"
         :header="col.label"
         :sortable="col.sortable ?? false"
-        />
-        <Column
+      />
+      <Column
         v-else
         :field="col.field"
         :header="col.label"
         :sortable="col.sortable ?? false"
-        >
+      >
         <template #body="slotProps">
-            <InputText
+          <InputText
             v-model="slotProps.data[col.field]"
             class="w-full"
             :placeholder="col.placeholder || ''"
-            />
+          />
         </template>
-        </Column>
+      </Column>
     </template>
   </DataTable>
 </template>
-
-<style scoped>
-::v-deep .p-paginator {
-  font-size: 0.9rem;
-  padding: 0.5rem 0;
-}
-
-::v-deep .p-paginator-prev,
-::v-deep .p-paginator-next,
-::v-deep .p-paginator-page {
-  min-width: 1.5rem;
-  height: 1.5rem;
-  line-height: 1.5rem;
-  margin: 0 0.15rem;
-}
-
-::v-deep .p-datatable-column-title {
-  font-size: 0.85rem;
-}
-</style>
