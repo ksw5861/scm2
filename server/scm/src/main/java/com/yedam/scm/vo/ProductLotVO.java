@@ -15,6 +15,11 @@ public class ProductLotVO {
     private int useQty;           // 사용 수량
     private int remainQty;        // 잔여 수량
     private LocalDate transferDate; // 이동 일자
-    private String status;        // 상태 (Y: 사용, N: 미사용 등)
+    private String status;        // 상태
+
+
+    //추가
+    private LocalDate endDate;
+    private String prodName; 
 
 }

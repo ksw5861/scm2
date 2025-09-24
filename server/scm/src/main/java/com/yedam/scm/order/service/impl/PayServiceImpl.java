@@ -9,30 +9,37 @@ import com.yedam.scm.order.mapper.PayMapper;
 import com.yedam.scm.order.service.PayService;
 import com.yedam.scm.vo.PaymentDetailVO;
 import com.yedam.scm.vo.PaymentVO;
+import com.yedam.scm.vo.SalesOrderVO;
 
 @Service
 public class PayServiceImpl implements PayService {
 
     @Autowired
-    private PayMapper payMapper;
+    private PayMapper paymentMapper; 
 
-    @Override
-    public int insertPay(PaymentVO payVO) {
-        return payMapper.insertPayment(payVO);
-    }
+        @Override
+        public Long insertPayment(PaymentVO paymentVO) { 
+            return paymentMapper.insertPayment(paymentVO);
+        }
 
-    @Override
-    public int insertPayDetail(PaymentDetailVO detailVO) {
-        return payMapper.insertPaymentDetail(detailVO);
-    }
+        @Override
+        public Long insertPaymentDetail(PaymentDetailVO detailVO) {
+            return paymentMapper.insertPaymentDetail(detailVO);
+        }
 
-    @Override
-    public List<PaymentVO> getPayList(String payNo, String startDate, String endDate) {
-        return payMapper.getPayList(payNo, startDate, endDate);
-    }
+        @Override
+        public List<PaymentVO> selectPaymentList(String paymentNo, String startDate, String endDate) { 
+            return paymentMapper.selectPaymentList(paymentNo, startDate, endDate);
+        }
 
-    @Override
-    public List<PaymentDetailVO> getPayDetail(String payId) {
-        return payMapper.getPayDetail(payId);
-    }
+        @Override
+        public List<PaymentDetailVO> selectPaymentDetail(String paymentId) { 
+            return paymentMapper.selectPaymentDetail(paymentId);
+        }
+
+        //결제 대기중인 주문건 목록
+        @Override
+        public List<SalesOrderVO> selectPendingOrders() {
+            return paymentMapper.selectPendingPaymentOrders();
+        }
 }

@@ -2,12 +2,12 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.yedam.scm.mapper.PayMapper">
+<mapper namespace="com.yedam.scm.order.mapper.PayMapper">
 
   <!-- ==================================== -->
   <!-- 1. 결제 등록 (payment 테이블) -->
   <!-- ==================================== -->
-  <insert id="insertPay" parameterType="com.yedam.scm.vo.PaymentVO">
+  <insert id="insertPayment" parameterType="PaymentVO">
     INSERT INTO payment (
       pay_id,
       pay_rmk,
@@ -25,18 +25,37 @@
     )
   </insert>
 
+
+  <!-- 결제 대기 상태인 주문만 조회 -->
+  <select id="selectPendingPaymentOrders" resultType="SalesOrderVO">
+    SELECT
+        so.order_id,
+        so.order_date,
+        so.send_date,
+        so.total_price,
+        so.paydue_date,
+        so.pay_status,
+        p.prod_name
+    FROM sales_order so
+    JOIN sales_order_detail sod ON so.order_id = sod.order_id
+    JOIN product p ON sod.prod_id = p.prod_id
+    WHERE so.pay_status = '대기'
+    ORDER BY so.order_date DESC
+</select>
+
+
   <!-- ==================================== -->
   <!-- 2. 결제 상세 등록 (payment_detail 테이블) -->
   <!-- ==================================== -->
-  <insert id="insertPayDetail" parameterType="com.yedam.scm.vo.PaymentDetailVO">
+  <insert id="insertPaymentDetail" parameterType="PaymentDetailVO">
     INSERT INTO payment_detail (
-      key,
-      field,
+      pay_detail_id,
+      pay_id,
       order_id,
       total_price
     ) VALUES (
-      #{key},
-      #{field},
+      #{payDetailId},
+      #{payId},
       #{orderId},
       #{totalPrice}
     )
@@ -45,58 +64,82 @@
   <!-- ==================================== -->
   <!-- 3. 결제 목록 조회 -->
   <!-- ==================================== -->
-  <select id="getPayList" parameterType="map" resultType="com.yedam.scm.vo.PaymentVO">
+ <select id="selectPaymentList" resultType="map">
+    WITH SALES_DATA AS (
+        SELECT TO_CHAR(ORDER_DATE, 'YYYY-MM') AS MONTH_KEY,  -- 년-월 단위 그룹핑
+               SUM(TOTAL_PRICE) AS TOTAL_SALES               -- 총매출
+        FROM SALES_ORDER
+        GROUP BY TO_CHAR(ORDER_DATE, 'YYYY-MM')
+    ),
+    RETURN_DATA AS (
+        SELECT TO_CHAR(RETURN_DATE, 'YYYY-MM') AS MONTH_KEY, -- 년-월 단위 그룹핑
+               SUM(RETURN_PRICE) AS TOTAL_RETURNS            -- 총반품금액
+        FROM RETURN
+        GROUP BY TO_CHAR(RETURN_DATE, 'YYYY-MM')
+    ),
+    PAYMENT_DATA AS (
+        SELECT PAY_ID,
+               PAY_DATE,
+               PAY_RMK,
+               VENDOR_ID,
+               SUM(PAY_AMOUNT) AS PAY_AMOUNT
+        FROM PAYMENT
+        GROUP BY PAY_ID, PAY_DATE, PAY_RMK, VENDOR_ID
+    )
     SELECT
-      p.pay_id,
-      p.pay_rmk,
-      p.pay_amount,
-      p.vendor_id,
-      TO_CHAR(p.pay_date, 'YYYY-MM-DD') AS pay_date,
-      p.pay_type
-    FROM payment p
-    WHERE 1=1
-      <if test="payNo != null and payNo != ''">
-        AND p.pay_id = #{payNo}
-      </if>
-      <if test="startDate != null and startDate != ''">
-        AND p.pay_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
-      </if>
-      <if test="endDate != null and endDate != ''">
-        AND p.pay_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
-      </if>
-    ORDER BY p.pay_date DESC
-  </select>
+        PD.PAY_ID,
+        TO_CHAR(PD.PAY_DATE, 'YYYY-MM-DD') AS PAY_DATE,  -- 결제일자 (년-월-일)
+        
+        -- 미수금 = 총매출 - 총반품
+        NVL(SD.TOTAL_SALES, 0) - NVL(RD.TOTAL_RETURNS, 0) AS OUTSTANDING_AMOUNT,
+        
+        -- 납부금액 = 결제 테이블의 납부금액
+        NVL(PD.PAY_AMOUNT, 0) AS PAY_AMOUNT,
+        
+        -- 최종잔액 = (총매출 - 총반품) - 납부금
+        (NVL(SD.TOTAL_SALES, 0) - NVL(RD.TOTAL_RETURNS, 0)) - NVL(PD.PAY_AMOUNT, 0) AS FINAL_BALANCE,
+        
+        -- 여신잔액 = 여신한도 - (총매출 - 총반품)
+        (10000000 - (NVL(SD.TOTAL_SALES, 0) - NVL(RD.TOTAL_RETURNS, 0))) AS CREDIT_BALANCE,
+        
+        PD.PAY_RMK
+    FROM PAYMENT_DATA PD
+    LEFT JOIN SALES_DATA SD ON TO_CHAR(PD.PAY_DATE, 'YYYY-MM') = SD.MONTH_KEY
+    LEFT JOIN RETURN_DATA RD ON TO_CHAR(PD.PAY_DATE, 'YYYY-MM') = RD.MONTH_KEY
+    ORDER BY PD.PAY_DATE DESC
+</select>
+
 
   <!-- ==================================== -->
   <!-- 4. 결제 상세 조회 -->
   <!-- ==================================== -->
-  <select id="getPayDetail" parameterType="string" resultType="com.yedam.scm.vo.PaymentDetailVO">
+  <select id="selectPaymentDetail" parameterType="string" resultType="PaymentDetailVO">
     SELECT
-      pd.key,
-      pd.field,
+      pd.pay_detail_id,
+      pd.pay_id,
       pd.order_id,
       pd.total_price,
-      so.total_price AS order_total_price,
-      so.order_date,
+      so.total_price,
+      TO_CHAR(so.order_date, 'YYYY-MM-DD') AS order_date,
       v.vendor_name
     FROM payment_detail pd
-      JOIN sales_order so ON pd.order_id = so.order_id
-      JOIN vendor v ON so.vendor_id = v.vendor_id
-    WHERE pd.field = #{payId}
+    JOIN sales_order so ON pd.order_id = so.order_id
+    JOIN vendor v ON so.vendor_id = v.vendor_id
+    WHERE pd.pay_id = #{payId}
     ORDER BY pd.order_id
   </select>
 
   <!-- ==================================== -->
   <!-- 5. 결제 내역 삭제 (취소) -->
   <!-- ==================================== -->
-  <delete id="deletePay" parameterType="string">
+  <delete id="deletePayment" parameterType="string">
     DELETE FROM payment
     WHERE pay_id = #{payId}
   </delete>
 
-  <delete id="deletePayDetail" parameterType="string">
+  <delete id="deletePaymentDetail" parameterType="string">
     DELETE FROM payment_detail
-    WHERE field = #{payId}
+    WHERE pay_id = #{payId}
   </delete>
 
 </mapper>

@@ -33,4 +33,5 @@ public class SalesOrderVO {
 
     private List<SalesOrderDetailVO> details;
 
+    private String prodId;
 }

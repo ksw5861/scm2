@@ -5,7 +5,9 @@ import com.yedam.scm.vo.BomVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+
 @Mapper
+
 public interface BomMapper {
 
     // 특정 제품의 BOM 목록 조회

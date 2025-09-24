@@ -13,15 +13,15 @@ import lombok.RequiredArgsConstructor;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.ibatis.annotations.Delete;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
-
-
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequiredArgsConstructor
@@ -45,6 +45,45 @@ public class DhController {
     return employeeSvc.getEmployeeById(empId);
 
   }
+
+  @PostMapping("/employee")
+  public ResponseEntity<Map<String, String>> addEmployee(
+    @RequestBody EmployeeVO emp
+  ) {
+
+    boolean isInserted = employeeSvc.addEmployee(emp);
+
+    Map<String, String> response = new HashMap<>();
+    if (isInserted) {
+      response.put("employeeId", emp.getEmployeeId());
+      response.put("status", "success");
+      return ResponseEntity.ok(response);
+    } else {
+      response.put("status", "error");
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+  }
+  
+  @PutMapping("/employee/{empId}")
+  public ResponseEntity<Map<String, String>> modifyEmployee(
+      @PathVariable String empId,
+      @RequestBody EmployeeVO emp
+  ) {
+      emp.setEmployeeId(empId);
+
+      boolean isUpdated = employeeSvc.modifyEmployeeById(emp);
+
+      Map<String, String> response = new HashMap<>();
+      if (isUpdated) {
+          response.put("status", "success");
+          return ResponseEntity.ok(response);
+      } else {
+          response.put("status", "not_found");
+          return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+      }
+  }
+
 
   @DeleteMapping("/employee/{empId}")
   public ResponseEntity<Map<String, String>> removeEmployee(

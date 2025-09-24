@@ -13,6 +13,12 @@ public interface EmployeeService {
   // 사원번호로 단건 조회
   EmployeeVO getEmployeeById(String empId);
 
+  // 사원 등록
+  boolean addEmployee(EmployeeVO emp);
+
+  // 사원 정보 수정
+  boolean modifyEmployeeById(EmployeeVO emp);
+
   // 사원번호로 단건 삭제
   boolean removeEmployeeById(String empId);
   

@@ -134,6 +134,44 @@
     WHERE employee_id = #{empId}
   </select>
 
+  <insert id="insertEmployee">
+    
+    <selectKey keyProperty="employeeId" resultType="String" order="BEFORE">
+      SELECT next_code('emp') FROM dual
+    </selectKey>
+
+    INSERT INTO employee (
+      employee_id,
+      name,
+      email,
+      phone,
+      hire_date,
+      resign_date,
+      status
+    ) VALUES (
+      #{employeeId},
+      #{name},
+      #{email},
+      #{phone},
+      #{hireDate},
+      #{resignDate},
+      #{status}
+    )
+  </insert>
+
+  <update id="updateEmployeeById">
+      UPDATE employee
+      SET
+        name = #{name},
+        email = #{email},
+        phone = #{phone},
+        hire_date = #{hireDate},
+        resign_date = #{resignDate},
+        status = #{status},
+        is_active = #{isActive}
+      WHERE employee_id = #{employeeId}
+  </update>
+
   <delete id="deleteEmployeeById">
     DELETE FROM employee
     WHERE employee_id = #{empId}

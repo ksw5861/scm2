@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useAppToast } from '@/composables/useAppToast';
 import Modal from '@/components/common/Modal.vue';
@@ -22,7 +22,7 @@ function fmtDate(d) {
 }
 
 /* ------------------ 검색 폼 ------------------ */
-const searchForm = ref({ prodCode: '', prodName: '', makerDate: null });
+const searchForm = ref({ prodCode: '', prodName: '', endDate: null });
 
 /* ------------------ 목록/상세 ------------------ */
 const inboundList = ref([]);
@@ -65,10 +65,10 @@ function clearDetail() {
 function bindDetail(row) {
   selectedRow.value = row;
   detail.value = {
-    prodCode: row?.prodCode ?? '',
+    prodCode: row?.prodId ?? '',
     prodName: row?.prodName ?? '',
-    lotNo: row?.lotNo ?? '',
-    qty: row?.qty ?? null,
+    lotNo: row?.prdLot ?? '',
+    qty: row?.inQty ?? null,
     prodDate: row?.prodDate ?? '',
     expireDate: null,
     unitSpec: row?.unitSpec ?? '',
@@ -76,7 +76,7 @@ function bindDetail(row) {
     manager: row?.manager ?? '',
     inDate: row?.inDate ?? '',
     stockNow: Number(row?.stockNow) || 0,
-    stockAfter: (Number(row?.stockNow) || 0) + (Number(row?.qty) || 0)
+    stockAfter: (Number(row?.stockNow) || 0) + (Number(row?.inQty) || 0)
   };
 }
 
@@ -90,10 +90,10 @@ async function doSearch() {
     const params = {
       prodCode: searchForm.value.prodCode.trim(),
       prodName: searchForm.value.prodName.trim(),
-      makerDate: searchForm.value.makerDate ? fmtDate(searchForm.value.makerDate) : ''
+      endDate: searchForm.value.endDate ? fmtDate(searchForm.value.endDate) : ''
     };
-    const { data } = await axios.get('/api/inbound/lots', { params });
-    inboundList.value = Array.isArray(data) ? data : [];
+    const { data } = await axios.get('/api/lots', { params });
+    inboundList.value = data ?? [];
     clearDetail();
   } catch (err) {
     toast.error('목록 조회 오류');
@@ -102,7 +102,7 @@ async function doSearch() {
 }
 
 function resetSearch() {
-  searchForm.value = { prodCode: '', prodName: '', makerDate: null };
+  searchForm.value = { prodCode: '', prodName: '', endDate: null };
   doSearch();
 }
 
@@ -135,7 +135,6 @@ async function save() {
   try {
     const body = {
       prdLot: detail.value.lotNo,
-      prodNo: detail.value.prodCode,
       prodId: detail.value.prodCode,
       inQty: Number(detail.value.qty || 0),
       inDate: detail.value.inDate,
@@ -167,6 +166,11 @@ async function remove() {
     console.error(err);
   }
 }
+
+// ✅ 페이지 진입 시 자동 조회
+onMounted(() => {
+  doSearch();
+});
 </script>
 
 <template>
@@ -194,7 +198,7 @@ async function remove() {
         </div>
         <div class="field">
           <label>생산일자</label>
-          <Calendar v-model="searchForm.makerDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
+          <Calendar v-model="searchForm.endDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
         </div>
       </div>
       <div class="actions">
@@ -207,13 +211,12 @@ async function remove() {
     <div class="split">
       <!-- 목록 -->
       <div class="list-box">
-        <DataTable :value="inboundList" dataKey="lotNo" class="datatable" @rowClick="onRowClick">
-          <Column field="lotNo" header="LOT번호" />
-          <Column field="prodCode" header="제품코드" />
+        <DataTable :value="inboundList" dataKey="prdLot" class="datatable" @rowClick="onRowClick">
+          <Column field="prdLot" header="LOT번호" />
+          <Column field="prodId" header="제품코드" />
           <Column field="prodName" header="제품명" />
-          <Column field="qty" header="수량" />
+          <Column field="totalQty" header="수량" />
           <Column field="status" header="상태" />
-          <!-- ✅ 목록에만 상태 -->
         </DataTable>
       </div>
 
@@ -238,7 +241,6 @@ async function remove() {
           <div class="field"><label>규격/단위</label><InputText v-model="detail.unitSpec" /></div>
           <div class="field"><label>담당자</label><InputText v-model="detail.manager" /></div>
           <div class="field"><label>입고일자</label><InputText v-model="detail.inDate" /></div>
-          <!-- ❌ 상태는 상세에서 제거 -->
         </div>
       </div>
     </div>
