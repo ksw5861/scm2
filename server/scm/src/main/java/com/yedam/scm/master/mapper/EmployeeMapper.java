@@ -26,6 +26,10 @@ public interface EmployeeMapper {
     @Param("empId") String empId
   );
 
+  int insertEmployee(EmployeeVO emp);
+
+  int updateEmployeeById(EmployeeVO emp);
+
   int deleteEmployeeById(
     @Param("empId") String empId
   );

@@ -38,6 +38,18 @@ public class EmployeeServiceImpl implements EmployeeService {
   }
 
   @Override
+  public boolean addEmployee(EmployeeVO emp) {
+
+    return mapper.insertEmployee(emp) > 0;
+  }
+
+  @Override
+  public boolean modifyEmployeeById(EmployeeVO emp) {
+
+    return mapper.updateEmployeeById(emp) > 0;
+  }
+
+  @Override
   public boolean removeEmployeeById(String empId) {
 
     return mapper.deleteEmployeeById(empId) > 0;
