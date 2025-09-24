@@ -136,7 +136,7 @@ const submit = async () => {
     <!--(detail)하단박스 start-->
     <div class="card flex flex-col gap-4">
       <div class="flex justify-between items-center">
-        <div class="font-semibold text-xl">제품 계획</div>
+        <div class="font-semibold text-l">제품 계획</div>
         <div class="flex whitespace-nowrap items-center justify-end gap-2">
           <btn color="secondary" icon="pi pi-file-excel" @click="addRow"> 행추가 </btn>
           <btn color="secondary" icon="pi pi-file-pdf" @click="deleteRow"> 행삭제 </btn>
