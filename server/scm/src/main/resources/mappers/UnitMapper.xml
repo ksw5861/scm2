@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yedam.scm.master.mapper.UnitMapper">
+
+    <resultMap id="UnitResultMap" type="com.yedam.scm.vo.UnitVO">
+        <id property="unitId" column="UNIT_ID" />
+        <result property="unitName" column="UNIT_NAME" />
+        <result property="useFor" column="USE_FOR" />
+        <result property="useYn" column="USE_YN" />
+        <result property="status" column="STATUS" />
+    </resultMap>
+
+    <select id="getUnitList" resultMap="UnitResultMap" parameterType="com.yedam.scm.vo.UnitVO">
+        SELECT UNIT_ID, UNIT_NAME, USE_FOR, USE_YN, STATUS
+        FROM UNIT
+        <where>
+            <if test="unitId != null and unitId != ''"> AND UNIT_ID = #{unitId} </if>
+            <if test="unitName != null and unitName != ''"> AND UNIT_NAME LIKE '%' || #{unitName} || '%' </if>
+            AND USE_YN = 'Y'
+        </where>
+    </select>
+
+</mapper>

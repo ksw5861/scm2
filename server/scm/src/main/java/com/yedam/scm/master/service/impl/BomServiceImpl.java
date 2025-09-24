@@ -14,28 +14,27 @@ public class BomServiceImpl implements BomService {
     private BomMapper bomMapper;
 
     @Override
-    public int insertBom(BomVO bom) {
-        return bomMapper.insertBom(bom);
+    public List<BomVO> getBomDetailByProdId(String prodId) {
+        return bomMapper.getBomByProdId(prodId);
     }
 
     @Override
-    public int updateBom(BomVO bom) {
-        return bomMapper.updateBom(bom);
+    public BomVO getBomDetail(String bomId) {
+        return bomMapper.getBomDetail(bomId);
+    }
+
+    @Override
+    public int insertBom(BomVO bomVO) {
+        return bomMapper.insertBom(bomVO);
+    }
+
+    @Override
+    public int updateBom(BomVO bomVO) {
+        return bomMapper.updateBom(bomVO);
     }
 
     @Override
     public int deleteBom(String bomId) {
         return bomMapper.deleteBom(bomId);
-    }
-
-    @Override
-    public List<BomVO> getBomList(BomVO bomVO) {
-      return bomMapper.getBomList(bomVO);
-      
-    }
-
-    @Override
-    public BomVO getBomDetail(String bomId) {
-      return bomMapper.getBomDetail(bomId);
     }
 }

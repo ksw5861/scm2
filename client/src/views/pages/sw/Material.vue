@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import InputText from 'primevue/inputtext';
-import Calendar from 'primevue/calendar';
 
 const searchName = ref('');
 const searchMatType = ref('');
@@ -11,7 +10,6 @@ const searchMatId = ref('');
 const matList = ref([]);
 const selected = ref(null);
 
-/* form + mode: view | edit | new */
 const form = ref({
   matId: '',
   matName: '',
@@ -21,49 +19,12 @@ const form = ref({
   matStoreCond: '',
   matUnitConv: '',
   leadTime: null,
-  matExpireDate: null,
   matUnitPrice: '',
   safeStock: '',
   status: ''
 });
 const mode = ref('view'); // default
 
-// 날짜 변환/포맷 헬퍼
-const parseToDate = (value) => {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-  if (!isNaN(Number(value))) return new Date(Number(value));
-  const d = new Date(value);
-  return isNaN(d) ? null : d;
-};
-
-const formatDate = (value) => {
-  const d = parseToDate(value);
-  if (!d) return '';
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-};
-
-const toServerDateString = (date) => {
-  if (!date) return null;
-  const d = parseToDate(date);
-  if (!d) return null;
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
-/* 만료일 색상 계산 */
-const getExpireClass = (expireDate) => {
-  if (!expireDate) return 'text-gray-600';
-  const today = new Date();
-  const diffDays = Math.ceil((parseToDate(expireDate) - today) / (1000 * 60 * 60 * 24));
-  if (diffDays < 15) return 'text-red-600';
-  if (diffDays < 30) return 'text-blue-600';
-  return 'text-black';
-};
-
-/* 목록 호출 */
 const fetchList = async () => {
   try {
     const res = await axios.get('/api/material', {
@@ -74,21 +35,19 @@ const fetchList = async () => {
         matId: searchMatId.value || undefined
       }
     });
-    matList.value = Array.isArray(res.data) ? res.data.map((i) => ({ ...i, matExpireDate: parseToDate(i.matExpireDate ?? i.MAT_EXPIRE_DATE) })) : (res.data?.items ?? []).map((i) => ({ ...i, matExpireDate: parseToDate(i.matExpireDate ?? i.MAT_EXPIRE_DATE) }));
+    matList.value = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
   } catch (e) {
     console.error('fetchList error', e);
-    alert('자재 목록을 불러오는데 실패했습니다. 콘솔 확인');
+    alert('자재 목록을 불러오는데 실패했습니다.');
   }
 };
 
-/* 상세 호출 */
 const fetchDetail = async (matId) => {
   if (!matId) return;
   try {
     const res = await axios.get(`/api/material/${matId}`);
     const data = Array.isArray(res.data) ? res.data[0] : res.data;
     if (data) {
-      data.matExpireDate = parseToDate(data.matExpireDate ?? data.MAT_EXPIRE_DATE);
       selected.value = data;
       form.value = {
         matId: data.matId ?? data.MAT_ID ?? '',
@@ -97,9 +56,8 @@ const fetchDetail = async (matId) => {
         spec: data.spec ?? data.SPEC ?? '',
         unit: data.unit ?? data.UNIT ?? '',
         matStoreCond: data.matStoreCond ?? data.MAT_STORE_COND ?? '',
-        matUnitConv: data.matUnitConv ?? data.MAT_UNIT.CONV ?? '',
+        matUnitConv: data.matUnitConv ?? data.MAT_UNIT_CONV ?? '',
         leadTime: data.leadTime ?? data.LEAD_TIME ?? null,
-        matExpireDate: data.matExpireDate ?? data.MAT_EXPIRE_DATE ?? null,
         matUnitPrice: data.matUnitPrice ?? data.MAT_UNIT_PRICE ?? '',
         safeStock: data.safeStock ?? data.SAFE_STOCK ?? '',
         status: data.status ?? data.STATUS ?? ''
@@ -111,14 +69,11 @@ const fetchDetail = async (matId) => {
     }
   } catch (e) {
     console.error('fetchDetail error', e);
-    alert('상세 정보를 불러오는데 실패했습니다. 콘솔 확인');
+    alert('상세 정보를 불러오는데 실패했습니다.');
   }
 };
 
-const onRowClick = (row) => {
-  fetchDetail(row.matId ?? row.MAT_ID);
-};
-
+const onRowClick = (row) => fetchDetail(row.matId ?? row.MAT_ID);
 const onSearch = () => fetchList();
 const onReset = () => {
   searchMatId.value = '';
@@ -128,7 +83,6 @@ const onReset = () => {
   fetchList();
 };
 
-/* 신규 폼 초기화 */
 const newMaterial = () => {
   form.value = {
     matId: '',
@@ -139,7 +93,6 @@ const newMaterial = () => {
     matStoreCond: '',
     matUnitConv: '',
     leadTime: null,
-    matExpireDate: null,
     matUnitPrice: '',
     safeStock: '',
     status: ''
@@ -148,42 +101,20 @@ const newMaterial = () => {
   mode.value = 'new';
 };
 
-/* 편집 모드 진입 */
 const editMaterial = () => {
   if (!selected.value) return alert('수정할 항목을 선택하세요.');
   mode.value = 'edit';
 };
 
-/* 저장 (등록/수정) */
 const saveMaterial = async () => {
-  if (mode.value === 'new') {
-    if (!form.value.matName) return alert('자재명을 입력하세요.');
-  } else {
-    if (!form.value.matId || !form.value.matName) return alert('자재코드와 자재명을 입력하세요.');
-  }
-
-  const payload = {
-    ...form.value,
-    matExpireDate: toServerDateString(form.value.matExpireDate)
-  };
-  if (mode.value === 'new') delete payload.matId;
-
+  if (!form.value.matName) return alert('자재명을 입력하세요.');
+  const payload = { ...form.value };
   try {
     if (mode.value === 'new') {
-      const res = await axios.post('/api/material', payload);
-      let newId = null;
-      if (res && res.data) {
-        if (typeof res.data === 'string') newId = res.data;
-        else newId = res.data.matId ?? res.data.MAT_ID ?? null;
-      }
+      await axios.post('/api/material', payload);
       await fetchList();
-      if (newId) {
-        await fetchDetail(newId);
-        alert('등록되었습니다. (코드: ' + newId + ')');
-      } else {
-        mode.value = 'view';
-        alert('등록되었습니다.');
-      }
+      mode.value = 'view';
+      alert('등록되었습니다.');
     } else if (mode.value === 'edit') {
       await axios.put(`/api/material/${form.value.matId}`, payload);
       await fetchList();
@@ -192,13 +123,10 @@ const saveMaterial = async () => {
     }
   } catch (e) {
     console.error('saveMaterial error', e);
-    alert('저장에 실패했습니다. 콘솔 확인');
-  } finally {
-    mode.value = 'view';
+    alert('저장에 실패했습니다.');
   }
 };
 
-/* 삭제 */
 const deleteMaterial = async () => {
   const matId = selected.value?.matId ?? selected.value?.MAT_ID ?? form.value.matId;
   if (!matId) return alert('삭제할 항목을 선택하세요.');
@@ -217,7 +145,6 @@ const deleteMaterial = async () => {
       matStoreCond: '',
       matUnitConv: '',
       leadTime: null,
-      matExpireDate: null,
       matUnitPrice: '',
       safeStock: '',
       status: ''
@@ -226,11 +153,10 @@ const deleteMaterial = async () => {
     await fetchList();
   } catch (e) {
     console.error('deleteMaterial error', e);
-    alert('삭제에 실패했습니다. 콘솔 확인');
+    alert('삭제에 실패했습니다.');
   }
 };
 
-/* 취소 */
 const cancelEdit = () => {
   if (mode.value === 'new') {
     form.value = {
@@ -242,35 +168,24 @@ const cancelEdit = () => {
       matStoreCond: '',
       matUnitConv: '',
       leadTime: null,
-      matExpireDate: null,
       matUnitPrice: '',
       safeStock: '',
       status: ''
     };
-    mode.value = 'view';
     selected.value = null;
+    mode.value = 'view';
   } else if (mode.value === 'edit') {
     if (selected.value) fetchDetail(selected.value.matId ?? selected.value.MAT_ID);
     mode.value = 'view';
   }
 };
 
-onMounted(() => {
-  fetchList();
-});
-
-// 남은일수 계산
-const remainingDays = (date) => {
-  const d = parseToDate(date);
-  if (!d) return '';
-  const diff = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
-  return Math.max(0, diff);
-};
+onMounted(() => fetchList());
 </script>
 
 <template>
   <div class="container p-4">
-    <h2 class="mb-3">자재 관리 (목록 / 상세 / 등록 / 수정 / 삭제)</h2>
+    <h2 class="mb-3">자재 관리</h2>
 
     <div class="mb-4 flex gap-2 items-center">
       <InputText v-model="searchName" placeholder="자재명" class="h-10" />
@@ -308,89 +223,63 @@ const remainingDays = (date) => {
       <!-- 상세 -->
       <div>
         <h3>상세 / 편집</h3>
-
-        <!-- 버튼 -->
         <div class="flex justify-end gap-2 mb-2">
           <button v-if="mode === 'view' && selected" class="btn" @click="editMaterial">수정</button>
           <button v-if="mode === 'view' && selected" class="btn-danger" @click="deleteMaterial">삭제</button>
-
           <button v-if="mode === 'edit' || mode === 'new'" class="btn" @click="saveMaterial">저장</button>
           <button v-if="mode === 'edit' || mode === 'new'" class="btn-secondary" @click="cancelEdit">취소</button>
         </div>
 
-        <!-- form -->
         <div class="grid gap-2">
           <div>
             <label class="text-sm block mb-1">자재코드</label>
             <InputText v-model="form.matId" class="w-full h-10" :disabled="true" placeholder="자재코드는 자동 생성됩니다" />
           </div>
-
           <div>
             <label class="text-sm block mb-1">자재명</label>
             <InputText v-model="form.matName" class="w-full h-10" placeholder="자재명 (필수)" />
           </div>
-
           <div>
             <label class="text-sm block mb-1">자재유형</label>
             <InputText v-model="form.matType" class="w-full h-10" placeholder="자재유형" />
           </div>
-
           <div>
             <label class="text-sm block mb-1">규격</label>
             <InputText v-model="form.spec" class="w-full h-10" placeholder="규격" />
           </div>
-
           <div>
             <label class="text-sm block mb-1">단위</label>
             <InputText v-model="form.unit" class="w-full h-10" placeholder="단위" />
           </div>
-
           <div>
             <label class="text-sm block mb-1">보관조건</label>
             <InputText v-model="form.matStoreCond" class="w-full h-10" placeholder="보관조건" />
           </div>
-
           <div>
             <label class="text-sm block mb-1">단위환산</label>
             <InputText v-model="form.matUnitConv" class="w-full h-10" placeholder="단위환산" />
           </div>
-
           <div>
             <label class="text-sm block mb-1">리드타임</label>
             <InputText v-model="form.leadTime" class="w-full h-10" placeholder="리드타임" />
           </div>
-
           <div>
             <label class="text-sm block mb-1">안전재고</label>
             <InputText v-model="form.safeStock" class="w-full h-10" placeholder="안전재고" />
           </div>
-
           <div>
             <label class="text-sm block mb-1">상태</label>
             <InputText v-model="form.status" class="w-full h-10" placeholder="상태" />
           </div>
-
           <div>
             <label class="text-sm block mb-1">단가</label>
             <InputText v-model="form.matUnitPrice" class="w-full h-10" placeholder="단가" />
-          </div>
-
-          <div>
-            <label class="text-sm block mb-1">만료일</label>
-            <div class="flex items-center gap-2">
-              <Calendar v-model="form.matExpireDate" date-format="yy-mm-dd" input-class="h-8" />
-              <span class="text-sm" :class="getExpireClass(form.matExpireDate)">
-                {{ formatDate(form.matExpireDate) }}
-                <span v-if="form.matExpireDate"> (남은일수: {{ remainingDays(form.matExpireDate) }}일) </span>
-              </span>
-            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 </template>
-
 <style scoped>
 .container {
   max-width: 1100px;
