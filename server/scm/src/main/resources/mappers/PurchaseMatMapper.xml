@@ -3,23 +3,93 @@
 <mapper namespace="com.yedam.scm.purchaseMat.mapper.PurchaseMatMapper">
 
     <!-- 1. 생산계획 등록 -->
+    <!-- 1. 생산계획 마스터 등록 -->
     <insert id="insertProductionPlan" parameterType="ProductionPlanVO">
-    INSERT INTO procduct_plan (
-        pl_id,
-        start_date,
-        end_date,
-        plan_no,
-        emp_name
-    )
-    VALUES (
-        seq_procduct_plan.NEXTVAL,       
-        #{startDate},                    
-        #{endDate},                      
-        NEXT_DATE_CODE('PP'),            
-        #{empName}                                      
-    )
-</insert>
+        <!-- 시퀀스 먼저 뽑아서 VO.planId 에 세팅 -->
+        <selectKey keyProperty="plId" resultType="long" order="BEFORE">
+            SELECT seq_product_plan.NEXTVAL FROM dual
+        </selectKey>
+        INSERT INTO product_plan (
+            pl_id,
+            start_date,
+            end_date,
+            plan_no,
+            emp_name
+        )
+        VALUES (
+            #{plId},               <!-- selectKey로 얻은 값 -->
+            #{startDate},
+            #{endDate},
+            NEXT_DATE_CODE('PP'),    <!-- 커스텀 코드 함수 (있다면) -->
+            #{empName}
+        )
+    </insert>
 
+    <!-- 2. 생산계획 디테일 등록 -->
+    <insert id="insertProductionPlanDetail" parameterType="PrdPlanDetailVO">
+        <selectKey keyProperty="plDetId" resultType="long" order="BEFORE">
+            SELECT seq_product_plan_detail.NEXTVAL FROM dual
+        </selectKey>
+        INSERT INTO product_plan_detail (
+           pl_det_id,
+           prod_id,
+           pro_qty, 
+           pro_date,  
+           pl_id, 
+           mat_status, 
+           prod_no, 
+           mpr_status
+        )
+        VALUES (
+            #{plDetId},
+            #{prodId},         
+            #{proQty},
+            #{proDate},
+            #{plId},
+            #{matStatus},
+             NEXT_DATE_CODE('PNO'), <!--제품LOT번호-->
+            #{mprStatus}
+        )
+    </insert>
+
+
+
+
+
+
+<!--모달용===============================================================================-->
+<!--제품모달-->  
+    <select id="getProductCount" resultType="int">
+    SELECT COUNT(*)
+    FROM product
+    <where>
+        <if test="prodName != null and prodName != ''">
+            AND prod_name LIKE '%' || #{prodName} || '%'
+        </if>
+    </where>
+</select>
+
+    <select id="getProductList" resultType="com.yedam.scm.vo.ProductVO">
+    SELECT *
+    FROM (
+        SELECT ROWNUM AS rn,
+               p.*
+        FROM (
+            SELECT prod_id AS prodId,
+                   prod_name AS prodName,
+                   unit
+            FROM product
+            <where>
+                <if test="prodName != null and prodName != ''">
+                    AND prod_name LIKE '%' || #{prodName} || '%'
+                </if>
+            </where>
+            ORDER BY prod_id
+        ) p
+        WHERE ROWNUM &lt;= #{offset} + #{size}
+    )
+    WHERE rn &gt; #{offset}
+</select>
 
 </mapper>
 
