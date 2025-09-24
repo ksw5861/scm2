@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import com.yedam.scm.dto.EmployeeSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.vo.EmployeeSimpleVO;
+import com.yedam.scm.vo.EmployeeVO;
 
 @Mapper
 public interface EmployeeMapper {
@@ -17,6 +18,16 @@ public interface EmployeeMapper {
     @Param("paging") PageDTO paging
   );
 
-  long selectEmployeeCountByCondition(@Param("condition") EmployeeSearchDTO condition);
+  long selectEmployeeCountByCondition(
+    @Param("condition") EmployeeSearchDTO condition
+  );
+
+  EmployeeVO selectEmployeeById(
+    @Param("empId") String empId
+  );
+
+  int deleteEmployeeById(
+    @Param("empId") String empId
+  );
 
 }

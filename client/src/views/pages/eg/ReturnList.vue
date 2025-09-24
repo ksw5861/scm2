@@ -13,19 +13,29 @@
     <div class="filter-section">
       <div class="filter-item">
         <label>반품일자</label>
-        <Calendar v-model="filters.startDate" placeholder="시작일" dateFormat="yy-mm-dd" showIcon />
+        <DatePicker
+          v-model="filters.startDate"
+          placeholder="시작일"
+          dateFormat="yy-mm-dd"
+          showIcon
+        />
         <span>~</span>
-        <Calendar v-model="filters.endDate" placeholder="종료일" dateFormat="yy-mm-dd" showIcon />
+        <DatePicker
+          v-model="filters.endDate"
+          placeholder="종료일"
+          dateFormat="yy-mm-dd"
+          showIcon
+        />
       </div>
 
       <div class="filter-item">
         <label>제품명</label>
-        <InputText v-model="filters.productName" placeholder="제품명 입력" />
+        <InputText v-model="filters.prodName" placeholder="제품명 입력" />
       </div>
 
       <div class="filter-item">
         <label>반품상태</label>
-        <Dropdown
+        <Select
           v-model="filters.returnStatus"
           :options="statusOptions"
           optionLabel="label"
@@ -56,32 +66,33 @@
       columnResizeMode="fit"
       class="custom-table"
     >
-      <Column field="return_date" header="반품일자" style="width:120px; text-align:center;" />
-      <Column field="prod_id" header="제품코드" style="width:120px; text-align:center;" />
-      <Column field="prod_name" header="제품명" style="width:180px;" />
-      <Column field="prod_spec" header="규격" style="width:100px; text-align:center;" />
-      <Column field="prod_unit" header="단위" style="width:100px; text-align:center;" />
-
-      <Column field="prod_price" header="제품가격" style="width:120px; text-align:right;">
+      <Column field="returnDate" header="반품일자" />
+      <Column field="prodId" header="제품코드" />
+      <Column field="prodName" header="제품명" />
+      <Column field="spec" header="규격" />
+      <Column field="unit" header="단위" />
+      <Column field="prodPrice" header="제품가격">
         <template #body="slotProps">
-          {{ formatCurrency(slotProps.data.prod_price) }}
+          {{ formatCurrency(slotProps.data.prodPrice) }}
         </template>
       </Column>
-
-      <Column field="return_qty" header="반품수량" style="width:90px; text-align:center;" />
-
-      <Column field="return_total" header="제품가격" style="width:120px; text-align:right;">
+      <Column field="returnQty" header="반품수량" />
+      <Column field="returnTotal" header="총액">
         <template #body="slotProps">
-          {{ formatCurrency(slotProps.data.return_total) }}
+          {{ formatCurrency(slotProps.data.prodPrice * slotProps.data.returnQty) }}
         </template>
       </Column>
+      <Column field="returnWhy" header="사유" />
+      <Column field="returnStatus" header="상태" />
 
-      <Column field="reason" header="사유" style="width:150px;" />
-      <Column field="status" header="상태" style="width:120px; text-align:center;" />
 
       <Column header="" style="width:130px; text-align:center;">
         <template #body="slotProps">
-          <Button label="제품 상태 확인" class="p-button-outlined p-button-sm" @click="checkProductStatus(slotProps.data)" />
+          <Button
+            label="제품 상태 확인"
+            class="p-button-outlined p-button-sm"
+            @click="checkProductStatus(slotProps.data)"
+          />
         </template>
       </Column>
     </DataTable>
@@ -90,77 +101,78 @@
 
 <script setup>
 import { ref } from 'vue'
+import axios from 'axios'
+
+// PrimeVue 컴포넌트
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
 import Button from 'primevue/button'
-import Calendar from 'primevue/calendar'
-import Dropdown from 'primevue/dropdown'
+import DatePicker from 'primevue/datepicker'
+import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
 
 // 검색 필터
 const filters = ref({
   startDate: null,
   endDate: null,
-  productName: '',
+  prodName: '',
   returnStatus: null,
   returnNo: ''
 })
 
 const statusOptions = [
-  { label: '대기', value: 'WAIT' },
-  { label: '승인', value: 'APPROVED' },
-  { label: '승인완료', value: 'COMPLETED' }
+  { label: '대기', value: '대기' },
+  { label: '반려', value: '반려' },
+  { label: '승인완료', value: '승인완료' }
 ]
 
-// 샘플 데이터
-const returnList = ref([
-  {
-    return_date: '2025-09-15',
-    prod_id: 'AB-012',
-    prod_name: '아라비카원두',
-    prod_spec: '1 kg 팩',
-    prod_unit: 'Box(24팩)',
-    prod_price: 480000,
-    return_qty: 2,
-    return_total: 960000,
-    reason: '브라질원두타입',
-    status: '승인대기'
-  },
-  {
-    return_date: '2025-09-15',
-    prod_id: 'AB-013',
-    prod_name: '온컵300미리',
-    prod_spec: '100ea 줄',
-    prod_unit: 'Box(30줄)',
-    prod_price: 50000,
-    return_qty: 4,
-    return_total: 200000,
-    reason: '로그불량',
-    status: '승인완료'
-  }
-])
+// 반품 목록 데이터
+const returnList = ref([])
 
+// 통화 포맷 함수
 const formatCurrency = (value) => {
   return value ? value.toLocaleString('ko-KR') + ' 원' : '0 원'
 }
 
-const searchReturns = () => {
-  console.log('반품 조회 API 호출', filters.value)
+// 반품 목록 조회
+const searchReturns = async () => {
+  try {
+  const { data } = await axios.get('/api/returnlist', {
+    params: {
+      startDate: filters.value.startDate,
+      endDate: filters.value.endDate,
+      returnStatus: filters.value.returnStatus,
+      prodName: filters.value.prodName,
+      returnNo: filters.value.returnNo  
+    }
+  })
+
+    console.log('반품 목록 응답:', data)
+    returnList.value = Array.isArray(data) ? data : (data.items || [])
+  } catch (err) {
+    console.error('반품 목록 조회 오류:', err)
+  }
 }
 
+// 필터 초기화
 const resetFilters = () => {
   filters.value = {
     startDate: null,
     endDate: null,
-    productName: '',
+    prodName: '',
     returnStatus: null,
     returnNo: ''
   }
 }
 
+// PDF 및 엑셀 다운로드
 const exportPDF = () => console.log('PDF 출력 기능 호출')
 const exportExcel = () => console.log('엑셀 다운로드 기능 호출')
-const checkProductStatus = (data) => console.log('제품 상태 확인 모달', data)
+
+// 제품 상태 확인 모달
+const checkProductStatus = (data) => {
+  console.log('제품 상태 확인 모달', data)
+}
 </script>
 
 <style scoped>

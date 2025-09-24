@@ -1,5 +1,6 @@
 package com.yedam.scm.vo;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import lombok.Data;
@@ -13,4 +14,5 @@ public class ProductVO {
     private String status;
     private String spec;
     private String unit;
+    private BigDecimal prodPrice; // NULL 들어와도 문제 없음
 }

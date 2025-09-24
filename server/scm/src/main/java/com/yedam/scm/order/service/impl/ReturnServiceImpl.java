@@ -1,6 +1,8 @@
 package com.yedam.scm.order.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -30,9 +32,13 @@ public class ReturnServiceImpl implements ReturnService {
     }
 
     @Override
-    public List<ReturnVO> getReturnList(String startDate, String endDate, String status) {
-        return returnMapper.getReturnList(startDate, endDate, status);
+    public List<ReturnVO> getReturnList(String startDate, String endDate, String returnStatus, String prodName, String returnNo) {
+        return returnMapper.getReturnList(startDate, endDate, returnStatus, prodName, returnNo);
     }
+
+
+
+
 
     @Override
     public ReturnVO getReturnDetail(String returnId) {
