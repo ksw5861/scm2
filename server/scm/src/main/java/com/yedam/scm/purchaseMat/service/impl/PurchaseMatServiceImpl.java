@@ -1,11 +1,14 @@
 package com.yedam.scm.purchaseMat.service.impl;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.yedam.scm.purchaseMat.mapper.PurchaseMatMapper;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
 import com.yedam.scm.vo.PrdPlanDetailVO;
+import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
 
 import lombok.RequiredArgsConstructor;
@@ -16,12 +19,11 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
     
     final PurchaseMatMapper purchaseMatMapper; //mapper injection
 
-
     //생산계획 등록
     @Transactional
-    public void insertProductionPlan(ProductionPlanVO plan) {
+    public int insertProductionPlan(ProductionPlanVO plan) {
         // 1. 마스터 저장
-        purchaseMatMapper.insertProductionPlan(plan); //mapper 호출하고, plan에 planId의 값이 세팅됨
+       int result = purchaseMatMapper.insertProductionPlan(plan); //mapper 호출하고, plan에 planId의 값이 세팅됨
         System.out.println("생산계획 등록 후 planId : " + plan.getPlId());
 
         // 2. 디테일 저장
@@ -31,7 +33,18 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
                 purchaseMatMapper.insertProductionPlanDetail(details);
             }
         }
+    return result; 
     }
 
+    /*==========================
+     * 모달용
+     ===========================*/
+    //제품모달(생산계획등록시)
+    public int getProductCount(String prodName) {
+        return purchaseMatMapper.getProductCount(prodName);
+    }
 
+    public List<ProductVO> getProductList(String prodName, int offset, int size) {
+        return purchaseMatMapper.getProductList(prodName, offset, size);
+    }
 }

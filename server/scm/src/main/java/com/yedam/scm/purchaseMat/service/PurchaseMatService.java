@@ -1,7 +1,17 @@
 package com.yedam.scm.purchaseMat.service;
 
+import java.util.List;
+
+import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
 
 public interface PurchaseMatService {
-    public void insertProductionPlan(ProductionPlanVO plan);
+    int insertProductionPlan(ProductionPlanVO plan); //생산계획등록 [마스터 + 디테일 한번에]
+
+     /*=========================
+      모달용
+     =========================*/
+     //제품모달
+    int getProductCount(String prodName);
+    List<ProductVO> getProductList(String prodName, int offset, int size);
 }
