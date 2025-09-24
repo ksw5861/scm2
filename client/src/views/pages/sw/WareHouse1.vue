@@ -134,7 +134,7 @@ onMounted(() => {
 
 <template>
   <div class="container p-4">
-    <h2 class="mb-3">창고 관리 (목록 / 상세 / 등록 / 수정 / 삭제)</h2>
+    <h2 class="mb-3">창고 관리</h2>
 
     <div class="mb-4 flex gap-2 items-center">
       <InputText v-model="searchWhId" placeholder="창고코드" class="h-10" />
@@ -180,28 +180,28 @@ onMounted(() => {
 
         <div class="grid gap-2">
           <div>
-            <label>창고코드</label>
-            <InputText v-model="form.whId" :disabled="true" placeholder="자동 생성" />
+            <label class="text-sm block mb-1">창고코드</label>
+            <InputText v-model="form.whId" class="w-full h-10" :disabled="true" placeholder="자동 생성" />
           </div>
           <div>
-            <label>창고명</label>
-            <InputText v-model="form.whName" placeholder="창고명" />
+            <label class="text-sm block mb-1">창고명</label>
+            <InputText v-model="form.whName" class="w-full h-10" placeholder="창고명" />
           </div>
           <div>
-            <label>주소</label>
-            <InputText v-model="form.whAddress" placeholder="주소" />
+            <label class="text-sm block mb-1">주소</label>
+            <InputText v-model="form.whAddress" class="w-full h-10" placeholder="주소" />
           </div>
           <div>
-            <label>창고 담당자</label>
-            <InputText v-model="form.whOwner" placeholder="담당자" />
+            <label class="text-sm block mb-1">창고 담당자</label>
+            <InputText v-model="form.whOwner" class="w-full h-10" placeholder="담당자" />
           </div>
           <div>
-            <label>전화번호</label>
-            <InputText v-model="form.ownerTel" placeholder="전화번호" />
+            <label class="text-sm block mb-1">전화번호</label>
+            <InputText v-model="form.ownerTel" class="w-full h-10" placeholder="전화번호" />
           </div>
           <div>
-            <label>상태</label>
-            <InputText v-model="form.status" placeholder="상태" />
+            <label class="text-sm block mb-1">상태</label>
+            <InputText v-model="form.status" class="w-full h-10" placeholder="상태" />
           </div>
         </div>
       </div>

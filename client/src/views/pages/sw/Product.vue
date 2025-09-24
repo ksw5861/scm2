@@ -2,7 +2,6 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import InputText from 'primevue/inputtext';
-import Calendar from 'primevue/calendar';
 
 const searchProdName = ref('');
 const searchStatus = ref('');
@@ -15,48 +14,12 @@ const selectedProduct = ref(null);
 const productForm = ref({
   prodId: '',
   prodName: '',
-  prodExpireDate: null,
   safeStock: '',
   status: '',
   spec: '',
   unit: ''
 });
 const mode = ref('view'); // default
-
-// 날짜 변환/포맷 헬퍼
-const parseToDate = (value) => {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-  if (!isNaN(Number(value))) return new Date(Number(value));
-  const d = new Date(value);
-  return isNaN(d) ? null : d;
-};
-
-const formatDate = (value) => {
-  const d = parseToDate(value);
-  if (!d) return '';
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-};
-
-const toServerDateString = (date) => {
-  if (!date) return null;
-  const d = parseToDate(date);
-  if (!d) return null;
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-};
-
-/* 만료일 색상 계산 */
-const getExpireClass = (expireDate) => {
-  if (!expireDate) return 'text-gray-600';
-  const today = new Date();
-  const diffDays = Math.ceil((parseToDate(expireDate) - today) / (1000 * 60 * 60 * 24));
-  if (diffDays < 15) return 'text-red-600';
-  if (diffDays < 30) return 'text-blue-600';
-  return 'text-black';
-};
 
 /* 목록 호출 */
 const fetchProductList = async () => {
@@ -69,7 +32,7 @@ const fetchProductList = async () => {
         prodId: searchProdId.value || undefined
       }
     });
-    prodList.value = Array.isArray(res.data) ? res.data.map((i) => ({ ...i, prodExpireDate: parseToDate(i.prodExpireDate ?? i.PROD_EXPIRE_DATE) })) : [];
+    prodList.value = Array.isArray(res.data) ? res.data.map((i) => ({ ...i })) : [];
   } catch (e) {
     console.error('fetchProductList error', e);
     alert('제품 목록 불러오기 실패');
@@ -83,12 +46,10 @@ const fetchProductDetail = async (prodId) => {
     const res = await axios.get(`/api/product/${prodId}`);
     const data = Array.isArray(res.data) ? res.data[0] : res.data;
     if (data) {
-      data.prodExpireDate = parseToDate(data.prodExpireDate ?? data.PROD_EXPIRE_DATE);
       selectedProduct.value = data;
       productForm.value = {
         prodId: data.prodId ?? data.PROD_ID ?? '',
         prodName: data.prodName ?? data.PROD_NAME ?? '',
-        prodExpireDate: data.prodExpireDate ?? data.PROD_EXPIRE_DATE ?? null,
         safeStock: data.safeStock ?? data.SAFE_STOCK ?? '',
         status: data.status ?? data.STATUS ?? '',
         spec: data.spec ?? data.SPEC ?? '',
@@ -123,7 +84,6 @@ const newProduct = () => {
   productForm.value = {
     prodId: '',
     prodName: '',
-    prodExpireDate: null,
     safeStock: '',
     status: '',
     spec: '',
@@ -147,10 +107,7 @@ const saveProduct = async () => {
     if (!productForm.value.prodId || !productForm.value.prodName) return alert('제품코드와 제품명을 입력하세요.');
   }
 
-  const payload = {
-    ...productForm.value,
-    prodExpireDate: toServerDateString(productForm.value.prodExpireDate)
-  };
+  const payload = { ...productForm.value };
   if (mode.value === 'new') delete payload.prodId;
 
   try {
@@ -196,7 +153,6 @@ const deleteProduct = async () => {
     productForm.value = {
       prodId: '',
       prodName: '',
-      prodExpireDate: null,
       safeStock: '',
       status: '',
       spec: '',
@@ -216,7 +172,6 @@ const cancelProductEdit = () => {
     productForm.value = {
       prodId: '',
       prodName: '',
-      prodExpireDate: null,
       safeStock: '',
       status: '',
       spec: '',
@@ -233,19 +188,11 @@ const cancelProductEdit = () => {
 onMounted(() => {
   fetchProductList();
 });
-
-// 남은일수 계산
-const remainingDays = (date) => {
-  const d = parseToDate(date);
-  if (!d) return '';
-  const diff = Math.ceil((d - new Date()) / (1000 * 60 * 60 * 24));
-  return Math.max(0, diff);
-};
 </script>
 
 <template>
   <div class="container p-4">
-    <h2 class="mb-3">제품 관리 (목록 / 상세 / 등록 / 수정 / 삭제)</h2>
+    <h2 class="mb-3">제품 관리</h2>
 
     <div class="mb-4 flex gap-2 items-center">
       <InputText v-model="searchProdName" placeholder="제품명" class="h-10" />
@@ -324,17 +271,6 @@ const remainingDays = (date) => {
             <label class="text-sm block mb-1">상태</label>
             <InputText v-model="productForm.status" class="w-full h-10" placeholder="상태" />
           </div>
-
-          <div>
-            <label class="text-sm block mb-1">만료일</label>
-            <div class="flex items-center gap-2">
-              <Calendar v-model="productForm.prodExpireDate" date-format="yy-mm-dd" input-class="h-8" />
-              <span class="text-sm" :class="getExpireClass(productForm.prodExpireDate)">
-                {{ formatDate(productForm.prodExpireDate) }}
-                <span v-if="productForm.prodExpireDate"> (남은일수: {{ remainingDays(productForm.prodExpireDate) }}일) </span>
-              </span>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -368,17 +304,5 @@ table td,
 table th {
   border-bottom: 1px solid #e5e7eb;
   padding: 6px 4px;
-}
-.text-red-600 {
-  color: #dc2626;
-}
-.text-blue-600 {
-  color: #2563eb;
-}
-.text-black {
-  color: #111827;
-}
-.text-gray-600 {
-  color: #4b5563;
 }
 </style>
