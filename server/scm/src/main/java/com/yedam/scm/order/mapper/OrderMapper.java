@@ -63,4 +63,7 @@ public interface OrderMapper {
     // 8. 제품 전체 개수 조회
     // --------------------------
     int getProductCount();
+
+    
+
 }

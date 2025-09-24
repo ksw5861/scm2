@@ -58,13 +58,13 @@ const detaildata = ref([
 <template>
   <div class="container">
     <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">자재구매요청 조회</div>
+      <div class="font-semibold text-xl">자재요청 조회</div>
       <Divider />
       <!-- 한 줄에 나란히: md 이상에서 가로, 모바일은 세로 -->
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
         <!-- 구매요청일자 -->
         <div class="flex flex-col">
-          <label class="whitespace-nowrap mb-3">구매요청일자</label>
+          <label class="whitespace-nowrap mb-3">요청일자</label>
           <div class="flex items-center gap-2">
             <DatePicker v-model="startDate" showIcon fluid :showOnFocus="false" />
             <span> ~ </span>

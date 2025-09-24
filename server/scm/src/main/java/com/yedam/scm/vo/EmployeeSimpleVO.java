@@ -1,7 +1,5 @@
 package com.yedam.scm.vo;
 
-import java.util.Date;
-
 import lombok.Data;
 
 @Data
