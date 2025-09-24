@@ -5,8 +5,8 @@ import lombok.Data;
 @Data
 public class PaymentDetailVO {
 
-    private String key;
-    private String field;
+    private String payDetailId; 
+    private String payId;       
     private String orderId;
     private int totalPrice;
 

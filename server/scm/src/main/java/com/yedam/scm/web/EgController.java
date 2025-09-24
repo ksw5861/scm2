@@ -7,7 +7,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import com.yedam.scm.order.mapper.OrderMapper;
+import com.yedam.scm.order.mapper.PayMapper;
 import com.yedam.scm.order.service.OrderService;
 import com.yedam.scm.order.service.ReturnService;
 import com.yedam.scm.order.service.PayService;
@@ -25,11 +25,10 @@ import com.yedam.scm.vo.ProductVO;
  * ============================================================
  */
 @RestController
-
 public class EgController {
 
     // ==============================
-    // Service & Mapper 의존성 주입
+    // Service 의존성 주입
     // ==============================
     @Autowired
     private OrderService orderSvc;
@@ -38,14 +37,10 @@ public class EgController {
     private ReturnService returnSvc;
 
     @Autowired
-    private PayService paySvc;
+    private PayService paymentSvc; 
 
-  
     // =================================================================
     // 1. 제품 목록 조회 (모달용)
-    // -----------------------------------------------------------------
-    // - 페이징 처리 포함
-    // - 프론트 모달창에서 제품을 선택할 때 사용
     // =================================================================
     @GetMapping("/products")
     public Map<String, Object> getProducts(
@@ -66,9 +61,6 @@ public class EgController {
 
     // =================================================================
     // 2. 주문 등록
-    // -----------------------------------------------------------------
-    // - 판매처에서 신규 주문을 등록
-    // - 주문 마스터 + 상세 동시 등록
     // =================================================================
     @PostMapping("/insertorder")
     public int insertOrder(@RequestBody SalesOrderVO orderVO) {
@@ -77,9 +69,6 @@ public class EgController {
 
     // =================================================================
     // 3. 주문 목록 조회
-    // -----------------------------------------------------------------
-    // - 조건 검색 가능
-    //   (기간, 제품명, 상태, 주문번호)
     // =================================================================
     @GetMapping("/orderlist")
     public List<SalesOrderVO> getOrderListForView(
@@ -94,8 +83,6 @@ public class EgController {
 
     // =================================================================
     // 3-1. 주문 상세 조회
-    // -----------------------------------------------------------------
-    // - 특정 주문 건의 상세 제품 내역 조회
     // =================================================================
     @GetMapping("/orderdetail")
     public List<SalesOrderDetailVO> getOrderDetailList(@RequestParam String orderId) {
@@ -104,9 +91,6 @@ public class EgController {
 
     // =================================================================
     // 4. 반품 등록
-    // -----------------------------------------------------------------
-    // - 다건 등록 지원
-    // - 각 제품별로 반복 처리
     // =================================================================
     @PostMapping("/insertreturn")
     public int insertReturn(@RequestBody List<ReturnVO> returnList) {
@@ -119,8 +103,6 @@ public class EgController {
 
     // =================================================================
     // 5. 반품 목록 조회
-    // -----------------------------------------------------------------
-    // - 반품 상태, 기간 조건으로 검색
     // =================================================================
     @GetMapping("/returnlist")
     public List<ReturnVO> getReturnList(
@@ -135,35 +117,35 @@ public class EgController {
 
     // =================================================================
     // 6. 대금 결제 등록
-    // -----------------------------------------------------------------
-    // - 반품이나 주문에 대한 결제 처리
     // =================================================================
-    @PostMapping("/insertpay")
-    public int insertPay(@RequestBody PaymentVO payVO) {
-        return paySvc.insertPay(payVO);
+    @PostMapping("/insertpayment") // ✅ URL도 명확히 변경
+    public Long insertPayment(@RequestBody PaymentVO paymentVO) {
+        return paymentSvc.insertPayment(paymentVO); // ✅ insertPay → insertPayment
     }
 
     // =================================================================
     // 7. 납부 내역 조회
-    // -----------------------------------------------------------------
-    // - 결제 내역을 조건별 검색
     // =================================================================
-    @GetMapping("/paylist")
-    public List<PaymentVO> getPayList(
-            @RequestParam(required = false) String payNo,
+    @GetMapping("/paymentlist") // ✅ URL도 명확히 변경
+    public List<PaymentVO> selectPaymentList(
+            @RequestParam(required = false) String paymentNo,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate
     ) {
-        return paySvc.getPayList(payNo, startDate, endDate);
+        return paymentSvc.selectPaymentList(paymentNo, startDate, endDate); // ✅ getPayList → selectPaymentList
     }
 
     // =================================================================
     // 8. 지점 대시보드
-    // -----------------------------------------------------------------
-    // - 지점별 총 매출, 주문 건수 등 현황 데이터 제공
     // =================================================================
     @GetMapping("/branchdash")
     public Object getBranchDashboard() {
         return orderSvc.getBranchDashData();
     }
+
+    //결제 대기중인 주문건 목록
+    @GetMapping("/pendingorders")
+    public List<SalesOrderVO> selectPendingOrders() {
+    return paymentSvc.selectPendingOrders();
+}
 }
