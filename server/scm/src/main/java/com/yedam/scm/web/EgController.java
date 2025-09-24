@@ -127,7 +127,7 @@ public class EgController {
     // 7. 납부 내역 조회
     // =================================================================
     @GetMapping("/paymentlist") // ✅ URL도 명확히 변경
-    public List<PaymentVO> selectPaymentList(
+    public List<Map<String, Object>> selectPaymentList(
             @RequestParam(required = false) String paymentNo,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate

@@ -1,6 +1,7 @@
 package com.yedam.scm.order.service.impl;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,7 +29,7 @@ public class PayServiceImpl implements PayService {
         }
 
         @Override
-        public List<PaymentVO> selectPaymentList(String paymentNo, String startDate, String endDate) { 
+        public List<Map<String, Object>> selectPaymentList(String paymentNo, String startDate, String endDate) { 
             return paymentMapper.selectPaymentList(paymentNo, startDate, endDate);
         }
 
