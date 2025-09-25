@@ -9,9 +9,8 @@ public interface PurchaseMatService {
     int insertProductionPlan(ProductionPlanVO plan); //생산계획등록 [마스터 + 디테일 한번에]
 
      /*=========================
-      모달용
+      드롭다운/모달용
      =========================*/
-     //제품모달
-    int getProductCount(String prodName);
-    List<ProductVO> getProductList(String prodName, int offset, int size);
+     //제품리스트
+    List<ProductVO> getProductList();
 }

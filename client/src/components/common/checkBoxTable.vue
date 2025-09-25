@@ -4,6 +4,7 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import InputText from 'primevue/inputtext';
 import InputNumber from 'primevue/inputnumber';
+import Select from 'primevue/select';
 
 // Props 정의
 const props = defineProps({
@@ -62,7 +63,7 @@ const onSort = (event) => {
     <!-- 동적 컬럼들 -->
     <template v-for="col in columns" :key="col.field">
       <!-- 단순 출력 열 -->
-      <Column v-if="!col.inputText && !col.inputNumber && !col.datePicker" :field="col.field" :header="col.label" :sortable="col.sortable ?? false" :style="col.style" />
+      <Column v-if="!col.inputText && !col.inputNumber && !col.select && !col.datePicker" :field="col.field" :header="col.label" :sortable="col.sortable ?? false" :style="col.style" />
 
       <!-- InputText 열 -->
       <Column v-else-if="col.inputText && !col.onClick" :field="col.field" :header="col.label" :style="col.style" :sortable="col.sortable ?? false">
@@ -75,6 +76,20 @@ const onSort = (event) => {
       <Column v-else-if="col.inputText && col.onClick" :field="col.field" :header="col.label" :style="col.style" :sortable="col.sortable ?? false">
         <template #body="slotProps">
           <InputText v-model="slotProps.data[col.field]" class="w-full" :placeholder="col.placeholder || ''" @click="col.onClick(slotProps.index)" />
+        </template>
+      </Column>
+
+      <!--드롭다운-->
+      <!-- <Column v-else-if="col.select" :field="col.field" :header="col.label" :style="col.style" :sortable="col.sortable ?? false">
+        <template #body="slotProps">
+          <Select v-model="slotProps.data[col.field]" :options="col.option" optionLabel="label" optionValue="value" :placeholder="col.placeholder" checkmark :highlightOnSelect="false" class="w-full" />
+        </template>
+      </Column> -->
+
+      <!--드롭다운-->
+      <Column v-else-if="col.select" :field="col.field" :header="col.label" :style="col.style" :sortable="col.sortable ?? false">
+        <template #body="slotProps">
+          <Select v-model="slotProps.data[col.field]" :options="col.option" optionLabel="label" optionValue="value" :placeholder="col.placeholder" checkmark class="w-full" @change="(e) => col.change?.(slotProps.data, e.value)" />
         </template>
       </Column>
 

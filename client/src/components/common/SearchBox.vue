@@ -8,7 +8,8 @@ const props = defineProps({
   type: { type: String, required: true }, // "dateRange", "text", "checkbox"
   label: { type: String, required: true },
   modelValue: { type: [String, Array, Object], default: null },
-  options: { type: Array, default: () => [] } // checkbox 전용 [{label:'대기', value:'WAIT'}, ...]
+  options: { type: Array, default: () => [] }, // checkbox 전용 [{label:'대기', value:'WAIT'}, ...]
+  width: { type: String, default: 'w-64' }
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -43,7 +44,7 @@ watch(
     </div>
 
     <!-- 텍스트박스 읽기 전용 -->
-    <div v-else-if="type === 'readOnly'" class="w-64">
+    <div v-else-if="type === 'readOnly'"  :class="width">
       <InputText v-model="internalValue" class="w-full" readonly="true" />
     </div>
 
@@ -73,13 +74,13 @@ watch(
 
 2) 컴포넌트 import후 사용
 
-    label이랑 v-model은 필요한 값으로 변경하면 됨. 
-    
+    label이랑 v-model은 필요한 값으로 변경하면 됨.
+
     type 종류별로 5가지 있음.
 
-         1. 날짜범위   
+         1. 날짜범위
         <SearchField type="dateRange" label="구매요청일자" v-model="dateRange" />
-         2. 날짜  
+         2. 날짜
         <SearchField type="textIcon" label="자재명" v-model="materialName" />
          3. 단순텍스트박스
         <SearchField type="date" label="등록일" v-model="registerDate" />

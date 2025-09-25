@@ -3,7 +3,7 @@ package com.yedam.scm.purchaseMat.mapper;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
+
 
 import com.yedam.scm.vo.PrdPlanDetailVO;
 import com.yedam.scm.vo.ProductVO;
@@ -18,11 +18,7 @@ public interface PurchaseMatMapper {
 
    
     /*==========================
-     * 모달용
+     * 드롭다운/모달용
      ===========================*/
-      int getProductCount(@Param("prodName") String prodName);
-
-    List<ProductVO> getProductList(@Param("prodName") String prodName,
-                                   @Param("offset") int offset,
-                                   @Param("size") int size);
+    List<ProductVO> getProductList();
 }
