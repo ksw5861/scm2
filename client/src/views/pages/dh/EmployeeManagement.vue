@@ -9,7 +9,7 @@ import { useDateFormat } from '@/composables/useFormat';
 const route = useRoute();
 const { toast } = useAppToast();
 
-const defaultPhoto = 'https://i.namu.wiki/i/NB_qC6YRjH7hv6elNznBIBOBZ5AwE-PKYEWKcU03aFzGsc60bOt9KLxocyvB01OxAbOG8joW9mgkShFmTaTKsQ.webp';
+const defaultPhoto = 'https://mblogthumb-phinf.pstatic.net/MjAyMTA0MTlfMTU5/MDAxNjE4ODI5MTcxNTI4.FgUayKEs6Xqy0jPaCbuzTizxj-HtPJs0Wm446ZnDldcg.eS3LMRX2l88LxJvXIU8urkmaa55NMc-euMRGZWMD_YUg.JPEG.thdud941111/B216E4AE%EF%BC%8D5357%EF%BC%8D45F0%EF%BC%8D860B%EF%BC%8D63E99E8171D5.jpeg?type=w800';
 
 // ===== 아이콘 =====
 const icons = {
@@ -101,7 +101,7 @@ const editForm = reactive({
 
 // ===== 이미지 업로드 관련 =====
 const fileInput = ref(null);
-const previewImage = ref('');
+const previewImage = ref(''); // This will hold the URL for the preview (either uploaded or existing)
 const selectedFile = ref(null);
 
 const triggerFileInput = () => {
@@ -119,14 +119,29 @@ const handleImageUpload = (event) => {
     reader.readAsDataURL(file);
   } else {
     selectedFile.value = null;
-    previewImage.value = cardMode.value === 'edit' && employeeDetail.value ? getImageUrl(employeeDetail.value.employeeId, true) : defaultPhoto;
+    // 파일 선택 취소 시, 기존 데이터가 있으면 기존 사진을, 없으면 기본 사진을 보여줍니다.
+    if (cardMode.value === 'edit' && employeeDetail.value) {
+      previewImage.value = getEmployeePhotoSource(employeeDetail.value);
+    } else {
+      previewImage.value = defaultPhoto;
+    }
   }
 };
 
-const getImageUrl = (employeeId, addCacheBuster = false) => {
-    if (!employeeId) return defaultPhoto;
-    const url = `/api/img/employee/${employeeId}`;
-    return addCacheBuster ? `${url}?t=${new Date().getTime()}` : url;
+// Centralized function to get the correct image URL or default
+const getEmployeePhotoSource = (employee, addCacheBuster = false) => {
+    if (selectedFile.value && (cardMode.value === 'create' || cardMode.value === 'edit')) {
+        return previewImage.value;
+    }
+
+    // Check if the employee object and its hasPhoto property exist and are true
+    if (employee?.employeeId && employee?.hasPhoto) {
+        const url = `/api/img/employee/${employee.employeeId}`;
+        return addCacheBuster ? `${url}?t=${new Date().getTime()}` : url;
+    }
+
+    // If no employee ID or no photo, then use the default photo.
+    return defaultPhoto;
 };
 
 // ===== Helper Functions =====
@@ -154,8 +169,8 @@ const resetEditForm = () => {
     hireDate: null,
     resignDate: null
   });
-  previewImage.value = '';
-  selectedFile.value = null;
+  previewImage.value = ''; // Clear preview image
+  selectedFile.value = null; // Clear selected file
 };
 
 const confirmEditLoss = (message) => {
@@ -207,8 +222,9 @@ const fetchEmployeeDetail = async (employeeId) => {
   try {
     const { data } = await axios.get(`/api/employee/${employeeId}`);
     employeeDetail.value = data;
-    // 이제 photoUrl 대신 employeeId를 사용해 이미지를 불러옵니다.
-    previewImage.value = getImageUrl(employeeDetail.value.employeeId);
+    // For detail view, reset selectedFile and set previewImage based on the fetched detail
+    selectedFile.value = null;
+    previewImage.value = getEmployeePhotoSource(employeeDetail.value);
   } catch (e) {
     console.error(e);
     toast('error', '조회 실패', '사원 상세 정보 조회 중 오류가 발생했습니다.');
@@ -240,17 +256,20 @@ const addEmployee = async () => {
   }
 
   try {
-    const { data } = await axios.post('/api/employee', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    toast('success', '등록 성공', '새로운 사원이 성공적으로 등록되었습니다.');
-    await fetchEmployeeList();
-    
-    selectedEmployee.value = employees.value.find(emp => emp.employeeId === data.employeeId);
-    cardMode.value = 'view';
-    await fetchEmployeeDetail(data.employeeId);
-    
-    resetEditForm();
+    const response = await axios.post('/api/employee', formData);
+    if (response.status === 200) {
+      toast('success', '등록 성공', '새로운 사원이 성공적으로 등록되었습니다.');
+      await fetchEmployeeList();
+
+      selectedEmployee.value = employees.value.find(emp => emp.employeeId === response.data.employeeId);
+      cardMode.value = 'view';
+      await fetchEmployeeDetail(response.data.employeeId);
+
+      resetEditForm();
+    } else {
+      toast('error', '등록 실패', `사원 등록 중 오류가 발생했습니다. (상태 코드: ${response.status})`);
+      console.error("API call failed with status code:", response.status, response.data);
+    }
   } catch (e) {
     console.error(e);
     toast('error', '등록 실패', '사원 등록 중 오류가 발생했습니다.');
@@ -280,16 +299,18 @@ const modifyEmployee = async () => {
   }
 
   try {
-    await axios.put(`/api/employee/${employeeDetail.value.employeeId}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    toast('success', '저장 성공', '사원 정보가 성공적으로 수정되었습니다.');
-    await fetchEmployeeList();
-    cardMode.value = 'view';
-    // 캐시 문제 해결을 위해 이미지 URL에 타임스탬프를 추가합니다.
-    previewImage.value = getImageUrl(employeeDetail.value.employeeId, true);
-    await fetchEmployeeDetail(employeeDetail.value.employeeId);
-    selectedFile.value = null;
+    const response = await axios.put(`/api/employee/${employeeDetail.value.employeeId}`, formData);
+    if (response.status === 200) {
+      toast('success', '저장 성공', '사원 정보가 성공적으로 수정되었습니다.');
+      await fetchEmployeeList();
+      cardMode.value = 'view';
+      selectedFile.value = null;
+
+      await fetchEmployeeDetail(employeeDetail.value.employeeId);
+    } else {
+      toast('error', '저장 실패', `사원 정보 수정 중 오류가 발생했습니다. (상태 코드: ${response.status})`);
+      console.error("API call failed with status code:", response.status, response.data);
+    }
   } catch (e) {
     console.error(e);
     toast('error', '저장 실패', '사원 정보 수정 중 오류가 발생했습니다.');
@@ -298,14 +319,20 @@ const modifyEmployee = async () => {
 
 const removeEmployee = async () => {
   if (!employeeDetail.value || !confirm("정말로 이 사원 정보를 삭제하시겠습니까?")) return;
-  
+
   try {
-    await axios.delete(`/api/employee/${employeeDetail.value.employeeId}`);
-    toast('success', '삭제 성공', '사원 정보가 성공적으로 삭제되었습니다.');
-    await fetchEmployeeList();
-    cardMode.value = 'create';
-    selectedEmployee.value = null;
-    employeeDetail.value = null;
+    const response = await axios.delete(`/api/employee/${employeeDetail.value.employeeId}`);
+    if (response.status === 200) {
+      toast('success', '삭제 성공', '사원 정보가 성공적으로 삭제되었습니다.');
+      await fetchEmployeeList();
+      cardMode.value = 'create';
+      selectedEmployee.value = null;
+      employeeDetail.value = null;
+      resetEditForm();
+    } else {
+      toast('error', '삭제 실패', `사원 정보 삭제 중 오류가 발생했습니다. (상태 코드: ${response.status})`);
+      console.error("API call failed with status code:", response.status, response.data);
+    }
   } catch (e) {
     console.error(e);
     toast('error', '삭제 실패', '사원 정보 삭제 중 오류가 발생했습니다.');
@@ -361,6 +388,27 @@ const handleReset = () => {
   fetchEmployeeList();
 };
 
+// 신규 사원 등록 폼 초기화 시, 입력 내용이 있으면 확인창을 띄우는 함수 추가
+const handleResetForm = () => {
+  // 폼에 값이 하나라도 입력되었는지 확인
+  const isFormDirty =
+    editForm.name ||
+    editForm.phone ||
+    editForm.email ||
+    editForm.hireDate ||
+    editForm.resignDate;
+
+  if (isFormDirty || selectedFile.value) { // Also check if a file has been selected
+    // 값이 있을 경우, 사용자에게 경고 및 확인
+    if (confirm('현재 입력 중인 내용이 저장되지 않습니다. 계속 진행하시겠습니까?')) {
+      resetEditForm();
+    }
+  } else {
+    // 폼이 비어있으면 바로 초기화 진행
+    resetEditForm();
+  }
+};
+
 const handleEdit = () => {
   if (!employeeDetail.value) return;
   Object.assign(editForm, {
@@ -369,8 +417,8 @@ const handleEdit = () => {
     hireDate: employeeDetail.value.hireDate ? new Date(employeeDetail.value.hireDate) : null,
     resignDate: employeeDetail.value.resignDate ? new Date(employeeDetail.value.resignDate) : null
   });
-  selectedFile.value = null;
-  previewImage.value = getImageUrl(employeeDetail.value.employeeId);
+  selectedFile.value = null; // Clear selected file when entering edit mode to show current image
+  previewImage.value = getEmployeePhotoSource(employeeDetail.value); // Set preview to current employee photo
   cardMode.value = 'edit';
 };
 
@@ -424,9 +472,11 @@ watch(
 
 watch(cardMode, (newMode) => {
   if (newMode === 'create') {
-    previewImage.value = '';
-    selectedFile.value = null;
-    resetEditForm();
+    resetEditForm(); // Ensure form and image preview are reset when switching to create mode
+  } else if (newMode === 'view' && selectedEmployee.value) {
+    // When switching to view mode, ensure the correct photo for the selected employee is displayed
+    selectedFile.value = null; // Clear any temporary selected file
+    previewImage.value = getEmployeePhotoSource(selectedEmployee.value);
   }
 });
 
@@ -434,14 +484,13 @@ watch(cardMode, (newMode) => {
 const isImageModalVisible = ref(false);
 const modalImage = ref('');
 
-const openImageModal = (imageUrl) => {
-  if (!imageUrl) return;
-  modalImage.value = imageUrl;
+const openImageModal = (employee) => {
+  modalImage.value = getEmployeePhotoSource(employee, true);
   isImageModalVisible.value = true;
 };
 
 const handleImageError = (event) => {
-  event.target.src = defaultPhoto;
+  event.target.src = defaultPhoto; // Fallback to default photo if image fails to load
 };
 
 // ===== Mounted =====
@@ -450,6 +499,7 @@ onMounted(fetchEmployeeList);
 
 <template>
   <Fluid>
+
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
 
     <SearchCard
@@ -595,7 +645,7 @@ onMounted(fetchEmployeeList);
               <Btn v-if="cardMode === 'view'" icon="cancel" color="secondary" class="whitespace-nowrap" @click="handleRowUnSelect" outlined>취소</Btn>
               <Btn v-if="cardMode === 'view'" icon="delete" color="danger" @click="removeEmployee" outlined>삭제</Btn>
               <Btn v-if="cardMode === 'view'" icon="edit" color="warn" @click="handleEdit" outlined>수정</Btn>
-              <Btn v-if="cardMode === 'create'" icon="refresh" color="secondary" class="whitespace-nowrap" @click="resetEditForm" outlined>초기화</Btn>
+              <Btn v-if="cardMode === 'create'" icon="refresh" color="secondary" class="whitespace-nowrap" @click="handleResetForm" outlined>초기화</Btn>
               <Btn v-if="cardMode === 'create'" icon="add" @click="addEmployee" outlined>등록</Btn>
               <Btn v-if="cardMode === 'edit'" icon="save" @click="modifyEmployee" outlined>저장</Btn>
             </div>
@@ -607,17 +657,19 @@ onMounted(fetchEmployeeList);
             <div class="flex items-center mb-4">
               <div class="skeleton w-[96px] h-[96px] rounded-lg"></div>
               <div class="ml-6 flex-1">
-                <div class="skeleton w-32 h-4 mb-2"></div>
-                <div class="skeleton w-20 h-4"></div>
+                <div class="skeleton w-20 h-4 mb-2"></div>
+                <div class="skeleton w-32 h-4"></div>
               </div>
             </div>
             <div class="mb-4">
               <div class="skeleton w-full h-10 mb-2"></div>
-              <div class="skeleton w-full h-10"></div>
             </div>
-            <div class="flex gap-4">
-              <div class="skeleton w-24 h-8"></div>
-              <div class="skeleton w-24 h-8"></div>
+            <div class="flex gap-4 mb-4">
+              <div class="skeleton w-1/2 h-8"></div>
+              <div class="skeleton w-1/2 h-8"></div>
+            </div>
+            <div class="mb-4">
+              <div class="skeleton w-full h-10"></div>
             </div>
           </div>
 
@@ -625,16 +677,17 @@ onMounted(fetchEmployeeList);
             <div class="w-full flex flex-row mb-2 gap-2">
               <div class="relative w-[96px] group">
                 <img
-                  :src="getImageUrl(employeeDetail.employeeId, true)"
+                  :src="getEmployeePhotoSource(employeeDetail, true)"
                   @error="handleImageError"
                   class="w-[96px] aspect-square rounded-lg object-cover border border-gray-300"
+                  alt="사원 사진"
                 />
 
                 <div
                   class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100
-                         flex items-center justify-center rounded-lg cursor-pointer
-                         transition-opacity duration-200"
-                  @click="openImageModal(getImageUrl(employeeDetail.employeeId))"
+                              flex items-center justify-center rounded-lg cursor-pointer
+                              transition-opacity duration-200"
+                  @click="openImageModal(employeeDetail)"
                 >
                   <i class="pi pi-search text-white text-2xl"></i>
                 </div>
@@ -728,7 +781,7 @@ onMounted(fetchEmployeeList);
             <div class="w-full flex flex-row mb-2 gap-2">
               <div class="relative w-[96px] group">
                 <img
-                  :src="previewImage || defaultPhoto"
+                  :src="getEmployeePhotoSource(employeeDetail, true)"
                   @error="handleImageError"
                   alt="사원 사진"
                   class="w-[96px] aspect-square rounded-lg object-cover border border-gray-300"
@@ -736,8 +789,8 @@ onMounted(fetchEmployeeList);
 
                 <div
                   class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100
-                         flex items-center justify-center rounded-lg cursor-pointer
-                         transition-opacity duration-200"
+                              flex items-center justify-center rounded-lg cursor-pointer
+                              transition-opacity duration-200"
                   @click="triggerFileInput"
                 >
                   <i v-if="cardMode === 'create'" class="pi pi-plus text-white text-2xl"></i>
@@ -856,8 +909,8 @@ onMounted(fetchEmployeeList);
       </div>
     </div>
 
-    <Dialog v-model:visible="isImageModalVisible" modal header="사진 보기" :style="{ width: '400px' }">
-      <img :src="modalImage" class="w-full object-contain rounded-lg" alt="확대 이미지" />
+    <Dialog v-model:visible="isImageModalVisible " modal header="사진 보기" :style="{ width: '400px' }">
+      <img :src="modalImage || defaultPhoto" class="w-full object-contain rounded-lg" alt="확대 이미지" @error="handleImageError" />
     </Dialog>
   </Fluid>
 </template>

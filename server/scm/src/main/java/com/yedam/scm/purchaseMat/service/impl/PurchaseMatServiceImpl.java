@@ -17,34 +17,31 @@ import lombok.RequiredArgsConstructor;
 @Service
 public class PurchaseMatServiceImpl implements PurchaseMatService{
     
-    final PurchaseMatMapper purchaseMatMapper; //mapper injection
+    final PurchaseMatMapper mapper; //mapper injection
 
     //생산계획 등록
     @Transactional
     public int insertProductionPlan(ProductionPlanVO plan) {
         // 1. 마스터 저장
-       int result = purchaseMatMapper.insertProductionPlan(plan); //mapper 호출하고, plan에 planId의 값이 세팅됨
+       int result =  mapper.insertProductionPlan(plan); //mapper 호출하고, plan에 planId의 값이 세팅됨
         System.out.println("생산계획 등록 후 planId : " + plan.getPlId());
 
         // 2. 디테일 저장
         if (plan.getPrdPlanDetailList() != null) {  //생산계획에 디테일이 있으면 
             for (PrdPlanDetailVO details : plan.getPrdPlanDetailList()) {
                 details.setPlId(plan.getPlId()); // FK 세팅
-                purchaseMatMapper.insertProductionPlanDetail(details);
+                 mapper.insertProductionPlanDetail(details);
             }
         }
     return result; 
     }
 
     /*==========================
-     * 모달용
+     * 드롭다운/모달용
      ===========================*/
-    //제품모달(생산계획등록시)
-    public int getProductCount(String prodName) {
-        return purchaseMatMapper.getProductCount(prodName);
-    }
-
-    public List<ProductVO> getProductList(String prodName, int offset, int size) {
-        return purchaseMatMapper.getProductList(prodName, offset, size);
+    //제품리스트
+    @Override
+    public List<ProductVO> getProductList() {
+        return mapper.getProductList();
     }
 }

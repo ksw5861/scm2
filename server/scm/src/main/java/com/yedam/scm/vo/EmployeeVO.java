@@ -23,6 +23,7 @@ public class EmployeeVO {
   
   private String status;
   private char isActive;
+  private char hasPhoto;
 
   // 이미지 파일 첨부
   private MultipartFile photo;

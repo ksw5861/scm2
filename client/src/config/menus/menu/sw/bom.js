@@ -1,6 +1,8 @@
+import { useIcon } from '@/composables/useIcon';
+
 const Bom = {
   label: 'bom 관리',
-  icon: 'pi pi-fw pi-home',
+  icon: useIcon('info'),
   to: '/bom',
   roles: ['admin']
 };

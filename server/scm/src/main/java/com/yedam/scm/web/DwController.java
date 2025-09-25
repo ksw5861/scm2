@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,11 +14,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-
 import com.yedam.scm.product.service.InboundService;
 import com.yedam.scm.vo.ItemInboundVO;
 
 import lombok.RequiredArgsConstructor;
+
 
 
 @RestController
@@ -34,8 +35,18 @@ public class DwController {
 
     // 등록
     @PostMapping("/lots")
-    public int insertInbound(@RequestBody ItemInboundVO vo) {
-        return service.insertInbound(vo);
+    public Map<String, Object> insertInbound(@RequestBody Map<String, Object> vo) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        if(service.registerInbound(vo)) {
+            response.put("status", "success");
+            return response;
+        } else {
+            response.put("status", "fail");
+            return response;
+        }
+        // axios.post => {"status" : "success/fail"}
     }
 
     // 삭제
@@ -43,6 +54,7 @@ public class DwController {
     public int deleteInbound(@PathVariable String inboundId) {
         return service.deleteInbound(inboundId);
     }
+
 
 
 
@@ -57,11 +69,11 @@ public class DwController {
 
         Map<String, Object> response = new HashMap<>();
         if (isRegister) {
-            response.put("status", "success");
+            response.put("retCode", "success");
             return ResponseEntity.ok(response);
         } else {
-            response.put("status", "not_found");
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            response.put("retCode", "BAD_REQUEST");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
     }
     
