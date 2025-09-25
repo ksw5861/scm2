@@ -43,14 +43,11 @@
       <Column field="prodName" header="제품명" />
       <Column field="spec" header="규격" />
       <Column field="unit" header="단위" />
-
-      <Column field="prodPrice" header="제품가격">
+      <Column field="prodUnitPrice" header="제품단가">
         <template #body="{ data }">
-          <div class="text-right">{{ formatCurrency(data.prodPrice) }}</div>
+          <div class="text-right">{{ formatCurrency(data.prodUnitPrice) }}</div>
         </template>
       </Column>
-
-      <!-- 주문수량 -->
       <Column header="주문수량" style="text-align: center;">
         <template #body="{ data }">
           <div>
@@ -75,13 +72,7 @@
       </Column>
     </DataTable>
 
-    <!-- <Column field="status" header="주문상태">
-      <template #body="{ data }">
-        {{ data.status || '미지정' }}
-      </template>
-    </Column> -->
-
-    
+    <!-- 제품 검색 모달 -->
     <Dialog
       v-model:visible="isShowModal"
       header="제품 검색"
@@ -101,6 +92,7 @@
         <Column field="prodName" header="제품명" />
         <Column field="spec" header="규격" />
         <Column field="unit" header="단위" />
+        <Column field="prodUnitPrice" header="제품가격" />
       </DataTable>
     </Dialog>
   </div>
@@ -134,7 +126,7 @@ const deliveryDate = ref('2025-11-15')
 // 총 주문합계
 const totalAmount = computed(() =>
   orderDetailList.value.reduce((sum, item) => sum + (item.total || 0), 0)
-);
+)
 
 // 금액 포맷
 const formatCurrency = (value) =>
@@ -142,10 +134,14 @@ const formatCurrency = (value) =>
 
 // 행별 합계 계산
 const calculateRowTotal = (row) => {
-  row.total = row.orderQty * row.prodPrice;
-  console.log('합계 계산:', row.total);
-};
+  // ✅ prodUnitPrice로 합계 계산
+  row.total = row.orderQty * row.prodUnitPrice
+  console.log('합계 계산:', row.total)
+}
 
+// 주문 저장 관련 기본값
+const returnPrice = ref(1)
+const returnStatus = ref('대기')
 
 // 제품 목록 조회
 const fetchProducts = async () => {
@@ -155,7 +151,6 @@ const fetchProducts = async () => {
     })
     console.log('제품 목록 API 응답:', data)
 
-    // ✅ 항상 data.items를 직접 참조하도록 수정
     productList.value = data.items || []
   } catch (err) {
     console.error('제품 목록 조회 오류:', err)
@@ -165,56 +160,63 @@ const fetchProducts = async () => {
 
 // 제품 선택 시 주문 상세 목록에 추가
 const handleSelect = () => {
-  if (!selectedProduct.value) return
+  if (!selectedProduct.value) return;
 
-  const product = selectedProduct.value
+  const product = selectedProduct.value;
 
+  // ✅ 중복 체크: 같은 prodId가 이미 있는지 확인
+  const isDuplicate = orderDetailList.value.some(item => item.prodId === product.prodId);
+
+  if (isDuplicate) {
+    toast('warn', '중복 제품', '이미 추가된 제품입니다.');
+    return;
+  }
+
+  // ✅ 새 컬럼명 사용
   orderDetailList.value.push({
     odetailId: null,
     prodId: product.prodId,
     prodName: product.prodName,
     spec: product.spec || '-',
     unit: product.unit || '-',
-    prodPrice: product.prodPrice || 0,
+    prodUnitPrice: product.prodUnitPrice || 0, // ← 기존 prodPrice → prodUnitPrice
     orderQty: 1,
-    prodStatus: '대기'
-  })
+    prodStatus: '대기',
+    total: product.prodUnitPrice || 0 // 초기 합계
+  });
 
-  // 선택 초기화 및 모달 닫기
-  selectedProduct.value = null
-  isShowModal.value = false
-}
-
+  selectedProduct.value = null;
+  isShowModal.value = false;
+};
 
 // 주문 저장
-const returnPrice = ref(1);       // 기본값 1
-const returnStatus = ref('대기'); // 기본값 '대기'
-
 const saveOrder = async () => {
+  console.log('✅ saveOrder 실행됨')
+
   const payload = {
     orderDate: new Date().toISOString().slice(0, 10),
     deliveryDate: deliveryDate.value,
     totalPrice: totalAmount.value,
-    status: '대기',           // 주문 기본 상태
-    payStatus: '대기',        // 결제 상태 기본값
-    returnPrice: returnPrice.value ? returnPrice.value : 1,    // 없으면 1
-    returnStatus: returnStatus.value ? returnStatus.value : '대기', // 없으면 '대기'
-    details: JSON.parse(JSON.stringify(orderDetailList.value))
-  };
+    status: '대기',
+    payStatus: '대기',
+    returnPrice: returnPrice.value || 1,
+    returnStatus: returnStatus.value || '대기',
+    details: JSON.parse(JSON.stringify(orderDetailList.value)) // ✅ prodUnitPrice 포함됨
+  }
 
-  console.log('전송되는 데이터:', payload);
+  console.log('📤 전송되는 데이터:', payload)
 
   try {
-    const { data } = await axios.post('/api/insertorder', payload);
-    console.log('응답 데이터:', data);
+    const { data } = await axios.post('/api/insertorder', payload)
+    console.log('📥 응답 데이터:', data)
+
+    toast('success', '주문 등록', '주문이 성공적으로 등록되었습니다.')
+    orderDetailList.value = []
   } catch (err) {
-    console.error('API 오류:', err);
+    console.error('❌ API 오류:', err)
+    toast('error', '등록 실패', '주문 등록 중 오류가 발생했습니다.')
   }
-};
-
-
-
-
+}
 
 onMounted(fetchProducts)
 </script>
@@ -263,7 +265,6 @@ onMounted(fetchProducts)
   text-align: right;
   padding-right: 6px;
 }
-
 
 .p-inputnumber {
   display: flex;

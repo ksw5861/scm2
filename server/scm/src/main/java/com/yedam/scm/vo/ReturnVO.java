@@ -19,6 +19,7 @@ public class ReturnVO {
     private String spec;
     private String unit;
     private Long orderQty;
-    private Long prodPrice;
-    
+
+    // ✅ PROD_UNIT_PRICE 사용
+    private Long prodUnitPrice;
 }

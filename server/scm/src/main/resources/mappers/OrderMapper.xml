@@ -51,7 +51,7 @@
         spec,
         unit,
         order_qty,
-        prod_price,
+        prod_unit_price,
         prod_status
     ) VALUES (
         #{odetailId},
@@ -61,75 +61,63 @@
         #{spec},
         #{unit},
         #{orderQty},
-        #{prodPrice},
+        #{prodUnitPrice},
         #{prodStatus}
     )
     </insert>
 
+<!-- ============================= -->
+<!-- 3. 주문 목록 조회 (좌측 리스트) -->
+<!-- ============================= -->
+<select id="getOrderListForView" parameterType="map" resultType="SalesOrderVO">
+    SELECT 
+        so.order_id,
+        so.order_date,
+        so.delivery_date,
+        so.status,
+        NVL(SUM(d.order_qty * d.prod_unit_price), 0) AS totalPrice,
+        (
+            SELECT CASE 
+                    WHEN COUNT(*) = 1 THEN MIN(sod2.prod_name)
+                    ELSE MIN(sod2.prod_name) || ' 외 ' || (COUNT(*) - 1) || '건'
+                   END
+            FROM sales_order_detail sod2
+            WHERE sod2.order_id = so.order_id
+        ) AS prod_name
+    FROM sales_order so
+    LEFT JOIN sales_order_detail d ON so.order_id = d.order_id
+    GROUP BY so.order_id, so.order_date, so.delivery_date, so.status
+    ORDER BY so.order_date DESC
+</select>
 
-    <!-- ============================= -->
-    <!-- 3. 주문 목록 조회 -->
-    <!-- ============================= -->
-    <select id="getOrderListForView" parameterType="map" resultType="SalesOrderVO">
-        SELECT 
-            so.order_id,
-            so.order_date,
-            so.total_price,
-            so.delivery_date,
-            so.status,
-            (
-                SELECT CASE 
-                        WHEN COUNT(*) = 1 THEN MIN(sod2.prod_name)
-                        ELSE MIN(sod2.prod_name) || ' 외 ' || (COUNT(*) - 1) || '건'
-                       END
-                FROM sales_order_detail sod2
-                WHERE sod2.order_id = so.order_id
-            ) AS prod_name
-        FROM sales_order so
-        WHERE 1=1
 
-        <if test="startDate != null and startDate != ''">
-            AND so.order_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
-        </if>
-        <if test="endDate != null and endDate != ''">
-            AND so.order_date &lt; TO_DATE(#{endDate}, 'YYYY-MM-DD') + 1
-        </if>
-        <if test="status != null and status != ''">
-            AND so.status = #{status}
-        </if>
-        <if test="orderId != null and orderId != ''">
-            AND so.order_id LIKE '%' || #{orderId} || '%'
-        </if>
-        <if test="prodName != null and prodName != ''">
-            AND EXISTS (
-                SELECT 1
-                FROM sales_order_detail sod2
-                WHERE sod2.order_id = so.order_id
-                  AND sod2.prod_name LIKE '%' || #{prodName} || '%'
-            )
-        </if>
 
-        ORDER BY so.order_date DESC
-    </select>
+   
+<!-- ============================= -->
+<!-- 4. 주문 상세 조회 (우측 상세) -->
+<!-- ============================= -->
+<select id="getOrderDetailList" parameterType="java.lang.String" resultType="SalesOrderDetailVO">
+    SELECT
+        d.odetail_id,
+        d.order_id,
+        d.prod_id,
+        p.prod_name,
+        p.spec,
+        p.unit,
+        d.order_qty,
+        d.prod_unit_price,
 
-    <!-- ============================= -->
-    <!-- 4. 주문 상세 조회 -->
-    <!-- ============================= -->
-    <select id="getOrderDetailList" parameterType="java.lang.String" resultType="SalesOrderDetailVO">
-        SELECT
-            sod.odetail_id,
-            sod.order_id,
-            sod.prod_id,
-            sod.prod_name,
-            sod.spec,
-            sod.unit,
-            sod.order_qty,
-            sod.prod_price,
-            sod.prod_status
-        FROM SALES_ORDER_DETAIL sod
-        WHERE sod.order_id = #{orderId}
-        ORDER BY sod.odetail_id
-    </select>
+        
+        (d.order_qty * d.prod_unit_price) AS totalUnitPrice,
+
+        d.prod_status
+    FROM SALES_ORDER_DETAIL d
+    JOIN PRODUCT p
+      ON d.prod_id = p.prod_id
+    WHERE d.order_id = #{orderId}
+    ORDER BY d.odetail_id
+</select>
+
 
     <!-- ============================= -->
     <!-- 8. 제품 총 개수 조회 -->
@@ -150,14 +138,15 @@
             p.PROD_NAME,
             p.SPEC,
             p.UNIT,
-            NULL AS PROD_PRICE, 
+            p.PROD_UNIT_PRICE, 
             ROWNUM rn
         FROM (
             SELECT 
                 PROD_ID,
                 PROD_NAME,
                 SPEC,
-                UNIT
+                UNIT,
+                PROD_UNIT_PRICE
             FROM PRODUCT
             <where>
                 <if test="prodName != null and prodName != ''">
