@@ -657,17 +657,19 @@ onMounted(fetchEmployeeList);
             <div class="flex items-center mb-4">
               <div class="skeleton w-[96px] h-[96px] rounded-lg"></div>
               <div class="ml-6 flex-1">
-                <div class="skeleton w-32 h-4 mb-2"></div>
-                <div class="skeleton w-20 h-4"></div>
+                <div class="skeleton w-20 h-4 mb-2"></div>
+                <div class="skeleton w-32 h-4"></div>
               </div>
             </div>
             <div class="mb-4">
               <div class="skeleton w-full h-10 mb-2"></div>
-              <div class="skeleton w-full h-10"></div>
             </div>
-            <div class="flex gap-4">
-              <div class="skeleton w-24 h-8"></div>
-              <div class="skeleton w-24 h-8"></div>
+            <div class="flex gap-4 mb-4">
+              <div class="skeleton w-1/2 h-8"></div>
+              <div class="skeleton w-1/2 h-8"></div>
+            </div>
+            <div class="mb-4">
+              <div class="skeleton w-full h-10"></div>
             </div>
           </div>
 
