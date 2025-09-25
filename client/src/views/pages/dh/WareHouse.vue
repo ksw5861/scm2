@@ -1,148 +1,125 @@
 <script setup>
-import { useAppToast } from '@/composables/useAppToast'
-import InputText from 'primevue/inputtext'
 import { ref } from 'vue'
-import DTable from '@/components/common/DTable.vue'
 import Modal from '@/components/common/Modal.vue'
 import axios from 'axios'
-import Dialog from 'primevue/dialog';
-import Button from 'primevue/button';
-import { useIcon } from '@/composables/useIcon';
-import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 
-const displayConfirmation = ref(false);
+// 모달 visible 상태
+const isWarehouseModalVisible = ref(false)
+const isEmployeeModalVisible = ref(false)
 
-const closeConfirmation = () => {
-  displayConfirmation.value = false;
-};
+// 선택된 아이템들
+const selectedWarehouseItem = ref(null)
+const selectedEmployeeItem = ref(null)
 
-const openConfirmation = () => {
-  displayConfirmation.value = true;
-};
-
-
-
-const showDialog = ref(false)
-
-const onConfirm = () => {
-  alert('확인 클릭됨!')
-}
-
-const onCancel = () => {
-  alert('취소 클릭됨!')
-}
-
-
-
-const { toast } = useAppToast()
-
-const isShowModal = ref(false)
-const selectedItem = ref(null)
-
-const columns = [
-  { label: '창고코드', field: 'whId', sortable: true },
-  { label: '창고명', field: 'whName', sortable: true }
+// 창고 컬럼 정의
+const warehouseColumns = [
+    { label: '창고코드', field: 'whId', sortable: true },
+    { label: '창고명', field: 'whName', sortable: true }
 ]
 
-const data = [
-  { whId: 'WH001', whName: '창고1' },
-  { whId: 'WH002', whName: '창고2' },
-  { whId: 'WH003', whName: '창고3' },
-  { whId: 'WH004', whName: '창고4' },
-  { whId: 'WH005', whName: '창고5' },
-  { whId: 'WH006', whName: '창고6' },
-  { whId: 'WH007', whName: '창고7' },
-  { whId: 'WH008', whName: '창고8' },
-  { whId: 'WH009', whName: '창고9' },
-  { whId: 'WH010', whName: '창고10' }
+// 사원 컬럼 정의
+const employeeColumns = [
+    { label: '사원번호', field: 'employeeId', sortable: true },
+    { label: '사원명', field: 'name', sortable: true },
+    { label: '연락처', field: 'phone' }
 ]
 
-const fetchWarehouseData = async ({ page, size, search, sortField, sortOrder }) => {
-  const response = await axios.get('/api/warehouse', {
-    params: {
-      page,
-      size,
-      search,
-      sortField,
-      sortOrder
+// 창고 전체 데이터 캐싱용
+const warehouseListCache = ref([])
+
+// 창고 목록 조회 (프론트엔드 페이징)
+const fetchWarehouseList = async () => {
+    if (warehouseListCache.value.length === 0) {
+        try {
+            const response = await axios.get('/api/warehouse1')
+            warehouseListCache.value = response.data
+        } catch (e) {
+            console.error('창고 데이터 조회 실패:', e)
+            return { items: [], total: 0 }
+        }
     }
-  })
-  return {
-    items: response.data.items,
-    total: response.data.total
-  }
+    return {
+        items: warehouseListCache.value,
+        total: warehouseListCache.value.length
+    }
 }
 
-const handleSelect = (item) => {
-  selectedItem.value = item
-  isShowModal.value = false
+// 사원 목록 조회 (백엔드 페이징)
+const fetchEmployeeList = async ({ page = 1, size = 3, sortField = null, sortOrder = null } = {}) => {
+    try {
+        const params = { page, size }
+        if (sortField) params.sortField = sortField
+        if (sortOrder) params.sortOrder = sortOrder
+
+        const response = await axios.get('/api/employee', { params })
+        return {
+            items: response.data.data || response.data.items || [],
+            total: response.data.page?.totalElements || 0
+        }
+    } catch (e) {
+        console.error('사원 데이터 조회 실패:', e)
+        return { items: [], total: 0 }
+    }
 }
+
+// 창고 선택 핸들러
+const handleWarehouseSelect = (item) => {
+    selectedWarehouseItem.value = item
+    isWarehouseModalVisible.value = false
+}
+
+// 사원 선택 핸들러
+const handleEmployeeSelect = (item) => {
+    selectedEmployeeItem.value = item
+    isEmployeeModalVisible.value = false
+}
+
 </script>
 
 <template>
-  <Fluid>
-    <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">창고관리</div>
-      <div class="flex flex-col gap-2">
-        <label for="name1">입력</label>
-        <InputText id="name1" type="text" />
-      </div>
-    </div>
+    <Fluid>
+        <div class="card flex flex-col gap-4">
+            <div class="font-semibold text-xl">창고선택</div>
+            <Btn @click="isWarehouseModalVisible = true">창고 모달 열기</Btn>
+        </div>
 
-    <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">창고목록</div>
-      <Btn @click="isShowModal = true">모달</Btn>
-      <div class="flex flex-col gap-2">
-        <DTable :columns="columns" :data="data" :paginator="true" :rows="10" />
-      </div>
-    </div>
-  </Fluid>
+        <div class="card flex flex-col gap-4">
+            <div class="font-semibold text-xl">사원선택</div>
+            <Btn @click="isEmployeeModalVisible = true">사원 모달 열기</Btn>
+        </div>
+    </Fluid>
 
-  <pre class="mt-4">선택된 창고: {{ selectedItem }}</pre>
+    <pre class="mt-4">
+        선택된 창고: {{ selectedWarehouseItem }}
+    </pre>
 
-  <div class="card">
-    <div class="font-semibold text-xl mb-4">사원 등록</div>
-    <Button label="Delete" icon="pi pi-trash" severity="danger" style="width: auto" @click="openConfirmation" />
+    <pre class="mt-4">
+        선택된 사원: {{ selectedEmployeeItem }}
+    </pre>
 
-    <Dialog header="사원 등록" v-model:visible="displayConfirmation" :style="{ width: '350px' }" :modal="true">
-      <div class="flex items-center justify-center">
-        <i class="pi pi-exclamation-triangle mr-4" style="font-size: 2rem" />
-        <span>등록하시겠습니까?</span>
-      </div>
-      <template #footer>
-        <Button label="취소" :icon="useIcon('cancel')" @click="closeConfirmation" text severity="secondary" />
-        <Button label="등록" :icon="useIcon('check')" @click="closeConfirmation" severity="primary" outlined autofocus />
-      </template>
-    </Dialog>
+    <!-- 창고 모달 (프론트엔드 페이징) -->
+    <Modal
+        :visible="isWarehouseModalVisible"
+        title="창고 검색"
+        :columns="warehouseColumns"
+        dataKey="whId"
+        :fetchData="fetchWarehouseList"
+        :pageSize="5"
+        :frontPagination="true"
+        @select="handleWarehouseSelect"
+        @close="isWarehouseModalVisible = false"
+    />
 
-  <Button label="등록" @click="showDialog = true" />
-
-  <ConfirmDialog
-    v-model="showDialog"
-    header="사원 등록"
-    message="등록하시겠습니까?"
-    cancelLabel="취소"
-    confirmLabel="등록"
-    cancelIcon="cancel"
-    confirmIcon="check"
-    confirmSeverity="primary"
-    @confirm="onConfirm"
-    @cancel="onCancel"
-  />
-
-  </div>
-
-  <Modal
-    :visible="isShowModal"
-    title="창고 검색"
-    idField="whId"
-    :columns="[
-      { key: 'whId', label: '창고번호' },
-      { key: 'whName', label: '창고명' }
-    ]"
-    :fetchData="fetchWarehouseData"
-    :page-size="5"
-    @select="handleSelect"
-    @close="isShowModal = false"
-  />
+    <!-- 사원 모달 (백엔드 페이징) -->
+    <Modal
+        :visible="isEmployeeModalVisible"
+        title="사원 검색"
+        :columns="employeeColumns"
+        dataKey="employeeId"
+        :fetchData="fetchEmployeeList"
+        :pageSize="3"
+        :frontPagination="false"
+        @select="handleEmployeeSelect"
+        @close="isEmployeeModalVisible = false"
+    />
 </template>
