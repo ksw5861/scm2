@@ -3,13 +3,15 @@ package com.yedam.scm.product.service;
 import java.util.List;
 import java.util.Map;
 
-import com.yedam.scm.vo.ItemInboundVO;
+import com.yedam.scm.vo.ProductLotVO;
 
 public interface InboundService {
-    List<ItemInboundVO> selectInboundLots(ItemInboundVO vo);
-    int insertInbound(ItemInboundVO vo);
-    int deleteInbound(String inboundId);
+    List<ProductLotVO> selectInboundLots(ProductLotVO vo);
 
-    boolean registerInbound( Map<String,Object> inbound);
+    int updateInbound(ProductLotVO vo);
+
+    int deleteInbound(String prdLot);
+
+    boolean registerInbound(Map<String, Object> inbound);
 
 }
