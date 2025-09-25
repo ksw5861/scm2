@@ -1,10 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import selectTable from '@/components/common/checkBoxTable.vue';
 import btn from '@/components/common/Btn.vue';
 import searchField from '@/components/common/SearchBox.vue';
-import modal from '@/components/common/Modal.vue';
 
 //등록일 날짜출력[페이지로드시 오늘날짜 자동셋팅]
 const getNowDate = () => {
@@ -27,46 +26,37 @@ const getNextId = () => {
 };
 // 디테일 1행출력 [페이지로드시 1행 자동셋팅]
 const productionPlans = ref([{ id: columnId.value, prodId: '', prdName: '', proQty: null, unit: '', proDate: '' }]);
+//드롭다운옵션용
+const productOptions = ref([]);
 
-//모달용
-const isShowModal = ref(false);
-const selectedItem = ref(null); //모달에서 선택된 데이터
-const modalPrdColumns = [{ key: 'mProdId', label: '제품번호' }, { key: 'mProdName', label: '제품명' }, { key: 'mUnit' }];
+onMounted(async () => {
+  const res = await axios.get('/api/mat/productsList');
+  productOptions.value = res.data.map((item) => ({
+    label: item.prodName,
+    value: item.prodId,
+    unit: item.unit
+  }));
+});
 
-//제품모달
-const openModal = () => {
-  isShowModal.value = true;
-  console.log('모달 열기');
+console.log(productOptions);
+console.log(productOptions.value);
+
+//옵션선택시 컬럼반영
+const selectOpt = (row, value) => {
+  const selected = productOptions.value.find((opt) => opt.value === value);
+  if (selected) {
+    row.prodId = selected.value;
+    row.unit = selected.unit;
+  }
 };
 
-//모달제품 데이터
-const fetchProductData = async ({ page, size, search }) => {
-  const res = await axios.get('/api/productsListM', {
-    params: { page, size, prodName: search }
-  });
-  return {
-    items: res.data.items.map((item) => ({
-      mProdId: item.prodId,
-      mProdName: item.prodName,
-      mUnit: item.unit
-    })),
-    total: res.data.total
-  };
-};
-
-const handleSelect = (item) => {
-  selectedItem.value = item;
-  isShowModal.value = false;
-};
-
-//detail 컬럼
-const detailColumns = [
+const detailColumns = computed(() => [
   { field: 'prodId', label: '제품코드', style: 'width: 15rem' },
-  { field: 'prdName', label: '제품명', inputText: true, style: 'width: 30rem', onClick: openModal },
+  { field: 'prdName', label: '제품명', select: true, style: 'width: 20rem', option: productOptions.value, selectOpt },
   { field: 'proQty', label: '생산수량', inputNumber: true, style: 'width: 10rem' },
   { field: 'unit', label: '단위', style: 'width: 9rem' },
   { field: 'proDate', label: '생산예정일', datePicker: true, style: 'width: 20rem' }
-];
+]);
 
 //상단박스버튼
 const resetForm = () => {
@@ -99,11 +89,11 @@ const submit = async () => {
   // 유효성 검사: 제품 계획이 비어있는지 확인
   if (!plan.prdPlanDetailList || plan.prdPlanDetailList.length === 0 || !plan.prdPlanDetailList[0].prdName || !plan.prdPlanDetailList[0].proQty) {
     alert('제품 계획을 하나 이상 입력해주세요.');
-    return; // 함수 실행 중단
+    return;
   }
 
   try {
-    const response = await axios.post('/api/productionPlan', plan);
+    const response = await axios.post('/api/mat/productionPlan', plan);
     alert('등록 성공!');
   } catch (error) {
     alert('등록 실패!');
@@ -146,7 +136,4 @@ const submit = async () => {
     </div>
     <!--(detail)하단박스 end-->
   </div>
-
-  <!--제품모달-->
-  <modal :visible="isShowModal" title="제품 검색" idField="mProdId" :columns="modalPrdColumns" :fetchData="fetchProductData" :page-size="5" @select="handleSelect" @close="isShowModal = false" />
 </template>

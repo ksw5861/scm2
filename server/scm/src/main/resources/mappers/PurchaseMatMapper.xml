@@ -35,10 +35,8 @@
            prod_id,
            pro_qty, 
            pro_date,  
-           pl_id, 
-           mat_status, 
-           prod_no, 
-           mpr_status
+           pl_id,  
+           prod_no 
         )
         VALUES (
             #{plDetId},
@@ -46,9 +44,7 @@
             #{proQty},
             #{proDate},
             #{plId},
-            #{matStatus},
-             NEXT_DATE_CODE('PNO'), <!--제품LOT번호-->
-            #{mprStatus}
+             NEXT_DATE_CODE('PNO') <!--제품LOT번호-->
         )
     </insert>
 
@@ -57,38 +53,14 @@
 
 
 
-<!--모달용===============================================================================-->
-<!--제품모달-->  
-    <select id="getProductCount" resultType="int">
-    SELECT COUNT(*)
+<!--드롭다운/모달용===============================================================================-->
+<!--제품목록-->
+<select id="getProductList" resultType="productVO">
+    SELECT prod_id,
+           prod_name,
+           unit
     FROM product
-    <where>
-        <if test="prodName != null and prodName != ''">
-            AND prod_name LIKE '%' || #{prodName} || '%'
-        </if>
-    </where>
-</select>
-
-    <select id="getProductList" resultType="com.yedam.scm.vo.ProductVO">
-    SELECT *
-    FROM (
-        SELECT ROWNUM AS rn,
-               p.*
-        FROM (
-            SELECT prod_id AS prodId,
-                   prod_name AS prodName,
-                   unit
-            FROM product
-            <where>
-                <if test="prodName != null and prodName != ''">
-                    AND prod_name LIKE '%' || #{prodName} || '%'
-                </if>
-            </where>
-            ORDER BY prod_id
-        ) p
-        WHERE ROWNUM &lt;= #{offset} + #{size}
-    )
-    WHERE rn &gt; #{offset}
+    WHERE status = '정상'
 </select>
 
 </mapper>
