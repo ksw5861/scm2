@@ -5,6 +5,34 @@ import { ref } from 'vue'
 import DTable from '@/components/common/DTable.vue'
 import Modal from '@/components/common/Modal.vue'
 import axios from 'axios'
+import Dialog from 'primevue/dialog';
+import Button from 'primevue/button';
+import { useIcon } from '@/composables/useIcon';
+import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
+
+const displayConfirmation = ref(false);
+
+const closeConfirmation = () => {
+  displayConfirmation.value = false;
+};
+
+const openConfirmation = () => {
+  displayConfirmation.value = true;
+};
+
+
+
+const showDialog = ref(false)
+
+const onConfirm = () => {
+  alert('확인 클릭됨!')
+}
+
+const onCancel = () => {
+  alert('취소 클릭됨!')
+}
+
+
 
 const { toast } = useAppToast()
 
@@ -71,6 +99,38 @@ const handleSelect = (item) => {
   </Fluid>
 
   <pre class="mt-4">선택된 창고: {{ selectedItem }}</pre>
+
+  <div class="card">
+    <div class="font-semibold text-xl mb-4">사원 등록</div>
+    <Button label="Delete" icon="pi pi-trash" severity="danger" style="width: auto" @click="openConfirmation" />
+
+    <Dialog header="사원 등록" v-model:visible="displayConfirmation" :style="{ width: '350px' }" :modal="true">
+      <div class="flex items-center justify-center">
+        <i class="pi pi-exclamation-triangle mr-4" style="font-size: 2rem" />
+        <span>등록하시겠습니까?</span>
+      </div>
+      <template #footer>
+        <Button label="취소" :icon="useIcon('cancel')" @click="closeConfirmation" text severity="secondary" />
+        <Button label="등록" :icon="useIcon('check')" @click="closeConfirmation" severity="primary" outlined autofocus />
+      </template>
+    </Dialog>
+
+  <Button label="등록" @click="showDialog = true" />
+
+  <ConfirmDialog
+    v-model="showDialog"
+    header="사원 등록"
+    message="등록하시겠습니까?"
+    cancelLabel="취소"
+    confirmLabel="등록"
+    cancelIcon="cancel"
+    confirmIcon="check"
+    confirmSeverity="primary"
+    @confirm="onConfirm"
+    @cancel="onCancel"
+  />
+
+  </div>
 
   <Modal
     :visible="isShowModal"

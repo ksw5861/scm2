@@ -6,5 +6,3 @@ import Toast from 'primevue/toast';
   <Toast />
   <router-view />
 </template>
-
-<style scoped></style>
