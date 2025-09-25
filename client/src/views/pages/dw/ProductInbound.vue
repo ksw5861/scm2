@@ -12,7 +12,6 @@ import Calendar from 'primevue/calendar';
 import Button from 'primevue/button';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
-import { useToast } from 'primevue/usetoast';
 
 const { toast } = useAppToast();
 
@@ -28,34 +27,36 @@ function fmtDate(d) {
 }
 
 /* ------------------ 검색 폼 ------------------ */
-const searchForm = ref({ prodCode: '', prodName: '', endDate: null });
+const searchForm = ref({ prodId: '', prodName: '', endDate: null });
 
 /* ------------------ 목록/상세 ------------------ */
 const inboundList = ref([]);
 const selectedRow = ref(null);
 
 const detail = ref({
-  prodCode: '',
+  prodId: '',
   prodName: '',
-  lotNo: '',
-  qty: null,
-  inDate: '',
-  expireDate: null,
-  unitSpec: '',
-  manager: ''
-  // whCode: ''
+  prodNo: '',
+  proQty: null,
+  proDate: '',
+  endDate: null,
+  spec: '',
+  unit: '',
+  manager: '',
+  whCode: ''
 });
 
 /* ------------------ 초기화 ------------------ */
 function clearDetail() {
   detail.value = {
-    prodCode: '',
+    prodId: '',
     prodName: '',
-    lotNo: '',
-    qty: null,
-    inDate: '',
-    expireDate: null,
-    unitSpec: '',
+    prodNo: '',
+    proQty: null,
+    proDate: '',
+    endDate: null,
+    spec: '',
+    unit: '',
     manager: '',
     whCode: ''
   };
@@ -65,15 +66,15 @@ function clearDetail() {
 function bindDetail(row) {
   selectedRow.value = row;
   detail.value = {
-    prodCode: row?.prodId ?? '',
+    prodId: row?.prodId ?? '',
     prodName: row?.prodName ?? '',
-    lotNo: row?.prdLot ?? '',
-    qty: row?.totalQty ?? null,
-    inDate: row?.inDate ?? '',
-    expireDate: row?.expireDate ?? null,
-    unitSpec: row?.unitSpec ?? '',
+    prodNo: row?.prodNo ?? '',
+    proQty: row?.proQty ?? null,
+    endDate: row?.endDate ?? null,
+    spec: row?.spec ?? '',
     manager: row?.manager ?? '',
-    whCode: row?.whCode ?? ''
+    whCode: row?.whCode ?? '',
+    proDate: row?.proDate ?? ''
   };
 }
 
@@ -85,7 +86,7 @@ function onRowClick(e) {
 async function doSearch() {
   try {
     const params = {
-      prodCode: searchForm.value.prodCode.trim(),
+      prodCode: searchForm.value.prodId.trim(),
       prodName: searchForm.value.prodName.trim(),
       endDate: searchForm.value.endDate ? fmtDate(searchForm.value.endDate) : ''
     };
@@ -99,7 +100,7 @@ async function doSearch() {
 }
 
 function resetSearch() {
-  searchForm.value = { prodCode: '', prodName: '', endDate: null };
+  searchForm.value = { prodId: '', prodName: '', proDate: null };
   doSearch();
 }
 
@@ -120,7 +121,7 @@ const fetchProductData = async ({ q = '', page = 1, size = 10 } = {}) => {
 function handleSelectProduct(item) {
   const code = item?.prodId || '';
   const name = item?.prodName || '';
-  searchForm.value.prodCode = code;
+  searchForm.value.prodId = code;
   searchForm.value.prodName = name;
   closeProdModal();
   toast.info(`제품 선택: ${code} / ${name}`);
@@ -151,28 +152,36 @@ function handleSelectWarehouse(item) {
 async function save() {
   try {
     const body = {
-      prdLot: detail.value.lotNo,
-      prodId: detail.value.prodCode,
-      totalQty: Number(detail.value.qty || 0), // ✅ qty → totalQty 맞춤
-      whId: detail.value.whCode,
-      transferDate: detail.value.inDate
+      prodNo: detail.value.prodNo,
+      employeeId: detail.value.manager,
+      totalQty: Number(detail.value.proQty || 0),
+      whId: detail.value.whCode
     };
+    // const result = await axios.post('/api/inbound', body);
+    // console.log(result.data.retCode); // success, fail
+    // console.log(result.status); // 200, 404, 405, 400
 
-    await axios.post('/api/inbound', body);
-    toast.add({
-      severity: 'success',
-      summary: '성공',
-      detail: '입고 등록 완료',
-      life: 3000
-    });
+    // if (result.data.retCode === 'success') {
+    //   toast('success', '등록 성공', '성공적으로 입고처리되었습니다.');
+    // } else if (result.data.retCode === 'fail') {
+    //   toast('error', '실패', '실패 하였습니다');
+    // }
+
+    // if (result.status === 200) {
+    //   toast('success', '등록 성공', '성공적으로 입고처리되었습니다.');
+    // } else {
+    //   toast('error', '실패', '실패 하였습니다');
+    // }
+
+    // const { data } = await axios.post('/api/inbound', body);
+    const { status } = await axios.post('/api/inbound', body); // 200
+
+    if (status === 200) return toast('success', '등록 성공', '성공적으로 입고처리되었습니다.');
+    if (status === 302) return toast('error', '에러', '사용자 정의 에러');
+
     await doSearch();
   } catch (err) {
-    toast.add({
-      severity: 'error',
-      summary: '에러',
-      detail: '입고 등록 실패',
-      life: 3000
-    });
+    toast('error', '실패', '실패 하였습니다');
     console.error(err);
   }
 }
@@ -180,8 +189,8 @@ async function save() {
 /* ------------------ 삭제 ------------------ */
 async function remove() {
   try {
-    const prdLot = selectedRow.value?.prdLot;
-    if (!prdLot) {
+    const prodNo = selectedRow.value?.prodNo;
+    if (!prodNo) {
       toast.add({
         severity: 'warn',
         summary: '경고',
@@ -191,7 +200,7 @@ async function remove() {
       return;
     }
 
-    await axios.delete(`/api/inbound/${prdLot}`);
+    await axios.delete(`/api/inbound/${prodNo}`);
     toast.add({
       severity: 'success',
       summary: '성공',
@@ -224,7 +233,7 @@ onMounted(() => {
         <div class="field">
           <label>제품코드</label>
           <InputGroup>
-            <InputText v-model="searchForm.prodCode" placeholder="PRD001" @click="openProdModal" />
+            <InputText v-model="searchForm.prodId" placeholder="PRD001" @click="openProdModal" />
             <InputGroupAddon>
               <Button icon="pi pi-search" text @click="openProdModal" />
             </InputGroupAddon>
@@ -241,7 +250,7 @@ onMounted(() => {
         </div>
         <div class="field">
           <label>생산일자</label>
-          <Calendar v-model="searchForm.endDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
+          <Calendar v-model="searchForm.proDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
         </div>
       </div>
       <div class="actions">
@@ -262,11 +271,11 @@ onMounted(() => {
             </template>
           </Column>
 
-          <Column field="prdLot" header="LOT번호" />
+          <Column field="prodNo" header="LOT번호" />
           <Column field="prodId" header="제품코드" />
           <Column field="prodName" header="제품명" />
-          <Column field="totalQty" header="수량" />
-          <Column field="status" header="상태" />
+          <Column field="proQty" header="수량" />
+          <Column field="matStatus" header="상태" />
         </DataTable>
       </div>
 
@@ -281,13 +290,13 @@ onMounted(() => {
         </div>
 
         <div class="detail-grid">
-          <div class="field"><label>제품코드</label><InputText v-model="detail.prodCode" /></div>
+          <div class="field"><label>제품코드</label><InputText v-model="detail.prodId" /></div>
           <div class="field"><label>제품명</label><InputText v-model="detail.prodName" /></div>
-          <div class="field"><label>LOT번호</label><InputText v-model="detail.lotNo" /></div>
-          <div class="field"><label>입고일자</label><Calendar v-model="detail.inDate" dateFormat="yy-mm-dd" showIcon /></div>
-          <div class="field"><label>입고수량</label><InputText v-model="detail.qty" /></div>
-          <div class="field"><label>유통기한</label><Calendar v-model="detail.expireDate" dateFormat="yy-mm-dd" showIcon /></div>
-          <div class="field"><label>규격/단위</label><InputText v-model="detail.unitSpec" /></div>
+          <div class="field"><label>LOT번호</label><InputText v-model="detail.prodNo" /></div>
+          <div class="field"><label>입고일자</label><Calendar v-model="detail.proDate" dateFormat="yy-mm-dd" showIcon /></div>
+          <div class="field"><label>입고수량</label><InputText v-model="detail.proQty" /></div>
+          <div class="field"><label>유통기한</label><Calendar v-model="detail.endDate" dateFormat="yy-mm-dd" showIcon /></div>
+          <div class="field"><label>규격/단위</label><InputText v-model="detail.spec" /></div>
           <div class="field"><label>담당자</label><InputText v-model="detail.manager" /></div>
           <div class="field">
             <label>창고코드</label>
