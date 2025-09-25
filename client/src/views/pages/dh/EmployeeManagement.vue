@@ -645,7 +645,7 @@ onMounted(fetchEmployeeList);
                 v-if="cardMode === 'view'"
                 icon="cancel"
                 color="secondary"
-                label="삭제"
+                label="선택 해제"
                 class="whitespace-nowrap"
                 @click="handleRowUnSelect"
                 outlined
