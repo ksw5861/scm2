@@ -6,15 +6,10 @@
       <div class="header-actions">
         <Button label="초기화" icon="pi pi-refresh" class="p-button-outlined" @click="resetFilters" />
         <Button label="조회" icon="pi pi-search" class="p-button-primary" @click="fetchOrders" />
-        <!-- 엑셀 다운로드 버튼 -->
         <Button label="엑셀 다운로드" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel" />
-
-        <!-- PDF 다운로드 버튼 -->
         <Button label="PDF 출력" icon="pi pi-file-pdf" class="p-button-danger" @click="exportPDF" />
       </div>
     </div>
-    
- 
 
     <!-- 검색 영역 -->
     <div class="filter-section">
@@ -64,15 +59,27 @@
           <Column field="orderId" header="주문번호" style="width:140px; text-align:center;" />
           <Column field="orderDate" header="주문일자" style="width:140px; text-align:center;" />
           <Column field="prodName" header="대표 제품명" style="width:200px;" />
+          
+          <!-- ✅ 주문총액도 totalUnitPrice 사용 -->
           <Column field="totalPrice" header="주문총액(원)" style="width:150px; text-align:right;">
             <template #body="slotProps">
+              <span>
+                  {{ console.log('totalPrice:', slotProps.data.totalPrice) }}
+               
+              </span>
               {{ formatCurrency(slotProps.data.totalPrice) }}
+
+
             </template>
           </Column>
+
           <Column field="deliveryDate" header="배송예정일" style="width:140px; text-align:center;" />
           <Column field="status" header="상태" style="width:120px; text-align:center;" />
         </DataTable>
       </div>
+      <div>{{ orderList }}</div>
+
+
 
       <!-- 우측 주문 상세 -->
       <div class="order-detail-table">
@@ -85,20 +92,24 @@
         >
           <Column field="prodId" header="제품코드" style="width:120px; text-align:center;" />
           <Column field="prodName" header="제품명" style="width:150px;" />
-          <Column field="prodSpec" header="규격" style="width:100px; text-align:center;" />
-          <Column field="prodUnit" header="단위" style="width:80px; text-align:center;" />
-          <Column field="prodPrice" header="제품가격" style="width:120px; text-align:right;">
+          <Column field="Spec" header="규격" style="width:100px; text-align:center;" />
+          <Column field="Unit" header="단위" style="width:80px; text-align:center;" />
+
+          <Column field="prodUnitPrice" header="제품단가" style="width:120px; text-align:right;">
             <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.prodPrice) }}
+              {{ formatCurrency(slotProps.data.prodUnitPrice) }}
             </template>
           </Column>
+
           <Column field="orderQty" header="주문수량" style="width:80px; text-align:center;" />
-          <Column field="total" header="합계" style="width:120px; text-align:right;">
+
+          <Column field="totalUnitPrice" header="합계" style="width:120px; text-align:right;">
             <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.total) }}
+              {{ formatCurrency(slotProps.data.totalUnitPrice) }}
             </template>
           </Column>
         </DataTable>
+<div>orders: {{ orders }}</div>
 
         <!-- 합계 금액 -->
         <div class="total-footer">
@@ -117,10 +128,6 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
-// import * as XLSX from 'xlsx'
-// import * as FileSaver from 'file-saver'  // ✅ 핵심
-// import jsPDF from 'jspdf'
-// import 'jspdf-autotable'
 
 // ===== 검색 조건 =====
 const filters = ref({
@@ -147,11 +154,12 @@ const detailTotal = computed(() => {
 
 // ===== 금액 포맷 =====
 const formatCurrency = (value) => {
-  if (!value) return '0 원'
+  if (value === null || value === undefined) return '0 원'
   return value.toLocaleString('ko-KR') + ' 원'
 }
 
-// ===== 날짜 포맷 (YYYY-MM-DD로 변환) =====
+
+// ===== 날짜 포맷 =====
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   const date = new Date(dateString)
@@ -161,13 +169,26 @@ const formatDate = (dateString) => {
   return `${year}-${month}-${day}`
 }
 
-// ===== API 전달용 날짜 포맷 함수 =====
+// 날짜 더하기
+const addDays = (dateString, days) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  date.setDate(date.getDate() + days)
+
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+// API 날짜 포맷
 const formatDateForAPI = (date) => {
   if (!date) return null
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}` // YYYY-MM-DD
+  return `${year}-${month}-${day}`
 }
 
 // ===== 주문 목록 조회 =====
@@ -183,22 +204,18 @@ const fetchOrders = async () => {
       }
     })
 
-    console.log('API 요청 파라미터:', {
-      startDate: formatDateForAPI(filters.value.startDate),
-      endDate: formatDateForAPI(filters.value.endDate)
-    })
-
-    // 서버 데이터를 화면 출력용으로 가공
+    // 서버 데이터를 화면 출력용으로 변환
     orders.value = data.map(item => ({
       orderId: item.orderId,
       orderDate: formatDate(item.orderDate),
       prodName: item.prodName || '-',
+
+      // ✅ totalUnitPrice 필드 사용
       totalPrice: item.totalPrice || 0,
-      deliveryDate: formatDate(item.deliveryDate),
+
+      deliveryDate: addDays(item.orderDate, 2),
       status: item.status || '-'
     }))
-
-    console.log('주문 목록:', data)
   } catch (error) {
     console.error('주문 목록 조회 오류:', error)
     alert('주문 목록 조회 중 오류가 발생했습니다.')
@@ -207,28 +224,25 @@ const fetchOrders = async () => {
 
 // ===== 주문 상세 조회 =====
 const fetchOrderDetail = async (orderId) => {
-  console.log("요청한 주문번호:", orderId)
-
   try {
     const { data } = await axios.get('/api/orderdetail', {
       params: { orderId }
     })
 
-    console.log('서버에서 받은 주문 상세 데이터:', data)
 
+
+    // ✅ prodUnitPrice를 사용하여 합계 계산
     orderDetails.value = data.map(item => ({
       ...item,
-      total: item.prodPrice * item.orderQty
+      total: item.prodUnitPrice * item.orderQty
     }))
-
-    console.log('주문 상세:', orderDetails.value)
   } catch (error) {
     console.error('주문 상세 조회 오류:', error)
     alert('주문 상세 조회 중 오류가 발생했습니다.')
   }
 }
 
-// ===== 선택된 주문 감시 =====
+// ===== 선택된 주문 변경 감시 =====
 watch(selectedOrder, (newOrder) => {
   if (newOrder && newOrder.orderId) {
     fetchOrderDetail(newOrder.orderId)
@@ -249,68 +263,10 @@ const resetFilters = () => {
   fetchOrders()
 }
 
-
-// ===== 엑셀 다운로드 =====
-// const exportExcel = () => {
-//   if (!orders.value.length) {
-//     alert('다운로드할 데이터가 없습니다.')
-//     return
-//   }
-
-//   // JSON → 시트 변환
-//   const ws = XLSX.utils.json_to_sheet(orders.value)
-
-//   // 워크북 생성
-//   const wb = XLSX.utils.book_new()
-//   XLSX.utils.book_append_sheet(wb, ws, "주문목록")
-
-//   // 엑셀 파일로 변환
-//   const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
-//   const data = new Blob([excelBuffer], { type: 'application/octet-stream' })
-
-//   // ✅ FileSaver.saveAs 로 호출
-//   FileSaver.saveAs(data, `주문목록_${new Date().toISOString().slice(0, 10)}.xlsx`)
-// }
-
-
-// // ===== PDF 다운로드 =====
-// const exportPDF = () => {
-//   if (!orders.value.length) {
-//     alert('출력할 데이터가 없습니다.')
-//     return
-//   }
-
-//   const doc = new jsPDF()
-
-//   // 타이틀
-//   doc.setFontSize(18)
-//   doc.text('주문 목록 보고서', 14, 20)
-
-//   // 테이블 생성
-//   const tableData = orders.value.map(item => [
-//     item.orderId,
-//     item.orderDate,
-//     item.prodName,
-//     formatCurrency(item.totalPrice),
-//     item.status
-//   ])
-
-//   doc.autoTable({
-//     head: [['주문번호', '주문일자', '대표 제품명', '총액', '상태']],
-//     body: tableData,
-//     startY: 30
-//   })
-
-//   // PDF 저장
-//   doc.save(`주문목록_${new Date().toISOString().slice(0, 10)}.pdf`)
-// }
-
-// ===== 페이지 로드 시 전체 주문 자동 조회 =====
 onMounted(() => {
   fetchOrders()
 })
 </script>
-
 
 <style scoped>
 .order-list {
@@ -411,6 +367,7 @@ onMounted(() => {
     min-width: 100%;
   }
 }
+
 .header-actions .p-button-success {
   background-color: #28a745;
   border: none;

@@ -14,16 +14,16 @@
         return_qty,
         return_why,
         return_price,
-        return_date,
-        return_status
+        return_date
+        
     ) VALUES (
         next_date_code('RT'),
         #{odetailId},
         #{returnQty},
         #{returnWhy,jdbcType=VARCHAR},
         NVL(#{returnPrice}, 1),
-        SYSDATE,
-        NVL(#{returnStatus}, '대기')  <!-- 기본값 WAIT 대신 한글 '대기' -->
+        SYSDATE
+       
     )
   </insert>
 
@@ -44,7 +44,7 @@
       sod.spec,
       sod.unit,
       sod.order_qty,
-      sod.prod_price,
+      sod.prod_unit_price,
       so.order_id,
       so.vendor_id
     FROM "RETURN" r
@@ -97,7 +97,7 @@
       sod.spec,
       sod.unit,
       sod.order_qty,
-      sod.prod_price
+      sod.prod_unit_price
     FROM "RETURN" r
       JOIN sales_order_detail sod
         ON r.odetail_id = sod.odetail_id

@@ -7,7 +7,6 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import com.yedam.scm.order.mapper.PayMapper;
 import com.yedam.scm.order.service.OrderService;
 import com.yedam.scm.order.service.ReturnService;
 import com.yedam.scm.order.service.PayService;
@@ -37,7 +36,7 @@ public class EgController {
     private ReturnService returnSvc;
 
     @Autowired
-    private PayService paymentSvc; 
+    private PayService paymentSvc;
 
     // =================================================================
     // 1. 제품 목록 조회 (모달용)
@@ -50,6 +49,8 @@ public class EgController {
 
         int offset = (page - 1) * pageSize;
         int totalCount = orderSvc.getProductCount();
+        
+        // ✅ 제품 목록은 반드시 PROD_UNIT_PRICE 컬럼 사용
         List<ProductVO> items = orderSvc.getProductList(prodName, offset, pageSize);
 
         Map<String, Object> result = new HashMap<>();
@@ -86,7 +87,7 @@ public class EgController {
     // =================================================================
     @GetMapping("/orderdetail")
     public List<SalesOrderDetailVO> getOrderDetailList(@RequestParam String orderId) {
-        return orderSvc.getOrderDetailList(orderId);
+        return orderSvc.getOrderDetailList(orderId); // ✅ 내부적으로 prodUnitPrice 사용
     }
 
     // =================================================================
@@ -118,21 +119,21 @@ public class EgController {
     // =================================================================
     // 6. 대금 결제 등록
     // =================================================================
-    @PostMapping("/insertpayment") // ✅ URL도 명확히 변경
-    public Long insertPayment(@RequestBody PaymentVO paymentVO) {
-        return paymentSvc.insertPayment(paymentVO); // ✅ insertPay → insertPayment
+    @PostMapping("/insertpayment")
+    public String insertPayment(@RequestBody PaymentVO paymentVO) {
+        return paymentSvc.insertPayment(paymentVO);
     }
 
     // =================================================================
     // 7. 납부 내역 조회
     // =================================================================
-    @GetMapping("/paymentlist") // ✅ URL도 명확히 변경
+    @GetMapping("/paymentlist")
     public List<Map<String, Object>> selectPaymentList(
             @RequestParam(required = false) String paymentNo,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate
     ) {
-        return paymentSvc.selectPaymentList(paymentNo, startDate, endDate); // ✅ getPayList → selectPaymentList
+        return paymentSvc.selectPaymentList(paymentNo, startDate, endDate);
     }
 
     // =================================================================
@@ -143,9 +144,11 @@ public class EgController {
         return orderSvc.getBranchDashData();
     }
 
-    //결제 대기중인 주문건 목록
+    // =================================================================
+    // 9. 결제 대기중인 주문건 목록
+    // =================================================================
     @GetMapping("/pendingorders")
     public List<SalesOrderVO> selectPendingOrders() {
-    return paymentSvc.selectPendingOrders();
-}
+        return paymentSvc.selectPendingOrders();
+    }
 }

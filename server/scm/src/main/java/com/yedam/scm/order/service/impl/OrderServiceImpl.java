@@ -48,7 +48,7 @@ public class OrderServiceImpl implements OrderService {
                 detail.setOrderId(orderVO.getOrderId());
 
                 // 상세 합계 계산 (수량 * 단가)
-                detail.setTotalPrice(detail.getProdPrice() * detail.getOrderQty());
+                detail.setTotalUnitPrice(detail.getProdUnitPrice() * detail.getOrderQty());
 
                 // 상세 저장
                 orderMapper.insertOrderDetail(detail);

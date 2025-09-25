@@ -18,6 +18,7 @@ public class SalesOrderVO {
   Date sendDate;
   Date paydueDate;
   Long returnPrice;
+  String dataType; // 'ORDER' or 'RETURN'
   
   // 추가된 대표 제품명 필드
     private String prodName;

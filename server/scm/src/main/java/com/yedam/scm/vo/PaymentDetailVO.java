@@ -9,5 +9,6 @@ public class PaymentDetailVO {
     private String payId;       
     private String orderId;
     private int totalPrice;
+    private int returnPrice;   
 
 }

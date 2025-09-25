@@ -71,21 +71,27 @@
       <Column field="prodName" header="제품명" />
       <Column field="spec" header="규격" />
       <Column field="unit" header="단위" />
-      <Column field="prodPrice" header="제품가격">
+
+      <!-- ✅ 제품 단가 컬럼 -->
+      <Column field="prodUnitPrice" header="제품단가">
         <template #body="slotProps">
-          {{ formatCurrency(slotProps.data.prodPrice) }}
+          {{ formatCurrency(slotProps.data.prodUnitPrice) }}
         </template>
       </Column>
+
       <Column field="returnQty" header="반품수량" />
+
+      <!-- ✅ 총액 계산 (단가 × 수량) -->
       <Column field="returnTotal" header="총액">
         <template #body="slotProps">
-          {{ formatCurrency(slotProps.data.prodPrice * slotProps.data.returnQty) }}
+          {{ formatCurrency(slotProps.data.prodUnitPrice * slotProps.data.returnQty) }}
         </template>
       </Column>
+
       <Column field="returnWhy" header="사유" />
       <Column field="returnStatus" header="상태" />
 
-
+      <!-- 제품 상태 확인 버튼 -->
       <Column header="" style="width:130px; text-align:center;">
         <template #body="slotProps">
           <Button
@@ -100,7 +106,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
 // PrimeVue 컴포넌트
@@ -111,12 +117,22 @@ import DatePicker from 'primevue/datepicker'
 import Select from 'primevue/select'
 import InputText from 'primevue/inputtext'
 
+// 날짜 포맷 함수 (YYYY-MM-DD)
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 // 검색 필터
 const filters = ref({
   startDate: null,
   endDate: null,
   prodName: '',
-  returnStatus: null,
+  returnStatus: '',
   returnNo: ''
 })
 
@@ -137,18 +153,28 @@ const formatCurrency = (value) => {
 // 반품 목록 조회
 const searchReturns = async () => {
   try {
-  const { data } = await axios.get('/api/returnlist', {
-    params: {
-      startDate: filters.value.startDate,
-      endDate: filters.value.endDate,
-      returnStatus: filters.value.returnStatus,
-      prodName: filters.value.prodName,
-      returnNo: filters.value.returnNo  
-    }
-  })
+    const { data } = await axios.get('/api/returnlist', {
+      params: {
+        startDate: filters.value.startDate,
+        endDate: filters.value.endDate,
+        returnStatus: filters.value.returnStatus,
+        prodName: filters.value.prodName,
+        returnNo: filters.value.returnNo  
+      }
+    })
 
     console.log('반품 목록 응답:', data)
-    returnList.value = Array.isArray(data) ? data : (data.items || [])
+
+    // 서버 데이터 가공
+    returnList.value = (Array.isArray(data) ? data : (data.items || [])).map(item => ({
+      ...item,
+      // ✅ 단가 컬럼 매핑
+      prodUnitPrice: item.prodUnitPrice || 0,
+      // ✅ 날짜를 YYYY-MM-DD 형식으로 변환
+      returnDate: formatDate(item.returnDate),
+      // ✅ 상태값 REQUEST → 대기 치환
+      returnStatus: item.returnStatus === 'REQUEST' ? '대기' : item.returnStatus
+    }))
   } catch (err) {
     console.error('반품 목록 조회 오류:', err)
   }
@@ -160,7 +186,7 @@ const resetFilters = () => {
     startDate: null,
     endDate: null,
     prodName: '',
-    returnStatus: null,
+    returnStatus: '', 
     returnNo: ''
   }
 }
@@ -173,6 +199,11 @@ const exportExcel = () => console.log('엑셀 다운로드 기능 호출')
 const checkProductStatus = (data) => {
   console.log('제품 상태 확인 모달', data)
 }
+
+// 페이지 진입 시 자동으로 반품 목록 조회
+onMounted(() => {
+  searchReturns();
+});
 </script>
 
 <style scoped>
