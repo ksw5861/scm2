@@ -24,6 +24,9 @@ public interface PayService {
     /** 결제대기중인 주문건 + 반품 목록 조회 */
     List<SalesOrderVO> selectPendingOrders();
 
-    /** 주문/반품 상태 COMPLETE 업데이트 */
+    /** 주문 상태 COMPLETE 업데이트 (여러건) */
     void updateOrderStatusToComplete(List<String> orderId);
+
+    /** 반품 상태 COMPLETE 업데이트 (단일건) */
+    void updateReturnStatusToComplete(List<String> returnId);
 }

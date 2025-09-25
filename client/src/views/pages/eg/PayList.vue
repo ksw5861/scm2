@@ -97,9 +97,11 @@
         </Column>
 
         <!-- 납부금 -->
-        <Column field="PAY_AMOUNT" header="납부금액" style="width:120px; text-align:right;">
+        <Column field="PAY_AMOUNT" header="납부금액">
           <template #body="slotProps">
-            {{ formatCurrency(slotProps.data.PAY_AMOUNT) }}
+            <span :class="{ 'negative': slotProps.data.PAY_AMOUNT < 0 }">
+              {{ formatCurrency(slotProps.data.PAY_AMOUNT) }}
+            </span>
           </template>
         </Column>
 

@@ -13,6 +13,7 @@
 
     <!-- 검색 영역 -->
     <div class="filter-section">
+      <!-- 주문일자 -->
       <div class="filter-group">
         <span class="filter-label">주문일자</span>
         <DatePicker v-model="filters.startDate" placeholder="시작일" dateFormat="yy-mm-dd" showIcon />
@@ -20,11 +21,13 @@
         <DatePicker v-model="filters.endDate" placeholder="종료일" dateFormat="yy-mm-dd" showIcon />
       </div>
 
+      <!-- 제품명 -->
       <div class="filter-group">
         <span class="filter-label">제품명</span>
         <InputText v-model="filters.prodName" placeholder="제품명 검색" />
       </div>
 
+      <!-- 주문 상태 -->
       <div class="filter-group">
         <span class="filter-label">주문상태</span>
         <div class="status-buttons">
@@ -49,9 +52,9 @@
             @click="() => { filters.status = '배송완료'; fetchOrders(); }" 
           />
         </div>
-
       </div>
 
+      <!-- 주문번호 -->
       <div class="filter-group">
         <span class="filter-label">주문번호</span>
         <InputText v-model="filters.orderId" placeholder="주문번호 검색" />
@@ -66,6 +69,7 @@
           :value="orders"
           selectionMode="single"
           v-model:selection="selectedOrder"
+          dataKey="orderId"     
           paginator
           :rows="10"
           responsiveLayout="scroll"
@@ -77,12 +81,9 @@
           <Column field="orderDate" header="주문일자" style="width:140px; text-align:center;" />
           <Column field="prodName" header="대표 제품명" style="width:200px;" />
           
-          <!-- ✅ 주문총액도 totalUnitPrice 사용 -->
           <Column field="totalPrice" header="주문총액(원)" style="width:150px; text-align:right;">
             <template #body="slotProps">
               {{ formatCurrency(slotProps.data.totalPrice) }}
-
-
             </template>
           </Column>
 
@@ -90,9 +91,6 @@
           <Column field="status" header="상태" style="width:120px; text-align:center;" />
         </DataTable>
       </div>
-     
-
-
 
       <!-- 우측 주문 상세 -->
       <div class="order-detail-table">
@@ -122,7 +120,6 @@
             </template>
           </Column>
         </DataTable>
-
 
         <!-- 합계 금액 -->
         <div class="total-footer">
@@ -154,13 +151,13 @@ const filters = ref({
 // ===== 주문 목록 =====
 const orders = ref([])
 
-// ===== 선택된 주문 (좌측 목록 → 우측 상세) =====
+// ===== 선택된 주문 =====
 const selectedOrder = ref(null)
 
 // ===== 주문 상세 =====
 const orderDetails = ref([])
 
-// ===== 합계 =====
+// ===== 합계 계산 =====
 const detailTotal = computed(() => {
   return orderDetails.value.reduce((acc, item) => acc + (item.total || 0), 0)
 })
@@ -170,7 +167,6 @@ const formatCurrency = (value) => {
   if (value === null || value === undefined) return '0 원'
   return value.toLocaleString('ko-KR') + ' 원'
 }
-
 
 // ===== 날짜 포맷 =====
 const formatDate = (dateString) => {
@@ -182,20 +178,18 @@ const formatDate = (dateString) => {
   return `${year}-${month}-${day}`
 }
 
-// 날짜 더하기
+// ===== 날짜 더하기 =====
 const addDays = (dateString, days) => {
   if (!dateString) return '-'
   const date = new Date(dateString)
   date.setDate(date.getDate() + days)
-
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-
   return `${year}-${month}-${day}`
 }
 
-// API 날짜 포맷
+// ===== API 날짜 포맷 =====
 const formatDateForAPI = (date) => {
   if (!date) return null
   const year = date.getFullYear()
@@ -217,18 +211,21 @@ const fetchOrders = async () => {
       }
     })
 
-    // 서버 데이터를 화면 출력용으로 변환
+
+
+    // 목록 데이터 세팅
     orders.value = data.map(item => ({
       orderId: item.orderId,
       orderDate: formatDate(item.orderDate),
       prodName: item.prodName || '-',
-
-      // ✅ totalUnitPrice 필드 사용
       totalPrice: item.totalPrice || 0,
-
       deliveryDate: addDays(item.orderDate, 2),
       status: item.status || '-'
     }))
+
+    // 목록 새로고침 시 선택 초기화
+    selectedOrder.value = null
+    orderDetails.value = []
   } catch (error) {
     console.error('주문 목록 조회 오류:', error)
     alert('주문 목록 조회 중 오류가 발생했습니다.')
@@ -237,14 +234,14 @@ const fetchOrders = async () => {
 
 // ===== 주문 상세 조회 =====
 const fetchOrderDetail = async (orderId) => {
+  console.log('상세 조회 호출됨:', orderId)
   try {
     const { data } = await axios.get('/api/orderdetail', {
       params: { orderId }
     })
 
+    console.log('상세 조회 응답 데이터:', data)
 
-
-    // ✅ prodUnitPrice를 사용하여 합계 계산
     orderDetails.value = data.map(item => ({
       ...item,
       total: item.prodUnitPrice * item.orderQty
@@ -256,13 +253,17 @@ const fetchOrderDetail = async (orderId) => {
 }
 
 // ===== 선택된 주문 변경 감시 =====
-watch(selectedOrder, (newOrder) => {
-  if (newOrder && newOrder.orderId) {
-    fetchOrderDetail(newOrder.orderId)
-  } else {
-    orderDetails.value = []
+watch(
+  () => selectedOrder.value,
+  (newOrder) => {
+    console.log('선택된 주문 변경 감지:', newOrder)
+    if (newOrder && newOrder.orderId) {
+      fetchOrderDetail(newOrder.orderId)
+    } else {
+      orderDetails.value = []
+    }
   }
-})
+)
 
 // ===== 초기화 =====
 const resetFilters = () => {
@@ -322,8 +323,8 @@ onMounted(() => {
 }
 
 .status-buttons .selected {
-  background: #007ad9;
-  color: white;
+  background: #007ad9 !important;
+  color: white !important;
 }
 
 .content-section {
