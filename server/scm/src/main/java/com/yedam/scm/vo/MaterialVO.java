@@ -1,7 +1,6 @@
 package com.yedam.scm.vo;
 
 import lombok.Data;
-import java.util.Date;
 
 @Data
 public class MaterialVO {
@@ -10,7 +9,6 @@ public class MaterialVO {
     private String matType;         // 자재유형
     private String matStoreCond;    // 보관조건
     private Long matUnitConv;       // 단위환산
-    private Date matExpireDate;     // 유효기간
     private Long matUnitPrice;      // 단가
     private Long leadTime;          // 리드타임
     private Long safeStock;         // 안전재고

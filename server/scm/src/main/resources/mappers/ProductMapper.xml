@@ -10,8 +10,11 @@
     SELECT 
       PROD_ID,
       PROD_NAME,
+      PROD_STORE_COND,
       STATUS,
-      UNIT
+      UNIT,
+      EXP,
+      PROD_UNIT_PRICE
     FROM PRODUCT
     <where>
       <if test="prodId != null and prodId != ''">
@@ -53,20 +56,24 @@
     INSERT INTO PRODUCT (
       PROD_ID,
       PROD_NAME,
-      PROD_EXPIRE_DATE,
+      PROD_STORE_COND,
       SAFE_STOCK,
       STATUS,
       SPEC,
-      UNIT
+      UNIT,
+      EXP,
+      PROD_UNIT_PRICE
     )
     VALUES (
-      next_code('PROD'),
+      next_code('P'),
       #{prodName},
-      #{prodExpireDate},
+      #{prodStoreCond},
       #{safeStock},
       #{status},
       #{spec},
-      #{unit}
+      #{unit},
+      #{exp},
+      #{prodUnitPrice}
     )
   </insert>
 
@@ -77,11 +84,13 @@
     UPDATE PRODUCT
     SET 
       PROD_NAME = #{prodName},
-      PROD_EXPIRE_DATE = #{prodExpireDate},
+      PROD_STORE_COND = #{prodStoreCond},
       SAFE_STOCK = #{safeStock},
       STATUS = #{status},
       SPEC = #{spec},
-      UNIT = #{unit}
+      UNIT = #{unit},
+      EXP = #{exp},
+      PROD_UNIT_PRICE = #{prodUnitPrice}
     WHERE PROD_ID = #{prodId}
   </update>
 </mapper>
