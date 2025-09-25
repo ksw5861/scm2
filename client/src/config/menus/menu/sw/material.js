@@ -1,6 +1,8 @@
+import { useIcon } from '@/composables/useIcon';
+
 const Material = {
   label: '자재 관리',
-  icon: 'pi pi-fw pi-home',
+  icon: useIcon('info'),
   to: '/material',
   roles: ['admin']
 };

@@ -1,16 +1,58 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
 import axios from 'axios';
-import InputText from 'primevue/inputtext';
+import { useIcon } from '@/composables/useIcon';
+import { useAppToast } from '@/composables/useAppToast';
+import { useDateFormat } from '@/composables/useFormat'; // 프로젝트에 있는 경우 자동 사용
 
-const searchName = ref('');
-const searchMatType = ref('');
-const searchMatStoreCond = ref('');
-const searchMatId = ref('');
-const matList = ref([]);
-const selected = ref(null);
+const route = useRoute();
+const { toast } = useAppToast();
 
-const form = ref({
+// icons
+const iconList = useIcon('list');
+const iconAdd = useIcon('add');
+const iconEdit = useIcon('edit');
+const iconInfo = useIcon('info');
+const iconBox = useIcon('box');
+const iconId = useIcon('id');
+
+// breadcrumb (same pattern as 사원 페이지)
+const breadcrumbHome = { icon: useIcon('home'), to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter((r) => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  const parentLabel = current.meta?.breadcrumb?.parent || '기준 정보';
+  const currentLabel = current.name || '';
+  return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
+});
+
+// 검색 파라미터
+const searchParams = reactive({
+  matId: '',
+  matName: '',
+  matType: '',
+  matStoreCond: ''
+});
+
+// 목록 / 선택 / 상세 / 폼 상태
+const materials = ref([]);
+const selectedMaterial = ref(null);
+const detail = reactive({
+  matId: '',
+  matName: '',
+  matType: '',
+  matStoreCond: '',
+  matUnitConv: null,
+  matUnitPrice: '',
+  leadTime: null,
+  safeStock: null,
+  status: '',
+  spec: '',
+  unit: ''
+});
+const form = reactive({
   matId: '',
   matName: '',
   matType: '',
@@ -23,301 +65,367 @@ const form = ref({
   safeStock: '',
   status: ''
 });
-const mode = ref('view'); // default
 
+const mode = ref('create'); // create | view | edit
+const loading = ref(false);
+
+// pagination (kept simple to match original)
+const page = ref({ page: 1, size: 10, totalElements: 0 });
+
+// DTable columns
+const columns = [
+  { label: '자재ID', field: 'matId', sortable: true },
+  { label: '자재명', field: 'matName', sortable: true }
+];
+
+// 날짜 포맷 (useDateFormat 있으면 사용, 없으면 fallback)
+const tryUseDateFormat = typeof useDateFormat === 'function';
+
+// 유틸: 서버에서 오는 ISO 날짜를 YYYY-MM-DD 로 바꿔주는 함수
+const toYYYYMMDD = (d) => {
+  if (!d) return '';
+  const dt = new Date(d);
+  if (isNaN(dt)) return String(d).slice(0, 10);
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+// API: 목록
 const fetchList = async () => {
+  loading.value = true;
   try {
-    const res = await axios.get('/api/material', {
-      params: {
-        matName: searchName.value || undefined,
-        matType: searchMatType.value || undefined,
-        matStoreCond: searchMatStoreCond.value || undefined,
-        matId: searchMatId.value || undefined
-      }
-    });
-    matList.value = Array.isArray(res.data) ? res.data : (res.data?.items ?? []);
+    const params = {
+      matId: searchParams.matId || undefined,
+      matName: searchParams.matName || undefined,
+      matType: searchParams.matType || undefined,
+      matStoreCond: searchParams.matStoreCond || undefined,
+      page: page.value.page,
+      size: page.value.size
+    };
+    const res = await axios.get('/api/material', { params });
+    // 서버 응답 구조에 따라 안전하게 처리
+    const data = Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.items ?? []);
+    materials.value = data;
+    page.value.totalElements = res.data?.page?.totalElements ?? materials.value.length;
+    // 선택된 항목이 있으면 목록 갱신 후 다시 선택 유지
+    if (selectedMaterial.value) {
+      const found = materials.value.find((m) => (m.matId ?? m.MAT_ID) === (selectedMaterial.value.matId ?? selectedMaterial.value.MAT_ID));
+      if (found) selectedMaterial.value = found;
+      else handleUnselect();
+    }
   } catch (e) {
     console.error('fetchList error', e);
-    alert('자재 목록을 불러오는데 실패했습니다.');
+    toast('error', '조회 실패', '자재 목록 조회 중 오류가 발생했습니다.');
+  } finally {
+    loading.value = false;
   }
 };
 
-const fetchDetail = async (matId) => {
-  if (!matId) return;
+// API: 상세
+const fetchDetail = async (id) => {
+  if (!id) return;
   try {
-    const res = await axios.get(`/api/material/${matId}`);
+    const res = await axios.get(`/api/material/${id}`);
     const data = Array.isArray(res.data) ? res.data[0] : res.data;
     if (data) {
-      selected.value = data;
-      form.value = {
+      // detail에 안전하게 채워넣어 Vue 반응성 유지
+      Object.assign(detail, {
         matId: data.matId ?? data.MAT_ID ?? '',
         matName: data.matName ?? data.MAT_NAME ?? '',
         matType: data.matType ?? data.MAT_TYPE ?? '',
-        spec: data.spec ?? data.SPEC ?? '',
-        unit: data.unit ?? data.UNIT ?? '',
         matStoreCond: data.matStoreCond ?? data.MAT_STORE_COND ?? '',
-        matUnitConv: data.matUnitConv ?? data.MAT_UNIT_CONV ?? '',
-        leadTime: data.leadTime ?? data.LEAD_TIME ?? null,
+        matUnitConv: data.matUnitConv ?? data.MAT_UNIT_CONV ?? null,
         matUnitPrice: data.matUnitPrice ?? data.MAT_UNIT_PRICE ?? '',
-        safeStock: data.safeStock ?? data.SAFE_STOCK ?? '',
-        status: data.status ?? data.STATUS ?? ''
-      };
-      mode.value = 'view';
+        leadTime: data.leadTime ?? data.LEAD_TIME ?? null,
+        safeStock: data.safeStock ?? data.SAFE_STOCK ?? null,
+        status: data.status ?? data.STATUS ?? '',
+        spec: data.spec ?? data.SPEC ?? '',
+        unit: data.unit ?? data.UNIT ?? ''
+      });
+      // 폼도 동기화 (선택시 바로 폼에 채워짐)
+      Object.assign(form, detail);
     } else {
-      selected.value = null;
-      mode.value = 'view';
+      // 비어있으면 초기화
+      Object.keys(detail).forEach((k) => (detail[k] = ''));
+      Object.keys(form).forEach((k) => (form[k] = ''));
     }
   } catch (e) {
     console.error('fetchDetail error', e);
-    alert('상세 정보를 불러오는데 실패했습니다.');
+    toast('error', '조회 실패', '자재 상세 조회 중 오류가 발생했습니다.');
   }
 };
 
-const onRowClick = (row) => fetchDetail(row.matId ?? row.MAT_ID);
-const onSearch = () => fetchList();
-const onReset = () => {
-  searchMatId.value = '';
-  searchMatType.value = '';
-  searchMatStoreCond.value = '';
-  searchName.value = '';
-  fetchList();
-};
-
-const newMaterial = () => {
-  form.value = {
-    matId: '',
-    matName: '',
-    matType: '',
-    spec: '',
-    unit: '',
-    matStoreCond: '',
-    matUnitConv: '',
-    leadTime: null,
-    matUnitPrice: '',
-    safeStock: '',
-    status: ''
-  };
-  selected.value = null;
-  mode.value = 'new';
-};
-
-const editMaterial = () => {
-  if (!selected.value) return alert('수정할 항목을 선택하세요.');
-  mode.value = 'edit';
-};
-
-const saveMaterial = async () => {
-  if (!form.value.matName) return alert('자재명을 입력하세요.');
-  const payload = { ...form.value };
+// CRUD: 등록
+const addMaterial = async () => {
+  // 간단 유효성
+  if (!form.matName) return toast('warn', '등록 실패', '자재명을 입력하세요.');
+  if (!form.matUnitPrice) {
+    /* 단가 필수가 아니면 주석 처리 */
+  }
   try {
-    if (mode.value === 'new') {
-      await axios.post('/api/material', payload);
+    // matId는 서버에서 생성 (Mapper XML: next_code('MAT'))
+    const payload = { ...form };
+    delete payload.matId;
+    const res = await axios.post('/api/material', payload);
+    if (res.status === 200 || res.status === 201) {
+      toast('success', '등록 성공', '자재가 등록되었습니다.');
       await fetchList();
-      mode.value = 'view';
-      alert('등록되었습니다.');
-    } else if (mode.value === 'edit') {
-      await axios.put(`/api/material/${form.value.matId}`, payload);
-      await fetchList();
-      await fetchDetail(form.value.matId);
-      alert('수정되었습니다.');
+      // 서버가 생성한 ID가 응답에 있으면 상세로 이동
+      const newId = res.data?.matId ?? res.data?.MAT_ID ?? res.data?.employeeId ?? null;
+      if (newId) {
+        await fetchDetail(newId);
+        mode.value = 'view';
+        selectedMaterial.value = materials.value.find((m) => (m.matId ?? m.MAT_ID) === newId) ?? null;
+      } else {
+        // 그냥 초기화 폼
+        Object.keys(form).forEach((k) => (form[k] = ''));
+        mode.value = 'create';
+      }
     }
   } catch (e) {
-    console.error('saveMaterial error', e);
-    alert('저장에 실패했습니다.');
+    console.error('addMaterial error', e);
+    toast('error', '등록 실패', '자재 등록 중 오류가 발생했습니다.');
   }
 };
 
-const deleteMaterial = async () => {
-  const matId = selected.value?.matId ?? selected.value?.MAT_ID ?? form.value.matId;
-  if (!matId) return alert('삭제할 항목을 선택하세요.');
-  if (!confirm(`자재 [${matId}]를 삭제하시겠습니까?`)) return;
-
+// CRUD: 수정
+const modifyMaterial = async () => {
+  if (!detail.matId) return toast('warn', '수정 실패', '수정할 자재를 선택하세요.');
   try {
-    await axios.delete(`/api/material/${matId}`);
-    alert('삭제되었습니다.');
-    selected.value = null;
-    form.value = {
-      matId: '',
-      matName: '',
-      matType: '',
-      spec: '',
-      unit: '',
-      matStoreCond: '',
-      matUnitConv: '',
-      leadTime: null,
-      matUnitPrice: '',
-      safeStock: '',
-      status: ''
-    };
-    mode.value = 'view';
+    const payload = { ...form };
+    const res = await axios.put(`/api/material/${detail.matId}`, payload);
+    if (res.status === 200) {
+      toast('success', '수정 성공', '자재가 수정되었습니다.');
+      await fetchList();
+      await fetchDetail(detail.matId);
+      mode.value = 'view';
+    }
+  } catch (e) {
+    console.error('modifyMaterial error', e);
+    toast('error', '수정 실패', '자재 수정 중 오류가 발생했습니다.');
+  }
+};
+
+// CRUD: 삭제
+const deleteMaterial = async () => {
+  if (!detail.matId) return toast('warn', '삭제 실패', '삭제할 자재를 선택하세요.');
+  if (!confirm(`자재 [${detail.matId}]를 삭제하시겠습니까?`)) return;
+  try {
+    await axios.delete(`/api/material/${detail.matId}`);
+    toast('success', '삭제 성공', '자재가 삭제되었습니다.');
+    // 초기화 / 목록 갱신
+    Object.keys(detail).forEach((k) => (detail[k] = ''));
+    Object.keys(form).forEach((k) => (form[k] = ''));
+    selectedMaterial.value = null;
+    mode.value = 'create';
     await fetchList();
   } catch (e) {
     console.error('deleteMaterial error', e);
-    alert('삭제에 실패했습니다.');
+    toast('error', '삭제 실패', '자재 삭제 중 오류가 발생했습니다.');
   }
 };
 
-const cancelEdit = () => {
-  if (mode.value === 'new') {
-    form.value = {
-      matId: '',
-      matName: '',
-      matType: '',
-      spec: '',
-      unit: '',
-      matStoreCond: '',
-      matUnitConv: '',
-      leadTime: null,
-      matUnitPrice: '',
-      safeStock: '',
-      status: ''
-    };
-    selected.value = null;
-    mode.value = 'view';
-  } else if (mode.value === 'edit') {
-    if (selected.value) fetchDetail(selected.value.matId ?? selected.value.MAT_ID);
-    mode.value = 'view';
+// 이벤트 핸들러
+const handleRowSelect = async (row) => {
+  selectedMaterial.value = row;
+  const id = row.matId ?? row.MAT_ID;
+  await fetchDetail(id);
+  mode.value = 'view';
+};
+const handleUnselect = () => {
+  selectedMaterial.value = null;
+  Object.keys(detail).forEach((k) => (detail[k] = ''));
+  Object.keys(form).forEach((k) => (form[k] = ''));
+  mode.value = 'create';
+};
+const handleEdit = () => {
+  // 폼은 이미 detail에서 동기화되므로 모드 변경만
+  mode.value = 'edit';
+};
+const handleResetForm = () => {
+  Object.keys(form).forEach((k) => (form[k] = ''));
+  // if viewing an item, keep details but clear form? We'll refill on fetchDetail
+  if (mode.value === 'view' && detail.matId) Object.assign(form, detail);
+};
+
+// 검색 관련 (same look & behaviour as employee page)
+const handleSearch = () => {
+  // if editing, warn user
+  if (mode.value === 'edit') {
+    if (!confirm('현재 수정 중입니다. 조회하면 수정 중인 내용은 저장되지 않습니다. 계속하시겠습니까?')) return;
   }
+  page.value.page = 1;
+  selectedMaterial.value = null;
+  Object.keys(detail).forEach((k) => (detail[k] = ''));
+  Object.keys(form).forEach((k) => (form[k] = ''));
+  mode.value = 'create';
+  fetchList();
+};
+const handleReset = () => {
+  Object.assign(searchParams, { matId: '', matName: '', matType: '', matStoreCond: '' });
+  handleSearch();
 };
 
 onMounted(() => fetchList());
 </script>
 
 <template>
-  <div class="container p-4">
-    <h2 class="mb-3">자재 관리</h2>
+  <Fluid>
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
 
-    <div class="mb-4 flex gap-2 items-center">
-      <InputText v-model="searchName" placeholder="자재명" class="h-10" />
-      <InputText v-model="searchMatType" placeholder="자재유형" class="h-10" />
-      <InputText v-model="searchMatStoreCond" placeholder="보관조건" class="h-10" />
-      <InputText v-model="searchMatId" placeholder="자재코드" class="h-10" />
-      <button class="btn" @click="onSearch">조회</button>
-      <button class="btn-secondary" @click="onReset">초기화</button>
-      <div class="ml-auto flex gap-2">
-        <button class="btn" @click="newMaterial">신규</button>
+    <SearchCard title="자재 검색" @search="handleSearch" @reset="handleReset">
+      <div class="flex flex-wrap w-full">
+        <div class="p-2 w-full md:w-1/4">
+          <InputGroup>
+            <InputGroupAddon><i :class="iconBox" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchParams.matName" inputId="matName" />
+              <label for="matName">자재명</label>
+            </IftaLabel>
+          </InputGroup>
+        </div>
+
+        <div class="p-2 w-full md:w-1/4">
+          <InputGroup>
+            <InputGroupAddon><i :class="iconId" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchParams.matId" inputId="matId" />
+              <label for="matId">자재ID</label>
+            </IftaLabel>
+          </InputGroup>
+        </div>
+
+        <div class="p-2 w-full md:w-1/4">
+          <InputGroup>
+            <InputGroupAddon><i :class="iconBox" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchParams.matType" inputId="matType" />
+              <label for="matType">자재유형</label>
+            </IftaLabel>
+          </InputGroup>
+        </div>
+
+        <div class="p-2 w-full md:w-1/4">
+          <InputGroup>
+            <InputGroupAddon><i :class="iconBox" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchParams.matStoreCond" inputId="matStoreCond" />
+              <label for="matStoreCond">보관조건</label>
+            </IftaLabel>
+          </InputGroup>
+        </div>
       </div>
-    </div>
+    </SearchCard>
 
-    <div class="grid grid-cols-2 gap-6">
+    <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
       <!-- 목록 -->
-      <div>
-        <h3>자재 목록</h3>
-        <table class="w-full border-collapse">
-          <thead>
-            <tr class="text-left border-b">
-              <th class="py-2">MAT_ID</th>
-              <th class="py-2">자재명</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="row in matList" :key="row.matId ?? row.MAT_ID" @click="onRowClick(row)" class="cursor-pointer hover:bg-gray-100">
-              <td class="py-2">{{ row.matId ?? row.MAT_ID }}</td>
-              <td class="py-2">{{ row.matName ?? row.MAT_NAME }}</td>
-            </tr>
-          </tbody>
-        </table>
-        <div v-if="!matList.length" class="text-sm text-gray-500 mt-2">데이터가 없습니다.</div>
+      <div class="w-full xl:w-5/12">
+        <div class="card flex flex-col">
+          <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+            <div class="flex items-center gap-4">
+              <span :class="[iconList, 'text-xl']"></span>
+              자재 목록
+            </div>
+            <div class="text-sm text-gray-400">
+              총 <span class="font-semibold text-sm text-gray-700">{{ page.totalElements || materials.length }}</span> 건
+            </div>
+          </div>
+
+          <Divider />
+
+          <DTable :columns="columns" :data="materials" :page="page" :loading="loading" dataKey="matId" v-model:selected="selectedMaterial" @row-select="handleRowSelect" @row-unselect="handleUnselect" />
+        </div>
       </div>
 
-      <!-- 상세 -->
-      <div>
-        <h3>상세 / 편집</h3>
-        <div class="flex justify-end gap-2 mb-2">
-          <button v-if="mode === 'view' && selected" class="btn" @click="editMaterial">수정</button>
-          <button v-if="mode === 'view' && selected" class="btn-danger" @click="deleteMaterial">삭제</button>
-          <button v-if="mode === 'edit' || mode === 'new'" class="btn" @click="saveMaterial">저장</button>
-          <button v-if="mode === 'edit' || mode === 'new'" class="btn-secondary" @click="cancelEdit">취소</button>
-        </div>
+      <!-- 상세 / 폼 -->
+      <div class="w-full xl:w-7/12">
+        <div class="card flex flex-col">
+          <div class="flex items-center justify-between h-10">
+            <div class="font-semibold text-xl flex items-center gap-4">
+              <span :class="[mode === 'create' ? iconAdd : mode === 'edit' ? iconEdit : iconInfo, 'text-xl']"></span>
+              {{ mode === 'create' ? '신규 자재 등록' : mode === 'edit' ? '자재 정보 수정' : '자재 상세 정보' }}
+            </div>
 
-        <div class="grid gap-2">
-          <div>
-            <label class="text-sm block mb-1">자재코드</label>
-            <InputText v-model="form.matId" class="w-full h-10" :disabled="true" placeholder="자재코드는 자동 생성됩니다" />
+            <div class="flex gap-2">
+              <!-- 버튼 집합: 상황에 따라 동작 -->
+              <Btn v-if="mode === 'create'" icon="add" @click="addMaterial" outlined>등록</Btn>
+              <Btn v-if="mode === 'edit'" icon="save" @click="modifyMaterial" outlined>저장</Btn>
+              <Btn v-if="mode === 'view' && detail.matId" icon="edit" color="warn" @click="handleEdit" outlined>수정</Btn>
+              <Btn v-if="mode !== 'create' && detail.matId" icon="delete" color="danger" @click="deleteMaterial" outlined>삭제</Btn>
+              <Btn icon="refresh" color="secondary" @click="handleResetForm" outlined>초기화</Btn>
+            </div>
           </div>
-          <div>
-            <label class="text-sm block mb-1">자재명</label>
-            <InputText v-model="form.matName" class="w-full h-10" placeholder="자재명 (필수)" />
+
+          <Divider />
+
+          <div class="w-full flex flex-row mb-2 gap-2">
+            <div class="flex-1 ml-6 flex flex-col justify-center gap-0">
+              <div class="font-light text-xs flex items-center gap-4 text-gray-500">
+                {{ detail.matId || (mode === 'create' ? '(신규)' : '') }}
+              </div>
+              <div class="font-semibold text-lg flex items-center gap-4">
+                <InputText v-model="form.matName" placeholder="자재명" class="w-full" />
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="text-sm block mb-1">자재유형</label>
-            <InputText v-model="form.matType" class="w-full h-10" placeholder="자재유형" />
-          </div>
-          <div>
-            <label class="text-sm block mb-1">규격</label>
-            <InputText v-model="form.spec" class="w-full h-10" placeholder="규격" />
-          </div>
-          <div>
-            <label class="text-sm block mb-1">단위</label>
-            <InputText v-model="form.unit" class="w-full h-10" placeholder="단위" />
-          </div>
-          <div>
-            <label class="text-sm block mb-1">보관조건</label>
-            <InputText v-model="form.matStoreCond" class="w-full h-10" placeholder="보관조건" />
-          </div>
-          <div>
-            <label class="text-sm block mb-1">단위환산</label>
-            <InputText v-model="form.matUnitConv" class="w-full h-10" placeholder="단위환산" />
-          </div>
-          <div>
-            <label class="text-sm block mb-1">리드타임</label>
-            <InputText v-model="form.leadTime" class="w-full h-10" placeholder="리드타임" />
-          </div>
-          <div>
-            <label class="text-sm block mb-1">안전재고</label>
-            <InputText v-model="form.safeStock" class="w-full h-10" placeholder="안전재고" />
-          </div>
-          <div>
-            <label class="text-sm block mb-1">상태</label>
-            <InputText v-model="form.status" class="w-full h-10" placeholder="상태" />
-          </div>
-          <div>
-            <label class="text-sm block mb-1">단가</label>
-            <InputText v-model="form.matUnitPrice" class="w-full h-10" placeholder="단가" />
+
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="text-sm block mb-1">자재유형</label>
+              <InputText v-model="form.matType" class="w-full h-10" placeholder="자재유형" />
+            </div>
+
+            <div>
+              <label class="text-sm block mb-1">보관조건</label>
+              <InputText v-model="form.matStoreCond" class="w-full h-10" placeholder="보관조건" />
+            </div>
+
+            <div>
+              <label class="text-sm block mb-1">단위</label>
+              <InputText v-model="form.unit" class="w-full h-10" placeholder="단위" />
+            </div>
+
+            <div>
+              <label class="text-sm block mb-1">규격</label>
+              <InputText v-model="form.spec" class="w-full h-10" placeholder="규격" />
+            </div>
+
+            <div>
+              <label class="text-sm block mb-1">단위환산</label>
+              <InputText v-model="form.matUnitConv" class="w-full h-10" placeholder="단위환산" />
+            </div>
+
+            <div>
+              <label class="text-sm block mb-1">리드타임</label>
+              <InputText v-model="form.leadTime" class="w-full h-10" placeholder="리드타임" />
+            </div>
+
+            <div>
+              <label class="text-sm block mb-1">안전재고</label>
+              <InputText v-model="form.safeStock" class="w-full h-10" placeholder="안전재고" />
+            </div>
+
+            <div>
+              <label class="text-sm block mb-1">상태</label>
+              <InputText v-model="form.status" class="w-full h-10" placeholder="상태" />
+            </div>
+
+            <div>
+              <label class="text-sm block mb-1">단가</label>
+              <InputText v-model="form.matUnitPrice" class="w-full h-10" placeholder="단가" />
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </Fluid>
 </template>
+
 <style scoped>
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-}
-.btn {
-  padding: 6px 12px;
-  background: #2563eb;
-  color: white;
-  border-radius: 4px;
-}
-.btn-secondary {
-  padding: 6px 12px;
-  background: #e5e7eb;
-  color: #111827;
-  border-radius: 4px;
-}
-.btn-danger {
-  padding: 6px 12px;
-  background: #ff0000;
-  color: #ffffff;
-  border-radius: 4px;
-}
-table td,
-table th {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 6px 4px;
-}
-.text-red-600 {
-  color: #dc2626;
-}
-.text-blue-600 {
-  color: #2563eb;
-}
-.text-black {
-  color: #111827;
-}
-.text-gray-600 {
-  color: #4b5563;
+/* 작은 커스터마이즈: 검색 input 기본 너비 제한 (사원 페이지 스타일과 유사) */
+.SearchCard .flex > .p-2 {
+  padding: 0.5rem;
 }
 </style>

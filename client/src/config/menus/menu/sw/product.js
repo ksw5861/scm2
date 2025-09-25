@@ -1,6 +1,8 @@
+import { useIcon } from '@/composables/useIcon';
+
 const Product = {
   label: '제품 관리',
-  icon: 'pi pi-fw pi-home',
+  icon: useIcon('info'),
   to: '/product',
   roles: ['admin']
 };
