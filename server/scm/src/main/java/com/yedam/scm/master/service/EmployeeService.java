@@ -1,5 +1,7 @@
 package com.yedam.scm.master.service;
 
+import java.io.IOException;
+
 import com.yedam.scm.dto.EmployeeListRes;
 import com.yedam.scm.dto.EmployeeSearchDTO;
 import com.yedam.scm.dto.PageDTO;
@@ -13,7 +15,13 @@ public interface EmployeeService {
   // 사원번호로 단건 조회
   EmployeeVO getEmployeeById(String empId);
 
+  // 사원 등록
+  boolean addEmployee(EmployeeVO emp) throws IOException;
+
+  // 사원 정보 수정
+  boolean modifyEmployeeById(EmployeeVO emp) throws IOException;
+
   // 사원번호로 단건 삭제
-  boolean removeEmployeeById(String empId);
+  boolean removeEmployeeById(String empId) throws IOException;
   
 }

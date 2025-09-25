@@ -33,3 +33,7 @@ logging:
       sqltiming: WARN      
     com.zaxxer.hikari: WARN 
 
+file:
+  upload:
+    employee-dir: C:/uploads/employee   # 개발 환경
+    # employee-dir: /home/app/uploads/employee  # 배포 환경
