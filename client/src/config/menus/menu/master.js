@@ -1,5 +1,5 @@
 import employees from './dh/employees';
-//import wareHouse from './dh/wareHouse';
+import wareHouse from './dh/wareHouse';
 import Bom from './sw/bom'; // 기준정보bom
 import material from './sw/material'; // 기준정보자재
 import product from './sw/product'; // 기준정보제품
