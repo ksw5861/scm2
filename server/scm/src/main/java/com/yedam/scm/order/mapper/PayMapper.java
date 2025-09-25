@@ -32,4 +32,5 @@ public interface PayMapper {
 
     // 주문/반품 상태 COMPLETE 일괄 업데이트
     void updateOrderStatusToComplete(@Param("orderId") List<String> orderId);
+    void updateReturnStatusToComplete(List<String> returnId);
 }

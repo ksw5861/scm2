@@ -49,13 +49,26 @@ public class PayServiceImpl implements PayService {
         }
 
         // 3. 주문/반품 상태 COMPLETE 업데이트
-        List<String> orderId = paymentVO.getPaymentDetails().stream()
+        List<String> orderIds = paymentVO.getPaymentDetails().stream()
+                .filter(detail -> "ORDER".equals(detail.getDataType())) // 주문건만
                 .map(PaymentDetailVO::getOrderId)
                 .distinct()
                 .collect(Collectors.toList());
 
-        if (!orderId.isEmpty()) {
-            updateOrderStatusToComplete(orderId);  // ✅ 여기서 바로 호출
+        List<String> returnIds = paymentVO.getPaymentDetails().stream()
+                .filter(detail -> "RETURN".equals(detail.getDataType())) // 반품건만
+                .map(PaymentDetailVO::getOrderId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 주문 상태 COMPLETE
+        if (!orderIds.isEmpty()) {
+            updateOrderStatusToComplete(orderIds);
+        }
+
+        // 반품 상태 COMPLETE
+        if (!returnIds.isEmpty()) {
+            updateReturnStatusToComplete(returnIds);
         }
 
         return payId;
@@ -81,13 +94,17 @@ public class PayServiceImpl implements PayService {
         return payMapper.selectPendingOrders();
     }
 
-    /**
-     * 주문/반품 상태 COMPLETE 업데이트
-     */
     @Override
     public void updateOrderStatusToComplete(List<String> orderId) {
         if (orderId != null && !orderId.isEmpty()) {
             payMapper.updateOrderStatusToComplete(orderId);
+        }
+    }
+
+    @Override
+    public void updateReturnStatusToComplete(List<String> returnId) {
+        if (returnId != null && !returnId.isEmpty()) {
+            payMapper.updateReturnStatusToComplete(returnId);
         }
     }
 }

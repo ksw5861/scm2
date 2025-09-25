@@ -76,6 +76,7 @@
         so.delivery_date,
         so.status,
         NVL(SUM(d.order_qty * d.prod_unit_price), 0) AS totalPrice,
+
         (
             SELECT CASE 
                     WHEN COUNT(*) = 1 THEN MIN(sod2.prod_name)
@@ -84,8 +85,33 @@
             FROM sales_order_detail sod2
             WHERE sod2.order_id = so.order_id
         ) AS prod_name
+
     FROM sales_order so
-    LEFT JOIN sales_order_detail d ON so.order_id = d.order_id
+    LEFT JOIN sales_order_detail d 
+        ON so.order_id = d.order_id
+
+    WHERE 1=1
+      <if test="startDate != null and startDate != ''">
+        AND so.order_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+      </if>
+      <if test="endDate != null and endDate != ''">
+        AND so.order_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+      </if>
+      <if test="status != null and status != ''">
+        AND so.status = #{status}
+      </if>
+      <if test="prodName != null and prodName != ''">
+        AND EXISTS (
+          SELECT 1 
+          FROM sales_order_detail sod3
+          WHERE sod3.order_id = so.order_id
+            AND sod3.prod_name LIKE '%' || #{prodName} || '%'
+        )
+      </if>
+      <if test="orderId != null and orderId != ''">
+        AND so.order_id = #{orderId}
+      </if>
+
     GROUP BY so.order_id, so.order_date, so.delivery_date, so.status
     ORDER BY so.order_date DESC
 </select>

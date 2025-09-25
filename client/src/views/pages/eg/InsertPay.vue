@@ -42,8 +42,10 @@
         columnResizeMode="fit"
         class="order-table"
         :rowClass="rowClass"
+        :sortField="'orderDate'"
+        :sortOrder="-1"
       >
-        <Column selectionMode="multiple" headerStyle="width: 50px"></Column>
+        <Column selectionMode="multiple" headerStyle="width: 50px" />
         <Column field="orderId" header="주문번호" style="width:120px" />
 
         <!-- 주문일자 yyyy-MM-dd -->
@@ -62,22 +64,12 @@
 
         <Column field="prodName" header="제품명" style="width:180px;" />
 
-        <!-- 금액 표시: 반품이면 returnUnitPrice 사용 -->
-        <Column field="prodUnitPrice" header="주문총액(원)" style="width:130px; text-align:right;">
+        <!-- 금액 표시: 반품이면 returnPrice 음수 표시 -->
+        <Column field="totalPrice" header="주문총액(원)" style="width:130px; text-align:right;">
           <template #body="slotProps">
-            <span v-if="slotProps.data.payStatus === 'RETURN'" class="refund-amount">
-              -{{ formatCurrency(slotProps.data.returnUnitPrice) }}
+            <span :class="{ 'refund-price': slotProps.data.totalPrice < 0 }">
+              {{ formatCurrency(slotProps.data.totalPrice) }}
             </span>
-            <span v-else>
-              {{ formatCurrency(slotProps.data.prodUnitPrice) }}
-            </span>
-          </template>
-        </Column>
-
-        <!-- 결제기한 = 주문일 + 180일 -->
-        <Column field="paydueDate" header="결제기한" style="width:120px; text-align:center;">
-          <template #body="slotProps">
-            {{ formatPayDueDate(slotProps.data.orderDate) }}
           </template>
         </Column>
 
@@ -106,15 +98,17 @@ const remainingCredit = ref(0)
 // ===== 주문 목록 조회 =====
 const fetchOrders = async () => {
   try {
-    const res = await axios.get('/api/pendingorders') // 🔹 반품 포함된 전체 주문 조회
+    const res = await axios.get('/api/pendingorders')
     orders.value = res.data || []
 
-    // 주문번호 + 상태 기준 정렬
+    // 날짜 → 주문번호 기준 정렬
     orders.value.sort((a, b) => {
-      if (a.orderId === b.orderId) {
-        return a.payStatus.localeCompare(b.payStatus) // RETURN이 아래쪽으로
+      const da = new Date(a.orderDate)
+      const db = new Date(b.orderDate)
+      if (db.getTime() !== da.getTime()) {
+        return db - da // 날짜 내림차순
       }
-      return a.orderId.localeCompare(b.orderId)
+      return String(b.orderId).localeCompare(String(a.orderId)) // 동일 날짜일 때 주문번호 내림차순
     })
 
     console.log('전체 주문 목록 (납부대기+반품):', orders.value)
@@ -124,31 +118,31 @@ const fetchOrders = async () => {
   }
 }
 
-// ===== 미수금 합계 (반품금액은 자동 차감) =====
+// ===== 전체 미수금 (전체 주문총액 합계 - 반품금액 차감) =====
 const monthSales = computed(() =>
   orders.value.reduce((sum, order) => {
-    const normal = order.payStatus === 'PENDING' ? Number(order.prodUnitPrice || 0) : 0
-    const refund = order.payStatus === 'RETURN' ? Number(order.returnUnitPrice || 0) : 0
+    const normal = order.dataType === 'ORDER' ? Number(order.totalPrice || 0) : 0
+    const refund = order.dataType === 'RETURN' ? Number(order.returnPrice || 0) : 0
     return sum + (normal - refund)
   }, 0)
 )
 
-// ===== 선택된 주문 총합 (반품금액은 자동 차감) =====
+// ===== 선택된 주문 총합 =====
 const selectedTotal = computed(() =>
   selectedOrders.value.reduce((sum, item) => {
-    const normal = item.payStatus === 'PENDING' ? Number(item.prodUnitPrice || 0) : 0
-    const refund = item.payStatus === 'RETURN' ? Number(item.returnUnitPrice || 0) : 0
+    const normal = item.dataType === 'ORDER' ? Number(item.totalPrice || 0) : 0
+    const refund = item.dataType === 'RETURN' ? Number(item.returnPrice || 0) : 0
     return sum + (normal - refund)
   }, 0)
 )
 
-// ===== 금액 포맷팅 =====
+// ===== 금액 포맷 =====
 const formatCurrency = (value) => {
   if (!value && value !== 0) return '0 원'
   return value.toLocaleString('ko-KR') + ' 원'
 }
 
-// ===== 날짜 포맷팅 (yyyy-MM-dd) =====
+// ===== 날짜 포맷 (yyyy-MM-dd) =====
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -161,15 +155,14 @@ const formatPayDueDate = (orderDateStr) => {
   if (!orderDateStr) return ''
   const orderDate = new Date(orderDateStr)
   if (isNaN(orderDate)) return ''
-
   orderDate.setDate(orderDate.getDate() + 180)
   return orderDate.toISOString().split('T')[0]
 }
 
-// ===== 행 스타일 (반품건은 전체 빨간 표시) =====
+// ===== 반품건 행 스타일 =====
 const rowClass = (data) => {
   return {
-    'refund-row': data.payStatus === 'RETURN'
+    'refund-row': data.dataType === 'RETURN'
   }
 }
 
@@ -180,7 +173,6 @@ const submitPayment = async () => {
     return
   }
 
-  // ✅ prodUnitPrice / returnUnitPrice 컬럼을 서버에 구분해서 전송
   const payload = {
     payRmk: '납부 처리',
     payAmount: selectedTotal.value,
@@ -188,8 +180,9 @@ const submitPayment = async () => {
     payType: 'CASH',
     paymentDetails: selectedOrders.value.map(o => ({
       orderId: o.orderId,
-      prodUnitPrice: o.payStatus === 'PENDING' ? o.prodUnitPrice : 0,
-      returnUnitPrice: o.payStatus === 'RETURN' ? o.returnUnitPrice : 0
+      prodUnitPrice: o.dataType === 'ORDER' ? o.totalPrice : 0,
+      returnUnitPrice: o.dataType === 'RETURN' ? o.returnPrice : 0,
+      dataType: o.dataType
     }))
   }
 
@@ -204,7 +197,6 @@ const submitPayment = async () => {
   }
 }
 
-// 페이지 로드시 자동 조회
 onMounted(() => {
   fetchOrders()
 })
@@ -269,7 +261,7 @@ onMounted(() => {
   background-color: #0059b3;
 }
 
-/* ===== 테이블 섹션 ===== */
+/* ===== 테이블 ===== */
 .order-table-section {
   background: white;
   padding: 15px;
@@ -297,15 +289,17 @@ onMounted(() => {
   text-align: center;
 }
 
-/* 반품 행 전체 빨간색 배경 */
-.refund-row {
-  background-color: #fff5f5 !important;
+/* ===== 반품 행 전체 스타일 ===== */
+::v-deep(.p-datatable-tbody > tr.refund-row) {
+  background-color: #fff5f5 !important; /* 연한 빨간 배경 */
+  color: #d60000 !important;           /* 글씨 빨간색 */
+  font-weight: bold;
 }
 
-/* 반품 금액만 빨간색 */
-.refund-amount {
-  color: #d60000;
-  font-weight: bold;
+/* 선택 시에도 빨간색 유지 */
+::v-deep(.p-datatable-tbody > tr.refund-row.p-highlight) {
+  background-color: #ffe5e5 !important; /* 선택 시 조금 더 진한 배경 */
+  color: #d60000 !important;
 }
 
 @media (max-width: 768px) {

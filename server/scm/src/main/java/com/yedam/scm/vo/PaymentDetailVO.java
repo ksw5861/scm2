@@ -10,5 +10,5 @@ public class PaymentDetailVO {
     private String orderId;
     private int totalPrice;
     private int returnPrice;   
-
+    private String dataType;
 }
