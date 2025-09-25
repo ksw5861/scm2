@@ -28,11 +28,28 @@
       <div class="filter-group">
         <span class="filter-label">주문상태</span>
         <div class="status-buttons">
-          <Button label="대기" :class="{'selected': filters.status === '대기'}" @click="filters.status = '대기'" />
-          <Button label="승인" :class="{'selected': filters.status === '승인'}" @click="filters.status = '승인'" />
-          <Button label="배송중" :class="{'selected': filters.status === '배송중'}" @click="filters.status = '배송중'" />
-          <Button label="배송완료" :class="{'selected': filters.status === '배송완료'}" @click="filters.status = '배송완료'" />
+          <Button 
+            label="대기" 
+            :class="{'selected': filters.status === '대기'}" 
+            @click="() => { filters.status = '대기'; fetchOrders(); }" 
+          />
+          <Button 
+            label="승인" 
+            :class="{'selected': filters.status === '승인'}" 
+            @click="() => { filters.status = '승인'; fetchOrders(); }" 
+          />
+          <Button 
+            label="배송중" 
+            :class="{'selected': filters.status === '배송중'}" 
+            @click="() => { filters.status = '배송중'; fetchOrders(); }" 
+          />
+          <Button 
+            label="배송완료" 
+            :class="{'selected': filters.status === '배송완료'}" 
+            @click="() => { filters.status = '배송완료'; fetchOrders(); }" 
+          />
         </div>
+
       </div>
 
       <div class="filter-group">
@@ -63,10 +80,6 @@
           <!-- ✅ 주문총액도 totalUnitPrice 사용 -->
           <Column field="totalPrice" header="주문총액(원)" style="width:150px; text-align:right;">
             <template #body="slotProps">
-              <span>
-                  {{ console.log('totalPrice:', slotProps.data.totalPrice) }}
-               
-              </span>
               {{ formatCurrency(slotProps.data.totalPrice) }}
 
 
@@ -77,7 +90,7 @@
           <Column field="status" header="상태" style="width:120px; text-align:center;" />
         </DataTable>
       </div>
-      <div>{{ orderList }}</div>
+     
 
 
 
@@ -92,8 +105,8 @@
         >
           <Column field="prodId" header="제품코드" style="width:120px; text-align:center;" />
           <Column field="prodName" header="제품명" style="width:150px;" />
-          <Column field="Spec" header="규격" style="width:100px; text-align:center;" />
-          <Column field="Unit" header="단위" style="width:80px; text-align:center;" />
+          <Column field="spec" header="규격" style="width:100px; text-align:center;" />
+          <Column field="unit" header="단위" style="width:80px; text-align:center;" />
 
           <Column field="prodUnitPrice" header="제품단가" style="width:120px; text-align:right;">
             <template #body="slotProps">
@@ -109,7 +122,7 @@
             </template>
           </Column>
         </DataTable>
-<div>orders: {{ orders }}</div>
+
 
         <!-- 합계 금액 -->
         <div class="total-footer">
