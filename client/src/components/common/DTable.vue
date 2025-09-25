@@ -85,12 +85,16 @@ const onSort = (event) => {
     <template v-for="col in columns" :key="col.field">
       <Column
         v-if="!col.input"
+        headerClass="whitespace-nowrap md:text-base text-xs"
+        bodyClass="whitespace-nowrap md:text-base text-md"
         :field="col.field"
         :header="col.label"
         :sortable="col.sortable ?? false"
       />
       <Column
         v-else
+        headerClass="whitespace-nowrap md:text-base text-xs"
+        bodyClass="whitespace-nowrap md:text-base text-md"
         :field="col.field"
         :header="col.label"
         :sortable="col.sortable ?? false"
@@ -106,3 +110,12 @@ const onSort = (event) => {
     </template>
   </DataTable>
 </template>
+
+<style scoped>
+@media (max-width: 575px) {
+  ::v-deep(.p-datatable .p-datatable-tbody > tr > td) {
+    font-size: 10px !important;
+  }
+}
+</style>
+
