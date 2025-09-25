@@ -1,6 +1,7 @@
 <script setup>
 import { computed, defineEmits, ref } from 'vue';
 import { useIcon } from '@/composables/useIcon';
+import Button from 'primevue/button'; // PrimeVue Button 컴포넌트를 직접 import 합니다.
 
 const props = defineProps({
   title: { type: String, default: '검색' },
@@ -29,7 +30,7 @@ function toggleCollapse() {
 <template>
   <div class="card flex flex-col w-full mt-4" id="card">
     <div 
-      class="font-semibold text-xl flex items-center gap-4 cursor-pointer select-none h-10"
+      class="font-semibold text-lg sm:text-xl flex items-center gap-4 cursor-pointer select-none h-10"
       @click="toggleCollapse"
       aria-expanded="!collapsed"
       role="button"
@@ -37,7 +38,7 @@ function toggleCollapse() {
       @keydown.enter.prevent="toggleCollapse"
       @keydown.space.prevent="toggleCollapse"
     >
-      <span :class="[iconClass, 'text-xl']"></span>
+      <span :class="iconClass"></span>
       {{ title }}
       <svg
         :class="{'rotate-180': !collapsed, 'rotate-0': collapsed}"
@@ -55,12 +56,24 @@ function toggleCollapse() {
       <div v-show="!collapsed">
         <Divider />
         <slot />
-        <div v-if="showButtons" class="flex sm:justify-end justify-start gap-2 mt-4">
-          <div class="w-1/2 sm:w-32">
-            <Btn color="secondary" class="w-full" icon="refresh" @click="onReset" outlined>초기화</Btn>
+        <div v-if="showButtons" class="flex justify-between sm:justify-end gap-2 mt-4">
+          <div class="w-1/2 xl:w-32">
+            <Button
+              label="초기화"
+              severity="secondary"
+              icon="pi pi-refresh"
+              @click="onReset"
+              outlined
+              class="w-full"
+            />
           </div>
-          <div class="w-1/2 sm:w-32">
-            <Btn class="w-full" icon="search" @click="onSearch">검색</Btn>
+          <div class="w-1/2 xl:w-32">
+            <Button
+              label="조회"
+              icon="pi pi-search"
+              @click="onSearch"
+              class="w-full"
+            />
           </div>
         </div>
       </div>
@@ -78,5 +91,24 @@ function toggleCollapse() {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* 1200px 미만 화면에서 버튼 스타일 조정 */
+.responsive-btn :deep(.p-button-label) {
+  @apply hidden;
+}
+
+.responsive-btn {
+  @apply !p-0 h-[35px] w-[35px];
+}
+
+/* 1200px 이상 화면에서 버튼 스타일 조정 */
+@media (min-width: 1200px) {
+  .responsive-btn :deep(.p-button-label) {
+    @apply inline-block;
+  }
+  .responsive-btn {
+    @apply !py-2 !px-4 !h-auto !w-auto;
+  }
 }
 </style>

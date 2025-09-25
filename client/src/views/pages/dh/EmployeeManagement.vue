@@ -593,9 +593,9 @@ onMounted(fetchEmployeeList);
     <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
       <div class="w-full xl:w-5/12">
         <div class="card flex flex-col">
-          <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+          <div class="font-semibold text-lg sm:text-xl flex items-center justify-between gap-4 h-10">
             <div class="flex items-center gap-4">
-              <span :class="[icons.list, 'text-xl']"></span>
+              <span :class="icons.list"></span>
               사원 목록
             </div>
             <div class="text-sm text-gray-400">
@@ -626,11 +626,10 @@ onMounted(fetchEmployeeList);
       <div class="w-full xl:w-7/12">
         <div class="card flex flex-col">
           <div class="flex items-center justify-between h-10">
-            <div class="font-semibold text-xl flex items-center gap-4">
+            <div class="font-semibold text-lg sm:text-xl flex items-center gap-4 whitespace-nowrap">
               <span :class="[
                 cardMode === 'create' ? icons.add :
                 cardMode === 'edit' ? icons.edit : icons.info,
-                'text-xl'
               ]"></span>
               {{
                 cardMode === 'create'
@@ -642,12 +641,57 @@ onMounted(fetchEmployeeList);
             </div>
 
             <div class="flex gap-2">
-              <Btn v-if="cardMode === 'view'" icon="cancel" color="secondary" class="whitespace-nowrap" @click="handleRowUnSelect" outlined>취소</Btn>
-              <Btn v-if="cardMode === 'view'" icon="delete" color="danger" @click="removeEmployee" outlined>삭제</Btn>
-              <Btn v-if="cardMode === 'view'" icon="edit" color="warn" @click="handleEdit" outlined>수정</Btn>
-              <Btn v-if="cardMode === 'create'" icon="refresh" color="secondary" class="whitespace-nowrap" @click="handleResetForm" outlined>초기화</Btn>
-              <Btn v-if="cardMode === 'create'" icon="add" @click="addEmployee" outlined>등록</Btn>
-              <Btn v-if="cardMode === 'edit'" icon="save" @click="modifyEmployee" outlined>저장</Btn>
+              <Btn
+                v-if="cardMode === 'view'"
+                icon="cancel"
+                color="secondary"
+                label="삭제"
+                class="whitespace-nowrap"
+                @click="handleRowUnSelect"
+                outlined
+              />
+              <Btn
+                v-if="cardMode === 'view'"
+                icon="delete"
+                color="danger"
+                label="삭제"
+                @click="removeEmployee"
+                outlined
+              />
+              <Btn
+                v-if="cardMode === 'view'"
+                icon="edit"
+                color="warn"
+                label="수정"
+                class="whitespace-nowrap"
+                @click="handleEdit"
+                outlined
+              />
+              <Btn
+                v-if="cardMode === 'create'"
+                icon="refresh"
+                color="secondary"
+                label="초기화"
+                class="whitespace-nowrap"
+                @click="handleResetForm"
+                outlined
+              />
+              <Btn
+                v-if="cardMode === 'create'"
+                icon="add"
+                label="등록"
+                @click="addEmployee"
+                class="whitespace-nowrap"
+                outlined
+              />
+              <Btn
+                v-if="cardMode === 'edit'"
+                icon="save"
+                label="저장"
+                @click="modifyEmployee"
+                class="whitespace-nowrap"
+                outlined
+              />
             </div>
           </div>
 
