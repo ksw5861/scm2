@@ -129,7 +129,8 @@
       hire_date,
       resign_date,
       status,
-      is_active
+      is_active,
+      has_photo
     FROM employee
     WHERE employee_id = #{empId}
   </select>
@@ -147,7 +148,8 @@
       phone,
       hire_date,
       resign_date,
-      status
+      status,
+      has_photo
     ) VALUES (
       #{employeeId},
       #{name},
@@ -155,7 +157,8 @@
       #{phone},
       #{hireDate},
       #{resignDate},
-      #{status}
+      #{status},
+      #{hasPhoto}
     )
   </insert>
 
@@ -168,7 +171,8 @@
         hire_date = #{hireDate},
         resign_date = #{resignDate},
         status = #{status},
-        is_active = #{isActive}
+        is_active = #{isActive},
+        has_photo = #{hasPhoto}
       WHERE employee_id = #{employeeId}
   </update>
 

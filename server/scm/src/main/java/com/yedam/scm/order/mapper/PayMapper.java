@@ -1,6 +1,7 @@
 package com.yedam.scm.order.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 
@@ -17,8 +18,8 @@ public interface PayMapper {
     // 결제 상세 등록
     Long insertPaymentDetail(PaymentDetailVO detailVO);
 
-    // 납부 내역 조회
-    List<PaymentVO> selectPaymentList(String paymentNo, String startDate, String endDate);
+    // 결제 내역 조회
+    List<Map<String, Object>> selectPaymentList(String paymentNo, String startDate, String endDate);
 
     // 특정 결제 상세 조회
     List<PaymentDetailVO> selectPaymentDetail(String paymentId);

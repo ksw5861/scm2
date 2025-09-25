@@ -6,8 +6,10 @@ import product from './sw/product'; // 기준정보제품
 import wareHouse1 from './sw/wareHouse1'; // 기준정보창고
 
 const master = {
-  label: '기준정보',
-  items: [employees, material, product, wareHouse1, Bom]
+
+  label: '기준 정보',
+  items: [wareHouse, employees, material, product, wareHouse1, Bom]
+
 };
 
 export default master;

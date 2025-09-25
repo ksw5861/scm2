@@ -86,8 +86,8 @@
         class="payment-table"
       >
         <!-- DB 컬럼 기준 -->
-        <Column field="payId" header="결제번호" style="width:120px;" />
-        <Column field="payDate" header="결제일자" style="width:120px;" />
+        <Column field="PAY_ID" header="결제번호" style="width:120px;" />
+        <Column field="PAY_DATE" header="결제일자" style="width:120px;" />
 
         <!-- 미수금 -->
         <Column field="OUTSTANDING_AMOUNT" header="미수금" style="width:120px; text-align:right;">
@@ -126,7 +126,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -169,6 +169,9 @@ const searchPayments = async () => {
     }
 
     const res = await axios.get('/api/paymentlist', { params })
+
+    console.log(res)
+
     payList.value = Array.isArray(res.data) ? res.data : []
   } catch (error) {
     console.error('납부내역 조회 실패:', error)
@@ -193,7 +196,14 @@ const exportPDF = () => {
 const exportExcel = () => {
   alert('엑셀 다운로드 기능은 추후 구현 예정')
 }
+
+onMounted(searchPayments)
 </script>
+
+
+
+
+
 
 <style scoped>
 /* ===== 전체 레이아웃 ===== */
