@@ -36,6 +36,9 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
     return result; 
     }
 
+    public List<PrdPlanDetailVO> getPlanList(){
+        return mapper.getPlanList();
+    }
     /*==========================
      * 드롭다운/모달용
      ===========================*/

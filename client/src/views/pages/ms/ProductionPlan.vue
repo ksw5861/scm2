@@ -4,6 +4,9 @@ import axios from 'axios';
 import selectTable from '@/components/common/checkBoxTable.vue';
 import btn from '@/components/common/Btn.vue';
 import searchField from '@/components/common/SearchBox.vue';
+import {useAppToast} from '@/composables/useAppToast';
+
+const { toast } = useAppToast();
 
 //등록일 날짜출력[페이지로드시 오늘날짜 자동셋팅]
 const getNowDate = () => {
@@ -30,16 +33,17 @@ const productionPlans = ref([{ id: columnId.value, prodId: '', prdName: '', proQ
 const productOptions = ref([]);
 
 onMounted(async () => {
-  const res = await axios.get('/api/mat/productsList');
-  productOptions.value = res.data.map((item) => ({
-    label: item.prodName,
-    value: item.prodId,
-    unit: item.unit
-  }));
+    try {
+    const res = await axios.get('/api/mat/productsList');
+    productOptions.value = res.data.map((item) => ({
+      label: item.prodName,
+      value: item.prodId,
+      unit: item.unit
+    }));
+  } catch (error) {
+    toast('제품 리스트 불러오기 실패:', error);
+  }
 });
-
-console.log(productOptions);
-console.log(productOptions.value);
 
 //옵션선택시 컬럼반영
 const selectOpt = (row, value) => {
@@ -52,7 +56,7 @@ const selectOpt = (row, value) => {
 
 const detailColumns = computed(() => [
   { field: 'prodId', label: '제품코드', style: 'width: 15rem' },
-  { field: 'prdName', label: '제품명', select: true, style: 'width: 20rem', option: productOptions.value, selectOpt },
+  { field: 'prdName', label: '제품명', select: true, style: 'width: 20rem', option: productOptions.value, change: selectOpt },
   { field: 'proQty', label: '생산수량', inputNumber: true, style: 'width: 10rem' },
   { field: 'unit', label: '단위', style: 'width: 9rem' },
   { field: 'proDate', label: '생산예정일', datePicker: true, style: 'width: 20rem' }
@@ -88,15 +92,15 @@ const submit = async () => {
 
   // 유효성 검사: 제품 계획이 비어있는지 확인
   if (!plan.prdPlanDetailList || plan.prdPlanDetailList.length === 0 || !plan.prdPlanDetailList[0].prdName || !plan.prdPlanDetailList[0].proQty) {
-    alert('제품 계획을 하나 이상 입력해주세요.');
+    toast('제품 계획을 하나 이상 입력해주세요.');
     return;
   }
 
   try {
     const response = await axios.post('/api/mat/productionPlan', plan);
-    alert('등록 성공!');
+    toast('등록 성공!');
   } catch (error) {
-    alert('등록 실패!');
+    toast('등록 실패!');
   }
 
   //폼 초기화

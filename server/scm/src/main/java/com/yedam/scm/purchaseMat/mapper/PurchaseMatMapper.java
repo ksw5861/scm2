@@ -12,9 +12,12 @@ import com.yedam.scm.vo.ProductionPlanVO;
 @Mapper
 public interface PurchaseMatMapper {
     
-    int insertProductionPlan(ProductionPlanVO master);
-    int insertProductionPlanDetail(PrdPlanDetailVO detail);
+    //생산계획등록[마스터 + 디테일]
+    int insertProductionPlan(ProductionPlanVO master); //마스터
+    int insertProductionPlanDetail(PrdPlanDetailVO detail); //디테일
 
+    //제품생산계획리스트
+    List<PrdPlanDetailVO> getPlanList();
 
    
     /*==========================

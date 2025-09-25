@@ -25,4 +25,6 @@ public class PrdPlanDetailVO {
     private String matStatus;  // 자재 상태
     private String prodNo;     // 제품 LOT번호[고유번호함수 활용]
     private String mprStatus;  // MPR 상태
+
+    ProductVO productVO;
 }
