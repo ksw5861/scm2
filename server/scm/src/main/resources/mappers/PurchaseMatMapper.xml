@@ -1,8 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.yedam.scm.purchaseMat.mapper.PurchaseMatMapper">
+<!--중첩VO 정의-->
+<!--제품마스터-->
+<resultMap id="ProductMap" type="ProductVO">
+  <id property="prodId" column="prod_id"/>
+  <result property="prodName" column="prod_name"/>
+  <result property="prodExpireDate" column="exp"/>
+  <result property="safeStock" column="safe_stock"/>
+  <result property="spec" column="spec"/>
+  <result property="prodUnitPrice" column="prod_unit_price"/>
+  <result property="unit" column="unit"/>
+  <result property="status" column="status"/>
+</resultMap>
+<!--생산계획상세 + 제품마스터테이블-->
+<resultMap id="PrdPlanDetailMap" type="PrdPlanDetailVO">
+  <id property="plDetId" column="pl_det_id"/>
+  <result property="prodId" column="prod_id"/>
+  <result property="proQty" column="pro_qty"/>
+  <result property="proDate" column="pro_date"/>
+  <result property="plId" column="pl_id"/>
+  <result property="matStatus" column="mat_status"/>
+  <result property="prodNo" column="prod_no"/>
+  <result property="mprStatus" column="mpr_status"/>
 
-    <!-- 1. 생산계획 등록 -->
+  <association property="productVO" resultMap="ProductMap"/>
+</resultMap>
+
+
+    <!-- ##생산계획 등록 -->
     <!-- 1. 생산계획 마스터 등록 -->
     <insert id="insertProductionPlan" parameterType="ProductionPlanVO">
         <!-- 시퀀스 먼저 뽑아서 VO.planId 에 세팅 -->
@@ -14,14 +40,18 @@
             start_date,
             end_date,
             plan_no,
-            emp_name
+            emp_name,
+            plan_type,
+            memo
         )
         VALUES (
             #{plId},               <!-- selectKey로 얻은 값 -->
             #{startDate},
             #{endDate},
             NEXT_DATE_CODE('PP'),    <!-- 커스텀 코드 함수 (있다면) -->
-            #{empName}
+            #{empName},
+            #{planType},
+            #{memo}
         )
     </insert>
 
@@ -47,20 +77,45 @@
              NEXT_DATE_CODE('PNO') <!--제품LOT번호-->
         )
     </insert>
+    <!--#자재요청-->
+    <!--생산계획마스터-->
+    <select id="getPlanMasterList" resultType="ProductionPlanVO">
+    SELECT pl_id, 
+           start_date,
+           end_date,
+           plan_no,
+           plan_type,
+           memo,
+           emp_name,
+           re_date
+    FROM product_plan
+    </select>
 
-
-
+    <!--생산계획디테일-->
+    <select id="getPlanList" resultMap="PrdPlanDetailMap">
+    SELECT ppd.prod_id,
+           ppd.pro_date,
+           ppd.prod_no,
+           po.prod_name,
+           ppd.pro_qty,
+           po.unit
+    FROM product_plan_detail ppd
+    JOIN product po
+    ON ppd.prod_id = po.prod_id
+    WHERE ppd.mpr_status = 'pp0'
+    AND po.status = '사용'
+    </select>
 
 
 
 <!--드롭다운/모달용===============================================================================-->
 <!--제품목록-->
-<select id="getProductList" resultType="productVO">
+<select id="getProductList" resultType="ProductVO">
     SELECT prod_id,
            prod_name,
            unit
     FROM product
-    WHERE status = '정상'
+    WHERE status = '사용'
 </select>
 
 </mapper>
