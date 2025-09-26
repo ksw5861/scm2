@@ -7,14 +7,23 @@
 
     <resultMap id="BomResultMap" type="com.yedam.scm.vo.BomVO">
         <id property="bomId" column="BOM_ID"/>
-        <result property="bomVer" column="BOM_VERSION"/>
+        <result property="bomVersion" column="BOM_VERSION"/>
         <result property="effectiveDate" column="EFFECTIVE_DATE"/>
         <result property="expireDate" column="EXPIRE_DATE"/>
         <result property="prodId" column="PROD_ID"/>
         <result property="matId" column="MAT_ID"/>
         <result property="createdAt" column="CREATED_AT"/>
         <result property="qty" column="QTY"/>
+
+        <!-- 제품 정보 추가 -->
+        <association property="product" javaType="com.yedam.scm.vo.ProductVO">
+            <result property="spec" column="SPEC"/>
+            <result property="unit" column="UNIT"/>
+        </association>
+
+        <!-- 자재 정보 -->
         <association property="material" javaType="com.yedam.scm.vo.MaterialVO">
+            <result property="matId" column="MAT_ID"/>
             <result property="matName" column="MAT_NAME"/>
             <result property="spec" column="SPEC"/>
             <result property="unit" column="UNIT"/>
@@ -26,9 +35,11 @@
 <select id="getBomByProdId" resultMap="BomResultMap" parameterType="string">
     SELECT b.BOM_ID, b.BOM_VERSION, b.EFFECTIVE_DATE, b.EXPIRE_DATE,
            b.PROD_ID, b.MAT_ID, b.CREATED_AT, b.QTY,
-           m.MAT_NAME, m.SPEC, m.UNIT
+           p.SPEC AS SPEC, p.UNIT AS UNIT,p.PROD_ID, p.PROD_NAME,
+           m.MAT_ID, m.MAT_NAME, m.SPEC, m.UNIT
     FROM BOM b
     LEFT JOIN MATERIAL m ON b.MAT_ID = m.MAT_ID
+    LEFT JOIN PRODUCT p ON b.PROD_ID = p.PROD_ID
     WHERE b.PROD_ID = #{prodId}
     ORDER BY b.BOM_VERSION, b.BOM_ID
 </select>
@@ -38,7 +49,7 @@
     <!-- BOM 등록 -->
     <insert id="insertBom" parameterType="com.yedam.scm.vo.BomVO">
         INSERT INTO BOM (BOM_ID, BOM_VERSION, EFFECTIVE_DATE, EXPIRE_DATE, PROD_ID, MAT_ID, CREATED_AT, QTY)
-        VALUES (next_code('BOM'), #{bomVer}, #{effectiveDate}, #{expireDate}, #{prodId}, #{matId}, #{createdAt}, #{qty})
+        VALUES (next_code('BOM'), #{bomVersion}, #{effectiveDate}, #{expireDate}, #{prodId}, #{matId}, #{createdAt}, #{qty})
     </insert>
 
     <!-- BOM 수정 -->

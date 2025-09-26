@@ -9,7 +9,8 @@
   <select id="getMaterialList" parameterType="map" resultType="MaterialVO">
   SELECT 
       MAT_ID,
-      MAT_NAME
+      MAT_NAME,
+      STATUS
   FROM MATERIAL
   <where>
     <if test="matId != null and matId != ''">
@@ -18,11 +19,8 @@
     <if test="matName != null and matName != ''">
       AND MAT_NAME LIKE '%' || #{matName} || '%'
     </if>
-    <if test="matType != null and matType != ''">
-      AND MAT_TYPE LIKE '%' ||  #{matType} || '%'
-    </if>
-    <if test="matStoreCond != null and matStoreCond != ''">
-      AND MAT_STORE_COND LIKE '%' || #{matStoreCond} || '%'
+    <if test="status != null and status !=''">
+      AND STATUS = #{status}
     </if>
   </where>
   ORDER BY MAT_ID DESC

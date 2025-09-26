@@ -42,7 +42,7 @@ const prodList = ref([]);
 const selectedProd = ref(null);
 
 // Form
-const form = ref({ prodId: '', prodName: '', spec: '', unit: '', bomVer: '' });
+const form = ref({ prodId: '', prodName: '', spec: '', unit: '', bomVersion: '' });
 
 // BOM
 const bomList = ref([]);
@@ -52,7 +52,7 @@ const bomDialogVisible = ref(false);
 const isEditing = ref(false);
 const currentBom = ref({
   bomId: '',
-  bomVer: '',
+  bomVersion: '',
   effectiveDate: new Date(),
   expireDate: new Date('9999-12-31'),
   prodId: '',
@@ -100,7 +100,7 @@ const fetchProdList = async () => {
 // --- 제품 선택 ---
 const selectProduct = async (prod) => {
   selectedProd.value = prod || null;
-  form.value = selectedProd.value ? { prodId: prod.prodId, prodName: prod.prodName, spec: prod.spec, unit: prod.unit, bomVer: prod.bomVer } : { prodId: '', prodName: '', spec: '', unit: '', bomVer: '' };
+  form.value = selectedProd.value ? { prodId: prod.prodId, prodName: prod.prodName, spec: prod.spec, unit: prod.unit, bomVersion: prod.bomVersion } : { prodId: '', prodName: '', spec: '', unit: '', bomVersion: '' };
 
   if (selectedProd.value) await fetchBomList(selectedProd.value.prodId);
   else bomList.value = [];
@@ -126,18 +126,24 @@ const fetchBomList = async (prodId) => {
 
 // --- 검색 초기화 ---
 const resetSearch = () => {
+  // 검색 조건 리셋
   searchFilters.value = { prodName: '', prodCode: '' };
   fetchProdList();
+
+  // 오른쪽 영역 처음 상태로 리셋
+  selectedProd.value = null;
+  form.value = { prodId: '', prodName: '', spec: '', unit: '', bomVersion: '' };
+  bomList.value = [];
 };
 
 // --- 신규 BOM 초기화 (신규탭 진입 시) ---
 const initNewBom = () => {
   isEditing.value = false;
   const nextBomId = 'BOM' + String(Date.now());
-  const nextBomVer = bomList.value.length ? Math.max(...bomList.value.map((b) => parseInt((b.bomVer || 'V0').replace('V', '')))) + 1 : 1;
+  const nextBomVer = bomList.value.length ? Math.max(...bomList.value.map((b) => parseInt((b.bomVersion || 'V0').replace('V', '')))) + 1 : 1;
   currentBom.value = {
     bomId: nextBomId,
-    bomVer: 'V' + nextBomVer,
+    bomVersion: 'V' + nextBomVer,
     effectiveDate: new Date(),
     expireDate: new Date('9999-12-31'),
     prodId: selectedProd.value ? selectedProd.value.prodId : '',
@@ -280,8 +286,8 @@ onMounted(() => fetchProdList());
                 </template>
                 <template #end>
                   <div class="flex gap-2">
-                    <Button label="조회" icon="pi pi-search" @click="fetchProdList" />
-                    <Button label="초기화" icon="pi pi-refresh" class="p-button-outlined" @click="resetSearch" />
+                    <Button label="" icon="pi pi-search" @click="fetchProdList" />
+                    <Button label="" icon="pi pi-refresh" class="p-button-outlined" @click="resetSearch" />
                   </div>
                 </template>
               </Toolbar>
@@ -308,7 +314,7 @@ onMounted(() => fetchProdList());
                         <div class="flex flex-column"><label>제품명</label><InputText v-model="form.prodName" class="w-full h-10" disabled /></div>
                         <div class="flex flex-column"><label>규격</label><InputText v-model="form.spec" class="w-full h-10" disabled /></div>
                         <div class="flex flex-column"><label>단위</label><InputText v-model="form.unit" class="w-full h-10" disabled /></div>
-                        <div class="flex flex-column"><label>BOM 버전</label><InputText v-model="form.bomVer" class="w-full h-10" disabled /></div>
+                        <div class="flex flex-column"><label>BOM 버전</label><InputText v-model="form.bomVersion" class="w-full h-10" disabled /></div>
                       </div>
                     </Fieldset>
                   </div>
@@ -321,17 +327,59 @@ onMounted(() => fetchProdList());
                     <Fieldset legend="BOM 상세정보" class="flex flex-column h-full">
                       <div class="flex-grow-1 overflow-auto">
                         <DataTable :value="bomList" paginator :rows="bomRows" dataKey="bomId" :loading="loading" class="h-full">
-                          <Column field="material.matId" header="자재코드" />
-                          <Column field="material.matName" header="자재명" />
-                          <Column field="material.spec" header="규격" />
-                          <Column field="qty" header="수량" />
-                          <Column field="material.unit" header="단위" />
-                          <Column header="시작일" :body="(row) => formatDate(row.effectiveDate)" />
-                          <Column header="종료일" :body="(row) => formatDate(row.expireDate)" />
+                          <!-- 자재코드 -->
+                          <Column header="자재코드">
+                            <template #body="slotProps">
+                              {{ slotProps.data.material?.matId || '' }}
+                            </template>
+                          </Column>
+
+                          <!-- 자재명 -->
+                          <Column header="자재명">
+                            <template #body="slotProps">
+                              {{ slotProps.data.material?.matName || '' }}
+                            </template>
+                          </Column>
+
+                          <!-- 규격 -->
+                          <Column header="규격">
+                            <template #body="slotProps">
+                              {{ slotProps.data.material?.spec || '' }}
+                            </template>
+                          </Column>
+
+                          <!-- 수량 -->
+                          <Column header="수량">
+                            <template #body="slotProps">
+                              {{ slotProps.data.qty || 0 }}
+                            </template>
+                          </Column>
+
+                          <!-- 단위 -->
+                          <Column header="단위">
+                            <template #body="slotProps">
+                              {{ slotProps.data.material?.unit || '' }}
+                            </template>
+                          </Column>
+
+                          <!-- 시작일 -->
+                          <Column header="시작일">
+                            <template #body="slotProps">
+                              {{ formatDate(slotProps.data.effectiveDate) }}
+                            </template>
+                          </Column>
+
+                          <!-- 종료일 -->
+                          <Column header="종료일">
+                            <template #body="slotProps">
+                              {{ formatDate(slotProps.data.expireDate) }}
+                            </template>
+                          </Column>
+
+                          <!-- 액션 -->
                           <Column header="액션">
                             <template #body="slotProps">
                               <div class="flex gap-1">
-                                <!-- 수정/삭제만 허용 -->
                                 <Button icon="pi pi-pencil" class="p-button-text p-button-sm" @click="openBomDialog(slotProps.data)" />
                                 <Button icon="pi pi-trash" class="p-button-text p-button-sm p-button-danger" @click="deleteBom(slotProps.data.bomId)" />
                               </div>
@@ -384,7 +432,7 @@ onMounted(() => fetchProdList());
 
                         <div>
                           <label class="block text-sm mb-1">BOM 버전</label>
-                          <InputText v-model="currentBom.bomVer" class="w-full h-10" />
+                          <InputText v-model="currentBom.bomVersion" class="w-full h-10" />
                         </div>
 
                         <div>
