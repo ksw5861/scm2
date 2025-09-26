@@ -4,6 +4,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import com.yedam.scm.dto.EmployeeListRes;
 import com.yedam.scm.dto.EmployeeSearchDTO;
+import com.yedam.scm.dto.LoginDTO;
+import com.yedam.scm.dto.LoginRes;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.master.service.EmployeeService;
 import com.yedam.scm.vo.EmployeeVO;
@@ -30,12 +32,14 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequiredArgsConstructor
 public class DhController {
 
   private final EmployeeService employeeSvc;
+  // private final AccountService accountSvc;
 
   @Value("${file.upload.employee-dir}")
   private String employeeUploadDir;
@@ -186,4 +190,11 @@ public class DhController {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
   }
+
+  // @PostMapping("/auth")
+  // public LoginRes AuthLogin(
+  //   @RequestBody LoginDTO login
+  // ) {
+  //   return accountSvc.
+  // }
 }

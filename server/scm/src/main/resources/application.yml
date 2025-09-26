@@ -7,6 +7,17 @@ spring:
     url: ENC(vAsvZ1mSBtSB+7c6R+z5irmCN3mdtJRC4bx4luOiLFI7hWaaVgmiFLxqqQFRKKh4YpE4He94Bdc=)
     username: ENC(+lq0h68ay/lVnja2fzgZOXFw3FJZerRd)
     password: ENC(6hF3NHbh9t71GYf+Bf1FTRFRRP34aXcu)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ENC(7JDPnrAIRt4K+W8VSzUhVMqKrhbSzM0mUoW+mEDG4pLmHs5cNTD8U0wvslYwfO9e)
+    password: ENC(v/5eQe9/43OFw1neIM6TSJa2Csj4sJJs47fTCzLhrxY=)
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   jpa:
     properties:

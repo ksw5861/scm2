@@ -1,6 +1,7 @@
 package com.yedam.scm.master.mapper;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -28,10 +29,10 @@ public interface EmployeeMapper {
 
   int insertEmployee(EmployeeVO emp);
 
-  int updateEmployeeById(EmployeeVO emp);
+  void updateEmployeeById(EmployeeVO emp);
 
-  int deleteEmployeeById(
-    @Param("empId") String empId
+  void deleteEmployeeById(
+    @Param("param") Map<String, Object> param
   );
 
 }

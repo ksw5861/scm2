@@ -5,13 +5,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.yedam.scm.common.MailService;
 import com.yedam.scm.dto.EmployeeListRes;
 import com.yedam.scm.dto.EmployeeSearchDTO;
 import com.yedam.scm.dto.PageDTO;
@@ -27,8 +33,12 @@ import lombok.RequiredArgsConstructor;
 public class EmployeeServiceImpl implements EmployeeService {
 
   private final EmployeeMapper mapper;
+  private final MailService mailService;
+  private final PasswordEncoder passwordEncoder;
 
-  // application.yml에서 경로를 주입
+  @Value("${spring.mail.username}")
+  private String fromEmail;
+
   @Value("${file.upload.employee-dir}")
   private String uploadDir;
 
@@ -54,19 +64,27 @@ public class EmployeeServiceImpl implements EmployeeService {
   @Override
   @Transactional
   public boolean addEmployee(EmployeeVO emp) throws IOException {
+
+    String tempPassword = generateTempPassword(10);
+
+    emp.setTempPassword(passwordEncoder.encode(tempPassword));
     MultipartFile photo = emp.getPhoto();
 
-    // 1. DB insert 먼저 실행 (employeeId 생성)
     int inserted = mapper.insertEmployee(emp);
-
     if (inserted == 0 || emp.getEmployeeId() == null || emp.getEmployeeId().isEmpty()) {
-      return false;
+        return false;
     }
 
-    // 2. 사진 저장
     if (photo != null && !photo.isEmpty()) {
-      saveEmployeePhoto(emp.getEmployeeId(), photo);
+        saveEmployeePhoto(emp.getEmployeeId(), photo);
     }
+
+    mailService.sendMailAsync(
+        emp.getEmail(),
+        "임시 비밀번호 안내",
+        "안녕하세요. 임시 비밀번호 안내드립니다.<br /> " + tempPassword,
+        fromEmail
+    );
 
     return true;
   }
@@ -79,23 +97,18 @@ public class EmployeeServiceImpl implements EmployeeService {
   @Override
   @Transactional
   public boolean modifyEmployeeById(EmployeeVO emp) throws IOException {
-    MultipartFile photo = emp.getPhoto();
-    
-    // 1. DB update 먼저 실행
-    int updated = mapper.updateEmployeeById(emp);
-    
-    if (updated == 0) {
+    mapper.updateEmployeeById(emp);
+
+    if (emp.getRowCount() == 0) {
       return false;
     }
 
-    // 2. 새로운 사진이 있을 경우
+    MultipartFile photo = emp.getPhoto();
     if (photo != null && !photo.isEmpty()) {
-      // 기존 사진 삭제
       deleteEmployeePhoto(emp.getEmployeeId());
-      // 새 사진 저장
       saveEmployeePhoto(emp.getEmployeeId(), photo);
     }
-    
+
     return true;
   }
 
@@ -106,14 +119,21 @@ public class EmployeeServiceImpl implements EmployeeService {
   @Override
   @Transactional
   public boolean removeEmployeeById(String empId) throws IOException {
-    int deleted = mapper.deleteEmployeeById(empId);
+    Map<String, Object> param = new HashMap<>();
+    param.put("empId", empId);
 
-    if (deleted > 0) {
-      deleteEmployeePhoto(empId);
-      return true;
+    mapper.deleteEmployeeById(param);
+
+    int rowCount = (Integer) param.get("rowCount");
+
+    if (rowCount == 0) {
+      return false;
     }
-    return false;
+
+    deleteEmployeePhoto(empId);
+    return true;
   }
+
   
   /**
    * 사원 사진 파일 저장
@@ -147,7 +167,6 @@ public class EmployeeServiceImpl implements EmployeeService {
   private void deleteEmployeePhoto(String employeeId) throws IOException {
     Path uploadPath = Paths.get(uploadDir);
     
-    // 지원되는 확장자 목록
     String[] extensions = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"};
     
     for (String ext : extensions) {
@@ -157,4 +176,20 @@ public class EmployeeServiceImpl implements EmployeeService {
       }
     }
   }
+
+  /**
+   * 임시 비밀번호 생성
+   */
+  public String generateTempPassword(int length) {
+    String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    StringBuilder sb = new StringBuilder();
+    Random rnd = new SecureRandom();
+
+    for (int i = 0; i < length; i++) {
+        sb.append(chars.charAt(rnd.nextInt(chars.length())));
+    }
+
+    return sb.toString();
+  }
+
 }
