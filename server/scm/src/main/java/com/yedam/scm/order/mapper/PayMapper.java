@@ -31,6 +31,6 @@ public interface PayMapper {
     List<SalesOrderVO> selectPendingOrders();
 
     // 주문/반품 상태 COMPLETE 일괄 업데이트
-    void updateOrderStatusToComplete(@Param("orderId") List<String> orderId);
+    void updateOrderStatusToComplete(List<String> orderIdList);
     void updateReturnStatusToComplete(List<String> returnId);
 }
