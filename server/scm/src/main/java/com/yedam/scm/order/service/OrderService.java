@@ -1,6 +1,7 @@
 package com.yedam.scm.order.service;
 
 import java.util.List;
+import java.util.Map;
 
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
@@ -96,7 +97,6 @@ public interface OrderService {
      */
     int getProductCount();
 
-
-   
+    
 
 }

@@ -18,6 +18,9 @@ import com.yedam.scm.vo.SalesOrderVO;
 @Mapper
 public interface OrderMapper {
 
+  
+
+
     // --------------------------
     // 1. 주문 등록
     // --------------------------
