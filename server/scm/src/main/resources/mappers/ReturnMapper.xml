@@ -1,124 +1,125 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.yedam.scm.order.mapper.ReturnMapper">
 
-  <!-- ==================================== -->
-  <!-- 1. 반품 등록 -->
-  <!-- ==================================== -->
-  <insert id="insertReturn" parameterType="ReturnVO">
-    INSERT INTO "RETURN" (
-        return_id,
-        odetail_id,
-        return_qty,
-        return_why,
-        return_price,
-        return_date
-        
-    ) VALUES (
-        next_date_code('RT'),
-        #{odetailId},
-        #{returnQty},
-        #{returnWhy,jdbcType=VARCHAR},
-        NVL(#{returnPrice}, 1),
-        SYSDATE
-       
-    )
-  </insert>
+    <!-- ============================================================= -->
+    <!-- 1. 반품 마스터 등록 -->
+    <!-- ============================================================= -->
+    <insert id="insertReturnOrder" parameterType="ReturnVO">
+        <selectKey keyProperty="returnId" resultType="string" order="BEFORE">
+            SELECT next_date_code('RT') FROM dual
+        </selectKey>
 
-  <!-- ==================================== -->
-  <!-- 2. 반품 목록 조회 -->
-  <!-- ==================================== -->
-  <select id="getReturnList" parameterType="map" resultType="ReturnVO">
-    SELECT 
-      r.return_id,
-      r.odetail_id,
-      r.return_qty,
-      r.return_why,
-      r.return_price,
-      r.return_date,
-      r.return_status,
-      sod.prod_id,
-      sod.prod_name,
-      sod.spec,
-      sod.unit,
-      sod.order_qty,
-      sod.prod_unit_price,
-      so.order_id,
-      so.vendor_id
-    FROM "RETURN" r
-      JOIN sales_order_detail sod
-        ON r.odetail_id = sod.odetail_id
-      JOIN sales_order so
-        ON sod.order_id = so.order_id
-    WHERE 1 = 1
+        INSERT INTO RETURN (
+            RETURN_ID,
+            VENDOR_ID,
+            RETURN_DATE,
+            RETURN_PRICE,
+            RETURN_STATUS
+        )
+        VALUES (
+            #{returnId},
+            #{vendorId},
+            SYSDATE,
+            #{returnPrice},
+            '대기'
+        )
+    </insert>
 
-      <!-- 날짜 조건 -->
-      <if test="startDate != null and startDate != ''">
-        AND r.return_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
-      </if>
-      <if test="endDate != null and endDate != ''">
-        AND r.return_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
-      </if>
+    <!-- ============================================================= -->
+    <!-- 2. 반품 상세 등록 -->
+    <!-- ============================================================= -->
+    <insert id="insertReturnDetail" parameterType="ReturnDetailVO">
+        <selectKey keyProperty="rdetailId" resultType="string" order="BEFORE">
+            SELECT next_date_code('RD') FROM dual
+        </selectKey>
 
-      <!-- 반품 상태 -->
-      <if test="returnStatus != null and returnStatus != ''">
-        AND r.return_status = #{returnStatus}
-      </if>
+        INSERT INTO RETURN_DETAIL (
+            RDETAIL_ID,
+            RETURN_ID,
+            PROD_ID,
+            RETURN_QTY,
+            PROD_UNIT_PRICE,
+            RETURN_WHY,
+            RDETAIL_STATUS
+        )
+        VALUES (
+            #{rdetailId},
+            #{returnId},
+            #{prodId},
+            #{returnQty},
+            #{prodUnitPrice},
+            #{returnWhy},
+            '대기'
+        )
+    </insert>
 
-      <!-- 제품명 검색 -->
-      <if test="prodName != null and prodName != ''">
-        AND sod.prod_name LIKE '%' || #{prodName} || '%'
-      </if>
+    <!-- ============================================================= -->
+    <!-- 3. 반품 목록 조회 (마스터 기준, 총액 포함) -->
+    <!-- ============================================================= -->
+    <select id="getReturnList" resultType="ReturnVO">
+        SELECT 
+            r.return_id AS returnId,
+            TO_CHAR(r.return_date, 'YYYY-MM-DD') AS returnDate,
+            r.return_status AS returnStatus,
+            NVL(SUM(rd.return_qty * rd.prod_unit_price), 0) AS returnPrice
+        FROM RETURN r
+        LEFT JOIN RETURN_DETAIL rd
+            ON r.return_id = rd.return_id
+        WHERE 1=1
+            <if test="startDate != null and startDate != ''">
+                AND r.return_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="endDate != null and endDate != ''">
+                AND r.return_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+            </if>
+            <if test="returnId != null and returnId != ''">
+                AND r.return_id LIKE '%' || #{returnId} || '%'
+            </if>
+            <if test="returnStatus != null and returnStatus != ''">
+                AND r.return_status = #{returnStatus}
+            </if>
+        GROUP BY r.return_id, r.return_date, r.return_status
+        ORDER BY r.return_date DESC
+    </select>
 
-      <!-- 반품번호 검색 -->
-      <if test="returnNo != null and returnNo != ''">
-        AND r.return_id LIKE '%' || #{returnNo} || '%'
-      </if>
+    <!-- ============================================================= -->
+    <!-- 4. 반품 마스터 단건 조회 -->
+    <!-- ============================================================= -->
+    <select id="getReturnDetail" parameterType="string" resultType="ReturnVO">
+        SELECT
+            RETURN_ID AS returnId,
+            VENDOR_ID AS vendorId,
+            TO_CHAR(RETURN_DATE, 'YYYY-MM-DD') AS returnDate,
+            RETURN_PRICE AS returnPrice,
+            RETURN_STATUS AS returnStatus
+        FROM RETURN
+        WHERE RETURN_ID = #{returnId}
+    </select>
 
-    ORDER BY r.return_date DESC, r.return_id DESC
-  </select>
-
-  <!-- ==================================== -->
-  <!-- 3. 반품 상세 조회 -->
-  <!-- ==================================== -->
-  <select id="getReturnDetail" parameterType="string" resultType="ReturnVO">
-    SELECT 
-      r.return_id,
-      r.odetail_id,
-      r.return_qty,
-      r.return_why,
-      r.return_price,
-      r.return_date,
-      r.return_status,
-      sod.prod_id,
-      sod.prod_name,
-      sod.spec,
-      sod.unit,
-      sod.order_qty,
-      sod.prod_unit_price
-    FROM "RETURN" r
-      JOIN sales_order_detail sod
-        ON r.odetail_id = sod.odetail_id
-    WHERE r.return_id = #{returnId}
-  </select>
-
-  <!-- ==================================== -->
-  <!-- 4. 반품 상태 업데이트 -->
-  <!-- ==================================== -->
-  <update id="updateReturnStatus" parameterType="map">
-    UPDATE "RETURN"
-    SET return_status = #{returnStatus}
-    WHERE return_id = #{returnId}
-  </update>
-
-  <!-- ==================================== -->
-  <!-- 5. 반품 삭제 -->
-  <!-- ==================================== -->
-  <delete id="deleteReturn" parameterType="string">
-    DELETE FROM "RETURN"
-    WHERE return_id = #{returnId}
-  </delete>
+    <!-- ============================================================= -->
+    <!-- 5. 반품 상세 리스트 조회 -->
+    <!-- ============================================================= -->
+    <select id="getReturnDetailList" resultType="ReturnDetailVO">
+        SELECT
+            rd.rdetail_id AS rdetailId,
+            rd.return_id AS returnId,
+            rd.prod_id AS prodId,
+            p.prod_name AS prodName,
+            p.spec AS spec,
+            p.unit AS unit,
+            rd.return_qty AS returnQty,
+            rd.prod_unit_price AS prodUnitPrice,
+            (rd.return_qty * rd.prod_unit_price) AS amt,
+            rd.return_why AS returnWhy,
+            rd.rdetail_status AS rdetailStatus
+        FROM RETURN_DETAIL rd
+        JOIN PRODUCT p ON rd.prod_id = p.prod_id
+        WHERE rd.return_id = #{returnId}
+        ORDER BY rd.rdetail_id
+    </select>
 
 </mapper>

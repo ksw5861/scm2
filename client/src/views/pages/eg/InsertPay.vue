@@ -1,172 +1,303 @@
 <template>
-  <div class="pay-register">
-    <!-- ===== 상단 요약 카드 ===== -->
-    <div class="summary-cards">
-      <div class="summary-card sales">
-        <p class="title">미수금</p>
-        <p class="amount">{{ formatCurrency(monthSales) }}</p>
+  <div class="payment-dashboard">
+    <!-- ===== 헤더 ===== -->
+    <header class="header">
+      <div>
+        <h1 class="title">본사 거래 관리</h1>
+        <p class="subtitle">주문, 반품 및 납부 현황 관리</p>
       </div>
+      <Badge class="date-badge">{{ today }}</Badge>
+    </header>
 
-      <div class="summary-card credit">
-        <p class="title">남은 여신한도</p>
-        <p class="amount highlight">{{ formatCurrency(remainingCredit) }}</p>
+    <!-- ===== 상단 카드 4개 ===== -->
+    <section class="summary-cards">
+      <div class="card red">
+        <p class="label">총 미결제 금액</p>
+        <p class="amount">₩{{ formatCurrency(summary.totalUnpaid) }}</p>
       </div>
-
-      <div class="summary-card total">
-        <p class="title">납부금액</p>
-        <p class="amount">{{ formatCurrency(selectedTotal) }}</p>
+      <div class="card orange">
+        <p class="label">연체된 건수</p>
+        <p class="amount">{{ summary.overdueCount }}건</p>
       </div>
+      <div class="card blue">
+        <p class="label">납부 예정</p>
+        <p class="amount">{{ summary.upcomingCount }}건</p>
+      </div>
+      <div class="card green">
+        <p class="label">이번 달 결제</p>
+        <p class="amount">₩{{ formatCurrency(summary.thisMonthPaid) }}</p>
+      </div>
+    </section>
 
-      <Button 
-        label="납부하기"
-        icon="pi pi-wallet"
-        class="p-button-lg p-button-primary pay-btn"
-        @click="submitPayment"
-      />
+    <!-- ===== 탭 ===== -->
+    <div class="tabs">
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'pending' }"
+        @click="activeTab = 'pending'"
+      >
+        미결제 내역
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'pay' }"
+        @click="activeTab = 'pay'"
+      >
+        납부 처리
+      </button>
+      <button
+        class="tab-btn"
+        :class="{ active: activeTab === 'summary' }"
+        @click="activeTab = 'summary'"
+      >
+        거래 요약
+      </button>
     </div>
 
-    <!-- Toast 알림 -->
-    <Toast />
+    <!-- ===== [탭] 미결제 내역 ===== -->
+    <div v-if="activeTab === 'pending'" class="tab-content">
+      <h3 class="section-title">본사 주문 미결제 내역</h3>
 
-    <!-- ===== 주문 내역 테이블 ===== -->
-    <div class="order-table-section">
+      <div class="table-toolbar">
+        <div class="search-container">
+          <i class="pi pi-search search-icon"></i>
+          <InputText
+            v-model="searchQuery"
+            placeholder="주문번호 또는 제품명 검색..."
+            class="search-input"
+          />
+        </div>
+      </div>
+
       <DataTable
-        :value="orders"
-        v-model:selection="selectedOrders"
-        dataKey="orderId"
+        :value="filteredOrders"
         selectionMode="checkbox"
+        dataKey="orderId"
+        v-model:selection="selectedOrders"
         paginator
         :rows="10"
-        responsiveLayout="scroll"
-        resizableColumns
-        columnResizeMode="fit"
-        class="order-table"
-        :rowClass="rowClass"
-        :sortField="'orderDate'"
-        :sortOrder="-1"
+        class="custom-table"
       >
-        <Column selectionMode="multiple" headerStyle="width: 50px" />
-        <Column field="orderId" header="주문번호" style="width:120px" />
+        <template #header>
+          <div v-if="selectedOrders.length > 0" class="selected-summary">
+            <span>{{ selectedOrders.length }}개 항목 선택됨</span>
+            <span>총 선택 금액: <strong>₩{{ formatCurrency(selectedTotal) }}</strong></span>
+          </div>
+        </template>
 
-        <!-- 주문일자 yyyy-MM-dd -->
-        <Column field="orderDate" header="주문일자" style="width:120px; text-align:center;">
-          <template #body="slotProps">
-            {{ formatDate(slotProps.data.orderDate) }}
+        <Column selectionMode="multiple" headerStyle="width:50px" />
+        <Column field="orderId" header="주문번호" style="width:140px;" />
+        <Column field="prodName" header="제품명" style="width:240px;" />
+        <Column field="totalPrice" header="주문금액" style="width:150px; text-align:right;">
+          <template #body="{ data }">
+            ₩{{ formatCurrency(data.totalPrice) }}
           </template>
         </Column>
-
-        <!-- 출고일자 yyyy-MM-dd -->
-        <Column field="sendDate" header="출고일자" style="width:120px; text-align:center;">
-          <template #body="slotProps">
-            {{ formatDate(slotProps.data.sendDate) }}
+        <Column field="payDate" header="납부일" style="width:140px;" />
+        <Column field="status" header="상태" style="width:140px;">
+          <template #body="{ data }">
+            <span :class="['status-badge', data.status]">{{ data.status }}</span>
           </template>
         </Column>
-
-        <Column field="prodName" header="제품명" style="width:180px;" />
-
-        <!-- 금액 표시: 반품이면 returnPrice 음수 표시 -->
-        <Column field="totalPrice" header="주문총액(원)" style="width:130px; text-align:right;">
-          <template #body="slotProps">
-            <span :class="{ 'refund-price': slotProps.data.totalPrice < 0 }">
-              {{ formatCurrency(slotProps.data.totalPrice) }}
-            </span>
-          </template>
-        </Column>
-
-        <Column field="payStatus" header="결제상태" style="width:100px; text-align:center;" />
       </DataTable>
     </div>
+
+    <!-- ===== [탭] 납부 처리 ===== -->
+    <div v-else-if="activeTab === 'pay'" class="tab-content pay-section">
+      <!-- 좌측 폼 -->
+      <div class="pay-form">
+        <h3 class="section-title"><i class="pi pi-wallet"></i> 납부 정보 입력</h3>
+        
+        <div class="form-group">
+          <label>결제 방법</label>
+          <div class="radio-group">
+            <RadioButton inputId="bank" value="계좌이체" v-model="method" />
+            <label for="bank">계좌이체</label>
+            <RadioButton inputId="card" value="신용카드" v-model="method" />
+            <label for="card">신용카드</label>
+            <RadioButton inputId="cash" value="현금" v-model="method" />
+            <label for="cash">현금</label>
+          </div>
+        </div>
+
+        <div v-if="method === '신용카드'" class="form-group">
+          <InputText placeholder="0000-0000-0000-0000" v-model="cardNumber" class="w-full mb-2" />
+          <div class="flex gap-3">
+            <InputText placeholder="MM/YY" v-model="expiry" class="flex-1" />
+            <InputText placeholder="CVV" v-model="cvv" class="flex-1" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>납부 예정일</label>
+          <Calendar v-model="payDate" dateFormat="yy-mm-dd" class="w-full" />
+        </div>
+
+        <div class="form-group">
+          <label>메모</label>
+          <Textarea v-model="memo" rows="2" placeholder="납부 관련 메모를 입력하세요" class="w-full" />
+        </div>
+
+        <Button
+          label="₩{{ formatCurrency(selectedTotal) }} 납부하기"
+          class="w-full pay-btn"
+          @click="submitPayment"
+        />
+      </div>
+
+      <!-- 우측 납부 요약 -->
+      <div class="pay-summary">
+        <h3 class="section-title"><i class="pi pi-check-circle"></i> 납부 요약</h3>
+        <div class="summary-list">
+          <div v-for="order in selectedOrders" :key="order.orderId" class="summary-item">
+            <span>{{ order.prodName }} + 외 {{ order.extraCount }}건</span>
+            <span>₩{{ formatCurrency(order.totalPrice) }}</span>
+          </div>
+        </div>
+        <div class="summary-total">
+          <div class="row">
+            <span>총 납부금액</span>
+            <span>₩{{ formatCurrency(selectedTotal) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== [탭] 거래 요약 ===== -->
+    <div v-else-if="activeTab === 'summary'" class="tab-content">
+      <!-- 상단 카드 -->
+      <div class="summary-grid">
+        <div class="card green">
+          <p class="label">완료된 납부 총액</p>
+          <p class="amount">₩{{ formatCurrency(summaryReport.completedAmount) }}</p>
+        </div>
+        <div class="card blue">
+          <p class="label">완료된 거래</p>
+          <p class="amount">{{ summaryReport.completedCount }}건</p>
+        </div>
+        <div class="card orange">
+          <p class="label">대기중인 거래</p>
+          <p class="amount">{{ summaryReport.pendingCount }}건</p>
+        </div>
+      </div>
+
+      <!-- 검색 & 필터 -->
+      <div class="table-toolbar between">
+        <div class="search-container">
+          <i class="pi pi-search search-icon"></i>
+          <InputText
+            v-model="searchSummary"
+            placeholder="공급업체 또는 거래번호 검색..."
+            class="search-input"
+          />
+        </div>
+
+        <div class="filters">
+          <Dropdown v-model="filterStatus" :options="statusOptions" placeholder="모든 상태" />
+          <Dropdown v-model="filterPeriod" :options="periodOptions" placeholder="전체 기간" />
+          <Button icon="pi pi-download" label="내보내기" class="export-btn" />
+        </div>
+      </div>
+
+      <!-- 거래 요약 테이블 -->
+      <DataTable
+        :value="filteredSummaryList"
+        paginator
+        :rows="10"
+        class="custom-table"
+      >
+        <Column field="supplier" header="공급업체" style="width:180px;" />
+        <Column field="amount" header="금액" style="width:140px; text-align:right;">
+          <template #body="{ data }">
+            ₩{{ formatCurrency(data.amount) }}
+          </template>
+        </Column>
+        <Column field="date" header="납부일" style="width:120px;" />
+        <Column field="method" header="결제방법" style="width:120px;" />
+        <Column field="status" header="상태" style="width:100px;">
+          <template #body="{ data }">
+            <span :class="['status-badge', data.status]">{{ data.status }}</span>
+          </template>
+        </Column>
+        <Column field="txnId" header="거래번호" style="width:160px;" />
+        <Column field="memo" header="메모" />
+      </DataTable>
+    </div>
+
+    <Toast />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
+import Badge from 'primevue/badge'
+import Toast from 'primevue/toast'
+import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
+import RadioButton from 'primevue/radiobutton'
+import Calendar from 'primevue/calendar'
+import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
-import Toast from 'primevue/toast'
+import Dropdown from 'primevue/dropdown'
 import { useToast } from 'primevue/usetoast'
 
-const orders = ref([])
-const selectedOrders = ref([])
+const today = new Date().toLocaleDateString('ko-KR')
 const toast = useToast()
 
-// 상단 카드 데이터
-const remainingCredit = ref(0)
+/* ========== 상단 카드 데이터 ========== */
+const summary = ref({
+  totalUnpaid: 15750000,
+  overdueCount: 3,
+  upcomingCount: 7,
+  thisMonthPaid: 28500000
+})
 
-// ===== 주문 목록 조회 =====
+/* ========== 거래 요약 상단 카드 ========== */
+const summaryReport = ref({
+  completedAmount: 8950000,
+  completedCount: 3,
+  pendingCount: 1
+})
+
+/* ========== 탭 관리 ========== */
+const activeTab = ref('pending')
+
+/* ========== 미결제 내역 데이터 ========== */
+const orders = ref([])
+const selectedOrders = ref([])
+const searchQuery = ref('')
+
 const fetchOrders = async () => {
   try {
     const res = await axios.get('/api/pendingorders')
     orders.value = res.data || []
-
-    // 날짜 → 주문번호 기준 정렬
-    orders.value.sort((a, b) => {
-      const da = new Date(a.orderDate)
-      const db = new Date(b.orderDate)
-      if (db.getTime() !== da.getTime()) {
-        return db - da // 날짜 내림차순
-      }
-      return String(b.orderId).localeCompare(String(a.orderId)) // 동일 날짜일 때 주문번호 내림차순
-    })
-
-    console.log('전체 주문 목록 (납부대기+반품):', orders.value)
   } catch (error) {
-    console.error('주문 목록 조회 실패:', error)
-    orders.value = []
+    console.error('미결제 목록 불러오기 실패:', error)
   }
 }
 
-// ===== 전체 미수금 (전체 주문총액 합계 - 반품금액 차감) =====
-const monthSales = computed(() =>
-  orders.value.reduce((sum, order) => {
-    const normal = order.dataType === 'ORDER' ? Number(order.totalPrice || 0) : 0
-    const refund = order.dataType === 'RETURN' ? Number(order.returnPrice || 0) : 0
-    return sum + (normal - refund)
-  }, 0)
-)
+const filteredOrders = computed(() => {
+  if (!searchQuery.value) return orders.value
+  return orders.value.filter(order =>
+    order.orderId.includes(searchQuery.value) ||
+    order.prodName.includes(searchQuery.value)
+  )
+})
 
-// ===== 선택된 주문 총합 =====
 const selectedTotal = computed(() =>
-  selectedOrders.value.reduce((sum, item) => {
-    const normal = item.dataType === 'ORDER' ? Number(item.totalPrice || 0) : 0
-    const refund = item.dataType === 'RETURN' ? Number(item.returnPrice || 0) : 0
-    return sum + (normal - refund)
-  }, 0)
+  selectedOrders.value.reduce((sum, order) => sum + (order.totalPrice || 0), 0)
 )
 
-// ===== 금액 포맷 =====
-const formatCurrency = (value) => {
-  if (!value && value !== 0) return '0 원'
-  return value.toLocaleString('ko-KR') + ' 원'
-}
+/* ========== 납부 처리 폼 ========== */
+const method = ref('신용카드')
+const cardNumber = ref('')
+const expiry = ref('')
+const cvv = ref('')
+const payDate = ref(null)
+const memo = ref('')
 
-// ===== 날짜 포맷 (yyyy-MM-dd) =====
-const formatDate = (dateStr) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  if (isNaN(date)) return ''
-  return date.toISOString().split('T')[0]
-}
-
-// ===== 결제기한 계산 (주문일 + 180일) =====
-const formatPayDueDate = (orderDateStr) => {
-  if (!orderDateStr) return ''
-  const orderDate = new Date(orderDateStr)
-  if (isNaN(orderDate)) return ''
-  orderDate.setDate(orderDate.getDate() + 180)
-  return orderDate.toISOString().split('T')[0]
-}
-
-// ===== 반품건 행 스타일 =====
-const rowClass = (data) => {
-  return {
-    'refund-row': data.dataType === 'RETURN'
-  }
-}
-
-// ===== 납부 처리 =====
 const submitPayment = async () => {
   if (selectedOrders.value.length === 0) {
     toast.add({ severity: 'warn', summary: '알림', detail: '납부할 주문을 선택하세요.', life: 3000 })
@@ -174,150 +305,232 @@ const submitPayment = async () => {
   }
 
   const payload = {
-    payRmk: '납부 처리',
-    payAmount: selectedTotal.value,
-    vendorId: 'V-001',
-    payType: 'CASH',
-    paymentDetails: selectedOrders.value.map(o => ({
-      orderId: o.orderId,
-      prodUnitPrice: o.dataType === 'ORDER' ? o.totalPrice : 0,
-      returnUnitPrice: o.dataType === 'RETURN' ? o.returnPrice : 0,
-      dataType: o.dataType
+    totalAmount: selectedTotal.value,
+    method: method.value,
+    payDate: payDate.value,
+    memo: memo.value,
+    orders: selectedOrders.value.map(order => ({
+      orderId: order.orderId,
+      totalPrice: order.totalPrice
     }))
   }
 
   try {
     await axios.post('/api/insertpayment', payload)
     toast.add({ severity: 'success', summary: '성공', detail: '납부가 완료되었습니다.', life: 3000 })
-    selectedOrders.value = []
     fetchOrders()
+    selectedOrders.value = []
   } catch (error) {
-    console.error('납부 등록 오류:', error)
-    toast.add({ severity: 'error', summary: '오류', detail: '납부 등록 중 오류가 발생했습니다.', life: 3000 })
+    toast.add({ severity: 'error', summary: '오류', detail: '납부 처리 중 오류가 발생했습니다.', life: 3000 })
   }
 }
+
+/* ========== 거래 요약 탭 데이터 ========== */
+const summaryList = ref([])
+const searchSummary = ref('')
+const filterStatus = ref(null)
+const filterPeriod = ref(null)
+
+const statusOptions = [
+  { label: '모든 상태', value: null },
+  { label: '완료', value: '완료' },
+  { label: '대기중', value: '대기중' },
+  { label: '실패', value: '실패' }
+]
+
+const periodOptions = [
+  { label: '전체 기간', value: null },
+  { label: '최근 1개월', value: '1M' },
+  { label: '최근 3개월', value: '3M' },
+  { label: '최근 6개월', value: '6M' }
+]
+
+const fetchSummaryList = async () => {
+  try {
+    const res = await axios.get('/api/paymentsummary')
+    summaryList.value = res.data || []
+  } catch (error) {
+    console.error('거래 요약 불러오기 실패:', error)
+  }
+}
+
+const filteredSummaryList = computed(() => {
+  return summaryList.value.filter(item => {
+    const matchSearch = item.supplier.includes(searchSummary.value) || item.txnId.includes(searchSummary.value)
+    const matchStatus = !filterStatus.value || item.status === filterStatus.value
+    return matchSearch && matchStatus
+  })
+})
 
 onMounted(() => {
   fetchOrders()
+  fetchSummaryList()
 })
+
+/* ========== 금액 포맷 ========== */
+const formatCurrency = (value) => {
+  return value ? value.toLocaleString('ko-KR') : '0'
+}
 </script>
 
 <style scoped>
-/* ===== 전체 레이아웃 ===== */
-.pay-register {
-  padding: 20px;
-  background: #f6f8fa;
-}
-
-/* ===== 상단 카드 ===== */
-.summary-cards {
+/* ===== 공통 스타일 ===== */
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 15px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
 }
+.title { font-size: 1.6rem; font-weight: bold; }
+.subtitle { font-size: 0.9rem; color: #777; }
+.date-badge { background: #eee; color: #333; }
 
-.summary-card {
-  flex: 1;
-  min-width: 200px;
-  background: white;
-  border: 1px solid #dcdcdc;
-  border-radius: 8px;
-  padding: 15px;
+/* 카드 */
+.summary-cards, .summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 20px 0;
+}
+.summary-cards { grid-template-columns: repeat(4, 1fr); }
+
+.card {
+  padding: 16px;
+  border-radius: 10px;
+  background: #fff;
   text-align: center;
   box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
+.card .label { color: #666; font-size: 0.9rem; }
+.card .amount { font-size: 1.4rem; font-weight: bold; }
+.red .amount { color: #e74c3c; }
+.orange .amount { color: #f39c12; }
+.blue .amount { color: #2980b9; }
+.green .amount { color: #27ae60; }
 
-.summary-card .title {
+/* 탭 */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 15px;
+}
+.tab-btn {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
   font-size: 1rem;
-  color: #555;
-  margin-bottom: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.tab-btn.active {
+  border-bottom: 3px solid #2980b9;
+  font-weight: bold;
+  color: #2980b9;
 }
 
-.summary-card .amount {
-  font-size: 1.5rem;
-  font-weight: bold;
+/* 검색창 */
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.table-toolbar.between {
+  justify-content: space-between;
+}
+.search-container {
+  position: relative;
+  width: 280px;
+}
+.search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+}
+.search-input {
+  padding-left: 30px;
+  border-radius: 20px;
+  height: 34px;
+  width: 100%;
+  border: 1px solid #ccc;
+}
+.filters {
+  display: flex;
+  gap: 10px;
+}
+.export-btn {
+  background: #f4f4f4;
+  border: none;
   color: #333;
 }
 
-.summary-card .highlight {
-  color: #007ad9;
+/* 상태 뱃지 */
+.status-badge {
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.8rem;
+}
+.status-badge.완료 { background: #27ae60; }
+.status-badge.대기중 { background: #f39c12; }
+.status-badge.실패 { background: #e74c3c; }
+
+/* 납부 처리 */
+.pay-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.pay-form, .pay-summary {
+  background: #fff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.section-title { font-weight: bold; margin-bottom: 12px; }
+
+.radio-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
 }
 
 .pay-btn {
-  height: 70px;
-  font-size: 1.2rem;
+  background-color: #000;
+  color: #fff;
   font-weight: bold;
-  background-color: #004080;
   border: none;
-  padding: 0 25px;
-  border-radius: 8px;
-  transition: 0.3s;
+  height: 40px;
+  border-radius: 6px;
+  cursor: pointer;
 }
-
 .pay-btn:hover {
-  background-color: #0059b3;
+  background-color: #333;
 }
 
-/* ===== 테이블 ===== */
-.order-table-section {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  border: 1px solid #dcdcdc;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+.summary-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 0.9rem;
 }
 
-.order-table {
-  font-size: 0.95rem;
-  width: 100%;
+.summary-total {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #ccc;
 }
-
-::v-deep(.p-datatable-thead > tr > th) {
-  border-right: 1px solid #e5e7eb;
-  background: #f9fafb;
-  font-weight: 600;
-  text-align: center;
-  padding: 10px;
-}
-
-::v-deep(.p-datatable-tbody > tr > td) {
-  border-right: 1px solid #f0f0f0;
-  padding: 8px 10px;
-  text-align: center;
-}
-
-/* ===== 반품 행 전체 스타일 ===== */
-::v-deep(.p-datatable-tbody > tr.refund-row) {
-  background-color: #fff5f5 !important; /* 연한 빨간 배경 */
-  color: #d60000 !important;           /* 글씨 빨간색 */
+.summary-total .row {
+  display: flex;
+  justify-content: space-between;
   font-weight: bold;
-}
-
-/* 선택 시에도 빨간색 유지 */
-::v-deep(.p-datatable-tbody > tr.refund-row.p-highlight) {
-  background-color: #ffe5e5 !important; /* 선택 시 조금 더 진한 배경 */
-  color: #d60000 !important;
-}
-
-@media (max-width: 768px) {
-  .summary-cards {
-    flex-direction: column;
-  }
-  
-  .pay-btn {
-    width: 100%;
-    margin-top: 10px;
-  }
-
-  .order-table {
-    font-size: 0.85rem;
-  }
-
-  .p-datatable-wrapper {
-    overflow-x: auto;
-  }
+  font-size: 1.1rem;
 }
 </style>

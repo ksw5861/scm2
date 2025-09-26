@@ -58,18 +58,66 @@
         #{whId,       mode=IN, jdbcType=VARCHAR},
         #{totalQty,   mode=IN, jdbcType=NUMERIC},
         #{employeeId, mode=IN, jdbcType=VARCHAR},
-        #{rowCount,   mode=OUT, jdbcType=NUMERIC}
+        #{rowCount,   mode=OUT, jdbcType=NUMERIC, javaType=java.lang.Integer}
       ) }
   </select>
 
 
 
-  <!-- 입고 삭제 -->
+  <!-- 입고 삭제
   <delete id="deleteInbound" parameterType="string">
     DELETE FROM Product_LOT WHERE prd_lot = #{prdLot}
-  </delete>
+  </delete> -->
 
   
+
+    <!-- 모달 부분 -->
+   <!-- 모달: 제품 목록 조회 -->
+<select id="selectInboundProductListByCondition" 
+        resultType="ProductVO">
+  SELECT *
+  FROM (
+    SELECT 
+      p.prod_id,
+      p.prod_name,
+      ROW_NUMBER() OVER (ORDER BY p.prod_id DESC) AS rn
+    FROM product p
+    WHERE 1 = 1
+    <if test="(condition != null and condition != '')">
+      AND (
+          p.prod_id LIKE '%' || #{condition} || '%'
+          OR
+          p.prod_name LIKE '%' || #{condition} || '%'
+      )
+    </if>
+  )
+  WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
+</select>
+
+
+<!-- ============================================================
+     모달 - 총 건수 조회 (OR 조건 적용)
+     ============================================================ -->
+<select id="selectInboundProductCountByCondition"
+        resultType="long">
+  SELECT COUNT(*)
+  FROM product p
+  WHERE 1=1
+    <if test="condition != null and condition != ''">
+      AND (
+        p.prod_id LIKE '%' || #{condition} || '%'
+        OR p.prod_name LIKE '%' || #{condition} || '%'
+      )
+    </if>
+</select>
+  <!-- 모달 부분 끝 -->
+
+
+
+  
+  
+
+
 
 
 </mapper>

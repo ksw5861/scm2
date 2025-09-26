@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class BomVO {
     private String bomId;
-    private String bomVer;
+    private String bomVersion;
     private Date effectiveDate;
     private Date expireDate;
     private String prodId;
@@ -15,4 +15,5 @@ public class BomVO {
     private Integer qty;
 
     private MaterialVO material; // 자재 정보 포함
+    private ProductVO product;
 }

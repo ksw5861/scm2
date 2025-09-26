@@ -2,7 +2,6 @@ package com.yedam.scm.vo;
 
 import java.math.BigDecimal;
 import java.sql.Date;
-
 import com.yedam.scm.dto.PageDTO;
 
 import lombok.Data;
@@ -13,6 +12,8 @@ public class ProductVO {
     private String prodId;            // 제품 코드
     private String prodName;          // 제품명
     private Date prodExpireDate;      // 유통기한
+    private int exp;                  // exp
+    private String prodStoreCond;     // 보관조건
     private int safeStock;            // 안전재고
     private String status;            // 제품 상태 (활성/비활성 등)
     private String spec;              // 규격

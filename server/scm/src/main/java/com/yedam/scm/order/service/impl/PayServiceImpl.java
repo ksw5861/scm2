@@ -1,5 +1,6 @@
 package com.yedam.scm.order.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,49 +31,30 @@ public class PayServiceImpl implements PayService {
     @Transactional
     @Override
     public String insertPayment(PaymentVO paymentVO) {
-        // 1. 납부 마스터 저장
-        payMapper.insertPayment(paymentVO);
+    // 1. 결제 마스터 저장
+    payMapper.insertPayment(paymentVO);
 
-        String payId = paymentVO.getPayId();
-        if (payId == null) {
-            throw new RuntimeException("납부 등록 실패: PAY_ID가 생성되지 않았습니다.");
-        }
-
-        // 2. 납부 상세 저장
-        if (paymentVO.getPaymentDetails() == null || paymentVO.getPaymentDetails().isEmpty()) {
-            throw new RuntimeException("납부 등록 실패: 결제 상세 정보가 없습니다.");
-        }
-
-        for (PaymentDetailVO detail : paymentVO.getPaymentDetails()) {
-            detail.setPayId(payId);
-            payMapper.insertPaymentDetail(detail);
-        }
-
-        // 3. 주문/반품 상태 COMPLETE 업데이트
-        List<String> orderIds = paymentVO.getPaymentDetails().stream()
-                .filter(detail -> "ORDER".equals(detail.getDataType())) // 주문건만
-                .map(PaymentDetailVO::getOrderId)
-                .distinct()
-                .collect(Collectors.toList());
-
-        List<String> returnIds = paymentVO.getPaymentDetails().stream()
-                .filter(detail -> "RETURN".equals(detail.getDataType())) // 반품건만
-                .map(PaymentDetailVO::getOrderId)
-                .distinct()
-                .collect(Collectors.toList());
-
-        // 주문 상태 COMPLETE
-        if (!orderIds.isEmpty()) {
-            updateOrderStatusToComplete(orderIds);
-        }
-
-        // 반품 상태 COMPLETE
-        if (!returnIds.isEmpty()) {
-            updateReturnStatusToComplete(returnIds);
-        }
-
-        return payId;
+    // 2. 결제 상세 저장
+    for (PaymentDetailVO detail : paymentVO.getPaymentDetails()) {
+        detail.setPayId(paymentVO.getPayId());
+        payMapper.insertPaymentDetail(detail);
     }
+
+    // 3. 납부한 주문건 상태 '완료'로 변경
+    List<String> orderIds = new ArrayList<>();
+    for (PaymentDetailVO detail : paymentVO.getPaymentDetails()) {
+        if ("ORDER".equals(detail.getDataType())) {
+            orderIds.add(detail.getOrderId());
+        }
+    }
+
+    if (!orderIds.isEmpty()) {
+        payMapper.updateOrderStatusToComplete(orderIds);
+    }
+
+    return "OK";
+    }
+
 
     @Override
     public Long insertPaymentDetail(PaymentDetailVO detailVO) {
@@ -107,4 +89,11 @@ public class PayServiceImpl implements PayService {
             payMapper.updateReturnStatusToComplete(returnId);
         }
     }
+
+
+
+
+
+
+
 }

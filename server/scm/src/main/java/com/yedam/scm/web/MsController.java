@@ -2,8 +2,8 @@ package com.yedam.scm.web;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
+import com.yedam.scm.vo.PrdPlanDetailVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
 
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 
 @RestController
-@RequestMapping("/mat") 
+@RequestMapping("/mat")
 @RequiredArgsConstructor
 public class MsController {
     
@@ -30,7 +30,18 @@ public class MsController {
          return purchaseMatService.insertProductionPlan(productionPlan);
      }
 
+    //생산계획마스터목록
+    @GetMapping("/planMasterList")
+    public List<ProductionPlanVO > getPlanMasterList() {
+        return purchaseMatService.getPlanMasterList();
+    }
 
+    //생산계획디테일목록
+    @GetMapping("/planList")
+    public List<PrdPlanDetailVO> getPlanList() {
+        return purchaseMatService.getPlanList();
+    }
+    
 
 
 

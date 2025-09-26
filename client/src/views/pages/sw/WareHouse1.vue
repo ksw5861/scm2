@@ -31,7 +31,7 @@ const breadcrumbItems = computed(() => {
 const searchParams = reactive({
   whId: '',
   whName: '',
-  status: ''
+  status: '' // '' = 전체
 });
 
 /* 목록 / 선택 / 상세 / 폼 상태 */
@@ -142,7 +142,6 @@ const addWarehouse = async () => {
       mode.value = 'view';
       selected.value = warehouses.value.find((w) => (w.whId ?? w.WH_ID) === newId) ?? null;
     } else {
-      // 초기화
       Object.keys(form).forEach((k) => (form[k] = ''));
       mode.value = 'create';
     }
@@ -253,14 +252,27 @@ onMounted(() => fetchList());
           </InputGroup>
         </div>
 
+        <!-- 상태 검색: 라디오 버튼 (전체 / 정상 / 점검중 / 폐쇄) -->
         <div class="p-2 w-full md:w-1/4">
-          <InputGroup>
-            <InputGroupAddon><i :class="iconBox" /></InputGroupAddon>
-            <IftaLabel>
-              <InputText v-model="searchParams.status" inputId="status" />
-              <label for="status">상태</label>
-            </IftaLabel>
-          </InputGroup>
+          <label class="block text-sm mb-1">상태</label>
+          <div class="flex gap-3 items-center">
+            <label class="flex items-center gap-1">
+              <input type="radio" v-model="searchParams.status" value="" />
+              전체
+            </label>
+            <label class="flex items-center gap-1">
+              <input type="radio" v-model="searchParams.status" value="정상" />
+              정상
+            </label>
+            <label class="flex items-center gap-1">
+              <input type="radio" v-model="searchParams.status" value="점검중" />
+              점검중
+            </label>
+            <label class="flex items-center gap-1">
+              <input type="radio" v-model="searchParams.status" value="폐쇄" />
+              폐쇄
+            </label>
+          </div>
         </div>
       </div>
     </SearchCard>
@@ -332,9 +344,23 @@ onMounted(() => fetchList());
               <InputText v-model="form.ownerTel" class="w-full h-10" placeholder="전화번호" />
             </div>
 
+            <!-- 상태 라디오 버튼 -->
             <div>
               <label class="text-sm block mb-1">상태</label>
-              <InputText v-model="form.status" class="w-full h-10" placeholder="상태" />
+              <div class="flex gap-4 items-center mt-1">
+                <label class="flex items-center gap-1">
+                  <input type="radio" value="정상" v-model="form.status" />
+                  정상
+                </label>
+                <label class="flex items-center gap-1">
+                  <input type="radio" value="점검중" v-model="form.status" />
+                  점검중
+                </label>
+                <label class="flex items-center gap-1">
+                  <input type="radio" value="폐쇄" v-model="form.status" />
+                  폐쇄
+                </label>
+              </div>
             </div>
 
             <div>
@@ -359,5 +385,10 @@ table td,
 table th {
   border-bottom: 1px solid #e5e7eb;
   padding: 6px 4px;
+}
+
+/* 라디오 그룹 spacing */
+input[type='radio'] {
+  transform: translateY(1px);
 }
 </style>

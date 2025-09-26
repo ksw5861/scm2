@@ -17,7 +17,7 @@ const iconInfo = useIcon('info');
 const iconBox = useIcon('box');
 const iconId = useIcon('id');
 
-// breadcrumb (사원 페이지 스타일과 동일)
+// breadcrumb
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
 const breadcrumbItems = computed(() => {
   const matched = route.matched.filter((r) => r.meta);
@@ -28,15 +28,15 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-/* ---------- 검색 파라미터 ---------- */
+// 검색 파라미터
 const searchParams = reactive({
   prodId: '',
   prodName: '',
-  status: '',
+  status: '', // 전체/사용/미사용
   unit: ''
 });
 
-/* ---------- 목록 / 선택 /상세 /폼 상태 ---------- */
+// 목록 / 선택 / 상세 / 폼 상태
 const products = ref([]);
 const selectedProduct = ref(null);
 
@@ -47,7 +47,7 @@ const productDetail = reactive({
   spec: '',
   unit: '',
   safeStock: '',
-  status: '',
+  status: '', // 사용/미사용
   exp: '',
   prodUnitPrice: ''
 });
@@ -67,14 +67,15 @@ const productForm = reactive({
 const mode = ref('create'); // create | view | edit
 const loading = ref(false);
 
-/* ---------- 페이징 / 컬럼 ---------- */
+// 페이징 / 컬럼
 const page = ref({ page: 1, size: 10, totalElements: 0 });
 const columns = [
   { label: '제품코드', field: 'prodId', sortable: true },
-  { label: '제품명', field: 'prodName', sortable: true }
+  { label: '제품명', field: 'prodName', sortable: true },
+  { label: '상태', field: 'status' }
 ];
 
-/* ---------- API: 목록 ---------- */
+// API: 목록
 const fetchProductList = async () => {
   loading.value = true;
   try {
@@ -87,12 +88,10 @@ const fetchProductList = async () => {
       size: page.value.size
     };
     const res = await axios.get('/api/product', { params });
-    // 안전하게 파싱: 서버가 배열을 바로 반환하거나 {data:[], page:...} 형태 모두 처리
     const payload = Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.items ?? []);
     products.value = payload;
     page.value.totalElements = res.data?.page?.totalElements ?? products.value.length;
 
-    // 선택 유지 (목록 갱신 시)
     if (selectedProduct.value) {
       const found = products.value.find((p) => (p.prodId ?? p.PROD_ID) === (selectedProduct.value.prodId ?? selectedProduct.value.PROD_ID));
       if (!found) handleUnselect();
@@ -105,7 +104,7 @@ const fetchProductList = async () => {
   }
 };
 
-/* ---------- API: 상세 ---------- */
+// API: 상세
 const fetchProductDetail = async (id) => {
   if (!id) return;
   try {
@@ -123,12 +122,10 @@ const fetchProductDetail = async (id) => {
         exp: data.exp ?? data.EXP ?? '',
         prodUnitPrice: data.prodUnitPrice ?? data.PROD_UNIT_PRICE ?? ''
       });
-      // 폼 동기화
       Object.assign(productForm, productDetail);
       selectedProduct.value = data;
       mode.value = 'view';
     } else {
-      // 초기화
       Object.keys(productDetail).forEach((k) => (productDetail[k] = ''));
       Object.keys(productForm).forEach((k) => (productForm[k] = ''));
       selectedProduct.value = null;
@@ -140,24 +137,21 @@ const fetchProductDetail = async (id) => {
   }
 };
 
-/* ---------- CRUD ---------- */
+// CRUD
 const addProduct = async () => {
   if (!productForm.prodName) return toast('warn', '등록 실패', '제품명을 입력하세요.');
   try {
     const payload = { ...productForm };
-    delete payload.prodId; // 서버에서 생성한다고 가정
+    delete payload.prodId;
     const res = await axios.post('/api/product', payload);
     toast('success', '등록 성공', '제품이 등록되었습니다.');
     await fetchProductList();
-    // 서버가 새 id를 반환하면 상세로 이동
     const newId = res.data?.prodId ?? res.data?.PROD_ID ?? null;
     if (newId) {
       await fetchProductDetail(newId);
       mode.value = 'view';
-      // 선택 갱신
       selectedProduct.value = products.value.find((p) => (p.prodId ?? p.PROD_ID) === newId) ?? null;
     } else {
-      // 폼 리셋
       Object.keys(productForm).forEach((k) => (productForm[k] = ''));
       mode.value = 'create';
     }
@@ -188,7 +182,6 @@ const deleteProduct = async () => {
   try {
     await axios.delete(`/api/product/${productDetail.prodId}`);
     toast('success', '삭제 성공', '제품이 삭제되었습니다.');
-    // 초기화 및 목록 갱신
     Object.keys(productDetail).forEach((k) => (productDetail[k] = ''));
     Object.keys(productForm).forEach((k) => (productForm[k] = ''));
     selectedProduct.value = null;
@@ -200,7 +193,7 @@ const deleteProduct = async () => {
   }
 };
 
-/* ---------- 이벤트 핸들러 / 유틸 ---------- */
+// 이벤트 핸들러
 const handleRowSelect = async (row) => {
   selectedProduct.value = row;
   const id = row.prodId ?? row.PROD_ID;
@@ -216,17 +209,15 @@ const handleUnselect = () => {
 };
 
 const handleEdit = () => {
-  // form은 이미 detail에서 동기화됨
   mode.value = 'edit';
 };
 
 const handleResetForm = () => {
-  // view 상황이면 detail로, 아니면 빈 폼
   if (mode.value === 'view' && productDetail.prodId) Object.assign(productForm, productDetail);
   else Object.keys(productForm).forEach((k) => (productForm[k] = ''));
 };
 
-/* 검색/초기화 (employee page와 동일 동작) */
+// 검색 / 초기화
 const handleSearch = () => {
   if (mode.value === 'edit') {
     if (!confirm('현재 수정 중입니다. 조회하면 수정중인 내용이 사라집니다. 계속하시겠습니까?')) return;
@@ -240,7 +231,7 @@ const handleSearch = () => {
 };
 
 const handleReset = () => {
-  Object.assign(searchParams, { prodId: '', prodName: '', prodStoreCond: '', status: '', unit: '', exp: '', prodUnitPrice: '' });
+  Object.assign(searchParams, { prodId: '', prodName: '', status: '', unit: '', exp: '', prodUnitPrice: '' });
   handleSearch();
 };
 
@@ -273,24 +264,14 @@ onMounted(() => fetchProductList());
           </InputGroup>
         </div>
 
+        <!-- 상태 라디오 버튼 -->
         <div class="p-2 w-full md:w-1/4">
-          <InputGroup>
-            <InputGroupAddon><i :class="iconBox" /></InputGroupAddon>
-            <IftaLabel>
-              <InputText v-model="searchParams.status" inputId="status" />
-              <label for="status">상태</label>
-            </IftaLabel>
-          </InputGroup>
-        </div>
-
-        <div class="p-2 w-full md:w-1/4">
-          <InputGroup>
-            <InputGroupAddon><i :class="iconBox" /></InputGroupAddon>
-            <IftaLabel>
-              <InputText v-model="searchParams.unit" inputId="unit" />
-              <label for="unit">단위</label>
-            </IftaLabel>
-          </InputGroup>
+          <label class="block mb-1 text-sm">상태</label>
+          <div class="flex gap-2 items-center">
+            <label><input type="radio" value="" v-model="searchParams.status" /> 전체</label>
+            <label><input type="radio" value="사용" v-model="searchParams.status" /> 사용</label>
+            <label><input type="radio" value="미사용" v-model="searchParams.status" /> 미사용</label>
+          </div>
         </div>
       </div>
     </SearchCard>
@@ -367,9 +348,13 @@ onMounted(() => fetchProductList());
               <InputText v-model="productForm.safeStock" class="w-full h-10" placeholder="안전재고" />
             </div>
 
+            <!-- 상태 라디오 버튼 -->
             <div>
               <label class="text-sm block mb-1">상태</label>
-              <InputText v-model="productForm.status" class="w-full h-10" placeholder="상태" />
+              <div class="flex gap-2 items-center">
+                <label><input type="radio" value="사용" v-model="productForm.status" /> 사용</label>
+                <label><input type="radio" value="미사용" v-model="productForm.status" /> 미사용</label>
+              </div>
             </div>
 
             <div>
@@ -392,38 +377,3 @@ onMounted(() => fetchProductList());
     </div>
   </Fluid>
 </template>
-
-<style scoped>
-/* 검색 박스 폭을 줄여서 한 줄에 들어가도록 조정 */
-.SearchCard .flex > .p-2 {
-  padding: 0.5rem;
-}
-/* 기존 스타일 재사용 */
-.container {
-  max-width: 1100px;
-  margin: 0 auto;
-}
-.btn {
-  padding: 6px 12px;
-  background: #2563eb;
-  color: white;
-  border-radius: 4px;
-}
-.btn-secondary {
-  padding: 6px 12px;
-  background: #e5e7eb;
-  color: #111827;
-  border-radius: 4px;
-}
-.btn-danger {
-  padding: 6px 12px;
-  background: #ff0000;
-  color: #ffffff;
-  border-radius: 4px;
-}
-table td,
-table th {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 6px 4px;
-}
-</style>
