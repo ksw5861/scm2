@@ -13,8 +13,7 @@ public interface MaterialMapper {
   List<MaterialVO> getMaterialList(
     @Param("matId") String matId,
     @Param("matName") String matName,
-    @Param("matType") String matType,
-    @Param("matStoreCond") String matStoreCond
+    @Param("status") String status
 );
 
   // 자재 상세

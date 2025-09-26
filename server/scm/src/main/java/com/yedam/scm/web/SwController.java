@@ -49,9 +49,8 @@ public class SwController {
     public List<MaterialVO> getMaterialList(
             @RequestParam(required = false) String matId,
             @RequestParam(required = false) String matName,
-            @RequestParam(required = false) String matType,
-            @RequestParam(required = false) String matStoreCond) {
-        return materialSvc.getMaterialList(matId, matName, matType, matStoreCond);
+            @RequestParam(required = false) String status) {
+        return materialSvc.getMaterialList(matId, matName, status);
     }
 
     @GetMapping("/material/{matId}")

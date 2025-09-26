@@ -15,8 +15,8 @@ public class MaterialServiceImpl implements MaterialService {
   MaterialMapper mapper;
 
   @Override
-  public List<MaterialVO> getMaterialList(String matId, String matName, String matType, String matStoreCond){
-    return mapper.getMaterialList(matId, matName, matType, matStoreCond);
+  public List<MaterialVO> getMaterialList(String matId, String matName, String status){
+    return mapper.getMaterialList(matId, matName, status);
 }
 
   @Override
