@@ -1,12 +1,13 @@
 package com.yedam.scm.web;
 
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
+
 import com.yedam.scm.dto.EmployeeListRes;
 import com.yedam.scm.dto.EmployeeSearchDTO;
 import com.yedam.scm.dto.LoginDTO;
 import com.yedam.scm.dto.LoginRes;
 import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.login.service.LoginService;
 import com.yedam.scm.master.service.EmployeeService;
 import com.yedam.scm.vo.EmployeeVO;
 
@@ -39,7 +40,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class DhController {
 
   private final EmployeeService employeeSvc;
-  // private final AccountService accountSvc;
+  private final LoginService loginSvc;
 
   @Value("${file.upload.employee-dir}")
   private String employeeUploadDir;
@@ -191,10 +192,20 @@ public class DhController {
     }
   }
 
-  // @PostMapping("/auth")
-  // public LoginRes AuthLogin(
-  //   @RequestBody LoginDTO login
-  // ) {
-  //   return accountSvc.
-  // }
+  /**
+   * 로그인
+   */
+  @PostMapping("/auth")
+  public ResponseEntity<LoginRes> authLogin(@RequestBody LoginDTO login) {
+      LoginRes result = loginSvc.loginByEmailAndPassword(login);
+
+      if (result != null) {
+        return ResponseEntity.ok(result);
+      } else {
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
+
+      }
+  }
+
 }

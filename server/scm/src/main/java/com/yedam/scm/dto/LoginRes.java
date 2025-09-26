@@ -1,13 +1,24 @@
 package com.yedam.scm.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import lombok.Data;
 
 @Data
 public class LoginRes {
 
     private String accessToken;
-    private String email;
-    private String role;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String accountId;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String code;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String name;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String role;
     
 }

@@ -594,7 +594,7 @@ onMounted(fetchEmployeeList);
     </SearchCard>
 
     <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
-      <div class="w-full xl:w-5/12">
+      <div class="w-full xl:w-5/12 lg:w-1/2">
         <div class="card flex flex-col">
           <div class="font-semibold text-lg sm:text-xl flex items-center justify-between gap-4 h-10">
             <div class="flex items-center gap-4">
@@ -626,7 +626,7 @@ onMounted(fetchEmployeeList);
         </div>
       </div>
 
-      <div class="w-full xl:w-7/12">
+      <div class="w-full xl:w-7/12 lg:w-1/2">
         <div class="card flex flex-col">
           <div class="flex items-center justify-between h-10">
             <div class="font-semibold text-lg sm:text-xl flex items-center gap-4 whitespace-nowrap">
@@ -765,7 +765,7 @@ onMounted(fetchEmployeeList);
                 <InputGroup>
                   <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
                   <IftaLabel>
-                    <InputText v-model="employeeDetail.phone" disabled />
+                    <InputText type="tel" v-model="employeeDetail.phone" disabled />
                     <label>휴대전화 번호</label>
                   </IftaLabel>
                 </InputGroup>
@@ -774,7 +774,7 @@ onMounted(fetchEmployeeList);
                 <InputGroup>
                   <InputGroupAddon><i :class="icons.email" /></InputGroupAddon>
                   <IftaLabel>
-                    <InputText v-model="employeeDetail.email" disabled />
+                    <InputText type="email" v-model="employeeDetail.email" disabled />
                     <label>이메일</label>
                   </IftaLabel>
                 </InputGroup>
