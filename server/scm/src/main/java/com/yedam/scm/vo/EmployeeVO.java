@@ -5,6 +5,8 @@ import java.util.Date;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Data;
 
 @Data
@@ -26,6 +28,15 @@ public class EmployeeVO {
   private char hasPhoto;
 
   // 이미지 파일 첨부
+  @JsonIgnore
   private MultipartFile photo;
+  
+  // 임시 비밀번호
+  @JsonIgnore
+  private String tempPassword;
+
+  // 결과 반환
+  @JsonIgnore
+  private int rowCount;
   
 }

@@ -101,7 +101,7 @@ const editForm = reactive({
 
 // ===== 이미지 업로드 관련 =====
 const fileInput = ref(null);
-const previewImage = ref(''); // This will hold the URL for the preview (either uploaded or existing)
+const previewImage = ref('');
 const selectedFile = ref(null);
 
 const triggerFileInput = () => {
@@ -119,7 +119,7 @@ const handleImageUpload = (event) => {
     reader.readAsDataURL(file);
   } else {
     selectedFile.value = null;
-    // 파일 선택 취소 시, 기존 데이터가 있으면 기존 사진을, 없으면 기본 사진을 보여줍니다.
+
     if (cardMode.value === 'edit' && employeeDetail.value) {
       previewImage.value = getEmployeePhotoSource(employeeDetail.value);
     } else {
@@ -128,19 +128,16 @@ const handleImageUpload = (event) => {
   }
 };
 
-// Centralized function to get the correct image URL or default
 const getEmployeePhotoSource = (employee, addCacheBuster = false) => {
     if (selectedFile.value && (cardMode.value === 'create' || cardMode.value === 'edit')) {
         return previewImage.value;
     }
 
-    // Check if the employee object and its hasPhoto property exist and are true
     if (employee?.employeeId && employee?.hasPhoto) {
         const url = `/api/img/employee/${employee.employeeId}`;
         return addCacheBuster ? `${url}?t=${new Date().getTime()}` : url;
     }
 
-    // If no employee ID or no photo, then use the default photo.
     return defaultPhoto;
 };
 
@@ -169,8 +166,8 @@ const resetEditForm = () => {
     hireDate: null,
     resignDate: null
   });
-  previewImage.value = ''; // Clear preview image
-  selectedFile.value = null; // Clear selected file
+  previewImage.value = '';
+  selectedFile.value = null;
 };
 
 const confirmEditLoss = (message) => {
@@ -222,7 +219,6 @@ const fetchEmployeeDetail = async (employeeId) => {
   try {
     const { data } = await axios.get(`/api/employee/${employeeId}`);
     employeeDetail.value = data;
-    // For detail view, reset selectedFile and set previewImage based on the fetched detail
     selectedFile.value = null;
     previewImage.value = getEmployeePhotoSource(employeeDetail.value);
   } catch (e) {
@@ -388,9 +384,7 @@ const handleReset = () => {
   fetchEmployeeList();
 };
 
-// 신규 사원 등록 폼 초기화 시, 입력 내용이 있으면 확인창을 띄우는 함수 추가
 const handleResetForm = () => {
-  // 폼에 값이 하나라도 입력되었는지 확인
   const isFormDirty =
     editForm.name ||
     editForm.phone ||
@@ -398,13 +392,11 @@ const handleResetForm = () => {
     editForm.hireDate ||
     editForm.resignDate;
 
-  if (isFormDirty || selectedFile.value) { // Also check if a file has been selected
-    // 값이 있을 경우, 사용자에게 경고 및 확인
+  if (isFormDirty || selectedFile.value) {
     if (confirm('현재 입력 중인 내용이 저장되지 않습니다. 계속 진행하시겠습니까?')) {
       resetEditForm();
     }
   } else {
-    // 폼이 비어있으면 바로 초기화 진행
     resetEditForm();
   }
 };
@@ -420,6 +412,17 @@ const handleEdit = () => {
   selectedFile.value = null; // Clear selected file when entering edit mode to show current image
   previewImage.value = getEmployeePhotoSource(employeeDetail.value); // Set preview to current employee photo
   cardMode.value = 'edit';
+};
+
+const handleCancelEdit = () => {
+  if (!employeeDetail.value) return;
+
+  if (!confirm('수정한 내용이 저장되지 않습니다. 취소하시겠습니까?')) return;
+
+  resetEditForm();
+  selectedFile.value = null;
+  previewImage.value = getEmployeePhotoSource(employeeDetail.value);
+  cardMode.value = 'view';
 };
 
 const getStatusLabel = (status) =>
@@ -472,10 +475,10 @@ watch(
 
 watch(cardMode, (newMode) => {
   if (newMode === 'create') {
-    resetEditForm(); // Ensure form and image preview are reset when switching to create mode
+    resetEditForm();
   } else if (newMode === 'view' && selectedEmployee.value) {
-    // When switching to view mode, ensure the correct photo for the selected employee is displayed
-    selectedFile.value = null; // Clear any temporary selected file
+
+    selectedFile.value = null;
     previewImage.value = getEmployeePhotoSource(selectedEmployee.value);
   }
 });
@@ -490,7 +493,7 @@ const openImageModal = (employee) => {
 };
 
 const handleImageError = (event) => {
-  event.target.src = defaultPhoto; // Fallback to default photo if image fails to load
+  event.target.src = defaultPhoto;
 };
 
 // ===== Mounted =====
@@ -681,6 +684,15 @@ onMounted(fetchEmployeeList);
                 icon="add"
                 label="등록"
                 @click="addEmployee"
+                class="whitespace-nowrap"
+                outlined
+              />
+              <Btn
+                v-if="cardMode === 'edit'"
+                icon="cancel"
+                color="secondary"
+                label="취소"
+                @click="handleCancelEdit"
                 class="whitespace-nowrap"
                 outlined
               />

@@ -135,49 +135,43 @@
     WHERE employee_id = #{empId}
   </select>
 
-  <insert id="insertEmployee">
-    
-    <selectKey keyProperty="employeeId" resultType="String" order="BEFORE">
-      SELECT next_code('emp') FROM dual
-    </selectKey>
+<insert id="insertEmployee" parameterType="EmployeeVO" statementType="CALLABLE">
+  <selectKey keyProperty="employeeId" resultType="string" order="BEFORE">
+    SELECT next_code('emp') FROM dual
+  </selectKey>
 
-    INSERT INTO employee (
-      employee_id,
-      name,
-      email,
-      phone,
-      hire_date,
-      resign_date,
-      status,
-      has_photo
-    ) VALUES (
-      #{employeeId},
-      #{name},
-      #{email},
-      #{phone},
-      #{hireDate},
-      #{resignDate},
-      #{status},
-      #{hasPhoto}
+  { CALL insert_employee_with_account(
+    #{employeeId, mode=IN, jdbcType=VARCHAR},
+    #{name, mode=IN, jdbcType=VARCHAR},
+    #{phone, mode=IN, jdbcType=VARCHAR},
+    #{email, mode=IN, jdbcType=VARCHAR},
+    #{status, mode=IN, jdbcType=VARCHAR},
+    #{isActive, mode=IN, jdbcType=CHAR},
+    #{hireDate, mode=IN, jdbcType=DATE},
+    #{resignDate, mode=IN, jdbcType=DATE},
+    #{tempPassword, mode=IN, jdbcType=VARCHAR}
+  ) }
+</insert>
+
+<update id="updateEmployeeById" statementType="CALLABLE">
+  { CALL update_employee_with_account(
+    #{employeeId, mode=IN, jdbcType=VARCHAR},
+    #{name, mode=IN, jdbcType=VARCHAR},
+    #{phone, mode=IN, jdbcType=VARCHAR},
+    #{email, mode=IN, jdbcType=VARCHAR},
+    #{status, mode=IN, jdbcType=VARCHAR},
+    #{isActive, mode=IN, jdbcType=CHAR},
+    #{hireDate, mode=IN, jdbcType=DATE},
+    #{resignDate, mode=IN, jdbcType=DATE},
+    #{hasPhoto, mode=IN, jdbcType=CHAR},
+    #{rowCount, mode=OUT, jdbcType=NUMERIC, javaType=java.lang.Integer}
+  )}
+</update>
+
+<delete id="deleteEmployeeById" statementType="CALLABLE">
+    CALL delete_employee_with_account(
+      #{param.empId, mode=IN, jdbcType=VARCHAR},
+      #{param.rowCount, mode=OUT, jdbcType=NUMERIC, javaType=java.lang.Integer}
     )
-  </insert>
-
-  <update id="updateEmployeeById">
-      UPDATE employee
-      SET
-        name = #{name},
-        email = #{email},
-        phone = #{phone},
-        hire_date = #{hireDate},
-        resign_date = #{resignDate},
-        status = #{status},
-        is_active = #{isActive},
-        has_photo = #{hasPhoto}
-      WHERE employee_id = #{employeeId}
-  </update>
-
-  <delete id="deleteEmployeeById">
-    DELETE FROM employee
-    WHERE employee_id = #{empId}
-  </delete>
+</delete>
 </mapper>

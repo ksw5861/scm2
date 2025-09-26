@@ -3,6 +3,8 @@ package com.yedam.scm.vo;
 import java.math.BigDecimal;
 import java.sql.Date;
 
+import com.yedam.scm.dto.PageDTO;
+
 import lombok.Data;
 
 @Data
@@ -20,4 +22,8 @@ public class ProductVO {
     // null 값 허용을 위해 BigDecimal 사용
     private BigDecimal prodUnitPrice;
 
+    private PageDTO paging;
+
 }
+
+
