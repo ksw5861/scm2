@@ -3,6 +3,9 @@ package com.yedam.scm.product.service;
 import java.util.List;
 import java.util.Map;
 
+import com.yedam.scm.dto.InboundListRes;
+import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.dto.WarehouseListRes;
 import com.yedam.scm.vo.ItemInboundVO;
 
 public interface InboundService {
@@ -20,5 +23,12 @@ public interface InboundService {
     // => 위 내용에 따라서 메소드 이름이 같더라도
     // 다 다른 메소드
 
+     // 모달에서 사용할 제품 목록 조회
+  InboundListRes getInboundProductList(String condition, PageDTO paging);
 
+  WarehouseListRes getWarehouseList(String keyword, PageDTO paging);   
+
+
+
+  
 }
