@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import DatePicker from 'primevue/datepicker';
 import InputText from 'primevue/inputtext';
 import Checkbox from 'primevue/checkbox';
+import Select from 'primevue/select';
 
 const props = defineProps({
   type: { type: String, required: true }, // "dateRange", "text", "checkbox"
@@ -27,10 +28,10 @@ watch(
     <label class="whitespace-nowrap mb-3">{{ label }}</label>
 
     <!-- 날짜 범위 -->
-    <div v-if="type === 'dateRange'" class="flex items-center gap-2">
-      <DatePicker v-model="internalValue.start" showIcon fluid :showOnFocus="false" dateFormat="yy/mm/dd" placeholder="시작일" />
+    <div v-if="type === 'dateRange'" :class="['w-full flex items-center gap-2 ', width]">
+      <DatePicker v-model="internalValue.start" showIcon fluid :showOnFocus="false" dateFormat="yy/mm/dd" placeholder="시작일" class="w-full" />
       <span> ~ </span>
-      <DatePicker v-model="internalValue.end" showIcon fluid :showOnFocus="false" dateFormat="yy/mm/dd" placeholder="종료일" />
+      <DatePicker v-model="internalValue.end" showIcon fluid :showOnFocus="false" dateFormat="yy/mm/dd" placeholder="종료일" class="w-full" />
     </div>
 
     <!--날짜만-->
@@ -39,21 +40,26 @@ watch(
     </div>
 
     <!-- 텍스트 입력 -->
-    <div v-else-if="type === 'text'" class="w-64">
-      <InputText v-model="internalValue" class="w-full" />
+    <div v-else-if="type === 'text'">
+      <InputText v-model="internalValue" :class="['w-full', width]" />
     </div>
 
     <!-- 텍스트박스 읽기 전용 -->
-    <div v-else-if="type === 'readOnly'"  :class="width">
-      <InputText v-model="internalValue" class="w-full" readonly="true" />
+    <div v-else-if="type === 'readOnly'">
+      <InputText v-model="internalValue" class="w-full" readonly="true" :class="['w-full', width]" />
     </div>
 
     <!-- 텍스트 입력 + 돋보기 아이콘-->
-    <div v-else-if="type === 'textIcon'" class="w-64">
-      <IconField iconPosition="left" class="w-64">
+    <div v-else-if="type === 'textIcon'">
+      <IconField iconPosition="left">
         <InputText v-model="internalValue" class="w-full" />
         <InputIcon class="pi pi-search" />
       </IconField>
+    </div>
+
+    <!--드롭다운-->
+    <div v-else-if="type === 'dropDown'">
+      <Select v-model="internalValue" :options="options" optionValue="value" optionLabel="name" :class="['w-full', width]" />
     </div>
 
     <!-- 체크박스 -->

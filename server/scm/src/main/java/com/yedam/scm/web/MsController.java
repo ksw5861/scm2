@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
 
 
 
@@ -31,6 +29,12 @@ public class MsController {
      public int insertProductionPlan(@RequestBody ProductionPlanVO productionPlan) {
          return purchaseMatService.insertProductionPlan(productionPlan);
      }
+
+    //생산계획마스터목록
+    @GetMapping("/planMasterList")
+    public List<ProductionPlanVO > getPlanMasterList() {
+        return purchaseMatService.getPlanMasterList();
+    }
 
     //생산계획디테일목록
     @GetMapping("/planList")

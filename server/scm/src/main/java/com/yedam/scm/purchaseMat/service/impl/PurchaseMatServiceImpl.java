@@ -35,6 +35,11 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
         }
     return result; 
     }
+    
+    //생산계획목록
+    public List<ProductionPlanVO> getPlanMasterList(){
+        return mapper.getPlanMasterList();
+    };
 
     public List<PrdPlanDetailVO> getPlanList(){
         return mapper.getPlanList();

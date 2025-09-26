@@ -17,6 +17,7 @@ public interface PurchaseMatMapper {
     int insertProductionPlanDetail(PrdPlanDetailVO detail); //디테일
 
     //제품생산계획리스트
+    List<ProductionPlanVO> getPlanMasterList();
     List<PrdPlanDetailVO> getPlanList();
 
    
