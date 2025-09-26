@@ -1,6 +1,9 @@
 package com.yedam.scm.vo;
 
 
+import java.math.BigDecimal;
+import java.sql.Date;
+
 import lombok.Data;
 
 @Data

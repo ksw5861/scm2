@@ -81,6 +81,7 @@ function bindDetail(row) {
 /* ------------------ 이벤트 ------------------ */
 function onRowClick(e) {
   bindDetail(e.data);
+  selectedRow.value = e.data; // 클릭행 만 선택값으로
 }
 
 async function doSearch() {
@@ -113,10 +114,14 @@ function closeProdModal() {
   isShowProdModal.value = false;
 }
 
-const fetchProductData = async ({ q = '', page = 1, size = 10 } = {}) => {
-  const { data } = await axios.get('/api/products', { params: { q, page, size } });
-  return data;
+
+const fetchProductData = async ({ page = 1, size = 10, search = '' } = {}) => {
+  const params = { page, size, keyword: search };
+  const { data } = await axios.get('/api/inbound/product', { params });
+  console.log("제품 모달 응답:", data);
+  return { items: data.data, total: data.page.totalElements };
 };
+
 
 function handleSelectProduct(item) {
   const code = item?.prodId || '';
@@ -129,7 +134,28 @@ function handleSelectProduct(item) {
 }
 
 /* ------------------ 창고 모달 ------------------ */
+// const isShowWhModal = ref(false);
+// function openWhModal() {
+//   isShowWhModal.value = true;
+// }
+// function closeWhModal() {
+//   isShowWhModal.value = false;
+// }
+
+// const fetchWarehouseData = async ({ q = '', page = 1, size = 10 } = {}) => {
+//   const { data } = await axios.get('/api/warehouse1', { params: { q, page, size } });
+//   c;
+//   return data;
+// };
+
+// function handleSelectWarehouse(item) {
+//   detail.value.whCode = item?.whId || '';
+//   closeWhModal();
+//   toast.info(`창고 선택: ${detail.value.whCode}`);
+// }
+
 const isShowWhModal = ref(false);
+
 function openWhModal() {
   isShowWhModal.value = true;
 }
@@ -137,9 +163,10 @@ function closeWhModal() {
   isShowWhModal.value = false;
 }
 
-const fetchWarehouseData = async ({ q = '', page = 1, size = 10 } = {}) => {
-  const { data } = await axios.get('/api/warehouses', { params: { q, page, size } });
-  return data;
+const fetchWarehouseData = async ({ page = 1, size = 10, search = '' } = {}) => {
+  const params = { page, size, keyword: search };
+  const { data } = await axios.get('/api/inbound/warehouse1', { params });
+  return { items: data.data, total: data.page.totalElements };
 };
 
 function handleSelectWarehouse(item) {
@@ -147,6 +174,7 @@ function handleSelectWarehouse(item) {
   closeWhModal();
   toast.info(`창고 선택: ${detail.value.whCode}`);
 }
+
 
 /* ------------------ 저장 ------------------ */
 async function save() {
@@ -174,12 +202,15 @@ async function save() {
     // }
 
     // const { data } = await axios.post('/api/inbound', body);
+    console.log(body);
     const { status } = await axios.post('/api/inbound', body); // 200
 
-    if (status === 200) return toast('success', '등록 성공', '성공적으로 입고처리되었습니다.');
-    if (status === 302) return toast('error', '에러', '사용자 정의 에러');
-
-    await doSearch();
+    if (status === 200) {
+      await doSearch();
+      return toast('success', '등록 성공', '성공적으로 입고처리되었습니다.');
+    } else {
+      return toast('error', '실패', '실패 하였습니다');
+    }
   } catch (err) {
     toast('error', '실패', '실패 하였습니다');
     console.error(err);
@@ -263,11 +294,11 @@ onMounted(() => {
     <div class="split">
       <!-- 목록 -->
       <div class="list-box">
-        <DataTable :value="inboundList" dataKey="prdLot" v-model:selection="selectedRow" selectionMode="single" @rowClick="onRowClick" :rowClass="(row) => (selectedRow?.prdLot === row.prdLot ? 'selected-row' : '')" highlightOnHover>
+        <DataTable :value="inboundList" dataKey="prdLot" @rowClick="onRowClick" :rowClass="(rowData) => (selectedRow?.prdLot === rowData.prdLot ? 'selected-row' : '')" highlightOnHover selectionMode="none">
           <!-- ✅ 행 체크박스, 전체선택 헤더 제거 -->
           <Column headerStyle="width:3em" :header="''">
             <template #body="slotProps">
-              <Checkbox :binary="true" :modelValue="selectedRow?.prdLot === slotProps.data.prdLot" @change="bindDetail(slotProps.data)" />
+              <Checkbox :binary="true" :modelValue="selectedRow?.prdLot === slotProps.data.prdLot" @update:modelValue="() => bindDetail(slotProps.data)" />
             </template>
           </Column>
 
@@ -312,42 +343,55 @@ onMounted(() => {
     </div>
 
     <!-- 제품검색 모달 -->
-    <Modal
-      :visible="isShowProdModal"
-      title="제품 검색"
-      idField="prodId"
-      :columns="[
-        { key: 'prodId', label: '제품코드' },
-        { key: 'prodName', label: '제품명' }
-      ]"
-      :fetchData="fetchProductData"
-      :page-size="5"
-      @select="handleSelectProduct"
-      @close="closeProdModal"
-    />
+  <Modal
+  :visible="isShowProdModal"
+  title="제품 검색"
+  :columns="[
+    { label: '제품코드', field: 'prodId' },
+    { label: '제품명', field: 'prodName' }
+  ]"
+  dataKey="prodId"
+  :fetchData="fetchProductData"
+  :pageSize="5"
+  :frontPagination="false"
+  @select="handleSelectProduct"
+  @close="closeProdModal"
+/>
 
     <!-- 창고검색 모달 -->
-    <Modal
+    <!-- <Modal
       :visible="isShowWhModal"
       title="창고 검색"
       idField="whId"
       :columns="[
-        { key: 'whId', label: '창고코드' },
-        { key: 'whName', label: '창고명' }
+      { label: '창고코드', field: 'whId' },
+      { label: '창고명', field: 'whName' }
       ]"
       :fetchData="fetchWarehouseData"
       :page-size="5"
       @select="handleSelectWarehouse"
       @close="closeWhModal"
+    /> -->
+    <Modal
+      :visible="isShowWhModal"
+      title="창고 검색"
+      dataKey="whId"
+      :columns="[
+        { label: '창고코드', field: 'whId' },
+        { label: '창고명', field: 'whName' }
+      ]"
+      :fetchData="fetchWarehouseData"
+      :pageSize="5"
+      :frontPagination="false"
+      @select="handleSelectWarehouse"
+      @close="closeWhModal"
     />
+
+
   </div>
 </template>
 
-<style>
-.selected-row {
-  background: #dbeafe !important; /* 선택된 행 강조 */
-}
-</style>
+<style></style>
 
 <style scoped>
 .page-wrap {

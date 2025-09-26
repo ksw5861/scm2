@@ -6,7 +6,10 @@ import java.util.Map;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.vo.ItemInboundVO;
+import com.yedam.scm.vo.ProductVO;
+import com.yedam.scm.vo.WareHouseVO;
 
 @Mapper
 public interface InboundMapper {
@@ -18,4 +21,26 @@ public interface InboundMapper {
 
     // ✅ 입고 삭제: item_inbound 기준 (컨트롤러가 inboundId 쓰고 있음)
     int deleteInbound(String inboundId);
-}
+
+
+    //모달
+     //  조건 + 페이징으로 제품 리스트 조회
+  List<ProductVO> selectInboundProductListByCondition(
+    @Param("condition") String condition,
+    @Param("paging") PageDTO paging
+  );
+
+  //  조건에 맞는 총 데이터 건수 조회
+  long selectInboundProductCountByCondition(
+    @Param("condition") String condition
+  );
+
+  List<WareHouseVO> getWareHouseList(String keyword, String keyword2, Object object);
+
+
+
+
+
+}// end
+
+
