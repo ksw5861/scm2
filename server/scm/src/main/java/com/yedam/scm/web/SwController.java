@@ -1,6 +1,8 @@
 package com.yedam.scm.web;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RestController;
@@ -64,9 +66,22 @@ public class SwController {
     }
 
     @PostMapping("/material")
-    public int insertMaterial(@RequestBody MaterialVO materialVO) {      
-        return materialSvc.insertMaterial(materialVO);
+    public Map<String, Object> insertMaterial(@RequestBody MaterialVO materialVO) {    
+        
+        Map<String, Object> result = new HashMap<>();
+        if (materialSvc.insertMaterial(materialVO)) {
+            result.put("status", "success");
+            // result.put("new_id", materialVO.getMatId());
+        } else {
+            result.put("status", "fail");
+            // result.put("data", null);
+        }
+        
+        return result;
     }
+
+    // result.data => 1
+    // result.data => { "status" : "success" }
 
     @PutMapping("/material/{matId}")
     public int updateMaterial(@PathVariable String matId, @RequestBody MaterialVO materialVO) {

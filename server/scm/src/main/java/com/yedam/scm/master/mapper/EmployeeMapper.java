@@ -8,13 +8,12 @@ import org.apache.ibatis.annotations.Param;
 
 import com.yedam.scm.dto.EmployeeSearchDTO;
 import com.yedam.scm.dto.PageDTO;
-import com.yedam.scm.vo.EmployeeSimpleVO;
 import com.yedam.scm.vo.EmployeeVO;
 
 @Mapper
 public interface EmployeeMapper {
 
-  List<EmployeeSimpleVO> selectEmployeeSimpleListByCondition(
+  List<EmployeeVO> selectEmployeeSimpleListByCondition(
     @Param("condition") EmployeeSearchDTO condition,
     @Param("paging") PageDTO paging
   );

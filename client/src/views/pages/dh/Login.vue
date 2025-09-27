@@ -20,13 +20,20 @@ const login = async () => {
     password: password.value,
   };
 
-  const result = await axios.post('/api/auth', param);
-  if (result.status === 200) {
-    console.log('로그인 성공:', result);
-  } else {
+  try {
+    const result = await axios.post('/api/auth', param);
+    if (result.status === 200) {
+      console.log('로그인 성공:', result);
+        // router.push('/');
+    } else {
+      alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+    }
+  } catch (e) {
     alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+    console.error('로그인 오류:', e);
+  } finally {
+    password.value = '';
   }
-  // router.push('/');
 };
 
 onMounted(() => {
