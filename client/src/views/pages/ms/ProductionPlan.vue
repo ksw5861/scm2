@@ -143,10 +143,10 @@ const submit = async () => {
       </div>
       <div class="flex sm:justify-end justify-start gap-2 mt-4">
         <div class="w-1/2 sm:w-32">
-          <Btn color="secondary" class="w-full" icon="refresh" @click="resetForm" outlined>초기화</Btn>
+          <Btn color="secondary" class="w-full" icon="refresh" label="초기화" @click="resetForm" outlined></Btn>
         </div>
         <div class="w-1/2 sm:w-32">
-          <Btn class="w-full" icon="add" severity="success" variant="outlined" @click="submit">등록</Btn>
+          <Btn class="w-full" icon="add" severity="success" label="등록" variant="outlined" @click="submit">등록</Btn>
         </div>
       </div>
     </div>

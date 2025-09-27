@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.yedam.scm.purchaseMat.mapper.PurchaseMatMapper">
 <!--중첩VO 정의-->
-<!--제품마스터-->
+<!--제품 resultMap-->
 <resultMap id="ProductMap" type="ProductVO">
   <id property="prodId" column="prod_id"/>
   <result property="prodName" column="prod_name"/>
@@ -13,6 +13,34 @@
   <result property="unit" column="unit"/>
   <result property="status" column="status"/>
 </resultMap>
+<!-- 자재 resultMap -->
+<resultMap id="MaterialMap" type="MaterialVO">
+    <id     property="matId"        column="MAT_ID"/>
+    <result property="matName"      column="MAT_NAME"/>
+    <result property="matType"      column="MAT_TYPE"/>
+    <result property="matStoreCond" column="MAT_STORE_COND"/>
+    <result property="matUnitConv"  column="MAT_UNIT_CONV"/>
+    <result property="matUnitPrice" column="MAT_UNIT_PRICE"/>
+    <result property="leadTime"     column="LEAD_TIME"/>
+    <result property="safeStock"    column="SAFE_STOCK"/>
+    <result property="status"       column="STATUS"/>
+    <result property="spec"         column="SPEC"/>
+    <result property="unit"         column="UNIT"/>
+</resultMap>
+<!--공급처 resultMap -->
+<resultMap id="VendorMap" type="VendorVO">
+    <result property="vendorId" column="VENDOR_ID"/>
+    <result property="businessRegistration" column="BUSINESS_REGISTRATION"/>
+    <result property="companyName" column="COMPANY_NAME"/>
+    <result property="ceoName" column="CEO_NAME"/>
+    <result property="phoneNumber" column="PHONE_NUMBER"/>
+    <result property="address" column="ADDRESS"/>
+    <result property="isActive" column="IS_ACTIVE"/>
+    <result property="createdAt" column="CREATED_AT"/>
+    <result property="updatedAt" column="UPDATED_AT"/>
+</resultMap>
+
+
 <!--생산계획상세 + 제품마스터테이블-->
 <resultMap id="PrdPlanDetailMap" type="PrdPlanDetailVO">
   <id property="plDetId" column="pl_det_id"/>
@@ -25,6 +53,31 @@
   <result property="mprStatus" column="mpr_status"/>
 
   <association property="productVO" resultMap="ProductMap"/>
+</resultMap>
+
+<!--mrp상세-->
+<resultMap id="MrpDetailMap" type="MrpDetailVO">
+  <id property="mrpDetId" column="mrp_det_id"/>
+  <result property="matId" column="mat_id"/>
+  <result property="needsQty" column="needs_qty"/>
+  <result property="status" column="status"/>
+  <result property="mrpId" column="mrp_id"/>
+
+  <association property="materialVO" resultMap="MaterialMap"/>
+</resultMap>
+
+<!--자재별거래처-->
+<resultMap id="MatVendorMap" type="MatVendorVO">
+    <result property="matVendorId" column="MAT_VENDOR_ID"/>
+    <result property="contractPrice" column="CONTRACT_PRICE"/>
+    <result property="matId" column="MAT_ID"/>
+    <result property="vendorId" column="VENDOR_ID"/>
+    <result property="createdBy" column="CREATED_BY"/>
+    <result property="createdAt" column="CREATED_AT"/>
+    <result property="status" column="STATUS"/>
+
+    <association property="materialVO" resultMap="MaterialMap"/>
+    <association property="vendorVO" resultMap="VendorMap"/>
 </resultMap>
 
 
@@ -104,6 +157,29 @@
     ON ppd.prod_id = po.prod_id
     WHERE ppd.mpr_status = 'pp0'
     AND po.status = '사용'
+    </select>
+
+    <!--mrp목록-->
+    <select id="getMrpDetailList" resultMap="MrpDetailMap">
+    SELECT  md.mrp_det_id,
+           md.mat_id,
+           md.needs_qty,
+           m.mat_name,
+           m.unit,
+           m.lead_time
+    FROM mrp_detail md
+    JOIN  material m
+    ON md.mat_id = m.mat_id
+    </select>
+
+    <select id="getMatVendorList" parameterType="string" resultMap="MatVendorMap">
+    SELECT mv.vendor_id,
+           v.company_name,
+           mv.contract_price
+    FROM material_vendor mv
+    JOIN vendor v
+    ON mv.vendor_id = v.vendor_id
+    Where mv.mat_id = #{matId}
     </select>
 
 

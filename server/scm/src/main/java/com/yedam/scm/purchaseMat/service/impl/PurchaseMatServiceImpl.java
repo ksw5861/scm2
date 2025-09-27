@@ -7,6 +7,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.yedam.scm.purchaseMat.mapper.PurchaseMatMapper;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
+import com.yedam.scm.vo.MatVendorVO;
+import com.yedam.scm.vo.MrpDetailVO;
 import com.yedam.scm.vo.PrdPlanDetailVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
@@ -37,13 +39,28 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
     }
     
     //생산계획목록
+    @Override
     public List<ProductionPlanVO> getPlanMasterList(){
         return mapper.getPlanMasterList();
     };
-
+    @Override
     public List<PrdPlanDetailVO> getPlanList(){
         return mapper.getPlanList();
     }
+    
+    //mrp목록
+    @Override
+    public List<MrpDetailVO> getMrpDetailList(){
+        return mapper.getMrpDetailList();
+    }
+    
+    //자재별공급처
+    @Override
+    public List<MatVendorVO> getMatVendorList(String matId) {
+        return mapper.getMatVendorList(matId);
+    }
+
+
     /*==========================
      * 드롭다운/모달용
      ===========================*/
@@ -52,4 +69,5 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
     public List<ProductVO> getProductList() {
         return mapper.getProductList();
     }
+
 }
