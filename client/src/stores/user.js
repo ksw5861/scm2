@@ -1,24 +1,33 @@
 import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
 
-export const useUserStore = defineStore('user', {
-  state: () => ({
-    userInfo: null,
-  }),
+export const useUserStore = defineStore('user', () => {
+  const userInfo = ref(null);
 
-  getters: {
-    name: (state) => state.userInfo?.name || '',
-    code: (state) => state.userInfo?.code || '',
-    accountId: (state) => state.userInfo?.accountId || '',
-    role: (state) => state.userInfo?.role || '',
-    isLoggedIn: (state) => !!state.userInfo,
-  },
+  // Getters
+  const name = computed(() => userInfo.value?.name || '');
+  const code = computed(() => userInfo.value?.code || '');
+  const accountId = computed(() => userInfo.value?.accountId || '');
+  const role = computed(() => userInfo.value?.role || '');
+  const isLoggedIn = computed(() => !!userInfo.value);
 
-  actions: {
-    setUserInfo(data) {
-      this.userInfo = data;
-    },
-    clearUserInfo() {
-      this.userInfo = null;
-    },
-  },
+  // Actions
+  const setUserInfo = (data) => {
+    userInfo.value = data;
+  };
+
+  const clearUserInfo = () => {
+    userInfo.value = null;
+  };
+
+  return {
+    userInfo,
+    name,
+    code,
+    accountId,
+    role,
+    isLoggedIn,
+    setUserInfo,
+    clearUserInfo,
+  };
 });
