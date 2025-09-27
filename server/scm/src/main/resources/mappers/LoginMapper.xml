@@ -5,6 +5,7 @@
 
   <select id="selectAccountByEmailAndPassword" parameterType="LoginDTO" resultType="LoginRes">
     SELECT account_id,
+           password_hash,
            code,
            name,
            division as role

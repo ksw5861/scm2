@@ -173,19 +173,25 @@ const addMaterial = async () => {
     };
     delete payload.matId;
 
-    const res = await axios.post('/api/material', payload);
-    toast('success', '등록 성공', '자재가 등록되었습니다.');
-    await fetchList();
+    const { data } = await axios.post('/api/material', payload);
 
-    const newId = res.data?.matId ?? res.data?.MAT_ID ?? null;
-    if (newId) {
-      await fetchDetail(newId);
-      mode.value = 'view';
-      selectedMaterial.value = materials.value.find((m) => (m.matId ?? m.MAT_ID) === newId) ?? null;
+    if (data.status === "success") {
+      toast('success', '등록 성공', '자재가 등록되었습니다.');
+      await fetchList();
+
+      const newId = res.data?.matId ?? res.data?.MAT_ID ?? null;
+      if (newId) {
+        await fetchDetail(newId);
+        mode.value = 'view';
+        selectedMaterial.value = materials.value.find((m) => (m.matId ?? m.MAT_ID) === newId) ?? null;
+      } else {
+        Object.keys(form).forEach((k) => (form[k] = ''));
+        mode.value = 'create';
+      }
     } else {
-      Object.keys(form).forEach((k) => (form[k] = ''));
-      mode.value = 'create';
+      toast('error', '등록 실패', '자재 등록에 실패했습니다.');
     }
+
   } catch (e) {
     console.error('addMaterial error', e);
     toast('error', '등록 실패', '자재 등록 중 오류가 발생했습니다.');
