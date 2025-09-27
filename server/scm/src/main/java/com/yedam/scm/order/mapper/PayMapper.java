@@ -33,4 +33,11 @@ public interface PayMapper {
     // 주문/반품 상태 COMPLETE 일괄 업데이트
     void updateOrderStatusToComplete(List<String> orderIdList);
     void updateReturnStatusToComplete(List<String> returnId);
+
+    //납부등록 페이지 - 상단카드내용들
+    PaymentVO selectSummaryData();
+
+    //납부내역
+    List<PaymentVO> selectPaymentSummaryList();
+
 }

@@ -91,9 +91,14 @@ public class PayServiceImpl implements PayService {
     }
 
 
+    @Override
+    public PaymentVO getSummaryData() {
+        return payMapper.selectSummaryData();
+    }
 
-
-
-
+    @Override
+    public List<PaymentVO> getPaymentSummaryList() {
+        return payMapper.selectPaymentSummaryList();
+    }
 
 }

@@ -172,6 +172,15 @@ public class EgController {
     return orderSvc.getBranchDashData();
     }
 
+     @GetMapping("/summary")
+    public PaymentVO getSummary() {
+        return paymentSvc.getSummaryData();
+    }
+
+    @GetMapping("/paymentsummarylist")
+    public List<PaymentVO> getPaymentSummaryList() {
+    return paymentSvc.getPaymentSummaryList();
+    }
 
 
 
