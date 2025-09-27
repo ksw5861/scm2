@@ -32,6 +32,7 @@ const login = async () => {
       try {
         const { data } = await axios.get('/api/auth/me', { withCredentials: true });
         userStore.setUserInfo(data);
+        // console.log('사용자 정보:', userStore.name, userStore.code, userStore.accountId, userStore.role);
         toast("success", "로그인 성공", `${data.name}님 환영합니다!`);
       } catch (e) {
         console.error('사용자 정보 불러오기 실패:', e);
