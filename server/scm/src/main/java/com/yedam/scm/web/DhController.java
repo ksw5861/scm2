@@ -9,8 +9,12 @@ import com.yedam.scm.dto.LoginRes;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.login.service.LoginService;
 import com.yedam.scm.master.service.EmployeeService;
+import com.yedam.scm.security.JwtUtil;
 import com.yedam.scm.vo.EmployeeVO;
 
+import io.jsonwebtoken.Claims;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 import java.io.File;
@@ -27,6 +31,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -41,6 +46,7 @@ public class DhController {
 
   private final EmployeeService employeeSvc;
   private final LoginService loginSvc;
+  private final JwtUtil jwtUtil;
 
   @Value("${file.upload.employee-dir}")
   private String employeeUploadDir;
@@ -196,16 +202,44 @@ public class DhController {
    * 로그인
    */
   @PostMapping("/auth")
-  public ResponseEntity<LoginRes> authLogin(@RequestBody LoginDTO login) {
-      LoginRes result = loginSvc.loginByEmailAndPassword(login);
+  public ResponseEntity<?> authLogin(
+    @RequestBody LoginDTO login,
+    HttpServletResponse response
+  ) {
 
-      if (result != null) {
-        return ResponseEntity.ok(result);
-      } else {
+    LoginRes result = loginSvc.loginByEmailAndPassword(login);
 
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
+    if (result != null) {
 
+        Cookie cookie = new Cookie("accessToken", result.getAccessToken());
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false);
+        cookie.setPath("/");
+        cookie.setMaxAge(60 * 30);
+
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok().build();
+    } else {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
+  }
+
+  @GetMapping("/auth/me")
+  public ResponseEntity<LoginRes> getCurrentUser(@CookieValue(value = "accessToken", required = false) String token) {
+      if (token == null || !jwtUtil.validateToken(token)) {
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
       }
+
+      Claims claims = jwtUtil.getClaims(token);
+
+      LoginRes user = new LoginRes();
+      user.setAccountId(claims.getSubject());
+      user.setName((String) claims.get("name"));
+      user.setCode((String) claims.get("code"));
+      user.setRole((String) claims.get("role"));
+
+      return ResponseEntity.ok(user);
   }
 
 }
