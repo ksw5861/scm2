@@ -60,31 +60,37 @@
     <!-- ============================================================= -->
     <!-- 3. 반품 목록 조회 (마스터 기준, 총액 포함) -->
     <!-- ============================================================= -->
-    <select id="getReturnList" resultType="ReturnVO">
-        SELECT 
-            r.return_id AS returnId,
-            TO_CHAR(r.return_date, 'YYYY-MM-DD') AS returnDate,
-            r.return_status AS returnStatus,
-            NVL(SUM(rd.return_qty * rd.prod_unit_price), 0) AS returnPrice
-        FROM RETURN r
-        LEFT JOIN RETURN_DETAIL rd
-            ON r.return_id = rd.return_id
-        WHERE 1=1
-            <if test="startDate != null and startDate != ''">
-                AND r.return_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
-            </if>
-            <if test="endDate != null and endDate != ''">
-                AND r.return_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
-            </if>
-            <if test="returnId != null and returnId != ''">
-                AND r.return_id LIKE '%' || #{returnId} || '%'
-            </if>
-            <if test="returnStatus != null and returnStatus != ''">
-                AND r.return_status = #{returnStatus}
-            </if>
-        GROUP BY r.return_id, r.return_date, r.return_status
-        ORDER BY r.return_date DESC
-    </select>
+    <select id="getReturnList" parameterType="map" resultType="ReturnVO">
+    SELECT 
+        r.return_id AS returnId,
+        TO_CHAR(r.return_date, 'YYYY-MM-DD') AS returnDate,
+        r.return_status AS returnStatus,
+        NVL(SUM(rd.return_qty * rd.prod_unit_price), 0) AS returnPrice,
+
+        CASE 
+            WHEN COUNT(rd.prod_id) > 1 THEN MIN(p.prod_name) || ' 외 ' || (COUNT(rd.prod_id)-1) || '건'
+            ELSE MIN(p.prod_name)
+        END AS prodName
+
+    FROM RETURN r
+    LEFT JOIN RETURN_DETAIL rd ON r.return_id = rd.return_id
+    LEFT JOIN PRODUCT p ON rd.prod_id = p.prod_id
+    WHERE 1=1
+        <if test="startDate != null and startDate != ''">
+            AND r.return_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="endDate != null and endDate != ''">
+            AND r.return_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+        </if>
+        <if test="returnId != null and returnId != ''">
+            AND r.return_id LIKE '%' || #{returnId} || '%'
+        </if>
+        <if test="returnStatus != null and returnStatus != ''">
+            AND r.return_status = #{returnStatus}
+        </if>
+    GROUP BY r.return_id, r.return_date, r.return_status
+    ORDER BY r.return_date DESC
+</select>
 
     <!-- ============================================================= -->
     <!-- 4. 반품 마스터 단건 조회 -->
@@ -121,5 +127,47 @@
         WHERE rd.return_id = #{returnId}
         ORDER BY rd.rdetail_id
     </select>
+
+
+ <!-- ============================================================= -->
+    <!-- . 반품 모달 리스트 조회 -->
+    <!-- ============================================================= -->
+
+<select id="getReturnableOrders" resultType="ReturnVO">
+    SELECT 
+        so.order_id AS orderId,
+        so.order_date AS orderDate,
+        so.vendor_id AS vendorId,
+        so.status AS status,
+        so.delivery_date AS deliveryDate,
+        so.total_price AS totalPrice
+    FROM SALES_ORDER so
+    WHERE so.vendor_id = #{vendorId}
+      AND so.status = '배송완료'
+      AND so.delivery_date >= SYSDATE - 60
+    ORDER BY so.delivery_date DESC
+</select>
+
+<select id="getReturnableOrderDetails" parameterType="list" resultType="ReturnDetailVO">
+    SELECT 
+        d.ODETAIL_ID,
+        d.ORDER_ID,
+        d.PROD_ID,
+        p.PROD_NAME,
+        p.SPEC,
+        p.UNIT,
+        d.ORDER_QTY,
+        d.PROD_UNIT_PRICE,
+        d.PROD_STATUS
+    FROM SALES_ORDER_DETAIL d
+    JOIN PRODUCT p ON d.PROD_ID = p.PROD_ID
+    WHERE d.ORDER_ID IN 
+    <foreach collection="list" item="orderId" open="(" separator="," close=")">
+        #{id}
+    </foreach>
+   
+
+</select>
+
 
 </mapper>

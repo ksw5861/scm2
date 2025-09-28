@@ -51,4 +51,4 @@ file:
 
 jwt:
   secret: ENC(dzfcQtWysP6YaJ/3ZshuUyeqb/Jqc23jSsctfL6ZfFEZHFBIOtIJIvjoknh2MiWnPQN3a2bYnUxzSV51QCoQ0A==)
-  expiration: 1800000
+  expiration: 18000000

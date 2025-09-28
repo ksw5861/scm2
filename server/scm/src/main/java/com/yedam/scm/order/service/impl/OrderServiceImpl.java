@@ -18,10 +18,6 @@ import com.yedam.scm.vo.SalesOrderVO;
  * OrderServiceImpl
  * ===========================
  * 주문 마스터 및 상세 데이터의 비즈니스 로직 구현
- * - 주문 등록(마스터 + 상세)
- * - 주문 목록 조회
- * - 주문 상세 조회
- * - 제품 목록 조회 (모달용)
  */
 @Service
 public class OrderServiceImpl implements OrderService {
@@ -30,74 +26,57 @@ public class OrderServiceImpl implements OrderService {
     private OrderMapper orderMapper;
 
     // ===============================================================
-    // 1. 주문 등록 (마스터 + 상세) - 트랜잭션 적용
+    // 1. 주문 등록 (마스터 + 상세)
     // ===============================================================
-    @Transactional // 하나라도 실패 시 전체 롤백
+    @Transactional
     @Override
-    public int insertOrder(SalesOrderVO orderVO) {
+    public boolean insertOrder(SalesOrderVO orderVO) {
 
         // 1) 주문 마스터 저장
-        int result = orderMapper.insertOrder(orderVO);
+        int masterResult = orderMapper.insertOrder(orderVO);
 
-        // 2) 주문 상세 저장 (마스터 저장 성공 시)
-        if (result > 0 && orderVO.getDetails() != null) {
-
+        // 2) 마스터 저장 성공 시 주문 상세 저장
+        if (masterResult > 0 && orderVO.getDetails() != null && !orderVO.getDetails().isEmpty()) {
             for (SalesOrderDetailVO detail : orderVO.getDetails()) {
-
-                // 주문번호 주입
+                // 주문번호 세팅
                 detail.setOrderId(orderVO.getOrderId());
 
-                // 상세 합계 계산 (수량 * 단가)
-                detail.setTotalUnitPrice(detail.getProdUnitPrice() * detail.getOrderQty());
+                // DB에 그대로 저장 (totalUnitPrice는 DB에서 계산 가능)
+                int detailResult = orderMapper.insertOrderDetail(detail);
 
-                // 상세 저장
-                orderMapper.insertOrderDetail(detail);
+                // 하나라도 실패하면 롤백
+                if (detailResult <= 0) {
+                    throw new RuntimeException("주문 상세 저장 실패");
+                }
             }
+            return true;
         }
 
-        return result;
+        return masterResult > 0;
     }
 
     // ===============================================================
     // 2. 주문 상세 단건 등록
     // ===============================================================
     @Override
-    public int insertOrderDetail(SalesOrderDetailVO detailVO) {
-        return orderMapper.insertOrderDetail(detailVO);
+    public boolean insertOrderDetail(SalesOrderDetailVO detailVO) {
+        return orderMapper.insertOrderDetail(detailVO) > 0;
     }
 
     // ===============================================================
-    // 3. 주문 상세 조회 (odetail_id 기준 단건 or 리스트)
-    // ===============================================================
-    // @Override
-    // public List<SalesOrderDetailVO> getOrderDetails(String orderId) {
-    //     return orderMapper.getOrderDetails(orderId);
-    // }
-
-    // ===============================================================
-    // 4. 주문 목록 조회 (검색 조건 포함)
+    // 3. 조건별 주문 목록 조회
     // ===============================================================
     @Override
-    public List<SalesOrderVO> getOrderListForView(
-            String startDate,
-            String endDate,
-            String prodName,
-            String status,
-            String orderId) {
-
+    public List<SalesOrderVO> getOrderListForView(String startDate,
+                                                  String endDate,
+                                                  String prodName,
+                                                  String status,
+                                                  String orderId) {
         return orderMapper.getOrderListForView(startDate, endDate, prodName, status, orderId);
     }
 
     // ===============================================================
-    // 5. 지점 대시보드 데이터 조회
-    // ===============================================================
-    @Override
-    public Object getBranchDashData() {
-        return orderMapper.getBranchDashData();
-    }
-
-    // ===============================================================
-    // 6. 주문 상세 조회 (order_id 기준 전체 상세)
+    // 4. 특정 주문의 상세 내역 조회
     // ===============================================================
     @Override
     public List<SalesOrderDetailVO> getOrderDetailList(String orderId) {
@@ -105,27 +84,31 @@ public class OrderServiceImpl implements OrderService {
     }
 
     // ===============================================================
-    // 7. 제품 목록 조회 (모달용)
+    // 5. 지점 대시보드 데이터 조회
     // ===============================================================
     @Override
-    public List<ProductVO> getProductList(String prodName, int offset, int pageSize) {
-    Map<String, Object> params = new HashMap<>();
-    params.put("prodName", prodName);   // ✅ 다시 넣기
-    params.put("offset", offset);
-    params.put("pageSize", pageSize);
-    params.put("status", null);
-    return orderMapper.getProductList(params);
+    public Map<String, Object> getBranchDashData() {
+        return orderMapper.getBranchDashData();
     }
 
     // ===============================================================
-    // 8. 제품 전체 개수 조회
+    // 6. 제품 목록 조회 (모달용)
+    // ===============================================================
+    @Override
+    public List<ProductVO> getProductList(String prodName, int offset, int pageSize) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("prodName", prodName);
+        params.put("offset", offset);
+        params.put("pageSize", pageSize);
+        params.put("status", null); // 상태값 필터링이 필요 없다면 null
+        return orderMapper.getProductList(params);
+    }
+
+    // ===============================================================
+    // 7. 제품 전체 개수 조회
     // ===============================================================
     @Override
     public int getProductCount() {
         return orderMapper.getProductCount();
     }
-
-
-   
-
 }

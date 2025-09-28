@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.yedam.scm.order.service.OrderService;
@@ -25,11 +27,9 @@ import com.yedam.scm.vo.ReturnDetailVO;
  * ============================================================
  */
 @RestController
+@RequestMapping// 공통 prefix 적용
 public class EgController {
 
-    // ==============================
-    // Service 의존성 주입
-    // ==============================
     @Autowired
     private OrderService orderSvc;
 
@@ -43,145 +43,382 @@ public class EgController {
     // 1. 제품 목록 조회 (모달용)
     // =================================================================
     @GetMapping("/products")
-    public Map<String, Object> getProducts(
+    public ResponseEntity<Map<String, Object>> getProducts(
             @RequestParam(required = false) String prodName,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "50") int pageSize) {
 
-        int offset = (page - 1) * pageSize;
-        int totalCount = orderSvc.getProductCount();
+        Map<String, Object> response = new HashMap<>();
+        try {
+            int offset = (page - 1) * pageSize;
+            int totalCount = orderSvc.getProductCount();
 
-        // ✅ 제품 목록은 반드시 PROD_UNIT_PRICE 컬럼 사용
-        List<ProductVO> items = orderSvc.getProductList(prodName, offset, pageSize);
+            List<ProductVO> items = orderSvc.getProductList(prodName, offset, pageSize);
 
-        Map<String, Object> result = new HashMap<>();
-        result.put("totalCount", totalCount);
-        result.put("items", items);
+            response.put("status", "success");
+            response.put("count", totalCount);
+            response.put("items", items);
 
-        return result;
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "제품 목록 조회 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     // =================================================================
     // 2. 주문 등록
     // =================================================================
     @PostMapping("/insertorder")
-    public int insertOrder(@RequestBody SalesOrderVO orderVO) {
-        return orderSvc.insertOrder(orderVO);
+    public ResponseEntity<Map<String, Object>> insertOrder(@RequestBody SalesOrderVO orderVO) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            boolean success = orderSvc.insertOrder(orderVO);
+
+            if (success) {
+                response.put("status", "success");
+                response.put("orderId", orderVO.getOrderId());
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("status", "error");
+                response.put("message", "주문 등록에 실패했습니다.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "서버 오류로 주문 등록에 실패했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     // =================================================================
     // 3. 주문 목록 조회
     // =================================================================
     @GetMapping("/orderlist")
-    public List<SalesOrderVO> getOrderListForView(
+    public ResponseEntity<Map<String, Object>> getOrderListForView(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String prodName,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String orderId
-    ) {
-        return orderSvc.getOrderListForView(startDate, endDate, prodName, status, orderId);
+            @RequestParam(required = false) String orderId) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<SalesOrderVO> orders = orderSvc.getOrderListForView(startDate, endDate, prodName, status, orderId);
+
+            response.put("status", "success");
+            response.put("count", orders.size());
+            response.put("orders", orders);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "주문 목록 조회 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     // =================================================================
     // 3-1. 주문 상세 조회
     // =================================================================
-    @GetMapping("/orderdetail")
-    public List<SalesOrderDetailVO> getOrderDetailList(@RequestParam String orderId) {
-        return orderSvc.getOrderDetailList(orderId); // ✅ 내부적으로 prodUnitPrice 사용
+    @GetMapping("/orders/{orderId}/details")
+    public ResponseEntity<Map<String, Object>> getOrderDetailList(@PathVariable String orderId) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<SalesOrderDetailVO> details = orderSvc.getOrderDetailList(orderId);
+
+            response.put("status", "success");
+            response.put("count", details.size());
+            response.put("details", details);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "주문 상세 조회 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     // =================================================================
     // 4. 반품 등록
     // =================================================================
     @PostMapping("/insertreturn")
-    public int insertReturn(@RequestBody ReturnVO returnVO) {
-        // 1) 반품 마스터 + 상세를 한 번에 INSERT
-        // returnVO 내부에 List<ReturnDetailVO> details 포함
-        return returnSvc.createReturnSlip(returnVO);
+    public ResponseEntity<Map<String, Object>> insertReturn(@RequestBody ReturnVO returnVO) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            int result = returnSvc.insertreturn(returnVO);
+
+            if (result > 0) {
+                response.put("status", "success");
+                response.put("returnId", returnVO.getReturnId());
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("status", "error");
+                response.put("message", "반품 등록에 실패했습니다.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "서버 오류로 반품 등록에 실패했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     // =================================================================
-    // 5. 반품 목록 조회
+    // 5. 반품 목록 조회(반품목록페이지)
     // =================================================================
     @GetMapping("/returnlist")
-    public List<ReturnVO> getReturnList(
+    public ResponseEntity<Map<String, Object>> getReturnList(
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String returnStatus,
             @RequestParam(required = false) String prodName,
-            @RequestParam(required = false) String returnId
-    ) {
-        return returnSvc.getReturnList(startDate, endDate, returnStatus, prodName, returnId);
+            @RequestParam(required = false) String returnId) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<ReturnVO> list = returnSvc.getReturnList(startDate, endDate, returnStatus, prodName, returnId);
+
+            response.put("status", "success");
+            response.put("count", list.size());
+            response.put("list", list);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "반품 목록 조회 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     // =================================================================
-    // 5-1. 반품 상세 조회
+    // 5-1. 반품 상세 조회(반품목록페이지)
     // =================================================================
-    @GetMapping("/returndetail")
-    public List<ReturnDetailVO> getReturnDetail(@RequestParam String returnId) {
-        return returnSvc.getReturnDetailList(returnId);  
+    @GetMapping("/returns/{returnId}/details")
+    public ResponseEntity<Map<String, Object>> getReturnDetail(@PathVariable String returnId) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<ReturnDetailVO> details = returnSvc.getReturnDetailList(returnId);
+
+            response.put("status", "success");
+            response.put("count", details.size());
+            response.put("details", details);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "반품 상세 조회 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     // =================================================================
     // 6. 대금 결제 등록
     // =================================================================
-    @PostMapping("/insertpayment")
-    public String insertPayment(@RequestBody PaymentVO paymentVO) {
-        // ✅ 납부 마스터 + 상세 Insert 및 주문 상태 업데이트
-        return paymentSvc.insertPayment(paymentVO);
+    @PostMapping("/payments")
+    public ResponseEntity<Map<String, Object>> insertPayment(@RequestBody PaymentVO paymentVO) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            String result = paymentSvc.insertPayment(paymentVO);
+
+            if ("SUCCESS".equalsIgnoreCase(result)) {
+                response.put("status", "success");
+                response.put("paymentId", paymentVO.getPayId());
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("status", "error");
+                response.put("message", "결제 등록에 실패했습니다.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "서버 오류로 결제 등록에 실패했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     // =================================================================
     // 7. 납부 내역 조회
     // =================================================================
-    @GetMapping("/paymentlist")
-    public List<Map<String, Object>> selectPaymentList(
+    @GetMapping("/payments")
+    public ResponseEntity<Map<String, Object>> selectPaymentList(
             @RequestParam(required = false) String paymentNo,
             @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate
-    ) {
-        return paymentSvc.selectPaymentList(paymentNo, startDate, endDate);
-    }
+            @RequestParam(required = false) String endDate) {
 
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<Map<String, Object>> list = paymentSvc.selectPaymentList(paymentNo, startDate, endDate);
+
+            response.put("status", "success");
+            response.put("count", list.size());
+            response.put("list", list);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "납부 내역 조회 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
 
     // =================================================================
     // 8. 결제 대기중인 주문건 목록
     // =================================================================
     @GetMapping("/pendingorders")
-    public List<SalesOrderVO> selectPendingOrders() {
-        /*
-         * 결제 대상 조건
-         * ----------------------------------------------
-         * 1) 주문건: pay_status = '대기'
-         * 2) 반품건: return_status = '승인' (미수금 차감 전용, 목록에는 미출력)
-         * 
-         * SQL 레벨에서 조건 처리:
-         *  - ORDER: 결제대기 건만 SELECT
-         *  - RETURN: 승인된 반품건만 SELECT
-         * 
-         * 프론트에서는 orders 리스트로 결제대기 주문건만 출력하고,
-         * 미수금 계산 시 승인된 반품건 금액은 음수로 합산되어 자동 차감됨.
-         */
-        return paymentSvc.selectPendingOrders();
+    public ResponseEntity<Map<String, Object>> selectPendingOrders() {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<SalesOrderVO> list = paymentSvc.selectPendingOrders();
+
+            response.put("status", "success");
+            response.put("count", list.size());
+            response.put("orders", list);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "결제 대기중 주문 목록 조회 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
+    // =================================================================
+    // 9. 지점 대시보드 데이터
+    // =================================================================
+    @GetMapping("/branchdashboard")
+    public ResponseEntity<Map<String, Object>> getBranchDashboard() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> dashData = orderSvc.getBranchDashData();
 
-    @GetMapping("/branchdash")
-    public Object getBranchDashboard() {
-    return orderSvc.getBranchDashData();
+            response.put("status", "success");
+            response.put("data", dashData);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "지점 대시보드 조회 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
-     @GetMapping("/summary")
-    public PaymentVO getSummary() {
-        return paymentSvc.getSummaryData();
+    // =================================================================
+    // 10. 결제 요약 데이터
+    // =================================================================
+    @GetMapping("/paymentsummary")
+    public ResponseEntity<Map<String, Object>> getSummary() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            PaymentVO summary = paymentSvc.getSummaryData();
+
+            response.put("status", "success");
+            response.put("data", summary);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "결제 요약 데이터 조회 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
+    // =================================================================
+    // 11. 결제 요약 리스트
+    // =================================================================
     @GetMapping("/paymentsummarylist")
-    public List<PaymentVO> getPaymentSummaryList() {
-    return paymentSvc.getPaymentSummaryList();
+    public ResponseEntity<Map<String, Object>> getPaymentSummaryList() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<PaymentVO> list = paymentSvc.getPaymentSummaryList();
+
+            response.put("status", "success");
+            response.put("count", list.size());
+            response.put("list", list);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.put("status", "error");
+            response.put("message", "결제 요약 리스트 조회 중 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
+    // =================================================================
+    // 12. 반품가능한 모달 리스트-그냥 페이지메인에띄우기로.모달말고
+    // =================================================================
+
+    @GetMapping("/returnableproducts")
+    public ResponseEntity<Map<String, Object>> getReturnableOrders(
+        @RequestParam String vendorId,
+        @RequestParam(required = false) String prodName
+        ) {
+
+    Map<String, Object> response = new HashMap<>();
+    try {
+        List<ReturnVO> list = returnSvc.getReturnableOrders(vendorId, prodName); // 서비스 호출
+
+        response.put("status", "success");
+        response.put("count", list.size());
+        response.put("items", list);
+        return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        response.put("status", "error");
+        response.put("message", "반품 가능 제품 조회 중 오류가 발생했습니다.");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+}
+ // =================================================================
+    // 12. 12의 상세
+    // =================================================================
+
+@GetMapping("/returnableorder/{orderId}/details")
+public ResponseEntity<Map<String, Object>> getReturnableOrderDetails(@PathVariable String orderId) {
+    Map<String, Object> response = new HashMap<>();
+
+    try {
+        // 서비스 호출
+        List<ReturnDetailVO> details = returnSvc.getReturnableOrderDetails(orderId);
+
+        response.put("status", "success");
+        response.put("count", details.size());
+        response.put("details", details);
+
+        return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        response.put("status", "error");
+        response.put("message", "반품 가능 주문 상세 조회 중 오류가 발생했습니다.");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+}
 
 
 }
+
+

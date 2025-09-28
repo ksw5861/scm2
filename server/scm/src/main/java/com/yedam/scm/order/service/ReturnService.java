@@ -10,11 +10,11 @@ public interface ReturnService {
     // 1. 반품 등록
     // =============================
     /**
-     * 반품 마스터 + 상세 등록 (월정산 방식)
+     * 반품 마스터 + 상세 등록
      * @param returnVO 마스터 및 상세 데이터 포함 VO
      * @return 등록 성공 시 1 이상
      */
-    int createReturnSlip(ReturnVO returnVO);
+    int insertreturn(ReturnVO returnVO);
 
     // =============================
     // 2. 반품 목록 조회
@@ -25,14 +25,14 @@ public interface ReturnService {
      * @param endDate 종료일
      * @param returnStatus 반품 상태
      * @param prodName 제품명
-     * @param returnNo 반품번호
+     * @param returnId 반품번호
      * @return 반품 마스터 목록
      */
     List<ReturnVO> getReturnList(String startDate,
                                   String endDate,
                                   String returnStatus,
                                   String prodName,
-                                  String returnNo);
+                                  String returnId);
 
     // =============================
     // 3. 반품 단건 조회
@@ -53,4 +53,23 @@ public interface ReturnService {
      * @return 반품 상세 리스트
      */
     List<ReturnDetailVO> getReturnDetailList(String returnId);
+
+    // =============================
+    // 5. 반품 가능 주문/상세 조회
+    // =============================
+    /**
+     * 반품 가능한 주문 목록 조회 (마스터)
+     * @param vendorId 거래처 ID
+     * @param prodName 제품명 (검색 필터)
+     * @return 반품 가능 주문 리스트
+     */
+    List<ReturnVO> getReturnableOrders(String vendorId, String prodName);
+
+    /**
+     * 반품 가능한 주문의 상세 조회
+     * @param orderIds 주문번호 리스트
+     * @return 해당 주문의 상세 리스트
+     */
+    List<ReturnDetailVO> getReturnableOrderDetails(String orderId);
+
 }
