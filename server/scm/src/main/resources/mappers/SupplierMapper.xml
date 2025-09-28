@@ -40,4 +40,17 @@ ON pm.mat_id = m.mat_id
 WHERE pur_mat_status = 'ms1'
 AND pm.vendor_id = #{vendorId}
 </select>
+
+<!--주문승인상태변경-->
+<update id="updateOrderApprove" parameterType="int">
+UPDATE purchase_mat
+SET pur_mat_status = 'ms2'
+WHERE pur_id = #{purId}
+</update>
+<!--주문상태변경이력등록-->
+<insert id="insertStatusLog" parameterType="map">
+INSERT INTO purchase_status_log (pur_log_id, name, pur_mat_status, pur_det_id)
+VALUES (seq_purchase_status_log.NEXTVAL, #{name}, 'ms2', #{purId})
+</insert>
+
 </mapper>

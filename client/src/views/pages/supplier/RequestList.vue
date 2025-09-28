@@ -9,6 +9,8 @@ import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 
+// 반려처리방식!
+
 const route = useRoute();
 const { toast } = useAppToast();
 
@@ -22,13 +24,15 @@ const breadcrumbItems = computed(() => {
   const currentLabel = current.name || '';
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
+
 //공급처코드
 const vendorId = ref('VND2004');
-const startDate = ref(null);
-const endDate = ref(null);
+const startDate = ref();
+const endDate = ref();
 const materialName = ref();
 const statusList = ref([]);
 const matOrderData = ref([]);
+const selectedRows =ref([]);
 
 const matOrderColumns = [
   { label: '주문일자', field: 'orderDate', sortable: true },
@@ -43,22 +47,11 @@ const matOrderColumns = [
   { label: '구매처 담당자', field: 'buyerName', sortable: true }
 ];
 
-///
-//
-// 반려처리방식!
-//
-//
-//
-
-
-
-
 
 //주문목록
-onMounted( async () => {
+const pageLoad = onMounted( async () => {
   try {
     const list = await axios.get(`/api/supplier/OrderList/${vendorId.value}`);
-    console.log(vendorId.value)
     matOrderData.value = list.data.map((item) => ({
 
         id: item.purId,
@@ -77,8 +70,25 @@ onMounted( async () => {
   } catch (error) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
+
+
 });
 
+const approve= async () => {
+
+    const list = JSON.parse(JSON.stringify(selectedRows.value));
+    const idList = list.map(row => row.id);
+
+    try{
+        const res = await axios.post('/api/supplier/approve',  {purId: idList, name: vendorId.value })
+        toast('info', '승인 성공', res.value + '건 주문 승인 되었습니다.', '3000');
+
+    } catch (error){
+        toast('error', '승인 실패', '주문 승인 실패:', '3000');
+    }
+
+  //발주테이블 상태값 변경[승인: ms2] => 발주아이디넘김 / 상태이력 남김 [상태이력일, ""담당자, 발주아이디""", 상태값: ms2]
+}
 
 </script>
 
@@ -120,11 +130,11 @@ onMounted( async () => {
     <div class="my-3 flex flex-wrap items-center justify-end gap-2">
       <btn color="contrast" icon="pi pi-plus" label="Excel 다운로드"/>
       <btn color="warn" icon="pi pi-file-excel" label="반려"/>
-      <btn color="info" icon="pi pi-file-pdf" label="승인"/>
+      <btn color="info" icon="pi pi-file-pdf" @click="approve" label="승인" />
     </div>
     <div class="card flex flex-col gap-4">
         <div class="font-semibold text-xl mb-5">조회 내역</div>
-          <selectTable :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" />
+          <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" />
         </div>
     </div>
 </template>
