@@ -10,10 +10,10 @@ import Column from 'primevue/column';
 
 /* 상태 */
 const search = ref({ fromDate: null, toDate: null, vendorName: '', orderId: '' });
-const orderList = ref([]); // 주문 헤더 목록 (orderId 단위)
-const selectedOrders = ref([]); // 선택된 주문 헤더들
-const detailRows = ref([]); // 누적된 상세
-const selectedDetailRows = ref([]); // 상세에서 선택된 행들
+const orderList = ref([]); // 주문 헤더 목록
+const selectedOrders = ref([]); // 선택된 주문 헤더
+const detailRows = ref([]); // 상세 누적
+const selectedDetailRows = ref([]); // 상세 선택
 
 /* 유틸 */
 function fmtDate(d) {
@@ -49,45 +49,41 @@ function resetSearch() {
   applySearch();
 }
 
-/* 행 클릭 */
+/* 행 클릭 → 상세 바인딩 */
 async function onRowClick(e) {
   const row = e.data;
-  const exists = selectedOrders.value.find((r) => r.orderId === row.orderId);
 
+  // 이미 존재하면 제거
+  const exists = detailRows.value.find((r) => r.orderId === row.orderId);
   if (exists) {
-    // 해제
-    selectedOrders.value = selectedOrders.value.filter((r) => r.orderId !== row.orderId);
     detailRows.value = detailRows.value.filter((r) => r.orderId !== row.orderId);
-  } else {
-    // 선택 → 상세 불러오기
-    selectedOrders.value.push(row);
-    await selectOrder(row);
+    return;
+  }
+
+  // 서버에서 상세 조회
+  const { data } = await axios.get('/api/approval/details', {
+    params: { orderId: row.orderId }
+  });
+
+  if (Array.isArray(data.data)) {
+    detailRows.value.push(
+      ...data.data.map((d) => ({
+        ...d,
+        amount: Number(d.prodUnitPrice) * Number(d.orderQty)
+      }))
+    );
   }
 }
 
-/* 상세 조회 */
-async function selectOrder(row) {
-  const { data } = await axios.get('/order/approval/details', {
-    params: { orderId: row.orderId }
-  });
-  const raw = Array.isArray(data) ? data : (data?.data ?? []);
-  raw.forEach((x) => {
-    if (!detailRows.value.find((r) => r.odetailId === x.odetailId)) {
-      const price = Number(x.prodUnitPrice || 0);
-      const qty = Number(x.orderQty || 0);
-      detailRows.value.push({
-        odetailId: x.odetailId,
-        orderId: x.orderId,
-        prodId: x.prodId,
-        prodName: x.prodName,
-        spec: x.spec,
-        unit: x.unit,
-        prodUnitPrice: price,
-        orderQty: qty,
-        amount: price * qty
-      });
-    }
-  });
+/* 상세 행 클릭 → 체크박스 토글 */
+function toggleDetailSelection(row) {
+  const idx = selectedDetailRows.value.findIndex((r) => r.odetailId === row.odetailId);
+  if (idx >= 0) {
+    selectedDetailRows.value.splice(idx, 1); // 제거
+  } else {
+    selectedDetailRows.value.push(row); // 추가
+  }
+  return selectedDetailRows.value;
 }
 
 /* 승인 */
@@ -99,7 +95,7 @@ async function approveSelected() {
   const odetailIds = selectedDetailRows.value.map((r) => r.odetailId);
   const body = { odetailIds };
 
-  const res = await axios.post('/order/approval/approve', body);
+  const res = await axios.post('/api/approval/approve', body);
   if (res?.status === 200) {
     alert('승인 완료');
     await applySearch();
@@ -168,7 +164,7 @@ onMounted(() => applySearch());
             <Button label="선택 승인" icon="pi pi-check" @click="approveSelected" :disabled="!selectedDetailRows.length" />
           </div>
         </div>
-        <DataTable :value="detailRows" dataKey="odetailId" :selection="selectedDetailRows" @update:selection="(val) => (selectedDetailRows.value = val)" selectionMode="multiple" paginator :rows="8">
+        <DataTable :value="detailRows" dataKey="odetailId" v-model:selection="selectedDetailRows" selectionMode="multiple" :metaKeySelection="false" @row-click="toggleDetailSelection($event.data)" paginator :rows="8">
           <Column selectionMode="multiple" />
           <Column field="prodId" header="제품 번호" />
           <Column field="prodName" header="제품명" />

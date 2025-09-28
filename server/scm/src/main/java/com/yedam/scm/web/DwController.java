@@ -19,6 +19,7 @@ import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.WarehouseListRes;
 import com.yedam.scm.product.service.InboundService;
 import com.yedam.scm.vo.ItemInboundVO;
+import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 
 import lombok.RequiredArgsConstructor;
@@ -101,6 +102,22 @@ public class DwController {
     @GetMapping("/approval-list")
     public List<SalesOrderVO> getApprovalList(SalesOrderVO vo) {
         return service.getApprovalList(vo);
+    }
+
+    // 상세 (우측 누적 바인딩용)
+    @GetMapping("/approval/details")
+    public Map<String, Object> getApprovalDetails(@RequestParam String orderId) {
+        List<SalesOrderDetailVO> details = service.getApprovalDetails(orderId);
+        return Map.of("data", details);
+    }
+
+    // 승인 (body: { "odetailIds": ["OD001","OD002", ...] })
+    @PostMapping("/approval/approve")
+    public Map<String, Object> approve(@RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<String> odetailIds = (List<String>) body.get("odetailIds"); // 변수명 맞춤
+        int cnt = service.approveDetails(odetailIds);
+        return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
     }
 
 } // end

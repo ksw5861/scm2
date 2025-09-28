@@ -7,6 +7,7 @@ import com.yedam.scm.dto.InboundListRes;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.WarehouseListRes;
 import com.yedam.scm.vo.ItemInboundVO;
+import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 
 public interface InboundService {
@@ -31,5 +32,11 @@ public interface InboundService {
   WarehouseListRes getWarehouseList(String condition, PageDTO paging);
 
   List<SalesOrderVO> getApprovalList(SalesOrderVO vo);
+
+  // 주문승인 상세
+  List<SalesOrderDetailVO> getApprovalDetails(String orderId);
+
+  // 주문승인 트리거
+  int approveDetails(List<String> odetailIds);
 
 }

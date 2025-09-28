@@ -175,7 +175,7 @@
   ORDER BY so.order_date DESC
 </select> -->
 
-
+<!--주문승인 목록 상태자식-->
 <select id="selectApprovalOrders"
         resultType="com.yedam.scm.vo.SalesOrderVO">
   SELECT
@@ -192,6 +192,53 @@
   GROUP BY so.order_id, so.order_date, v.company_name
   ORDER BY so.order_date DESC
 </select>
+
+
+
+  
+ <!-- Detail 매핑 (snake -> camel) 주문승인 상세-->
+  <resultMap id="SalesOrderDetailMap" type="com.yedam.scm.vo.SalesOrderDetailVO">
+    <id     column="odetail_id"      property="odetailId"/>
+    <result column="order_id"        property="orderId"/>
+    <result column="prod_id"         property="prodId"/>
+    <result column="prod_name"       property="prodName"/>
+    <result column="spec"            property="spec"/>
+    <result column="unit"            property="unit"/>
+    <result column="order_qty"       property="orderQty"/>
+    <result column="prod_unit_price" property="prodUnitPrice"/>
+    <result column="prod_status"     property="prodStatus"/>
+  </resultMap>
+
+  <!-- 상세: 해당 주문의 '대기' 라인만 -->
+  <select id="selectApprovalDetails" resultMap="SalesOrderDetailMap">
+    SELECT
+      sod.odetail_id,
+      sod.order_id,
+      sod.prod_id,
+      p.prod_name,
+      p.spec,
+      p.unit,
+      sod.order_qty,
+      sod.prod_unit_price,
+      sod.prod_status
+    FROM sales_order_detail sod
+      LEFT JOIN product p
+        ON p.prod_id = sod.prod_id
+    WHERE sod.order_id = #{orderId}
+      AND sod.prod_status = '대기'
+    ORDER BY sod.odetail_id
+  </select>
+  
+
+  <!-- 승인 업데이트: 선택 상세들을 '승인' -->
+  <update id="approveDetails">
+  UPDATE sales_order_detail
+  SET prod_status = '승인'
+  WHERE odetail_id IN
+  <foreach collection="odetailIds" item="id" open="(" separator="," close=")">
+    #{id}
+  </foreach>
+</update>
 
 
 

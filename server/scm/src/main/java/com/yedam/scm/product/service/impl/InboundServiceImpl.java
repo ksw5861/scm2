@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.yedam.scm.dto.InboundListRes;
 import com.yedam.scm.dto.PageDTO;
@@ -12,6 +13,7 @@ import com.yedam.scm.product.mapper.InboundMapper;
 import com.yedam.scm.product.service.InboundService;
 import com.yedam.scm.vo.ItemInboundVO;
 import com.yedam.scm.vo.ProductVO;
+import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 import com.yedam.scm.vo.WareHouseVO;
 
@@ -93,6 +95,26 @@ public class InboundServiceImpl implements InboundService {
     @Override
     public List<SalesOrderVO> getApprovalList(SalesOrderVO vo) {
         return inboundMapper.selectApprovalOrders(vo);
+    }
+
+
+
+
+    // 주문승인 상세
+    @Override
+    public List<SalesOrderDetailVO> getApprovalDetails(String orderId) {
+        return inboundMapper.selectApprovalDetails(orderId);
+    }
+
+
+    //주문승인 트리거
+    @Override
+    @Transactional
+    public int approveDetails(List<String> odetailIds) {
+        if (odetailIds == null || odetailIds.isEmpty())
+            return 0;
+        // 자식(DETAIL)만 업데이트 → 트리거가 부모(SALES_ORDER) 상태 동기화
+        return inboundMapper.approveDetails(odetailIds);
     }
 
 } // end
