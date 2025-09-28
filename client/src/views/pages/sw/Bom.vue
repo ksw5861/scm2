@@ -203,9 +203,16 @@ const saveBom = async () => {
 const deleteBom = async (bomId) => {
   if (!confirm('정말 삭제하시겠습니까?')) return;
   try {
-    await axios.delete(`/api/bom/${bomId}`);
-    toast('success', '삭제 완료', 'BOM이 삭제되었습니다.');
-    await fetchBomList(selectedProd.value.prodId);
+    const res = await axios.delete(`/api/bom/${bomId}`);
+    console.log(res);
+    console.log(res.data);
+    if (res.data > 0) {
+      toast('success', '삭제 완료', 'BOM이 삭제되었습니다.');
+      await fetchBomList(selectedProd.value.prodId);
+    } else {
+      toast('error', '삭제 실패', 'BOM 삭제에 실패했습니다.');
+    }
+
   } catch (e) {
     toast('error', '삭제 실패', 'BOM 삭제 중 오류가 발생했습니다.');
   }

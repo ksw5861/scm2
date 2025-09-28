@@ -30,8 +30,8 @@ public class MaterialServiceImpl implements MaterialService {
   }
 
   @Override
-  public int insertMaterial(MaterialVO materialVO){
-    return mapper.insertMaterial(materialVO);
+  public boolean insertMaterial(MaterialVO materialVO){
+    return mapper.insertMaterial(materialVO) > 0;
   }
 
   @Override

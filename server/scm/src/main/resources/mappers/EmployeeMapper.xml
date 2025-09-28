@@ -3,7 +3,7 @@
 
 <mapper namespace="com.yedam.scm.master.mapper.EmployeeMapper">
 
-  <select id="selectEmployeeSimpleListByCondition" resultType="EmployeeSimpleVO">
+  <select id="selectEmployeeSimpleListByCondition" resultType="EmployeeVO">
     SELECT 
       e.employee_id,
       e.name,

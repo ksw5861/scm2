@@ -7,14 +7,20 @@ import lombok.Data;
 
 @Data
 public class ReturnVO {
+    private String returnId;       // 반품번호
+    private String returnDate;       // 반품일자
+    private String vendorId;       // 거래처 ID
+    private Long returnPrice;      // 반품 총액
+    private String status;         // 반품 상태 (예: 반품접수, 반품완료)
+    
+    // =========== 주문(반품) 조회용 필드 ===========
+    private String orderId;
+    private Date orderDate;
+    private Date deliveryDate;
+    private Long totalPrice;
+    private String prodName; // 대표 상품명 (필요 시)
 
-    private String returnId;       // 반품 마스터 PK
-    private String orderId;        // 반품이 속한 주문 번호
-    private String vendorId;       // 가맹점 코드
-    private String returnDate;       // 반품 요청 일자
-    private int returnPrice;          // 반품 총액
-    private String returnStatus;         // 반품 상태 (REQ, APPROVE, COMPLETE)
-
-    // ✅ 반품 상세 목록
-    private List<ReturnDetailVO> details;
+    // =========== 상세 리스트 ===========
+    private List<ReturnDetailVO> details;  // 반품 상세 정보
 }
+

@@ -1,111 +1,84 @@
 <template>
   <div class="return-register">
-    <!-- 헤더 -->
     <div class="header">
       <h2>반품 등록 (판매처)</h2>
-      <div class="header-actions">
-        <Button 
-          label="제품 조회" 
-          icon="pi pi-search" 
-          class="p-button-outlined" 
-          @click="isShowModal = true" 
-        />
-        <Button 
-          label="등록" 
-          icon="pi pi-plus" 
-          class="p-button-success" 
-          @click="saveReturn" 
-        />
+      <Button 
+        label="등록" 
+        icon="pi pi-plus" 
+        class="p-button-success" 
+        @click="saveReturn" 
+      />
+    </div>
+
+    <div class="return-container">
+      <!-- 좌측 주문 목록 -->
+      <div class="order-list">
+        <h3>반품 가능 주문 목록</h3>
+        <DataTable 
+          :value="orderList"
+          :rows="10"
+          paginator
+          selectionMode="single"
+          v-model:selection="selectedOrder"
+          @rowSelect="loadOrderDetails"
+          :emptyMessage="'반품 가능한 주문이 없습니다.'"
+        >
+          <Column field="orderId" header="주문번호" style="width:120px"/>
+          <Column field="orderDate" header="주문일자" style="width:140px"/>
+          <Column field="totalPrice" header="총금액" style="width:120px">
+            <template #body="{ data }">{{ formatCurrency(data.totalPrice) }}</template>
+          </Column>
+        </DataTable>
+      </div>
+
+      <!-- 우측 상세 목록 -->
+      <div class="order-detail">
+        <h3>주문 상세</h3>
+        <DataTable 
+          :value="orderDetailList"
+          :rows="10"
+          paginator
+          :emptyMessage="'좌측에서 주문을 선택하세요.'"
+        >
+          <Column field="prodId" header="제품코드" style="width:120px"/>
+          <Column field="prodName" header="제품명" style="width:160px"/>
+          <Column field="spec" header="규격" style="width:100px"/>
+          <Column field="unit" header="단위" style="width:80px"/>
+          <Column field="prodUnitPrice" header="단가" style="width:100px">
+            <template #body="{ data }">{{ formatCurrency(data.prodUnitPrice) }}</template>
+          </Column>
+
+          <!-- 반품 수량 -->
+          <Column header="반품수량" style="width:120px">
+            <template #body="{ data }">
+              <InputNumber 
+                v-model="data.returnQty"
+                :min="0"
+                showButtons
+                @input="data.returnTotal = (data.returnQty || 0) * data.prodUnitPrice"
+              />
+            </template>
+          </Column>
+
+          <!-- 반품 사유 -->
+          <Column header="반품 사유" style="width:180px">
+            <template #body="{ data }">
+              <InputText v-model="data.returnWhy" placeholder="사유 입력"/>
+            </template>
+          </Column>
+
+          <!-- 합계 -->
+          <Column header="합계" style="width:130px">
+            <template #body="{ data }">{{ formatCurrency(data.returnTotal) }}</template>
+          </Column>
+        </DataTable>
       </div>
     </div>
 
-    <!-- 반품 요약 -->
+    <!-- 하단 합계 -->
     <div class="summary">
       총 반품합계: <strong>{{ formatCurrency(totalReturnAmount) }}</strong>
     </div>
-
-    <!-- 반품 상세 테이블 -->
-    <DataTable
-      :value="returnDetailList"
-      paginator
-      :rows="10"
-      responsiveLayout="scroll"
-      resizableColumns
-      columnResizeMode="fit"
-      class="return-table"
-      :emptyMessage="'제품을 검색 후 선택하세요.'"
-    >
-      <Column field="prodId" header="제품코드" style="width:120px;" />
-      <Column field="prodName" header="제품명" style="width:180px;" />
-      <Column field="spec" header="규격" style="width:120px;" />
-      <Column field="unit" header="단위" style="width:80px;" />
-
-      <!-- 단가 -->
-      <Column field="prodUnitPrice" header="제품단가" style="width:120px;">
-        <template #body="{ data }">
-          <div class="text-right">{{ formatCurrency(data.prodUnitPrice) }}</div>
-        </template>
-      </Column>
-
-      <!-- 반품수량 -->
-      <Column header="반품수량" style="width:110px;">
-        <template #body="{ data }">
-          <InputNumber
-            v-model="data.returnQty"
-            :min="0"
-            @input="data.returnTotal = (data.returnQty || 0) * data.prodUnitPrice"
-            showButtons
-            buttonLayout="horizontal"
-            decrementButtonClass="p-button-outlined p-button-sm"
-            incrementButtonClass="p-button-outlined p-button-sm"
-            :inputStyle="{ width: '70px', textAlign: 'center' }"
-          />
-        </template>
-      </Column>
-
-      <!-- 합계 -->
-      <Column header="합계" style="width:130px;">
-        <template #body="{ data }">
-          <div class="text-right">{{ formatCurrency(data.returnTotal) }}</div>
-        </template>
-      </Column>
-
-      <!-- 사유 -->
-      <Column header="반품 사유" style="width:180px;">
-        <template #body="{ data }">
-          <InputText v-model="data.returnWhy" placeholder="사유 입력" />
-        </template>
-      </Column>
-    </DataTable>
-
-    <!-- 제품 검색 모달 -->
-    <Dialog
-      v-model:visible="isShowModal"
-      header="제품 검색"
-      :style="{ width: '600px' }"
-      modal
-    >
-      <DataTable
-        :value="productList"
-        paginator
-        :rows="5"
-        responsiveLayout="scroll"
-        selectionMode="single"
-        v-model:selection="selectedProduct"
-        @rowClick="handleSelectProduct" 
-        :emptyMessage="'제품 목록이 없습니다.'"
-      >
-        <Column field="prodId" header="제품코드" />
-        <Column field="prodName" header="제품명" />
-        <Column field="spec" header="규격" />
-        <Column field="unit" header="단위" />
-        <Column field="prodUnitPrice" header="제품가격">
-          <template #body="{ data }">
-            {{ formatCurrency(data.prodUnitPrice) }}
-          </template>
-        </Column>
-      </DataTable>
-    </Dialog>
   </div>
 </template>
 
@@ -117,97 +90,77 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
 import InputText from 'primevue/inputtext'
-import Dialog from 'primevue/dialog'
 import { useAppToast } from '@/composables/useAppToast'
+import { useUserStore } from '@/stores/user'
 
 const { toast } = useAppToast()
-const API_BASE = '/api'
+const userStore = useUserStore()
 
-// 모달 상태
-const isShowModal = ref(false)
+// 주문 목록
+const orderList = ref([])
+const selectedOrder = ref(null)
 
-// 제품 목록
-const productList = ref([])
-const selectedProduct = ref(null)
-
-// 반품 상세 목록
-const returnDetailList = ref([])
+// 주문 상세
+const orderDetailList = ref([])
 
 // 통화 포맷
 const formatCurrency = (v) => (v ? v.toLocaleString('ko-KR') + ' 원' : '0 원')
 
-// 총 반품 합계 계산
+// 총 반품 합계
 const totalReturnAmount = computed(() =>
-  returnDetailList.value.reduce((sum, it) => sum + (it.returnTotal || 0), 0)
+  orderDetailList.value.reduce((sum, it) => sum + (it.returnTotal || 0), 0)
 )
 
-// 제품 목록 조회
-const fetchProducts = async () => {
+// 1. 반품 가능 주문 목록 조회
+const fetchReturnableOrders = async () => {
   try {
-    const { data } = await axios.get(`${API_BASE}/products`, {
-      params: { page: 1, pageSize: 50 }
+    const { data } = await axios.get('/api/returnableproducts', {
+      params: { vendorId: userStore.code }
     })
-    productList.value = data.items || []
+    if (data.status === 'success') {
+      orderList.value = data.items || []
+    } else {
+      toast('error', '조회 실패', data.message || '목록 조회 실패')
+    }
   } catch (err) {
-    console.error('제품 목록 조회 오류:', err)
-    productList.value = []
+    console.error(err)
+    toast('error', '조회 실패', '서버 오류 발생')
   }
 }
 
-// 제품 선택 시 반품 상세 목록에 추가
-const handleSelectProduct = () => {
-  if (!selectedProduct.value) return
-
-  const product = selectedProduct.value
-
-  // 중복 체크
-  const exists = returnDetailList.value.some(it => it.prodId === product.prodId)
-  if (exists) {
-    toast('warn', '중복 제품', '이미 선택된 제품입니다.')
-    return
+// 2. 주문 상세 조회
+const loadOrderDetails = async () => {
+  if (!selectedOrder.value) return
+  try {
+    const { data } = await axios.get(`/api/orders/${selectedOrder.value.orderId}/details`)
+    console.log('API 응답', data) // 백엔드 응답 확인
+    if (data.status === 'success') {
+      orderDetailList.value = data.details.map(it => ({
+        ...it,
+        returnQty: 0,
+        returnTotal: 0,
+        returnWhy: ''
+      }))
+    }
+  } catch (err) {
+    console.error(err)
+    toast('error', '상세 조회 실패', '서버 오류 발생')
   }
-
-  returnDetailList.value.push({
-    prodId: product.prodId,
-    prodName: product.prodName,
-    spec: product.spec || '-',
-    unit: product.unit || '-',
-    prodUnitPrice: product.prodUnitPrice || 0,
-    returnQty: 0,
-    returnTotal: 0,
-    returnWhy: ''
-  })
-
-  selectedProduct.value = null
-  isShowModal.value = false
 }
 
-// 반품 등록
+// 3. 반품 등록
 const saveReturn = async () => {
-  if (returnDetailList.value.length === 0) {
-    alert('반품할 제품을 선택하세요.')
+  const validItems = orderDetailList.value.filter(it => it.returnQty > 0 && it.returnWhy.trim() !== '')
+  if (validItems.length === 0) {
+    toast('warn', '반품 등록', '반품할 항목을 선택하세요.')
     return
   }
 
-  // 유효성 검사
-  for (const it of returnDetailList.value) {
-    if (!it.returnQty || it.returnQty <= 0) {
-      alert(`반품 수량을 확인하세요. (${it.prodName})`)
-      return
-    }
-    if (!it.returnWhy || it.returnWhy.trim() === '') {
-      alert(`반품 사유를 입력하세요. (${it.prodName})`)
-      return
-    }
-    it.returnTotal = it.returnQty * it.prodUnitPrice
-  }
-
-  // 마스터 + 상세 구조
   const payload = {
-    returnId: 'RT' + Date.now(),           // 프론트에서 임시 PK 생성
-    totalAmt: totalReturnAmount.value,     // 반품 총액
+    returnId: 'RT' + Date.now(),
+    vendorId: userStore.code,
     status: 'REQ',
-    details: returnDetailList.value.map(it => ({
+    details: validItems.map(it => ({
       rdetailId: 'RD' + Date.now() + '_' + it.prodId,
       prodId: it.prodId,
       returnQty: it.returnQty,
@@ -217,20 +170,22 @@ const saveReturn = async () => {
   }
 
   try {
-    const { data } = await axios.post(`${API_BASE}/insertreturn`, payload)
-    console.log('반품 등록 성공:', data)
-    toast('success', '반품 등록', '반품이 성공적으로 등록되었습니다.')
-
-    // 초기화
-    returnDetailList.value = []
-    selectedProduct.value = null
-  } catch (e) {
-    console.error('반품 등록 실패:', e)
-    toast('error', '반품 실패', '반품 등록 중 오류가 발생했습니다.')
+    const { data } = await axios.post('/api/insertreturn', payload)
+    if (data.status === 'success') {
+      toast('success', '반품 등록 완료', '반품이 성공적으로 등록되었습니다.')
+      orderDetailList.value = []
+      selectedOrder.value = null
+      fetchReturnableOrders()
+    } else {
+      toast('error', '등록 실패', data.message || '등록 중 오류 발생')
+    }
+  } catch (err) {
+    console.error(err)
+    toast('error', '등록 실패', '서버 오류 발생')
   }
 }
 
-onMounted(fetchProducts)
+onMounted(fetchReturnableOrders)
 </script>
 
 <style scoped>
@@ -241,21 +196,18 @@ onMounted(fetchProducts)
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+}
+.return-container {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+  margin-top: 20px;
 }
 .summary {
   text-align: right;
-  margin-bottom: 15px;
+  margin-top: 15px;
   font-size: 1.1rem;
   font-weight: bold;
   color: #007ad9;
-}
-.return-table {
-  width: 100%;
-  font-size: 0.95rem;
-}
-.text-right {
-  text-align: right;
-  padding-right: 6px;
 }
 </style>

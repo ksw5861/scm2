@@ -43,28 +43,33 @@
       <Column field="prodName" header="제품명" />
       <Column field="spec" header="규격" />
       <Column field="unit" header="단위" />
+      
+      <!-- 제품단가 -->
       <Column field="prodUnitPrice" header="제품단가">
         <template #body="{ data }">
           <div class="text-right">{{ formatCurrency(data.prodUnitPrice) }}</div>
         </template>
       </Column>
-      <Column header="주문수량" style="text-align: center;">
-        <template #body="{ data }">
-          <div>
-            <InputNumber
-              v-model="data.orderQty"
-              :min="0"
-              @input="calculateRowTotal(data)"
-              showButtons
-              buttonLayout="horizontal"
-              decrementButtonClass="p-button-outlined p-button-sm"
-              incrementButtonClass="p-button-outlined p-button-sm"
-              :inputStyle="{ width: '20px', textAlign: 'center', padding: '4px' }"
-            />
-          </div>
-        </template>
-      </Column>
 
+      <!-- 주문수량 -->
+      <template>
+  <Column header="주문수량" style="text-align: center;">
+    <template #body="{ data }">
+      <InputNumber
+        v-model="data.orderQty"
+        :min="0"
+        @input="data.orderQty = $event.value" 
+        showButtons
+        buttonLayout="horizontal"
+        decrementButtonClass="p-button-outlined p-button-sm"
+        incrementButtonClass="p-button-outlined p-button-sm"
+        :inputStyle="{ width: '20px', textAlign: 'center', padding: '4px' }"
+      />
+    </template>
+  </Column>
+</template>
+
+      <!-- 합계 -->
       <Column header="합계">
         <template #body="{ data }">
           <div class="text-right">{{ formatCurrency(data.total) }}</div>
@@ -99,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -107,7 +112,9 @@ import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
 import Dialog from 'primevue/dialog'
 import { useAppToast } from '@/composables/useAppToast'
+import { useUserStore } from '@/stores/user';
 
+const userStore = useUserStore();
 const { toast } = useAppToast()
 
 // 모달 표시 여부
@@ -134,8 +141,7 @@ const formatCurrency = (value) =>
 
 // 행별 합계 계산
 const calculateRowTotal = (row) => {
-  // ✅ prodUnitPrice로 합계 계산
-  row.total = row.orderQty * row.prodUnitPrice
+  row.total = (Number(row.orderQty) || 0) * (Number(row.prodUnitPrice) || 0)
   console.log('합계 계산:', row.total)
 }
 
@@ -164,7 +170,7 @@ const handleSelect = () => {
 
   const product = selectedProduct.value;
 
-  // ✅ 중복 체크: 같은 prodId가 이미 있는지 확인
+  // ✅ 중복 체크
   const isDuplicate = orderDetailList.value.some(item => item.prodId === product.prodId);
 
   if (isDuplicate) {
@@ -172,17 +178,17 @@ const handleSelect = () => {
     return;
   }
 
-  // ✅ 새 컬럼명 사용
+  // ✅ 초기 행 데이터 추가
   orderDetailList.value.push({
     odetailId: null,
     prodId: product.prodId,
     prodName: product.prodName,
     spec: product.spec || '-',
     unit: product.unit || '-',
-    prodUnitPrice: product.prodUnitPrice || 0, // ← 기존 prodPrice → prodUnitPrice
+    prodUnitPrice: product.prodUnitPrice || 0,
     orderQty: 1,
     prodStatus: '대기',
-    total: product.prodUnitPrice || 0 // 초기 합계
+    total: product.prodUnitPrice || 0
   });
 
   selectedProduct.value = null;
@@ -197,11 +203,12 @@ const saveOrder = async () => {
     orderDate: new Date().toISOString().slice(0, 10),
     deliveryDate: deliveryDate.value,
     totalPrice: totalAmount.value,
-    status: '대기',
-    payStatus: '대기',
+    status: '대기',          // 트리거가 있으면 사실 필요 X
+    payStatus: '대기',       // 트리거가 있으면 사실 필요 X
+    vendorId: userStore.code,
     returnPrice: returnPrice.value || 1,
     returnStatus: returnStatus.value || '대기',
-    details: JSON.parse(JSON.stringify(orderDetailList.value)) // ✅ prodUnitPrice 포함됨
+    details: JSON.parse(JSON.stringify(orderDetailList.value))
   }
 
   console.log('📤 전송되는 데이터:', payload)
@@ -210,15 +217,32 @@ const saveOrder = async () => {
     const { data } = await axios.post('/api/insertorder', payload)
     console.log('📥 응답 데이터:', data)
 
-    toast('success', '주문 등록', '주문이 성공적으로 등록되었습니다.')
-    orderDetailList.value = []
+    if (data.status === 'success') {
+      toast('success', '주문 등록', data.message || '주문이 성공적으로 등록되었습니다.')
+      orderDetailList.value = []
+    } else {
+      toast('warn', '등록 실패', data.message || '주문 등록에 실패했습니다.')
+    }
   } catch (err) {
     console.error('❌ API 오류:', err)
-    toast('error', '등록 실패', '주문 등록 중 오류가 발생했습니다.')
+    toast('error', '서버 오류', '주문 등록 중 서버 오류가 발생했습니다.')
   }
 }
 
+
 onMounted(fetchProducts)
+
+// -----------------------------
+// 🟢 watch 추가 부분
+// 주문수량이 변경될 때마다 자동으로 합계 계산
+// -----------------------------
+watch(
+  () => orderDetailList.value, // orderDetailList를 감시
+  (newVal) => {
+    newVal.forEach(row => calculateRowTotal(row))
+  },
+  { deep: true } // 객체 내부 속성까지 감시
+)
 </script>
 
 <style scoped>

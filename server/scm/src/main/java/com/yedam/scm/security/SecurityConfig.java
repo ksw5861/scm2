@@ -1,4 +1,4 @@
-package com.yedam.scm.config;
+package com.yedam.scm.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

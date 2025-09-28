@@ -9,17 +9,27 @@ import com.yedam.scm.vo.ReturnDetailVO;
 @Mapper
 public interface ReturnMapper {
 
-    int insertReturnOrder(ReturnVO returnVO);               // 반품 마스터 등록
-    int insertReturnDetail(ReturnDetailVO returnDetailVO);  // 반품 상세 등록
+    // 1. 반품 등록
+    int insertReturnOrder(ReturnVO returnVO);               
+    int insertReturnDetail(ReturnDetailVO returnDetailVO);  
 
+    // 2. 반품 목록 조회
     List<ReturnVO> getReturnList(
         @Param("startDate") String startDate,
         @Param("endDate") String endDate,
         @Param("returnStatus") String returnStatus,
         @Param("prodName") String prodName,
         @Param("returnId") String returnId
-    ); // 반품 목록 조회
+    );
 
-    ReturnVO getReturnDetail(String returnId); // 반품 마스터 단건 조회
-    List<ReturnDetailVO> getReturnDetailList(String returnId); // 반품 상세 목록 조회
+    // 3. 반품 단건 조회
+    ReturnVO getReturnDetail(String returnId);              
+    List<ReturnDetailVO> getReturnDetailList(String returnId);
+
+    // 4. 모달 - 반품 가능 주문 / 상세 조회
+    List<ReturnVO> getReturnableOrders(
+        @Param("vendorId") String vendorId,
+        @Param("prodName") String prodName
+    );
+    List<ReturnDetailVO> getReturnableOrderDetails(@Param("orderId") String orderId);
 }

@@ -25,12 +25,9 @@
       <div class="filter-group">
         <span class="filter-label">반품상태</span>
         <div class="status-buttons">
-          <Button label="대기" :class="{'selected': filters.status === '대기'}"
-            @click="() => { filters.status = '대기'; fetchReturns(); }" />
-          <Button label="승인" :class="{'selected': filters.status === '승인'}"
-            @click="() => { filters.status = '승인'; fetchReturns(); }" />
-          <Button label="반려" :class="{'selected': filters.status === '반려'}"
-            @click="() => { filters.status = '반려'; fetchReturns(); }" />
+          <Button label="대기" :class="{selected: filters.status === 'REQ'}" @click="() => { filters.status = 'REQ'; fetchReturns(); }" />
+          <Button label="승인" :class="{selected: filters.status === 'APPROVE'}" @click="() => { filters.status = 'APPROVE'; fetchReturns(); }" />
+          <Button label="반려" :class="{selected: filters.status === 'REJECT'}" @click="() => { filters.status = 'REJECT'; fetchReturns(); }" />
         </div>
       </div>
 
@@ -57,22 +54,34 @@
           resizableColumns
           columnResizeMode="fit"
           class="custom-table"
+          :emptyMessage="'조회된 반품 내역이 없습니다.'"
         >
-          <Column field="returnId" header="반품번호" style="width:160px; text-align:center;" />
-          <Column field="returnDate" header="반품일자" style="width:140px; text-align:center;" />
-          <Column field="returnPrice" header="반품총액" style="width:150px; text-align:right;">
+          <Column field="returnId" header="반품번호" style="width:140px; text-align:center;" />
+          <Column field="prodName" header="대표제품명" style="width:200px;">
+            <template #body="slotProps">
+              {{ slotProps.data.prodName }}
+            </template>
+          </Column>
+          <Column field="returnDate" header="반품일자" style="width:130px; text-align:center;" />
+          <Column field="returnPrice" header="반품총액" style="width:130px; text-align:right;">
             <template #body="slotProps">
               {{ formatCurrency(slotProps.data.returnPrice) }}
             </template>
           </Column>
-          <Column field="returnStatus" header="상태" style="width:120px; text-align:center;" />
+          <Column field="returnStatus" header="상태" style="width:100px; text-align:center;">
+            <template #body="slotProps">
+              <span :class="statusClass(slotProps.data.returnStatus)">
+                {{ statusLabel(slotProps.data.returnStatus) }}
+              </span>
+            </template>
+          </Column>
         </DataTable>
       </div>
 
       <!-- 우측 반품 상세 -->
       <div class="return-detail-table">
         <DataTable
-          v-if="returnDetails && returnDetails.length"
+          v-if="returnDetails.length"
           :value="returnDetails"
           :key="selectedReturn?.returnId"
           responsiveLayout="scroll"
@@ -105,7 +114,7 @@
           <Column field="rdetailStatus" header="상태" style="width:100px; text-align:center;">
             <template #body="slotProps">
               <span :class="statusClass(slotProps.data.rdetailStatus)">
-                {{ slotProps.data.rdetailStatus}}
+                {{ statusLabel(slotProps.data.rdetailStatus) }}
               </span>
             </template>
           </Column>
@@ -128,6 +137,9 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
+import { useAppToast } from '@/composables/useAppToast'
+
+const { toast } = useAppToast()
 
 /* ===== 검색 조건 ===== */
 const filters = ref({
@@ -161,16 +173,32 @@ const formatCurrency = (value) => {
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   const date = new Date(dateString)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
 /* ===== API 날짜 포맷 ===== */
 const formatDateForAPI = (date) => {
   if (!date) return null
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+/* ===== 상태 라벨 ===== */
+const statusLabel = (status) => {
+  switch (status) {
+    case 'REQ': return '대기'
+    case 'APPROVE': return '승인'
+    case 'REJECT': return '반려'
+    default: return status || '-'
+  }
+}
+
+/* ===== 상태별 CSS 클래스 ===== */
+const statusClass = (status) => {
+  return {
+    'status-wait': status === 'REQ',
+    'status-approve': status === 'APPROVE',
+    'status-reject': status === 'REJECT'
+  }
 }
 
 /* ===== 반품 목록 조회 ===== */
@@ -185,48 +213,51 @@ const fetchReturns = async () => {
       }
     })
 
-    console.log('반품 목록 API 응답:', data)
+    if (data.status !== 'success' || !Array.isArray(data.list)) {
+      toast('error', '반품 목록 조회 실패', '서버에서 올바른 데이터를 반환하지 않았습니다.')
+      return
+    }
 
-    returns.value = data.map(item => ({
-      returnId: item.returnId,
-      returnDate: formatDate(item.returnDate),
-      returnPrice: item.returnPrice || 0,
-      returnStatus: item.returnStatus 
-    }))
+    // 대표제품명 + 외 n건 형태로 가공
+    returns.value = data.list.map(item => {
+      let displayName = item.mainProdName
+      if (item.prodCount > 1) {
+        displayName += ` 외 ${item.prodCount - 1}건`
+      }
+      return {
+        returnId: item.returnId,
+        mainProdName: displayName,
+        returnDate: formatDate(item.returnDate),
+        returnPrice: item.returnPrice || 0,
+        returnStatus: item.returnStatus
+      }
+    })
 
     selectedReturn.value = null
     returnDetails.value = []
   } catch (error) {
     console.error('반품 목록 조회 오류:', error)
-    alert('반품 목록 조회 중 오류가 발생했습니다.')
+    toast('error', '반품 목록 조회 실패', '서버 오류가 발생했습니다.')
   }
 }
 
 /* ===== 반품 상세 조회 ===== */
 const fetchReturnDetail = async (returnId) => {
   try {
-    const { data } = await axios.get('/api/returndetail', { params: { returnId } })
-    console.log('반품 상세 응답:', data)
+    const { data } = await axios.get(`/api/returns/${returnId}/details`)
 
-    returnDetails.value = data.map(item => ({
+    if (data.status !== 'success' || !Array.isArray(data.details)) {
+      toast('error', '반품 상세 조회 실패', '서버에서 올바른 데이터를 반환하지 않았습니다.')
+      return
+    }
+
+    returnDetails.value = data.details.map(item => ({
       ...item,
       returnTotal: item.prodUnitPrice * item.returnQty
     }))
-
-    console.log('반품 상세 목록:', returnDetails.value)
   } catch (error) {
     console.error('반품 상세 조회 오류:', error)
-  }
-}
-
-/* ===== 상태 레이블/클래스 ===== */
-
-
-const statusClass = (status) => {
-  return {
-    'status-wait': status === 'REQ',
-    'status-approve': status === 'APPROVE',
-    'status-reject': status === 'REJECT'
+    toast('error', '반품 상세 조회 실패', '서버 오류가 발생했습니다.')
   }
 }
 
@@ -253,9 +284,7 @@ const resetFilters = () => {
   fetchReturns()
 }
 
-onMounted(() => {
-  fetchReturns()
-})
+onMounted(fetchReturns)
 
 /* ===== PDF & 엑셀 ===== */
 const exportExcel = () => console.log('엑셀 다운로드 실행')
@@ -263,7 +292,6 @@ const exportPDF = () => console.log('PDF 출력 실행')
 </script>
 
 <style scoped>
-/* 전체 레이아웃 */
 .return-list { padding: 20px; }
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
 
@@ -286,7 +314,6 @@ const exportPDF = () => console.log('PDF 출력 실행')
   font-size: 1.1rem; font-weight: bold; color: #333;
 }
 
-/* 테이블 */
 .custom-table { width: 100%; font-size: 0.95rem; }
 ::v-deep(.p-datatable-thead > tr > th) {
   border-right: 1px solid #e5e7eb; background: #f9fafb;
@@ -296,7 +323,6 @@ const exportPDF = () => console.log('PDF 출력 실행')
   border-right: 1px solid #f0f0f0; text-align: center; padding: 8px 10px;
 }
 
-/* 상태 색상 */
 .status-wait { color: #ff9800; font-weight: bold; }
 .status-approve { color: #4caf50; font-weight: bold; }
 .status-reject { color: #f44336; font-weight: bold; }
