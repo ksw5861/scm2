@@ -8,19 +8,19 @@ import lombok.Data;
 @Data
 public class SalesOrderVO {
 
-  String orderId;
-  Date orderDate;
-  Long totalPrice;
-  String vendorId;
-  String status;
-  Date deliveryDate;
-  String payStatus;
-  Date sendDate;
-  Date paydueDate;
-  Long returnPrice;
-  String dataType; // 'ORDER' or 'RETURN'
-  
-  // 추가된 대표 제품명 필드
+    String orderId;
+    Date orderDate;
+    Long totalPrice;
+    String vendorId;
+    String status;
+    Date deliveryDate;
+    String payStatus;
+    Date sendDate;
+    Date paydueDate;
+    Long returnPrice;
+    String dataType; // 'ORDER' or 'RETURN'
+
+    // 추가된 대표 제품명 필드
     private String prodName;
 
     // Getter / Setter
@@ -35,4 +35,10 @@ public class SalesOrderVO {
     private List<SalesOrderDetailVO> details;
 
     private String prodId;
+
+    // 동원 추가
+
+    private String companyName;
+    private String prodStatus;
+    
 }
