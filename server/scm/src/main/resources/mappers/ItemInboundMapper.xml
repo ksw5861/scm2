@@ -96,7 +96,7 @@
 
 
 <!-- ============================================================
-     모달 - 총 건수 조회 (OR 조건 적용)
+     제품모달 - 총 건수 조회 (OR 조건 적용)
      ============================================================ -->
 <select id="selectInboundProductCountByCondition"
         resultType="long">
@@ -110,12 +110,88 @@
       )
     </if>
 </select>
-  <!-- 모달 부분 끝 -->
+  <!-- 제품모달 부분 끝 -->
 
 
 
+
+  <!-- ================================
+       창고 모달 - 목록 (제품 모달과 동일 패턴)
+       condition + 페이징(rn BETWEEN startRow AND endRow)
+       ================================ -->
+  <select id="selectWarehouseListByCondition"
+          resultType="WareHouseVO">
+    SELECT *
+    FROM (
+      SELECT
+        w.wh_id   AS whId,
+        w.wh_name AS whName,
+        ROW_NUMBER() OVER (ORDER BY w.wh_id DESC) AS rn
+      FROM warehouse w
+      WHERE 1 = 1
+        <if test="condition != null and condition != ''">
+          AND (
+               w.wh_id   LIKE '%' || #{condition} || '%'
+            OR w.wh_name LIKE '%' || #{condition} || '%'
+          )
+        </if>
+    )
+    WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
+  </select>
+
+  <!-- ================================
+      제품입고 창고 모달 - 총 건수
+       ================================ -->
+  <select id="selectWarehouseCountByCondition"
+          resultType="long">
+    SELECT COUNT(*)
+    FROM warehouse w
+    WHERE 1 = 1
+      <if test="condition != null and condition != ''">
+        AND (
+             w.wh_id   LIKE '%' || #{condition} || '%'
+          OR w.wh_name LIKE '%' || #{condition} || '%'
+        )
+      </if>
+  </select>
   
   
+
+
+ <!-- 주문승인 페이지 목록 불러오기 -->
+<!-- <select id="selectApprovalOrders"
+        resultType="com.yedam.scm.vo.SalesOrderVO">
+  SELECT
+      so.order_id,
+      so.order_date,
+      so.vendor_id,
+      v.company_name,
+      sod.prod_status
+  FROM sales_order so
+    JOIN sales_order_detail sod
+      ON so.order_id = sod.order_id
+    LEFT JOIN vendor v
+      ON so.vendor_id = v.vendor_id
+  ORDER BY so.order_date DESC
+</select> -->
+
+
+<select id="selectApprovalOrders"
+        resultType="com.yedam.scm.vo.SalesOrderVO">
+  SELECT
+    so.order_id,
+    so.order_date,
+    v.company_name,
+    MIN(sod.prod_status) AS prod_status
+  FROM sales_order so
+    JOIN sales_order_detail sod
+      ON so.order_id = sod.order_id
+    LEFT JOIN vendor v
+      ON so.vendor_id = v.vendor_id
+  WHERE sod.prod_status = '대기'
+  GROUP BY so.order_id, so.order_date, v.company_name
+  ORDER BY so.order_date DESC
+</select>
 
 
 
