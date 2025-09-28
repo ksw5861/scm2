@@ -2,9 +2,9 @@ package com.yedam.scm.order.mapper;
 
 import java.util.List;
 import java.util.Map;
-
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
@@ -17,9 +17,6 @@ import com.yedam.scm.vo.SalesOrderVO;
  */
 @Mapper
 public interface OrderMapper {
-
-  
-
 
     // --------------------------
     // 1. 주문 등록
@@ -48,25 +45,17 @@ public interface OrderMapper {
     List<SalesOrderDetailVO> getOrderDetailList(@Param("orderId") String orderId);
 
     // --------------------------
-    // 5. 주문 상세 조회 (개별)
+    // 5. 지점 대시보드 데이터
     // --------------------------
-    // List<SalesOrderDetailVO> getOrderDetails(String orderId);
+    Map<String, Object> getBranchDashData();
 
     // --------------------------
-    // 6. 지점 대시보드
-    // --------------------------
-    Object getBranchDashData();
-
-    // --------------------------
-    // 7. 제품 목록 조회 (모달용)
+    // 6. 제품 목록 조회 (모달용)
     // --------------------------
     List<ProductVO> getProductList(Map<String, Object> params);
 
     // --------------------------
-    // 8. 제품 전체 개수 조회
+    // 7. 제품 전체 개수 조회
     // --------------------------
     int getProductCount();
-
-    
-
 }

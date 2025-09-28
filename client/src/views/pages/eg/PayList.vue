@@ -6,58 +6,56 @@
       <p class="subtitle">납부내역 조회 페이지입니다.</p>
     </div>
 
-<!-- ===== 검색 영역 ===== -->
-<div class="search-section">
-  <div class="search-form">
-    
-    <!-- 결제일자 -->
-    <div class="form-group date-group">
-      <label class="form-label">결제일자</label>
-      <div class="date-range">
-        <Calendar
-          v-model="filters.startDate"
-          placeholder="시작일"
-          dateFormat="yy-mm-dd"
-          class="calendar-input"
-        />
-        <span class="range-separator">~</span>
-        <Calendar
-          v-model="filters.endDate"
-          placeholder="종료일"
-          dateFormat="yy-mm-dd"
-          class="calendar-input"
-        />
+    <!-- ===== 검색 영역 ===== -->
+    <div class="search-section">
+      <div class="search-form">
+        <!-- 결제일자 -->
+        <div class="form-group date-group">
+          <label class="form-label">결제일자</label>
+          <div class="date-range">
+            <Calendar
+              v-model="filters.startDate"
+              placeholder="시작일"
+              dateFormat="yy-mm-dd"
+              class="calendar-input"
+            />
+            <span class="range-separator">~</span>
+            <Calendar
+              v-model="filters.endDate"
+              placeholder="종료일"
+              dateFormat="yy-mm-dd"
+              class="calendar-input"
+            />
+          </div>
+        </div>
+
+        <!-- 결제번호 -->
+        <div class="form-group code-group">
+          <label class="form-label">결제번호</label>
+          <InputText
+            v-model="filters.paymentNo"
+            placeholder="결제번호 입력"
+            class="input-text"
+          />
+        </div>
+
+        <!-- 버튼 영역 -->
+        <div class="form-actions">
+          <Button
+            label="초기화"
+            icon="pi pi-refresh"
+            class="p-button-outlined reset-btn"
+            @click="resetFilters"
+          />
+          <Button
+            label="조회"
+            icon="pi pi-search"
+            class="p-button-primary search-btn"
+            @click="searchPayments"
+          />
+        </div>
       </div>
     </div>
-
-    <!-- 결제번호 -->
-    <div class="form-group code-group">
-      <label class="form-label">결제번호</label>
-      <InputText
-        v-model="filters.payId"
-        placeholder="결제번호 입력"
-        class="input-text"
-      />
-    </div>
-
-    <!-- 버튼 영역 -->
-    <div class="form-actions">
-      <Button
-        label="초기화"
-        icon="pi pi-refresh"
-        class="p-button-outlined reset-btn"
-        @click="resetFilters"
-      />
-      <Button
-        label="조회"
-        icon="pi pi-search"
-        class="p-button-primary search-btn"
-        @click="searchPayments"
-      />
-    </div>
-  </div>
-</div>
-
 
     <!-- ===== 결과 테이블 ===== -->
     <div class="result-section">
@@ -76,7 +74,7 @@
         />
       </div>
 
-        <DataTable
+      <DataTable
         :value="payList"
         paginator
         :rows="10"
@@ -85,44 +83,38 @@
         columnResizeMode="fit"
         class="payment-table"
       >
-        <!-- DB 컬럼 기준 -->
-        <Column field="PAY_ID" header="결제번호" style="width:120px;" />
-        <Column field="PAY_DATE" header="결제일자" style="width:120px;" />
+        <!-- 컬럼 구조 최신화 -->
+        <Column field="paymentNo" header="결제번호" style="width:140px;" />
+        <Column field="payDate" header="결제일자" style="width:140px;" />
 
-        <!-- 미수금 -->
-        <Column field="OUTSTANDING_AMOUNT" header="미수금" style="width:120px; text-align:right;">
+        <Column field="outstandingAmount" header="미수금" style="width:140px; text-align:right;">
           <template #body="slotProps">
-            {{ formatCurrency(slotProps.data.OUTSTANDING_AMOUNT) }}
+            {{ formatCurrency(slotProps.data.outstandingAmount) }}
           </template>
         </Column>
 
-        <!-- 납부금 -->
-        <Column field="PAY_AMOUNT" header="납부금액">
+        <Column field="payAmount" header="납부금액" style="width:140px; text-align:right;">
           <template #body="slotProps">
-            <span :class="{ 'negative': slotProps.data.PAY_AMOUNT < 0 }">
-              {{ formatCurrency(slotProps.data.PAY_AMOUNT) }}
+            <span :class="{ negative: slotProps.data.payAmount < 0 }">
+              {{ formatCurrency(slotProps.data.payAmount) }}
             </span>
           </template>
         </Column>
 
-        <!-- 최종잔액 -->
-        <Column field="FINAL_BALANCE" header="최종잔액" style="width:120px; text-align:right;">
+        <Column field="finalBalance" header="최종잔액" style="width:140px; text-align:right;">
           <template #body="slotProps">
-            {{ formatCurrency(slotProps.data.FINAL_BALANCE) }}
+            {{ formatCurrency(slotProps.data.finalBalance) }}
           </template>
         </Column>
 
-        <!-- 여신잔액 -->
-        <Column field="CREDIT_BALANCE" header="여신잔액" style="width:120px; text-align:right;">
+        <Column field="creditBalance" header="여신잔액" style="width:140px; text-align:right;">
           <template #body="slotProps">
-            {{ formatCurrency(slotProps.data.CREDIT_BALANCE) }}
+            {{ formatCurrency(slotProps.data.creditBalance) }}
           </template>
         </Column>
 
-        <!-- 적요 -->
-        <Column field="PAY_RMK" header="적요" style="width:180px;" />
+        <Column field="payRmk" header="적요" style="width:200px;" />
       </DataTable>
-
     </div>
   </div>
 </template>
@@ -135,10 +127,15 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Calendar from 'primevue/calendar'
+import { useToast } from 'primevue/usetoast'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+const toast = useToast()
 
 // ===== 검색 조건 =====
 const filters = ref({
-  payId: '',
+  paymentNo: '',
   startDate: null,
   endDate: null
 })
@@ -148,16 +145,17 @@ const payList = ref([])
 
 // ===== 날짜 포맷 =====
 const formatDate = (date) => {
+  if (!date) return ''
   const d = new Date(date)
   const year = d.getFullYear()
-  const month = ('0' + (d.getMonth() + 1)).slice(-2)
-  const day = ('0' + d.getDate()).slice(-2)
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
 }
 
 // ===== 금액 포맷 =====
 const formatCurrency = (value) => {
-  if (!value && value !== 0) return '0 원'
+  if (value === null || value === undefined) return '0 원'
   return value.toLocaleString('ko-KR') + ' 원'
 }
 
@@ -165,47 +163,57 @@ const formatCurrency = (value) => {
 const searchPayments = async () => {
   try {
     const params = {
-      payId: filters.value.payId || '',
+      paymentNo: filters.value.paymentNo || '',
       startDate: filters.value.startDate ? formatDate(filters.value.startDate) : '',
       endDate: filters.value.endDate ? formatDate(filters.value.endDate) : ''
     }
 
-    const res = await axios.get('/api/paymentlist', { params })
-
-    console.log(res)
+    const res = await axios.get('/api/payments', { params })
+    console.log('납부내역 조회 결과:', res.data)
 
     payList.value = Array.isArray(res.data) ? res.data : []
   } catch (error) {
     console.error('납부내역 조회 실패:', error)
     payList.value = []
-    alert('납부내역 조회 중 오류가 발생했습니다.')
+    toast.add({
+      severity: 'error',
+      summary: '오류',
+      detail: '납부내역 조회 중 오류가 발생했습니다.',
+      life: 3000
+    })
   }
 }
 
 // ===== 초기화 버튼 =====
 const resetFilters = () => {
-  filters.value.payId = ''
+  filters.value.paymentNo = ''
   filters.value.startDate = null
   filters.value.endDate = null
+  payList.value = []
 }
 
 // ===== PDF 출력 =====
 const exportPDF = () => {
-  alert('PDF 출력 기능은 추후 구현 예정')
+  toast.add({
+    severity: 'info',
+    summary: 'PDF 출력',
+    detail: 'PDF 출력 기능은 추후 구현 예정입니다.',
+    life: 3000
+  })
 }
 
 // ===== 엑셀 다운로드 =====
 const exportExcel = () => {
-  alert('엑셀 다운로드 기능은 추후 구현 예정')
+  toast.add({
+    severity: 'info',
+    summary: '엑셀 다운로드',
+    detail: '엑셀 다운로드 기능은 추후 구현 예정입니다.',
+    life: 3000
+  })
 }
 
 onMounted(searchPayments)
 </script>
-
-
-
-
-
 
 <style scoped>
 /* ===== 전체 레이아웃 ===== */
@@ -218,12 +226,10 @@ onMounted(searchPayments)
 .header {
   margin-bottom: 10px;
 }
-
 .header h2 {
   font-size: 1.4rem;
   margin-bottom: 5px;
 }
-
 .subtitle {
   font-size: 0.9rem;
   color: #888;
@@ -237,43 +243,31 @@ onMounted(searchPayments)
   border-radius: 6px;
   margin-bottom: 20px;
 }
-
 .search-form {
   display: flex;
   align-items: flex-end;
   gap: 20px;
   flex-wrap: wrap;
 }
-
 .form-group {
   display: flex;
   flex-direction: column;
 }
-
 .form-label {
   font-size: 0.9rem;
   font-weight: 500;
   margin-bottom: 5px;
 }
-
 .input-text {
   width: 200px;
 }
-
-.date-group {
-  display: flex;
-  flex-direction: column;
-}
-
 .date-range {
   display: flex;
   align-items: center;
 }
-
 .calendar-input {
   width: 140px;
 }
-
 .range-separator {
   margin: 0 8px;
   font-weight: bold;
@@ -285,12 +279,10 @@ onMounted(searchPayments)
   display: flex;
   gap: 10px;
 }
-
 .reset-btn {
   background: white;
   color: #333;
 }
-
 .search-btn {
   background: #007ad9;
   border: none;
@@ -303,20 +295,16 @@ onMounted(searchPayments)
   border: 1px solid #dcdcdc;
   border-radius: 6px;
 }
-
 .export-buttons {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   margin-bottom: 10px;
 }
-
 .payment-table {
   width: 100%;
   font-size: 0.95rem;
 }
-
-/* 테이블 헤더 */
 ::v-deep(.p-datatable-thead > tr > th) {
   background: #f9fafb;
   border-right: 1px solid #e5e7eb;
@@ -324,8 +312,6 @@ onMounted(searchPayments)
   font-weight: 600;
   padding: 10px;
 }
-
-/* 본문 */
 ::v-deep(.p-datatable-tbody > tr > td) {
   border-right: 1px solid #f0f0f0;
   text-align: center;
@@ -338,15 +324,19 @@ onMounted(searchPayments)
     flex-direction: column;
     gap: 10px;
   }
-
   .input-text,
   .calendar-input {
     width: 100%;
   }
-
   .export-buttons {
     flex-direction: column;
     align-items: flex-end;
   }
+}
+
+/* 금액 음수 색상 */
+.negative {
+  color: #e74c3c;
+  font-weight: bold;
 }
 </style>

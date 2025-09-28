@@ -29,4 +29,11 @@ public interface PayService {
 
     /** 반품 상태 COMPLETE 업데이트 (단일건) */
     void updateReturnStatusToComplete(List<String> returnId);
+
+    /** 납부등록페이지 - 상단 카드들 */
+    PaymentVO getSummaryData();
+
+    /** 납부내역 */
+    List<PaymentVO> getPaymentSummaryList();
+
 }

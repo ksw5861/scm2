@@ -1,13 +1,17 @@
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
+import { useAppToast } from '@/composables/useAppToast';
 import axios from 'axios';
+
+const { toast } = useAppToast();
+const router = useRouter();
+const userStore = useUserStore();
 
 const email = ref('');
 const password = ref('');
 const capsLockOn = ref(false);
-const router = useRouter();
-
 const emailInput = ref(null);
 
 const handleKey = (event) => {
@@ -15,21 +19,31 @@ const handleKey = (event) => {
 };
 
 const login = async () => {
+  if (!email.value || !password.value) return toast("warn", "로그인 실패", "이메일과 비밀번호를 모두 입력해주세요.");
+
   const param = {
     email: email.value,
     password: password.value,
   };
 
   try {
-    const result = await axios.post('/api/auth', param);
+    const result = await axios.post('/api/auth', param, { withCredentials: true });
     if (result.status === 200) {
-      console.log('로그인 성공:', result);
-        // router.push('/');
+      try {
+        const { data } = await axios.get('/api/auth/me', { withCredentials: true });
+        userStore.setUserInfo(data);
+        console.log('사용자 정보:', userStore.name, userStore.code, userStore.accountId, userStore.role, userStore.isLoggedIn);
+        toast("success", "로그인 성공", `${data.name}님 환영합니다!`);
+      } catch (e) {
+        console.error('사용자 정보 불러오기 실패:', e);
+        toast("success", "로그인 성공", `환영합니다.!`);
+      }
+      router.push('/');
     } else {
-      alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+      toast("error", "로그인 실패", "이메일과 비밀번호를 확인해주세요.");
     }
   } catch (e) {
-    alert('로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+    toast("error", "로그인 실패", "이메일과 비밀번호를 확인해주세요.");
     console.error('로그인 오류:', e);
   } finally {
     password.value = '';

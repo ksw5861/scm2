@@ -31,26 +31,10 @@
       <div class="filter-group">
         <span class="filter-label">주문상태</span>
         <div class="status-buttons">
-          <Button 
-            label="대기" 
-            :class="{'selected': filters.status === '대기'}" 
-            @click="() => { filters.status = '대기'; fetchOrders(); }" 
-          />
-          <Button 
-            label="승인" 
-            :class="{'selected': filters.status === '승인'}" 
-            @click="() => { filters.status = '승인'; fetchOrders(); }" 
-          />
-          <Button 
-            label="배송중" 
-            :class="{'selected': filters.status === '배송중'}" 
-            @click="() => { filters.status = '배송중'; fetchOrders(); }" 
-          />
-          <Button 
-            label="배송완료" 
-            :class="{'selected': filters.status === '배송완료'}" 
-            @click="() => { filters.status = '배송완료'; fetchOrders(); }" 
-          />
+          <Button label="대기" :class="{selected: filters.status === '대기'}" @click="selectStatus('대기')" />
+          <Button label="승인" :class="{selected: filters.status === '승인'}" @click="selectStatus('승인')" />
+          <Button label="배송중" :class="{selected: filters.status === '배송중'}" @click="selectStatus('배송중')" />
+          <Button label="배송완료" :class="{selected: filters.status === '배송완료'}" @click="selectStatus('배송완료')" />
         </div>
       </div>
 
@@ -69,7 +53,7 @@
           :value="orders"
           selectionMode="single"
           v-model:selection="selectedOrder"
-          dataKey="orderId"     
+          dataKey="orderId"
           paginator
           :rows="10"
           responsiveLayout="scroll"
@@ -80,7 +64,7 @@
           <Column field="orderId" header="주문번호" style="width:140px; text-align:center;" />
           <Column field="orderDate" header="주문일자" style="width:140px; text-align:center;" />
           <Column field="prodName" header="대표 제품명" style="width:200px;" />
-          
+
           <Column field="totalPrice" header="주문총액(원)" style="width:150px; text-align:right;">
             <template #body="slotProps">
               {{ formatCurrency(slotProps.data.totalPrice) }}
@@ -138,6 +122,9 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
+import { useUserStore } from '@/stores/user';
+
+const userStore = useUserStore()
 
 // ===== 검색 조건 =====
 const filters = ref({
@@ -159,7 +146,7 @@ const orderDetails = ref([])
 
 // ===== 합계 계산 =====
 const detailTotal = computed(() => {
-  return orderDetails.value.reduce((acc, item) => acc + (item.total || 0), 0)
+  return orderDetails.value.reduce((acc, item) => acc + (item.totalUnitPrice || 0), 0)
 })
 
 // ===== 금액 포맷 =====
@@ -172,83 +159,74 @@ const formatCurrency = (value) => {
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   const date = new Date(dateString)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-// ===== 날짜 더하기 =====
+// ===== 배송 예정일 계산 =====
 const addDays = (dateString, days) => {
   if (!dateString) return '-'
   const date = new Date(dateString)
   date.setDate(date.getDate() + days)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-// ===== API 날짜 포맷 =====
+// ===== API 조회용 날짜 포맷 =====
 const formatDateForAPI = (date) => {
   if (!date) return null
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+// ===== 주문 상태 선택 =====
+const selectStatus = (status) => {
+  filters.value.status = status
+  fetchOrders()
 }
 
 // ===== 주문 목록 조회 =====
 const fetchOrders = async () => {
   try {
-    const { data } = await axios.get('/api/orderlist', {
-      params: {
-        startDate: formatDateForAPI(filters.value.startDate),
-        endDate: formatDateForAPI(filters.value.endDate),
-        prodName: filters.value.prodName,
-        status: filters.value.status,
-        orderId: filters.value.orderId
-      }
-    })
+    const params = {
+      ...filters.value,
+      startDate: formatDateForAPI(filters.value.startDate),
+      endDate: formatDateForAPI(filters.value.endDate)
+    }
 
+    const { data } = await axios.get('/api/orderlist', { params })
 
-
-    // 목록 데이터 세팅
-    orders.value = data.map(item => ({
-      orderId: item.orderId,
-      orderDate: formatDate(item.orderDate),
-      prodName: item.prodName || '-',
-      totalPrice: item.totalPrice || 0,
-      deliveryDate: addDays(item.orderDate, 2),
-      status: item.status || '-'
-    }))
-
-    // 목록 새로고침 시 선택 초기화
-    selectedOrder.value = null
-    orderDetails.value = []
+    if (data.status === 'success') {
+      orders.value = data.orders.map(item => ({
+        orderId: item.orderId,
+        orderDate: formatDate(item.orderDate),
+        prodName: item.prodName || '-',
+        totalPrice: item.totalPrice || 0,
+        deliveryDate: addDays(item.orderDate, 2),
+        status: item.status || '-'
+      }))
+    } else {
+      alert(data.message || '주문 목록을 불러오지 못했습니다.')
+    }
   } catch (error) {
-    console.error('주문 목록 조회 오류:', error)
-    alert('주문 목록 조회 중 오류가 발생했습니다.')
+    console.error('❌ 주문 목록 조회 오류:', error)
+    alert('서버 오류로 주문 목록을 불러올 수 없습니다.')
   }
 }
 
 // ===== 주문 상세 조회 =====
 const fetchOrderDetail = async (orderId) => {
-  console.log('상세 조회 호출됨:', orderId)
   try {
-    const { data } = await axios.get('/api/orderdetail', {
-      params: { orderId }
-    })
+    const { data } = await axios.get(`/api/orders/${orderId}/details`)
 
-    console.log('상세 조회 응답 데이터:', data)
-
-    orderDetails.value = data.map(item => ({
-      ...item,
-      total: item.prodUnitPrice * item.orderQty
-    }))
+    if (data.status === 'success') {
+      orderDetails.value = data.details.map(item => ({
+        ...item,
+        totalUnitPrice: item.prodUnitPrice * item.orderQty
+      }))
+    } else {
+      alert(data.message || '주문 상세 데이터를 불러오지 못했습니다.')
+    }
   } catch (error) {
-    console.error('주문 상세 조회 오류:', error)
-    alert('주문 상세 조회 중 오류가 발생했습니다.')
+    console.error('❌ 주문 상세 조회 오류:', error)
+    alert('서버 오류로 상세 데이터를 불러올 수 없습니다.')
   }
 }
 
@@ -256,7 +234,6 @@ const fetchOrderDetail = async (orderId) => {
 watch(
   () => selectedOrder.value,
   (newOrder) => {
-    console.log('선택된 주문 변경 감지:', newOrder)
     if (newOrder && newOrder.orderId) {
       fetchOrderDetail(newOrder.orderId)
     } else {
@@ -264,6 +241,14 @@ watch(
     }
   }
 )
+
+
+
+// ===== PDF 출력 =====
+const exportPDF = () => {
+  alert('PDF 출력 기능은 아직 구현되지 않았습니다.')
+}
+
 
 // ===== 초기화 =====
 const resetFilters = () => {
@@ -281,6 +266,9 @@ onMounted(() => {
   fetchOrders()
 })
 </script>
+
+
+
 
 <style scoped>
 .order-list {
