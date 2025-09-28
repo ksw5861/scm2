@@ -12,6 +12,7 @@ import com.yedam.scm.vo.MrpDetailVO;
 import com.yedam.scm.vo.PrdPlanDetailVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
+import com.yedam.scm.vo.PurchaseMatVO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -60,6 +61,20 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
         return mapper.getMatVendorList(matId);
     }
 
+    //자재주문등록
+    @Override
+    @Transactional
+    public boolean callReqestMatProc(List<PurchaseMatVO> requestList) {
+        try {
+            for (PurchaseMatVO list : requestList) { // mpper.xml에서 (<select>로 procedure call)
+                mapper.callReqestMatProc(list);
+            }
+            return true;
+        } catch(Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 
     /*==========================
      * 드롭다운/모달용

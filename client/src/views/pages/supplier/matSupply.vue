@@ -1,14 +1,35 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import SearchField from '@/components/common/SearchBox.vue';
+import { useAppToast } from '@/composables/useAppToast';
+import { useRoute } from 'vue-router';
+import { useIcon } from '@/composables/useIcon';
+import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 
-const dateRange = ref({ start: null, end: null }); // ✅ 초기값을 객체로
-const materialName = ref('');
+const route = useRoute();
+const { toast } = useAppToast();
+
+// breadcrumb
+const breadcrumbHome = { icon: useIcon('home'), to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter((r) => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  const parentLabel = current.meta?.breadcrumb?.parent || '주문 조회';
+  const currentLabel = current.name || '';
+  return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
+});
+
+const dateRange = ref({ start: null, end: null }); // 초기값을 객체로
+const materialName = ref([]);
 const statusList = ref([]);
 </script>
 
 <template>
   <div class="container">
+    <div class="p-4">
+        <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    </div>
     <div class="card flex flex-col gap-4">
       <div class="font-semibold text-xl">자재공급</div>
       <Divider />

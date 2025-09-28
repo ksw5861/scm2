@@ -8,6 +8,7 @@ import com.yedam.scm.vo.MrpDetailVO;
 import com.yedam.scm.vo.PrdPlanDetailVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
+import com.yedam.scm.vo.PurchaseMatVO;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,11 +56,14 @@ public class MsController {
     public List<MatVendorVO> getMatVendor(@RequestParam String matId) {
         return purchaseMatService.getMatVendorList(matId);
     }
+
+    //자재주문등록
+    @PostMapping("/reqMaterial")
+    public boolean callReqestMaterial(@RequestBody List<PurchaseMatVO> requestList) {      
+        return purchaseMatService.callReqestMatProc(requestList);
+    }
     
-
-
-
-
+    
     /*======================
     모달용   
     ======================*/

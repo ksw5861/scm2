@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yedam.scm.common.CommonMapper">
+<!-- 자재 resultMap -->
+<resultMap id="MaterialMap" type="MaterialVO">
+    <id     property="matId"        column="MAT_ID"/>
+    <result property="matName"      column="MAT_NAME"/>
+    <result property="matType"      column="MAT_TYPE"/>
+    <result property="matStoreCond" column="MAT_STORE_COND"/>
+    <result property="matUnitConv"  column="MAT_UNIT_CONV"/>
+    <result property="matUnitPrice" column="MAT_UNIT_PRICE"/>
+    <result property="leadTime"     column="LEAD_TIME"/>
+    <result property="safeStock"    column="SAFE_STOCK"/>
+    <result property="status"       column="STATUS"/>
+    <result property="spec"         column="SPEC"/>
+    <result property="unit"         column="UNIT"/>
+</resultMap>
+
+</mapper>
