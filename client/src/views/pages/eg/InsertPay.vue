@@ -10,41 +10,37 @@
     </header>
 
     <!-- ===== 상단 카드 4개 ===== -->
-<section class="summary-cards-formula">
-  <!-- 총 미결제 금액 -->
-  <div class="card red">
-    <p class="label">총 미결제 금액</p>
-    <p class="amount">₩{{ formatCurrency(summary.totalUnpaid) }}</p>
-  </div>
+    <section class="summary-cards-formula">
+      <!-- 총 미결제 금액 -->
+      <div class="card red">
+        <p class="label">총 미결제 금액</p>
+        <p class="amount">₩{{ formatCurrency(summary.totalUnpaid) }}</p>
+      </div>
 
-  <!-- ➖ 아이콘 -->
-  <div class="formula-icon">➖</div>
+      <div class="formula-icon">➖</div>
 
-  <!-- 승인된 반품 총액 -->
-  <div class="card green">
-    <p class="label">승인된 반품 총액</p>
-    <p class="amount">₩{{ formatCurrency(summary.thisMonthReturnAmount) }}</p>
-  </div>
+      <!-- 승인된 반품 총액 -->
+      <div class="card green">
+        <p class="label">승인된 반품 총액</p>
+        <p class="amount">₩{{ formatCurrency(summary.thisMonthReturnAmount) }}</p>
+      </div>
 
-  <!-- = 아이콘 -->
-  <div class="formula-icon">=</div>
+      <div class="formula-icon">=</div>
 
-  <!-- 최종 납부 예정 금액 (미결제 - 반품) -->
-  <div class="card blue">
-    <p class="label">이번 납부 예정 금액</p>
-    <p class="amount">
-      ₩{{ formatCurrency(summary.totalUnpaid - summary.thisMonthReturnAmount) }}
-    </p>
-  </div>
+      <!-- 최종 납부 예정 금액 -->
+      <div class="card blue">
+        <p class="label">이번 납부 예정 금액</p>
+        <p class="amount">
+          ₩{{ formatCurrency(summary.totalUnpaid - summary.thisMonthReturnAmount) }}
+        </p>
+      </div>
 
-  <!-- 다음 납부 예정 금액 -->
-  <div class="card orange">
-    <p class="label">다음 납부 예정 금액</p>
-    <p class="amount">₩{{ formatCurrency(summary.upcomingAmount) }}</p>
-  </div>
-</section>
-
-  
+      <!-- 다음 납부 예정 금액 -->
+      <div class="card orange">
+        <p class="label">다음 납부 예정 금액</p>
+        <p class="amount">₩{{ formatCurrency(summary.upcomingAmount) }}</p>
+      </div>
+    </section>
 
     <!-- ===== 탭 ===== -->
     <div class="tabs">
@@ -112,17 +108,14 @@
         </Column>
         <Column field="sendDate" header="출고일자" style="width:140px;">
           <template #body="{ data }">
-          {{ formatDate(data.sendDate) }}
-        </template>
+            {{ formatDate(data.sendDate) }}
+          </template>
         </Column>
-
         <Column field="status" header="주문상태" style="width:140px;" />
-     
-      
         <Column field="paydueDate" header="결제기한" style="width:140px;">
-        <template #body="{ data }">
-          {{ formatDate(data.paydueDate) }}
-        </template>
+          <template #body="{ data }">
+            {{ formatDate(data.paydueDate) }}
+          </template>
         </Column>
       </DataTable>
     </div>
@@ -163,7 +156,7 @@
           <Textarea v-model="memo" rows="2" placeholder="납부 관련 메모를 입력하세요" class="w-full" />
         </div>
 
-       <Button
+        <Button
           :label="'₩' + formatCurrency(selectedTotal) + ' 납부하기'"
           class="w-full pay-btn"
           @click="submitPayment"
@@ -190,7 +183,6 @@
 
     <!-- ===== [탭] 거래 요약 ===== -->
     <div v-else-if="activeTab === 'summary'" class="tab-content">
-      <!-- 상단 카드 -->
       <div class="summary-grid">
         <div class="card green">
           <p class="label">완료된 납부 총액</p>
@@ -206,25 +198,17 @@
         </div>
       </div>
 
-      <!-- 검색 & 필터 -->
       <div class="table-toolbar between">
         <div class="search-container">
           <i class="pi pi-search search-icon"></i>
           <InputText
             v-model="searchSummary"
-            placeholder="공급업체 또는 거래번호 검색..."
+            placeholder="납부번호 검색..."
             class="search-input"
           />
         </div>
-
-        <div class="filters">
-          <Dropdown v-model="filterStatus" :options="statusOptions" placeholder="모든 상태" />
-          <Dropdown v-model="filterPeriod" :options="periodOptions" placeholder="전체 기간" />
-          <Button icon="pi pi-download" label="내보내기" class="export-btn" />
-        </div>
       </div>
 
-      <!-- 거래 요약 테이블 -->
       <DataTable
         :value="filteredSummaryList"
         paginator
@@ -259,42 +243,30 @@ import RadioButton from 'primevue/radiobutton'
 import Calendar from 'primevue/calendar'
 import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
-import Dropdown from 'primevue/dropdown'
 import { useToast } from 'primevue/usetoast'
+import { useUserStore } from '@/stores/user';
 
+const userStore = useUserStore()
 const today = new Date().toLocaleDateString('ko-KR')
 const toast = useToast()
 
 /* ========== 상단 카드 데이터 ========== */
 const summary = ref({
-  totalUnpaid: '',
-  overdueCount: '',
-  upcomingCount: '',
-  thisMonthReturnAmount: ''
+  totalUnpaid: 0,
+  thisMonthReturnAmount: 0,
+  upcomingAmount: 0
 })
 
 const fetchSummary = async () => {
   try {
     const res = await axios.get('/api/summary')
-    summary.value = res.data
+    summary.value = res.data || {}
   } catch (error) {
     console.error('상단 카드 데이터 불러오기 실패:', error)
   }
 }
 
-
-
-/* ========== 거래 요약 상단 카드 ========== */
-const summaryReport = ref({
-  completedAmount: '',
-  completedCount: '',
-  pendingCount: ''
-})
-
-/* ========== 탭 관리 ========== */
-const activeTab = ref('pending')
-
-/* ========== 미결제 내역 데이터 ========== */
+/* ========== 미결제 내역 ========== */
 const orders = ref([])
 const selectedOrders = ref([])
 const searchQuery = ref('')
@@ -307,6 +279,7 @@ const fetchOrders = async () => {
     console.error('미결제 목록 불러오기 실패:', error)
   }
 }
+
 const filteredOrders = computed(() => {
   if (!searchQuery.value) return orders.value
   return orders.value.filter(order =>
@@ -319,7 +292,7 @@ const selectedTotal = computed(() =>
   selectedOrders.value.reduce((sum, order) => sum + (order.totalPrice || 0), 0)
 )
 
-/* ========== 납부 처리 폼 ========== */
+/* ========== 납부 처리 ========== */
 const method = ref('신용카드')
 const cardNumber = ref('')
 const expiry = ref('')
@@ -335,9 +308,10 @@ const submitPayment = async () => {
 
   const payload = {
     totalAmount: selectedTotal.value,
-    method: method.value,
-    payDate: payDate.value,
+    payType: method.value,
+    payDate: formatDateForAPI(payDate.value),
     memo: memo.value,
+    vendorId: userStore.code,
     orders: selectedOrders.value.map(order => ({
       orderId: order.orderId,
       totalPrice: order.totalPrice
@@ -345,7 +319,7 @@ const submitPayment = async () => {
   }
 
   try {
-    await axios.post('/api/insertpayment', payload)
+    await axios.post('/api/payments', payload)
     toast.add({ severity: 'success', summary: '성공', detail: '납부가 완료되었습니다.', life: 3000 })
     fetchOrders()
     selectedOrders.value = []
@@ -354,68 +328,50 @@ const submitPayment = async () => {
   }
 }
 
-/* ========== 거래 요약 탭 데이터 ========== */
+/* ========== 거래 요약 ========== */
 const summaryList = ref([])
 const searchSummary = ref('')
-const filterStatus = ref(null)
-const filterPeriod = ref(null)
-
-const statusOptions = [
-  { label: '모든 상태', value: null },
-  { label: '대기', value: '대기' },
-  { label: '완료', value: '완료' },
-  { label: '실패', value: '실패' }
-]
-
-const periodOptions = [
-  { label: '전체 기간', value: null },
-  { label: '최근 1개월', value: '1M' },
-  { label: '최근 3개월', value: '3M' },
-  { label: '최근 6개월', value: '6M' }
-]
 
 const fetchSummaryList = async () => {
   try {
-    const res = await axios.get('/api/paymentsummarylist') // 새로운 API 엔드포인트
-    console.log(res)
+    const res = await axios.get('/api/paymentsummarylist')
     summaryList.value = res.data || []
   } catch (error) {
     console.error('거래 요약 불러오기 실패:', error)
   }
 }
 
-
 const filteredSummaryList = computed(() => {
-  return summaryList.value.filter(item => {
-    // 납부번호 검색만
-    const matchSearch = !searchSummary.value || (item.payId && item.payId.includes(searchSummary.value))
-    return matchSearch
-  })
+  return summaryList.value.filter(item =>
+    !searchSummary.value || (item.payId && item.payId.includes(searchSummary.value))
+  )
 })
 
+/* ========== 날짜 포맷 ========== */
+const formatDate = (date) => {
+  if (!date) return ''
+  const d = new Date(date)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
-onMounted(() => {
-  fetchSummary() 
-  fetchOrders()
-  fetchSummaryList()
-})
+const formatDateForAPI = (date) => {
+  if (!date) return null
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
 
 /* ========== 금액 포맷 ========== */
 const formatCurrency = (value) => {
   return value ? value.toLocaleString('ko-KR') : '0'
 }
-/* 날짜포맷 */
-const formatDate = (date) => {
-  if (!date) return '';
 
-  const d = new Date(date);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0'); // 두 자리
-  const day = String(d.getDate()).padStart(2, '0');         // 두 자리
-
-  return `${year}-${month}-${day}`;
-};
+onMounted(() => {
+  fetchSummary()
+  fetchOrders()
+  fetchSummaryList()
+})
 </script>
+
+
 
 <style scoped>
 /* ===== 공통 스타일 ===== */

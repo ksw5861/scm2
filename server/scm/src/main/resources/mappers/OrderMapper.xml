@@ -15,23 +15,17 @@
         INSERT INTO SALES_ORDER (
             order_id,
             order_date,
-            total_price,
             vendor_id,
-            status,
             delivery_date,
-            pay_status,
-            paydue_date
-           
+            paydue_date,
+            total_price
         ) VALUES (
             #{orderId},
             SYSDATE,
-            NVL(#{totalPrice}, 0),
             #{vendorId},
-            NVL(#{status}, 'ORDER'),
             #{deliveryDate},
-            NVL(#{payStatus}, 'UNPAID'),
-            #{paydueDate}
-           
+            #{paydueDate},
+            0
         )
     </insert>
 
@@ -39,111 +33,104 @@
     <!-- 2. 주문 상세 등록 -->
     <!-- ============================= -->
     <insert id="insertOrderDetail" parameterType="SalesOrderDetailVO">
-    <selectKey keyProperty="odetailId" resultType="string" order="BEFORE">
-        SELECT next_date_code('SOD') FROM dual
-    </selectKey>
+        <selectKey keyProperty="odetailId" resultType="string" order="BEFORE">
+            SELECT next_date_code('SOD') FROM dual
+        </selectKey>
 
-    INSERT INTO SALES_ORDER_DETAIL (
-        odetail_id,
-        order_id,
-        prod_id,
-        prod_name,
-        spec,
-        unit,
-        order_qty,
-        prod_unit_price,
-        prod_status
-    ) VALUES (
-        #{odetailId},
-        #{orderId},
-        #{prodId},
-        #{prodName},
-        #{spec},
-        #{unit},
-        #{orderQty},
-        #{prodUnitPrice},
-        #{prodStatus}
-    )
+        INSERT INTO SALES_ORDER_DETAIL (
+            odetail_id,
+            order_id,
+            prod_id,
+            prod_name,
+            spec,
+            unit,
+            order_qty,
+            prod_unit_price,
+            prod_status
+        ) VALUES (
+            #{odetailId},
+            #{orderId},
+            #{prodId},
+            #{prodName},
+            #{spec},
+            #{unit},
+            #{orderQty},
+            #{prodUnitPrice},
+            #{prodStatus}
+        )
     </insert>
 
-<!-- ============================= -->
-<!-- 3. 주문 목록 조회 (좌측 리스트) -->
-<!-- ============================= -->
-<select id="getOrderListForView" parameterType="map" resultType="SalesOrderVO">
-    SELECT 
-        so.order_id,
-        so.order_date,
-        so.delivery_date,
-        so.status,
-        NVL(SUM(d.order_qty * d.prod_unit_price), 0) AS totalPrice,
+    <!-- ============================= -->
+    <!-- 3. 주문 목록 조회 (좌측 리스트) -->
+    <!-- ============================= -->
+    <select id="getOrderListForView" parameterType="map" resultType="SalesOrderVO">
+        SELECT 
+            so.order_id,
+            so.order_date,
+            so.delivery_date,
+            so.status,
+            NVL(SUM(d.order_qty * d.prod_unit_price), 0) AS totalPrice,
 
-        (
-            SELECT CASE 
-                    WHEN COUNT(*) = 1 THEN MIN(sod2.prod_name)
-                    ELSE MIN(sod2.prod_name) || ' 외 ' || (COUNT(*) - 1) || '건'
-                   END
-            FROM sales_order_detail sod2
-            WHERE sod2.order_id = so.order_id
-        ) AS prod_name
+            (
+                SELECT CASE 
+                        WHEN COUNT(*) = 1 THEN MIN(sod2.prod_name)
+                        ELSE MIN(sod2.prod_name) || ' 외 ' || (COUNT(*) - 1) || '건'
+                       END
+                FROM sales_order_detail sod2
+                WHERE sod2.order_id = so.order_id
+            ) AS prod_name
 
-    FROM sales_order so
-    LEFT JOIN sales_order_detail d 
-        ON so.order_id = d.order_id
+        FROM sales_order so
+        LEFT JOIN sales_order_detail d 
+            ON so.order_id = d.order_id
 
-    WHERE 1=1
-      <if test="startDate != null and startDate != ''">
-        AND so.order_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
-      </if>
-      <if test="endDate != null and endDate != ''">
-        AND so.order_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
-      </if>
-      <if test="status != null and status != ''">
-        AND so.status = #{status}
-      </if>
-      <if test="prodName != null and prodName != ''">
-        AND EXISTS (
-          SELECT 1 
-          FROM sales_order_detail sod3
-          WHERE sod3.order_id = so.order_id
-            AND sod3.prod_name LIKE '%' || #{prodName} || '%'
-        )
-      </if>
-      <if test="orderId != null and orderId != ''">
-          AND so.order_id LIKE '%' || #{orderId} || '%'
-      </if>
+        WHERE 1=1
+          <if test="startDate != null and startDate != ''">
+            AND so.order_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+          </if>
+          <if test="endDate != null and endDate != ''">
+            AND so.order_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+          </if>
+          <if test="status != null and status != ''">
+            AND so.status = #{status}
+          </if>
+          <if test="prodName != null and prodName != ''">
+            AND EXISTS (
+              SELECT 1 
+              FROM sales_order_detail sod3
+              WHERE sod3.order_id = so.order_id
+                AND sod3.prod_name LIKE '%' || #{prodName} || '%'
+            )
+          </if>
+          <if test="orderId != null and orderId != ''">
+              AND so.order_id LIKE '%' || #{orderId} || '%'
+          </if>
 
-    GROUP BY so.order_id, so.order_date, so.delivery_date, so.status
-    ORDER BY so.order_date DESC
-</select>
+        GROUP BY so.order_id, so.order_date, so.delivery_date, so.status
+        ORDER BY so.order_date DESC
+    </select>
 
-
-
-   
-<!-- ============================= -->
-<!-- 4. 주문 상세 조회 (우측 상세) -->
-<!-- ============================= -->
-<select id="getOrderDetailList" parameterType="java.lang.String" resultType="SalesOrderDetailVO">
-    SELECT
-        d.odetail_id,
-        d.order_id,
-        d.prod_id,
-        p.prod_name,
-        p.spec,
-        p.unit,
-        d.order_qty,
-        d.prod_unit_price,
-
-        
-        (d.order_qty * d.prod_unit_price) AS totalUnitPrice,
-
-        d.prod_status
-    FROM SALES_ORDER_DETAIL d
-    JOIN PRODUCT p
-      ON d.prod_id = p.prod_id
-    WHERE d.order_id = #{orderId}
-    ORDER BY d.odetail_id
-</select>
-
+    <!-- ============================= -->
+    <!-- 4. 주문 상세 조회 (우측 상세) -->
+    <!-- ============================= -->
+    <select id="getOrderDetailList" parameterType="java.lang.String" resultType="SalesOrderDetailVO">
+        SELECT
+            d.odetail_id,
+            d.order_id,
+            d.prod_id,
+            p.prod_name,
+            p.spec,
+            p.unit,
+            d.order_qty,
+            d.prod_unit_price,
+            (d.order_qty * d.prod_unit_price) AS totalUnitPrice,
+            d.prod_status
+        FROM SALES_ORDER_DETAIL d
+        JOIN PRODUCT p
+          ON d.prod_id = p.prod_id
+        WHERE d.order_id = #{orderId}
+        ORDER BY d.odetail_id
+    </select>
 
     <!-- ============================= -->
     <!-- 8. 제품 총 개수 조회 -->
@@ -157,59 +144,54 @@
     <!-- 9. 제품 목록 검색 (Oracle 11g 호환) -->
     <!-- ============================= -->
     <select id="getProductList" parameterType="map" resultType="ProductVO">
-    SELECT *
-    FROM (
-        SELECT 
-            p.PROD_ID,
-            p.PROD_NAME,
-            p.SPEC,
-            p.UNIT,
-            p.PROD_UNIT_PRICE, 
-            ROWNUM rn
+        SELECT *
         FROM (
             SELECT 
-                PROD_ID,
-                PROD_NAME,
-                SPEC,
-                UNIT,
-                PROD_UNIT_PRICE
-            FROM PRODUCT
-            <where>
-                <if test="prodName != null and prodName != ''">
-                    AND PROD_NAME LIKE '%' || #{prodName} || '%'
-                </if>
-                <if test="status != null and status != ''">
-                    AND STATUS = #{status}
-                </if>
-            </where>
-            ORDER BY PROD_ID
-        ) p
-        WHERE ROWNUM &lt;= #{offset} + #{pageSize}
-    )
-    WHERE rn &gt; #{offset}
+                p.PROD_ID,
+                p.PROD_NAME,
+                p.SPEC,
+                p.UNIT,
+                p.PROD_UNIT_PRICE, 
+                ROWNUM rn
+            FROM (
+                SELECT 
+                    PROD_ID,
+                    PROD_NAME,
+                    SPEC,
+                    UNIT,
+                    PROD_UNIT_PRICE
+                FROM PRODUCT
+                <where>
+                    <if test="prodName != null and prodName != ''">
+                        AND PROD_NAME LIKE '%' || #{prodName} || '%'
+                    </if>
+                    <if test="status != null and status != ''">
+                        AND STATUS = #{status}
+                    </if>
+                </where>
+                ORDER BY PROD_ID
+            ) p
+            WHERE ROWNUM &lt;= #{offset} + #{pageSize}
+        )
+        WHERE rn &gt; #{offset}
     </select>
 
+    <!-- ============================= -->
+    <!-- 대시보드 데이터 조회 -->
+    <!-- ============================= -->
+    <select id="getBranchDashData" resultType="map">
+        SELECT
+            NVL(SUM(CASE WHEN TO_CHAR(p.pay_date, 'YYYYMM') = TO_CHAR(SYSDATE, 'YYYYMM')
+                   THEN p.pay_amount ELSE 0 END), 0) AS thisMonthPayment,
 
- <!-- 대시보드 데이터 조회 -->
-  <select id="getBranchDashData" resultType="map">
-    SELECT
-  
-      NVL(SUM(CASE WHEN TO_CHAR(p.pay_date, 'YYYYMM') = TO_CHAR(SYSDATE, 'YYYYMM')
-             THEN p.pay_amount ELSE 0 END), 0) AS thisMonthPayment,
+            NVL(SUM(so.total_price), 0) AS totalOrders,
 
-      
-      NVL(SUM(so.total_price), 0) AS totalOrders,
+            100000000 AS creditLimit,
 
-      100000000 AS creditLimit,
-
-      
-      (100000000 - NVL(SUM(CASE WHEN so.pay_status = '대기'
-             THEN so.total_price ELSE 0 END), 0)) AS remainingLimit
-    FROM sales_order so
-    LEFT JOIN payment p ON so.vendor_id = p.vendor_id
-  </select>
-
-
-
+            (100000000 - NVL(SUM(CASE WHEN so.pay_status = '대기'
+                   THEN so.total_price ELSE 0 END), 0)) AS remainingLimit
+        FROM sales_order so
+        LEFT JOIN payment p ON so.vendor_id = p.vendor_id
+    </select>
 
 </mapper>

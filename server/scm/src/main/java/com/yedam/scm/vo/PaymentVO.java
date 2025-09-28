@@ -24,6 +24,6 @@ public class PaymentVO {
 
     private Long completedAmount;  // 완료된 납부 총액
     private Integer completedCount; // 완료된 거래 건수
-    private Integer pendingCount;   // 대기중 거래 건수 9/10일 기준 9/15일에 결제할것(8/1~9/30들과 + 9/1~10건들포함)
+    private Integer pendingCount;   // 대기중 거래 건수 
 
 }

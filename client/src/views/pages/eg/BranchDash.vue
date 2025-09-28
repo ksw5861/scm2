@@ -3,7 +3,7 @@
     <!-- 헤더 -->
     <header class="header">
       <div>
-        <h2 class="title">대시보드</h2>
+        <h2 class="title">대시보드 {{ userStore.name }}님 환영합니다!</h2>
         <p class="subtitle">{{ today }} | 가맹점 운영 현황</p>
       </div>
       <div class="header-ctrl">
@@ -121,110 +121,98 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import Badge from 'primevue/badge'
-import Button from 'primevue/button'
-import Dropdown from 'primevue/dropdown'
-import Card from 'primevue/card'
-import InputText from 'primevue/inputtext'
-import Tag from 'primevue/tag'
-import DataTable from 'primevue/datatable'
-import Column from 'primevue/column'
-import Chart from 'primevue/chart'
-import Message from 'primevue/message'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
+import { useUserStore } from '@/stores/user'
 
-const today = new Date().toLocaleDateString('ko-KR')
+// Pinia Store
+const userStore = useUserStore();
+const vendorId = userStore.code; // 로그인한 가맹점 코드
 
-/* 매장 */
-const stores = ref([{ label: '강남점' }, { label: '홍대점' }, { label: '부산서면점' }])
-const selectedStore = ref(stores.value[0])
+// KPI
+const kpi = ref({ todaySales: 0, monthSales: 0, unshipped: 0, nextDueAmount: 0, nextDueDate: '' });
+const fetchKpi = async () => {
+  try {
+    const { data } = await axios.get('/api/branchdashboard', { params: { vendorId } });
+    kpi.value = data;
+  } catch (err) {
+    console.error('KPI 불러오기 오류:', err);
+  }
+};
 
-/* KPI */
-const kpi = ref({
-  todaySales: 1280000,
-  monthSales: 28450000,
-  unshipped: 12,
-  nextDueAmount: 650000,
-  nextDueDate: '2025-09-30'
-})
-
-/* 주문/반품 요약 (카멜케이스) */
-const orders = ref([
-  { orderId: 'O2025-09-0012', prodName: '에스프레소 원두 1kg', totalPrice: 150000, sendDate: '2025-09-23', status: '대기', paydueDate: '2025-09-30' },
-  { orderId: 'O2025-09-0013', prodName: '우유 1L (20팩)', totalPrice: 94000, sendDate: '2025-09-22', status: '연체', paydueDate: '2025-09-22' },
-  { orderId: 'O2025-09-0014', prodName: '시럽 6종 (바닐라, 카라멜)', totalPrice: 120000, sendDate: '2025-09-21', status: '승인', paydueDate: '2025-09-30' },
-  // 반품 행(표시용): return → orderId 매핑, totalPrice 음수, status 적절히 표현
-  { orderId: 'R2025-09-0003', prodName: '머그컵 흠집 반품', totalPrice: -22000, sendDate: null, status: '반품', paydueDate: null },
-  { orderId: 'O2025-09-0015', prodName: '디카페인 원두 1kg', totalPrice: 110000, sendDate: '2025-09-20', status: '완료', paydueDate: '2025-09-27' }
-])
-const orderQuery = ref('')
+// 미결제 주문
+const orders = ref([]);
+const orderQuery = ref('');
+const fetchOrders = async () => {
+  try {
+    const { data } = await axios.get('/api/pendingorders', { params: { vendorId, limit: 10 } });
+    orders.value = data;
+  } catch (err) {
+    console.error('미결제 주문 조회 오류:', err);
+  }
+};
 const filteredOrders = computed(() =>
   orders.value.filter(o =>
     !orderQuery.value ||
     o.orderId.includes(orderQuery.value) ||
     (o.prodName && o.prodName.includes(orderQuery.value))
   )
-)
+);
 
-/* 재고 */
-const stock = ref([
-  { sku: 'ESP-001', name: '에스프레소 원두 1kg', qty: 45, safety: 30, price: 18000 },
-  { sku: 'MLK-20P', name: '우유 1L (20팩)', qty: 20, safety: 40, price: 24000 },
-  { sku: 'SYR-006', name: '시럽 6종', qty: 8, safety: 12, price: 32000 },
-  { sku: 'CUP-12', name: '12oz 종이컵', qty: 500, safety: 300, price: 75 },
-  { sku: 'LID-12', name: '12oz 컵뚜껑', qty: 150, safety: 200, price: 55 },
-])
-const lowItems = computed(() => stock.value.filter(s => s.qty < s.safety))
-
-/* 공지 */
-const notices = ref([
-  { id: 1, title: '원두 단가 조정 안내', category: '가격', date: '2025-09-25', desc: '국제 원두 시세 상승으로 일부 품목 단가가 조정됩니다.' },
-  { id: 2, title: '시스템 점검 공지', category: '시스템', date: '2025-09-20', desc: '점검 시간: 02:00~03:00, 주문/납부 일시 제한.' },
-  { id: 3, title: '반품 정책 업데이트', category: '정책', date: '2025-09-18', desc: '수령 후 7일 이내 반품 신청 가능.' }
-])
-
-/* 차트 */
-const days = Array.from({ length: 30 }, (_, i) => {
-  const d = new Date(); d.setDate(d.getDate() - (29 - i))
-  return `${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getDate().toString().padStart(2,'0')}`
-})
-const chartData = ref({
-  labels: days,
-  datasets: [{
-    label: '매출',
-    data: days.map(() => Math.floor(700000 + Math.random() * 400000)),
-    fill: true,
-    borderColor: '#4F46E5',
-    backgroundColor: 'rgba(79,70,229,0.08)',
-    tension: 0.35,
-    pointRadius: 0
-  }]
-})
-const chartOptions = ref({
-  maintainAspectRatio: false,
-  plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${asKRW(ctx.parsed.y)}` } } },
-  scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(0,0,0,0.06)' }, ticks: { callback: v => asKRW(v) } } }
-})
-
-/* utils */
-const asKRW = v => (v ?? 0).toLocaleString('ko-KR', { style: 'currency', currency: 'KRW', maximumFractionDigits: 0 })
-const formatDate = (date) => {
-  if (!date) return '-'
-  const d = new Date(date)
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-}
-const statusColor = (s) => {
-  switch (s) {
-    case '완료': return 'success'
-    case '대기': return 'warning'
-    case '승인': return 'info'
-    case '연체': return 'danger'
-    case '실패': return 'danger'
-    case '반품': return 'secondary'
-    default: return 'secondary'
+// 재고
+const stock = ref([]);
+const lowItems = computed(() => stock.value.filter(s => s.qty < s.safety));
+const fetchStock = async () => {
+  try {
+    const { data } = await axios.get('/api/dashboard/stock', { params: { vendorId } });
+    stock.value = data;
+  } catch (err) {
+    console.error('재고 조회 오류:', err);
   }
-}
-const noticeColor = (c) => (c === '가격' ? 'danger' : c === '정책' ? 'info' : 'warning')
+};
+
+// 공지사항
+const notices = ref([]);
+const fetchNotices = async () => {
+  try {
+    const { data } = await axios.get('/api/dashboard/notices');
+    notices.value = data;
+  } catch (err) {
+    console.error('공지사항 조회 오류:', err);
+  }
+};
+
+// 매출 추이
+const chartData = ref({ labels: [], datasets: [] });
+const fetchSalesTrend = async () => {
+  try {
+    const { data } = await axios.get('/api/dashboard/sales-trend', {
+      params: { vendorId, days: 30 }
+    });
+    chartData.value = {
+      labels: data.map(d => d.date),
+      datasets: [{
+        label: '매출',
+        data: data.map(d => d.amount),
+        borderColor: '#4F46E5',
+        backgroundColor: 'rgba(79,70,229,0.08)',
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0
+      }]
+    };
+  } catch (err) {
+    console.error('매출 추이 조회 오류:', err);
+  }
+};
+
+onMounted(() => {
+  fetchKpi();
+  fetchOrders();
+  fetchStock();
+  fetchNotices();
+  fetchSalesTrend();
+});
 </script>
 
 <style scoped>
