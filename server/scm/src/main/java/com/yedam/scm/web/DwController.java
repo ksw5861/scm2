@@ -119,7 +119,7 @@ public class DwController {
         int cnt = service.approveDetails(odetailIds);
         return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
     }
-
+    /////wewewewe
 } // end
 
 // // 입고처리
