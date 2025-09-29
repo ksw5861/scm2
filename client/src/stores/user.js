@@ -9,6 +9,7 @@ export const useUserStore = defineStore('user', () => {
   const code = computed(() => userInfo.value?.code || '');
   const accountId = computed(() => userInfo.value?.accountId || '');
   const role = computed(() => userInfo.value?.role || '');
+  const tempPassword = computed(() => userInfo.value?.tempPassword || '');
   const isLoggedIn = computed(() => !!userInfo.value);
 
   // Actions
@@ -26,6 +27,7 @@ export const useUserStore = defineStore('user', () => {
     code,
     accountId,
     role,
+    tempPassword,
     isLoggedIn,
     setUserInfo,
     clearUserInfo,

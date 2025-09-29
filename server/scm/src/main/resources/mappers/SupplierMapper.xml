@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yedam.scm.supplier.mapper.SupplierMapper">
+
+<resultMap id="purchaseMatMap" type="PurchaseMatVO">
+    <id property="purId" column="PUR_ID"/>
+    <result property="matId" column="MAT_ID"/>
+    <result property="reqQty" column="REQ_QTY"/>
+    <result property="outTotalQty" column="OUT_TOTAL_QTY"/>
+    <result property="purMatStatus" column="PUR_MAT_STATUS"/>
+    <result property="resonComm" column="RESON_COMM"/>
+    <result property="mrpDetId" column="MRP_DET_ID"/>
+    <result property="vendorId" column="VENDOR_ID"/>
+    <result property="empName" column="EMP_NAME"/>
+    <result property="regDate" column="REG_DATE"/>
+    <result property="purNo" column="PUR_NO"/>
+    <result property="total" column="TOTAL"/>
+    <result property="dueDate" column="DUE_DATE"/>
+
+   <association property="materialVO" resultMap="com.yedam.scm.common.CommonMapper.MaterialMap"/>
+   <association property="purStatusLogVO" resultMap="com.yedam.scm.common.CommonMapper.PurStatusLogMap"/>
+</resultMap>
+
+<!--자재구매목록-->
+<select id="getMatOerderList" parameterType="string" resultMap="purchaseMatMap">
+SELECT pm.pur_id,
+       pm.req_qty,
+       pm.mat_id,
+       m.mat_name,
+       pm.emp_name,
+       pm.reg_date,
+       pm.pur_no,
+       pm.total,
+       pm.due_date,
+       m.mat_name,
+       m.mat_unit_price,
+       m.unit
+FROM purchase_mat pm
+JOIN material m
+ON pm.mat_id = m.mat_id 
+WHERE pur_mat_status = 'ms1'
+AND pm.vendor_id = #{vendorId}
+</select>
+
+<!--주문승인상태변경-->
+<update id="updateOrderApprove" parameterType="int">
+UPDATE purchase_mat
+SET pur_mat_status = 'ms2'
+WHERE pur_id = #{purId}
+</update>
+<!--주문상태변경이력등록-->
+<insert id="insertStatusLog" parameterType="map">
+INSERT INTO purchase_status_log (pur_status_id, name, pur_mat_status, pur_id)
+VALUES (seq_purchase_status_log.NEXTVAL, #{name}, 'ms2', #{purId})
+</insert>
+
+<!--출고대기목록-->
+<select id= "getMatWReleaseList" resultMap="purchaseMatMap">
+SELECT pm.pur_id,
+       pm.mat_id,
+       pm.req_qty,
+       pm.out_total_qty,
+       pm.due_date,
+       pm.emp_name,
+       pm.pur_no,
+       m.mat_name,
+       m.unit,
+       pm.pur_mat_status,
+       psl.re_date
+FROM purchase_mat pm
+JOIN material m
+  ON pm.mat_id = m.mat_id
+JOIN (
+    SELECT pur_id, MAX(re_date) AS re_date
+    FROM purchase_status_log
+    GROUP BY pur_id
+) psl
+  ON pm.pur_id = psl.pur_id
+WHERE pm.vendor_id = #{vendorId}
+  AND pm.pur_mat_status = 'ms2'
+</select>
+</mapper>

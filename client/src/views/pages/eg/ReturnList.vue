@@ -57,9 +57,10 @@
           :emptyMessage="'조회된 반품 내역이 없습니다.'"
         >
           <Column field="returnId" header="반품번호" style="width:140px; text-align:center;" />
-          <Column field="prodName" header="대표제품명" style="width:200px;">
-            <template #body="slotProps">
-              {{ slotProps.data.prodName }}
+          <Column header="대표제품명" style="width:200px;">
+            <template #body="{ data }">
+              {{ data.prodName }}
+              <span v-if="data.prodCount > 1"> 외 {{ data.prodCount - 1 }}건</span>
             </template>
           </Column>
           <Column field="returnDate" header="반품일자" style="width:130px; text-align:center;" />
@@ -99,7 +100,7 @@
               {{ formatCurrency(slotProps.data.prodUnitPrice) }}
             </template>
           </Column>
-
+          
           <Column field="returnQty" header="반품수량" style="width:80px; text-align:center;" />
 
           <Column field="returnTotal" header="합계" style="width:120px; text-align:right;">
@@ -213,26 +214,23 @@ const fetchReturns = async () => {
       }
     })
 
+    // 서버 응답 검증
     if (data.status !== 'success' || !Array.isArray(data.list)) {
       toast('error', '반품 목록 조회 실패', '서버에서 올바른 데이터를 반환하지 않았습니다.')
       return
     }
 
-    // 대표제품명 + 외 n건 형태로 가공
-    returns.value = data.list.map(item => {
-      let displayName = item.mainProdName
-      if (item.prodCount > 1) {
-        displayName += ` 외 ${item.prodCount - 1}건`
-      }
-      return {
-        returnId: item.returnId,
-        mainProdName: displayName,
-        returnDate: formatDate(item.returnDate),
-        returnPrice: item.returnPrice || 0,
-        returnStatus: item.returnStatus
-      }
-    })
+    // 백엔드 데이터 그대로 저장 (프론트에서 화면만 가공)
+    returns.value = data.list.map(item => ({
+      returnId: item.returnId,
+      prodName: item.prodName,           // 대표제품명
+      prodCount: item.prodCount,         // 총 제품 개수
+      returnDate: formatDate(item.returnDate),
+      returnPrice: item.returnPrice || 0,
+      returnStatus: item.returnStatus
+    }))
 
+    // 초기화
     selectedReturn.value = null
     returnDetails.value = []
   } catch (error) {
@@ -240,6 +238,7 @@ const fetchReturns = async () => {
     toast('error', '반품 목록 조회 실패', '서버 오류가 발생했습니다.')
   }
 }
+
 
 /* ===== 반품 상세 조회 ===== */
 const fetchReturnDetail = async (returnId) => {

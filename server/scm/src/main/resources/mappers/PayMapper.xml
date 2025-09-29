@@ -60,9 +60,7 @@
     )
   </insert>
 
-  <!-- ==================================== -->
-  <!-- 3. 결제 대기중인 주문건 + 승인된 반품건 조회 -->
-  <!-- ==================================== -->
+
 <!-- ==================================== -->
 <!-- 3. 결제 대기중인 주문건 조회 (반품 제외) -->
 <!-- ==================================== -->
@@ -193,23 +191,23 @@
   <!-- ==================================== -->
   <!-- 7. 주문 상태 COMPLETE 업데이트 -->
   <!-- ==================================== -->
-  <update id="updateOrderStatusToComplete" parameterType="list">
+ <update id="updateOrderStatusToComplete">
     UPDATE sales_order
-    SET pay_status = '완료'
+    SET status = 'COMPLETE'
     WHERE order_id IN
-    <foreach collection="list" item="id" open="(" separator="," close=")">
-      #{id}
+    <foreach collection="orderIdList" item="id" open="(" separator="," close=")">
+        #{id}
     </foreach>
-  </update>
+</update>
 
   <!-- ==================================== -->
   <!-- 8. 반품 상태 COMPLETE 업데이트 -->
   <!-- ==================================== -->
-  <update id="updateReturnStatusToComplete" parameterType="list">
+  <update id="updateReturnStatusToComplete">
     UPDATE RETURN
     SET return_status = '완료'
     WHERE return_id IN
-    <foreach collection="list" item="id" open="(" separator="," close=")">
+    <foreach collection="returnIdList" item="id" open="(" separator="," close=")">
       #{id}
     </foreach>
   </update>

@@ -120,50 +120,10 @@
       </DataTable>
     </div>
 
+    
     <!-- ===== [탭] 납부 처리 ===== -->
     <div v-else-if="activeTab === 'pay'" class="tab-content pay-section">
-      <!-- 좌측 폼 -->
-      <div class="pay-form">
-        <h3 class="section-title"><i class="pi pi-wallet"></i> 납부 정보 입력</h3>
-        
-        <div class="form-group">
-          <label>결제 방법</label>
-          <div class="radio-group">
-            <RadioButton inputId="bank" value="계좌이체" v-model="method" />
-            <label for="bank">계좌이체</label>
-            <RadioButton inputId="card" value="신용카드" v-model="method" />
-            <label for="card">신용카드</label>
-            <RadioButton inputId="cash" value="현금" v-model="method" />
-            <label for="cash">현금</label>
-          </div>
-        </div>
-
-        <div v-if="method === '신용카드'" class="form-group">
-          <InputText placeholder="0000-0000-0000-0000" v-model="cardNumber" class="w-full mb-2" />
-          <div class="flex gap-3">
-            <InputText placeholder="MM/YY" v-model="expiry" class="flex-1" />
-            <InputText placeholder="CVV" v-model="cvv" class="flex-1" />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>납부 예정일</label>
-          <Calendar v-model="payDate" dateFormat="yy-mm-dd" class="w-full" />
-        </div>
-
-        <div class="form-group">
-          <label>메모</label>
-          <Textarea v-model="memo" rows="2" placeholder="납부 관련 메모를 입력하세요" class="w-full" />
-        </div>
-
-        <Button
-          :label="'₩' + formatCurrency(selectedTotal) + ' 납부하기'"
-          class="w-full pay-btn"
-          @click="submitPayment"
-        />
-      </div>
-
-      <!-- 우측 납부 요약 -->
+      <!-- 좌측 납부 요약 -->
       <div class="pay-summary">
         <h3 class="section-title"><i class="pi pi-check-circle"></i> 납부 요약</h3>
         <div class="summary-list">
@@ -179,7 +139,18 @@
           </div>
         </div>
       </div>
+
+    <!-- 우측 카카오페이 결제 버튼 -->
+    <div class="pay-form">
+      <h3 class="section-title"><i class="pi pi-wallet"></i> 카카오페이 결제</h3>
+      <Button
+        :label="'₩' + formatCurrency(selectedTotal) + ' 결제하기'"
+        class="w-full pay-btn"
+        @click="requestPay"
+        />
+      </div>
     </div>
+
 
     <!-- ===== [탭] 거래 요약 ===== -->
     <div v-else-if="activeTab === 'summary'" class="tab-content">
@@ -239,34 +210,42 @@ import Toast from 'primevue/toast'
 import InputText from 'primevue/inputtext'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
-import RadioButton from 'primevue/radiobutton'
-import Calendar from 'primevue/calendar'
-import Textarea from 'primevue/textarea'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
-import { useUserStore } from '@/stores/user';
+import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
-const today = new Date().toLocaleDateString('ko-KR')
 const toast = useToast()
+const today = new Date().toLocaleDateString('ko-KR')
 
-/* ========== 상단 카드 데이터 ========== */
+// ===== 탭 상태 =====
+const activeTab = ref('pending')
+
+// ===== 상단 카드 데이터 =====
 const summary = ref({
   totalUnpaid: 0,
   thisMonthReturnAmount: 0,
   upcomingAmount: 0
 })
 
+const summaryReport = ref({
+  completedAmount: 0,
+  completedCount: 0,
+  pendingCount: 0
+})
+
 const fetchSummary = async () => {
   try {
-    const res = await axios.get('/api/summary')
-    summary.value = res.data || {}
+    const res = await axios.get('/api/paymentsummary')
+    if (res.data && res.data.status === 'success') {
+      summary.value = res.data.data || {}
+    }
   } catch (error) {
     console.error('상단 카드 데이터 불러오기 실패:', error)
   }
 }
 
-/* ========== 미결제 내역 ========== */
+// ===== 미결제 내역 =====
 const orders = ref([])
 const selectedOrders = ref([])
 const searchQuery = ref('')
@@ -292,43 +271,82 @@ const selectedTotal = computed(() =>
   selectedOrders.value.reduce((sum, order) => sum + (order.totalPrice || 0), 0)
 )
 
-/* ========== 납부 처리 ========== */
-const method = ref('신용카드')
-const cardNumber = ref('')
-const expiry = ref('')
-const cvv = ref('')
-const payDate = ref(null)
-const memo = ref('')
+// ===== 카카오페이 결제 요청 =====
+onMounted(() => {
+  const IMP = window.IMP
+  IMP.init('imp62556076') // 아임포트 발급 가맹점 코드
+})
 
-const submitPayment = async () => {
+const requestPay = () => {
   if (selectedOrders.value.length === 0) {
     toast.add({ severity: 'warn', summary: '알림', detail: '납부할 주문을 선택하세요.', life: 3000 })
     return
   }
 
-  const payload = {
-    totalAmount: selectedTotal.value,
-    payType: method.value,
-    payDate: formatDateForAPI(payDate.value),
-    memo: memo.value,
-    vendorId: userStore.code,
-    orders: selectedOrders.value.map(order => ({
-      orderId: order.orderId,
-      totalPrice: order.totalPrice
-    }))
-  }
+  const IMP = window.IMP
+  const orderIds = selectedOrders.value.map(o => o.orderId).join(',')
 
-  try {
-    await axios.post('/api/payments', payload)
-    toast.add({ severity: 'success', summary: '성공', detail: '납부가 완료되었습니다.', life: 3000 })
-    fetchOrders()
-    selectedOrders.value = []
-  } catch (error) {
-    toast.add({ severity: 'error', summary: '오류', detail: '납부 처리 중 오류가 발생했습니다.', life: 3000 })
-  }
+  IMP.request_pay(
+    {
+      pg: 'kakaopay.TC0ONETIME',
+      pay_method: 'card',
+      merchant_uid: `ORDER_${new Date().getTime()}`,
+      name: `주문 ${selectedOrders.value.length}건`,
+      amount: selectedTotal.value,
+      buyer_email: userStore.email || 'test@example.com',
+      buyer_name: userStore.name || '홍길동',
+      buyer_tel: '010-1234-5678',
+      buyer_addr: '서울특별시 강남구 역삼동',
+      buyer_postcode: '123-456'
+    },
+    async (rsp) => {
+      if (rsp.success) {
+        try {
+          const payload = {
+            impUid: rsp.imp_uid,
+            merchantUid: rsp.merchant_uid,
+            totalAmount: selectedTotal.value,
+            vendorId: userStore.code,
+            paymentDetails: selectedOrders.value.map(order => ({
+              dataType: 'ORDER',
+              orderId: order.orderId,
+              totalPrice: order.totalPrice
+            }))
+          }
+
+          await axios.post('/api/verify-payment', payload)
+
+          toast.add({
+            severity: 'success',
+            summary: '성공',
+            detail: '결제가 완료되었습니다.',
+            life: 3000
+          })
+
+          // 화면 초기화
+          fetchOrders()
+          selectedOrders.value = []
+        } catch (err) {
+          toast.add({
+            severity: 'error',
+            summary: '서버 오류',
+            detail: '백엔드 저장 중 오류가 발생했습니다.',
+            life: 3000
+          })
+        }
+      } else {
+        toast.add({
+          severity: 'error',
+          summary: '결제 실패',
+          detail: rsp.error_msg,
+          life: 3000
+        })
+      }
+    }
+  )
 }
 
-/* ========== 거래 요약 ========== */
+// ===== 거래 요약 =====
 const summaryList = ref([])
 const searchSummary = ref('')
 
@@ -347,19 +365,13 @@ const filteredSummaryList = computed(() => {
   )
 })
 
-/* ========== 날짜 포맷 ========== */
+// ===== 날짜 & 금액 포맷 =====
 const formatDate = (date) => {
   if (!date) return ''
   const d = new Date(date)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-const formatDateForAPI = (date) => {
-  if (!date) return null
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
-
-/* ========== 금액 포맷 ========== */
 const formatCurrency = (value) => {
   return value ? value.toLocaleString('ko-KR') : '0'
 }

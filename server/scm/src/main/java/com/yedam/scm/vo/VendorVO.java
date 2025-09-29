@@ -6,6 +6,7 @@ import lombok.Data;
 
 @Data
 public class VendorVO {
+
     private String vendorId;               // 거래처 번호 (PK)
     private String businessRegistration;    // 사업자등록번호
     private String companyName;            // 업체명
