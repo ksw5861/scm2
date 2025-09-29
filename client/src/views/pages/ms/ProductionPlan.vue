@@ -5,8 +5,22 @@ import selectTable from '@/components/common/checkBoxTable.vue';
 import btn from '@/components/common/Btn.vue';
 import searchField from '@/components/common/SearchBox.vue';
 import { useAppToast } from '@/composables/useAppToast';
+import { useRoute } from 'vue-router';
+import { useIcon } from '@/composables/useIcon';
 
+const route = useRoute();
 const { toast } = useAppToast();
+
+// breadcrumb
+const breadcrumbHome = { icon: useIcon('home'), to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter((r) => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  const parentLabel = current.meta?.breadcrumb?.parent || '생산 계획';
+  const currentLabel = current.name || '';
+  return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
+});
 
 //등록일 날짜출력[페이지로드시 오늘날짜 자동셋팅]
 const getNowDate = () => {
@@ -104,9 +118,9 @@ const submit = async () => {
 
   try {
     const response = await axios.post('/api/mat/productionPlan', plan);
-    toast('등록 성공!');
+    toast('info', '등록 성공', '생산 계획등록 성공:', '3000');
   } catch (error) {
-    toast('등록 실패!');
+    toast('error', '등록 실패', '생산 계획등록 실패:', '3000');
   }
 
   //폼 초기화
@@ -116,6 +130,9 @@ const submit = async () => {
 
 <template>
   <div class="container">
+    <div class="p-4">
+      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    </div>
     <!--(master)상단박스 start-->
     <div class="card flex flex-col gap-4">
       <div class="font-semibold text-xl">생산계획 등록</div>
@@ -143,10 +160,10 @@ const submit = async () => {
       </div>
       <div class="flex sm:justify-end justify-start gap-2 mt-4">
         <div class="w-1/2 sm:w-32">
-          <Btn color="secondary" class="w-full" icon="refresh" @click="resetForm" outlined>초기화</Btn>
+          <Btn color="secondary" class="w-full" icon="refresh" label="초기화" @click="resetForm" outlined />
         </div>
         <div class="w-1/2 sm:w-32">
-          <Btn class="w-full" icon="add" severity="success" variant="outlined" @click="submit">등록</Btn>
+          <Btn class="w-full" icon="add" severity="success" label="등록" variant="outlined" @click="submit" />
         </div>
       </div>
     </div>

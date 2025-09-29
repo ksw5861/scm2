@@ -1,5 +1,6 @@
 import AppLayout from '@/layout/AppLayout.vue';
 import { createRouter, createWebHistory } from 'vue-router';
+import axios from 'axios';
 
 import login from './routes/login';
 import dh from '@/router/routes/dh';
@@ -7,7 +8,7 @@ import ms from '@/router/routes/ms';
 import sw from '@/router/routes/sw';
 import eg from '@/router/routes/eg';
 import dw from '@/router/routes/dw';
-import  supplier from '@/router/routes/supplier';
+import supplier from '@/router/routes/supplier';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -60,7 +61,6 @@ const router = createRouter({
           name: 'panel',
           component: () => import('@/views/uikit/PanelsDoc.vue')
         },
-
         {
           path: '/uikit/overlay',
           name: 'overlay',
@@ -128,22 +128,6 @@ const router = createRouter({
       name: 'notfound',
       component: () => import('@/views/pages/NotFound.vue')
     },
-
-    {
-      path: '/auth/login',
-      name: 'login',
-      component: () => import('@/views/pages/auth/Login.vue')
-    },
-    {
-      path: '/auth/access',
-      name: 'accessDenied',
-      component: () => import('@/views/pages/auth/Access.vue')
-    },
-    {
-      path: '/auth/error',
-      name: 'error',
-      component: () => import('@/views/pages/auth/Error.vue')
-    },
     login,
     dh,
     ms,
@@ -152,6 +136,46 @@ const router = createRouter({
     dw,
     supplier
   ]
+});
+
+const changePasswordPath = '/change-password';
+
+const publicPages = ['/login'];
+
+router.beforeEach(async (to, from, next) => {
+  if (publicPages.includes(to.path)) {
+    try {
+      const { data } = await axios.get('/api/auth/me', { withCredentials: true });
+
+      if (data && data.accountId) {
+        if (to.path === '/login') {
+          if (data.tempPassword === 'Y') {
+            return next(changePasswordPath);
+          } else {
+            return next('/');
+          }
+        }
+      }
+    } catch (e) {
+    }
+    return next();
+  }
+
+  try {
+    const { data } = await axios.get('/api/auth/me', { withCredentials: true });
+
+    if (!data || !data.accountId) {
+      return next('/login');
+    }
+
+    if ((data.tempPassword === 'Y') && to.path !== changePasswordPath) {
+      return next(changePasswordPath);
+    }
+
+    return next();
+  } catch (error) {
+    return next('/login');
+  }
 });
 
 export default router;

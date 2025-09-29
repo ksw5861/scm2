@@ -103,6 +103,7 @@
               {{ formatCurrency(slotProps.data.totalUnitPrice) }}
             </template>
           </Column>
+            <Column field="prodStatus" header="주문개별상태" />
         </DataTable>
 
         <!-- 합계 금액 -->

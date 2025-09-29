@@ -67,6 +67,7 @@
       />
     </template>
   </Column>
+  <Column field="prodStatus" header="주문개별상태" />
 </template>
 
       <!-- 합계 -->
