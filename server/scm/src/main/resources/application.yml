@@ -57,7 +57,7 @@ jwt:
 iamport:
   api:
     key: 6222787125430866
-    secret: MtoLaGYTgCRZGnFelL3g6ocelyUjj7ByG7anJbxM7bU62O0MKNudEZDgt8bFs2GVKxet2YkqhlQ1XV1a
+    secret: ENC(o3uRYlEvP8+RYBqiN+OpqY+r2Worq26zcZ1D9mBX2dqNBwL+FAH3rSTId12Ysvtq5IFDSb5HGglTpgmCgBF+tRZpS69ZPHuzi8Y0XPTnb5dW9D94XfYEBq0AXKr2XOHJ)
 
 recaptcha:
   secret: ENC(zLwiX/LhEU83nbjggue9DwY5fObo+LNsjThVngMWZTa/TAGBTqXx0itpNH4Y10HplpqrHVppJXA=)
