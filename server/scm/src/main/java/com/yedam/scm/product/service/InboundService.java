@@ -39,4 +39,8 @@ public interface InboundService {
   // 주문승인 트리거
   int approveDetails(List<String> odetailIds);
 
+
+  // 주문승인 반려 처리
+int rejectDetails(List<String> odetailIds);
+
 }

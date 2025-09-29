@@ -117,4 +117,14 @@ public class InboundServiceImpl implements InboundService {
         return inboundMapper.approveDetails(odetailIds);
     }
 
+
+    //주문반려
+
+    @Override
+    @Transactional
+    public int rejectDetails(List<String> odetailIds) {
+        if (odetailIds == null || odetailIds.isEmpty()) return 0;
+        return inboundMapper.rejectDetails(odetailIds);
+    }
+
 } // end

@@ -119,6 +119,19 @@ public class DwController {
         int cnt = service.approveDetails(odetailIds);
         return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
     }
+
+    // 반려
+    @PostMapping("/approval/reject")
+    public Map<String, Object> reject(@RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<String> odetailIds = (List<String>) body.get("odetailIds");
+        int cnt = service.rejectDetails(odetailIds);
+        return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
+    }
+
+    
+
+
     /////wewewewe
 } // end
 

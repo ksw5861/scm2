@@ -233,12 +233,23 @@
   <!-- 승인 업데이트: 선택 상세들을 '승인' -->
   <update id="approveDetails">
   UPDATE sales_order_detail
-  SET prod_status = '승인'
+     SET PROD_STATUS = '승인'
+   WHERE ODETAIL_ID IN
+   <foreach collection="list" item="id" open="(" separator="," close=")">
+     #{id}
+   </foreach>
+</update>
+
+<!-- 반려 업데이트 -->
+<update id="rejectDetails">
+  UPDATE sales_order_detail
+  SET prod_status = '반려'
   WHERE odetail_id IN
   <foreach collection="odetailIds" item="id" open="(" separator="," close=")">
     #{id}
   </foreach>
 </update>
+
 
 
 
