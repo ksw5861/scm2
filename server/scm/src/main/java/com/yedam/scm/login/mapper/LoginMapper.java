@@ -17,5 +17,8 @@ public interface LoginMapper {
         @Param("accountId") String accountId,
         @Param("password") String password
     );
+    
+    // 계정 번호로 계정 조회
+    LoginRes selectAccountByAccountId(String accountId);
 
 }

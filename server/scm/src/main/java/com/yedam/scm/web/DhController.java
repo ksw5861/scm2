@@ -2,6 +2,8 @@ package com.yedam.scm.web;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.yedam.scm.common.MailService;
+import com.yedam.scm.dto.EmailDTO;
 import com.yedam.scm.dto.EmployeeListRes;
 import com.yedam.scm.dto.EmployeeSearchDTO;
 import com.yedam.scm.dto.LoginDTO;
@@ -23,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -47,10 +50,13 @@ public class DhController {
   private final EmployeeService employeeSvc;
   private final LoginService loginSvc;
   private final JwtUtil jwtUtil;
+  private final MailService mailSvc;
 
   @Value("${file.upload.employee-dir}")
   private String employeeUploadDir;
 
+  @Value("${spring.mail.username}")
+  private String serverEmail;
   /**
    * 확장자 없이 요청 시 자동으로 탐색하여 이미지 반환
    * 예) GET /api/img/employee/EMP001
@@ -201,50 +207,171 @@ public class DhController {
   /**
    * 로그인
    */
+  // @PostMapping("/auth")
+  // public ResponseEntity<?> authLogin(
+  //     @RequestBody LoginDTO login,
+  //     HttpServletResponse response
+  // ) {
+
+  //     LoginRes result = loginSvc.loginByEmailAndPassword(login);
+
+  //     if (result != null && Boolean.FALSE.equals(result.getVerifyRecaptcha())) {
+  //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+  //                             .body(Map.of("message", "reCAPTCHA 검증 실패"));
+  //     }
+
+  //     if (result == null) {
+  //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+  //                             .body(Map.of("message", "이메일 또는 비밀번호가 올바르지 않습니다."));
+  //     }
+
+  //     Cookie cookie = new Cookie("accessToken", result.getAccessToken());
+  //     cookie.setHttpOnly(true);
+  //     cookie.setSecure(false);
+  //     cookie.setPath("/");
+  //     cookie.setMaxAge(60 * 30);
+  //     response.addCookie(cookie);
+
+  //     return ResponseEntity.ok(result);
+  // }
+
+
   @PostMapping("/auth")
-  public ResponseEntity<?> authLogin(
+  public ResponseEntity<?> tempLogin(
       @RequestBody LoginDTO login,
       HttpServletResponse response
-  ) {
-
+  ) throws Exception {
       LoginRes result = loginSvc.loginByEmailAndPassword(login);
 
       if (result != null && Boolean.FALSE.equals(result.getVerifyRecaptcha())) {
           return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                              .body(Map.of("message", "reCAPTCHA 검증 실패"));
+                  .body(Map.of("message", "reCAPTCHA 검증 실패"));
       }
 
       if (result == null) {
           return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                              .body(Map.of("message", "이메일 또는 비밀번호가 올바르지 않습니다."));
+                  .body(Map.of("message", "이메일 또는 비밀번호가 올바르지 않습니다."));
       }
 
-      Cookie cookie = new Cookie("accessToken", result.getAccessToken());
+      String tempToken = jwtUtil.generateTempToken(result.getAccountId());
+
+      Cookie cookie = new Cookie("tempToken", tempToken);
       cookie.setHttpOnly(true);
       cookie.setSecure(false);
       cookie.setPath("/");
-      cookie.setMaxAge(60 * 30);
+      cookie.setMaxAge(60);
       response.addCookie(cookie);
 
-      return ResponseEntity.ok(result);
+      String smsUrl = "sms:" + serverEmail + "?body=" + java.net.URLEncoder.encode(tempToken, "UTF-8");
+
+      String qrCodeBase64 = loginSvc.generateQRCodeImage(smsUrl, 300, 300);
+
+      return ResponseEntity.ok(Map.of(
+              "message", "2차 인증 필요",
+              "tempToken", tempToken,
+              "qrCodeImage", qrCodeBase64
+      ));
+  }
+
+  @PostMapping("/auth/login")
+  public ResponseEntity<?> completeLogin(
+      @CookieValue(value = "tempToken", required = false) String tempToken,
+      HttpServletResponse response
+  ) {
+      if (tempToken == null || tempToken.isEmpty()) {
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+              .body(Map.of("message", "인증 정보가 없습니다."));
+      }
+
+      String accountId;
+      try {
+          accountId = jwtUtil.getSubject(tempToken);
+      } catch (Exception e) {
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+              .body(Map.of("message", "잘못된 인증 토큰입니다."));
+      }
+
+      LoginRes account = loginSvc.getAccountByAccountId(accountId);
+      if (account == null) {
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+              .body(Map.of("message", "계정을 찾을 수 없습니다."));
+      }
+
+      List<EmailDTO> messages;
+      try {
+          messages = mailSvc.fetchRecentEmails();
+      } catch (Exception e) {
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body(Map.of("message", "이메일 인증 처리 중 오류가 발생했습니다."));
+      }
+
+      boolean isVerified = messages.stream().anyMatch(message -> {
+          String phone = account.getPhone().replaceAll("-", "");       // 하이픈 제거
+          String sender = message.getFrom().replaceAll("-", "");       // 메일 발신자 하이픈 제거
+          return sender.contains(phone) && message.getBody().contains(tempToken);
+      });
+
+      if (!isVerified) {
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+              .body(Map.of("message", "인증 메시지를 찾을 수 없습니다."));
+      }
+
+      // 인증 성공 → Access Token 발급
+      String accessToken = jwtUtil.generateToken(account);
+
+      Cookie accessCookie = new Cookie("accessToken", accessToken);
+      accessCookie.setHttpOnly(true);
+      accessCookie.setSecure(false); // 배포 시 true
+      accessCookie.setPath("/");
+      accessCookie.setMaxAge(60 * 60);
+      response.addCookie(accessCookie);
+
+      return ResponseEntity.ok(Map.of(
+          "message", "로그인 성공",
+          "accessToken", accessToken
+      ));
   }
 
   @GetMapping("/auth/me")
-  public ResponseEntity<LoginRes> getCurrentUser(@CookieValue(value = "accessToken", required = false) String token) {
-      if (token == null || !jwtUtil.validateToken(token)) {
+  public ResponseEntity<LoginRes> getCurrentUser(
+      @CookieValue(value = "accessToken", required = false) String token
+  ) {
+      if (token == null || token.isBlank()) {
           return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
       }
 
-      Claims claims = jwtUtil.getClaims(token);
+      boolean valid;
+      try {
+          valid = jwtUtil.validateToken(token);
+      } catch (Exception ex) {
+          ex.printStackTrace();
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+      }
 
-      LoginRes user = new LoginRes();
-      user.setAccountId(claims.getSubject());
-      user.setName((String) claims.get("name"));
-      user.setCode((String) claims.get("code"));
-      user.setRole((String) claims.get("role"));
-      user.setTempPassword((String) claims.get("tempPassword"));
+      if (!valid) {
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+      }
 
-      return ResponseEntity.ok(user);
+      Claims claims;
+      try {
+          claims = jwtUtil.getClaims(token);
+      } catch (Exception ex) {
+          ex.printStackTrace();
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+      }
+
+      try {
+          LoginRes user = new LoginRes();
+          user.setAccountId(claims.getSubject());
+          user.setName((String) claims.get("name"));
+          user.setCode((String) claims.get("code"));
+          user.setRole((String) claims.get("role"));
+          user.setTempPassword((String) claims.get("tempPassword"));
+          return ResponseEntity.ok(user);
+      } catch (Exception ex) {
+          ex.printStackTrace();
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+      }
   }
 
   @PostMapping("/auth/change-password")
