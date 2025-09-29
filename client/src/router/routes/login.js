@@ -1,5 +1,3 @@
-import AppLayout from '@/layout/AppLayout.vue';
-
 const login = {
   children: [
     {
@@ -7,8 +5,15 @@ const login = {
       name: '로그인',
       component: () => import('@/views/pages/dh/Login.vue'),
       meta: {
-        requiresAuth: true,
-        roles: ['admin', 'employee']
+        requiresAuth: false,
+      }
+    },
+    {
+      path: '/change-password',
+      name: '비밀번호 변경',
+      component: () => import('@/views/pages/dh/ChangePassword.vue'),
+      meta: {
+        requiresAuth: true
       }
     }
   ]

@@ -19,17 +19,15 @@ import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.WarehouseListRes;
 import com.yedam.scm.product.service.InboundService;
 import com.yedam.scm.vo.ItemInboundVO;
+import com.yedam.scm.vo.SalesOrderDetailVO;
+import com.yedam.scm.vo.SalesOrderVO;
 
 import lombok.RequiredArgsConstructor;
-
-
 
 @RestController
 @RequiredArgsConstructor
 public class DwController {
 
-
-    
     private final InboundService service;
 
     // 목록조회
@@ -44,7 +42,7 @@ public class DwController {
 
         Map<String, Object> response = new HashMap<>();
 
-        if(service.registerInbound(vo)) {
+        if (service.registerInbound(vo)) {
             response.put("status", "success");
             return response;
         } else {
@@ -60,75 +58,83 @@ public class DwController {
         return service.deleteInbound(inboundId);
     }
 
-
-
     // 입고처리
-@PostMapping("/inbound")
-public ResponseEntity<Map<String, Object>> registerInbound(@RequestBody Map<String, Object> inbound) {
-    boolean isRegister = service.registerInbound(inbound);
-    Map<String, Object> response = new HashMap<>();
-    if (isRegister) {
-        response.put("retCode", "success");
-        return ResponseEntity.ok(response);
-    } else {
-        response.put("retCode", "BAD_REQUEST");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    @PostMapping("/inbound")
+    public ResponseEntity<Map<String, Object>> registerInbound(@RequestBody Map<String, Object> inbound) {
+        boolean isRegister = service.registerInbound(inbound);
+        Map<String, Object> response = new HashMap<>();
+        if (isRegister) {
+            response.put("retCode", "success");
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("retCode", "BAD_REQUEST");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
     }
-}
 
-// ================================
-// 모달 검색 API (제품코드, 제품명, 생산일자)
-// ================================
-@GetMapping("/inbound/product")
-public InboundListRes getInboundProducts(
-    @RequestParam(defaultValue = "1") int page,
-    @RequestParam(defaultValue = "10") int size,
-    @RequestParam(required = false) String keyword // EMP000, ~~원두
-) {
-    // 페이징 세팅
-    PageDTO paging = new PageDTO(page, size);
-
-    // 서비스 호출 후 반환
-    return service.getInboundProductList(keyword, paging);
-}
-
-
-        @GetMapping("/inbound/warehouse")
-    public WarehouseListRes getWarehouses(
-        @RequestParam(defaultValue = "1") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(required = false) String keyword
+    // ================================
+    // 모달 검색 API (제품코드, 제품명, 생산일자)
+    // ================================
+    @GetMapping("/inbound/product")
+    public InboundListRes getInboundProducts(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword // EMP000, ~~원두
     ) {
+        // 페이징 세팅
+        PageDTO paging = new PageDTO(page, size);
+
+        // 서비스 호출 후 반환
+        return service.getInboundProductList(keyword, paging);
+    }
+
+    // 제품입고 페이지 창고모달
+    @GetMapping("/inbound/warehouse1")
+    public WarehouseListRes getWarehouses(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false, defaultValue = "") String keyword) {
         PageDTO paging = new PageDTO(page, size);
         return service.getWarehouseList(keyword, paging);
     }
 
+    // 주문승인 목록불러오기
+    @GetMapping("/approval-list")
+    public List<SalesOrderVO> getApprovalList(SalesOrderVO vo) {
+        return service.getApprovalList(vo);
+    }
 
+    // 상세 (우측 누적 바인딩용)
+    @GetMapping("/approval/details")
+    public Map<String, Object> getApprovalDetails(@RequestParam String orderId) {
+        List<SalesOrderDetailVO> details = service.getApprovalDetails(orderId);
+        return Map.of("data", details);
+    }
 
+    // 승인 (body: { "odetailIds": ["OD001","OD002", ...] })
+    @PostMapping("/approval/approve")
+    public Map<String, Object> approve(@RequestBody Map<String, Object> body) {
+        @SuppressWarnings("unchecked")
+        List<String> odetailIds = (List<String>) body.get("odetailIds"); // 변수명 맞춤
+        int cnt = service.approveDetails(odetailIds);
+        return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
+    }
+    /////wewewewe
+} // end
 
+// // 입고처리
+// @PostMapping("/inbound")
+// public Map<String, Object> registerInbound(@RequestBody Map<String, Object>
+// inbound) {
 
+// boolean isRegister = service.registerInbound(inbound);
 
-
-    
-
-    } // end
-    
-    // // 입고처리
-    // @PostMapping("/inbound")
-    // public Map<String, Object> registerInbound(@RequestBody Map<String, Object> inbound) {
-        
-    //     boolean isRegister = service.registerInbound(inbound);
-
-    //     Map<String, Object> result = new HashMap<>();
-    //     if (isRegister) {
-    //         result.put("status", "success");
-    //         return result;
-    //     } else {
-    //         result.put("status", "fail");
-    //         return result;
-    //     }
-    // }
-
-
-
-
+// Map<String, Object> result = new HashMap<>();
+// if (isRegister) {
+// result.put("status", "success");
+// return result;
+// } else {
+// result.put("status", "fail");
+// return result;
+// }
+// }

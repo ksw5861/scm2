@@ -29,6 +29,7 @@ public class JwtUtil {
                 .claim("name", res.getName())
                 .claim("code", res.getCode())
                 .claim("role", res.getRole())
+                .claim("tempPassword", res.getTempPassword()) 
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(secretKey, SignatureAlgorithm.HS256)
