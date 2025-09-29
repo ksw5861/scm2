@@ -18,7 +18,19 @@ const dh = {
       component: () => import('@/views/pages/dh/EmployeeManagement.vue'),
       meta: {
         breadcrumb: {
-            parent: '기준 정보'
+          parent: '기준 정보'
+        },
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    },
+    {
+      path: '/vendor',
+      name: '거래처 관리',
+      component: () => import('@/views/pages/dh/Vendor.vue'),
+      meta: {
+        breadcrumb: {
+          parent: '기준 정보'
         },
         requiresAuth: true,
         roles: ['admin', 'employee']
