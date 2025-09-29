@@ -14,7 +14,9 @@ public interface SupplierMapper {
     //주문승인상태변경
     int updateOrderApprove(Integer purId);
     //주문승인상태이력남김
-    void insertStatusLog(@Param("purId")Integer purId, @Param("name")String name);
+    void insertStatusLog(@Param("purId")int purId, @Param("name")String name);
     //출고대기목록
     List <PurchaseMatVO> getMatWReleaseList(String vendorId);
+    //출고정보등록
+    boolean callReleaseMatPoc(@Param("purId")Long purId, @Param("outQty")Long outQty, @Param("name")String vendorId);
 }

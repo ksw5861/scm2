@@ -32,7 +32,7 @@ const breadcrumbItems = computed(() => {
 
 const matOutColumns = [
   { label: '납기요청일', field: 'dueDate' },
-  { label: '주문번호', field: 'orderNo' },
+  { label: '주문번호', field: 'purNo' },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
   { label: '구매처 담당자', field: 'buyerName' },
@@ -41,7 +41,7 @@ const matOutColumns = [
   { label: '출고수량', field: 'outQty', inputText: true },
   { label: '남은수량', field: 'restQty' },
   { label: '상태', field: 'releaseStatus' },
-  { label: '승인일', field: 'approveDate' }
+  { label: '출고승인일', field: 'approveDate' }
 ];
 
 onMounted(async () => {
@@ -50,7 +50,7 @@ onMounted(async () => {
     matOutData.value = list.data.map((item) => ({
       id: item.purId,
       dueDate: useDateFormat(item.dueDate).value,
-      orderNo: item.purNo,
+      purNo: item.purNo,
       matId: item.matId,
       matName: item.materialVO.matName,
       buyerName: item.empName,
@@ -70,22 +70,22 @@ onMounted(async () => {
 // 출고시에 입고테이블 데이터 넣고, 입고는 마스터+ 디테일로 나뉨. => 1) 입고마스터 insert하고 데이터 받아서, 2) 디테일을 순환하면서 insert
 
 /*
- 
+
 보내야 할 데이터 [ 거래처코드, [자재코드들(복수)+출고수량] =>  ]
 
 
 pur_id로 식별
-1) 누적출고수량(out_total_qty),   
+1) 누적출고수량(out_total_qty),
   상태값(pur_mat+status)
 
-=> 유효성검사 -> req값보다 많으면 안됨. (프론트)   
-=> req랑 (out_total_qty+outQty) 비교후 
-if 1) 일치= 출고완료'ms4' 
+=> 유효성검사 -> req값보다 많으면 안됨. (프론트)
+=> req랑 (out_total_qty+outQty) 비교후
+if 1) 일치= 출고완료'ms4'
     2) 자재구매이력
   pur_id, 거래처코드, 상태값
 
 out_total_qty도 insert
-  
+
 else 2) 불일치 부분출고로 상태값'ms5'
       2) 자재구매이력
          pur_id, 거래처코드, 상태값
@@ -111,7 +111,7 @@ const outBound = async () => {
   const payload = list.map((row) => ({
     purId: row.id,
     matId: row.matId,
-    orderNo: row.orderNo,
+    purNo: row.purNo,
     outQty: row.outQty,
     vendorId: vendorId.value //이렇게 넣으면 행 마다 다 들어감.
   }));

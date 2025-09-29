@@ -53,10 +53,25 @@ public class SupplierServiceImpl implements SupplierService  {
     }
 
     //출고등록
+    @Transactional
     @Override
     public int insertReleaseData(List<PurchaseMatVO> payload) {
-       //1) purId: row.id, /matId: row.matId, /orderNo: row.orderNo, /outQty: row.outQty, /vendorId: vendorId.value 
+       //1) purId: row.id, /matId: row.matId, /orderNo: row.purNo, /outQty: row.outQty, /vendorId: vendorId.value 
        
+        for(PurchaseMatVO row : payload) {
+            
+            Long purId   = row.getPurId();
+            String matId = row.getMatId();
+            String purNo = row.getPurNo(); //발주번호 = 주문번호
+            Long outQty = row.getPurStatusLogVO().getSupOutQty(); //이력관리VO에 있음.
+            String vendorId = row.getVendorId();
+
+            //purchase_mat테이블 상태: 부분출고/전량출고로 상태값 변경 + 누적출고수량 updqate
+            //이력테이블 이력, venderId, purID, 출고수량 입력.
+            mapper.callReleaseMatPoc(purId, outQty, vendorId);
+        }
+
+
        //프로시저 쓴다면??????? 1) 자재구매 테이블 업데이트 + 이력 insert 
        //=============================================
        //2) 마스터 inert 후 입고테이블 아이디 받아오고

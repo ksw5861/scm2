@@ -23,6 +23,7 @@
     <result property="name"          column="NAME"/>
     <result property="purMatStatus"  column="PUR_MAT_STATUS"/>
     <result property="purId"         column="PUR_ID"/>
+    <result property="supOutQty"     column="SUP_OUT_QTY"/>
 </resultMap>
 
 </mapper>

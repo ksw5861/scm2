@@ -77,6 +77,15 @@ JOIN (
 ) psl
   ON pm.pur_id = psl.pur_id
 WHERE pm.vendor_id = #{vendorId}
-  AND pm.pur_mat_status = 'ms2'
+  AND pm.pur_mat_status in ('ms2', 'ms5')
 </select>
+<!--purchase_mat출고상태값 변경[부분출고], 출고수량누적합 + 상태log테이블 insert-->
+<select id="callReleaseMatPoc" parameterType="map" statementType="CALLABLE">
+        { call PROC_MAT_RELEASE(
+            #{purId,    mode=IN, jdbcType=NUMERIC},  
+            #{outQty,   mode=IN, jdbcType=NUMERIC},  
+            #{vendorId, mode=IN, jdbcType=VARCHAR}
+        )}
+    </select>
+ boolean callReleaseMatPoc(@Param("purId")Long purId, @Param("outQty")Long outQty, @Param("name")String vendorId);
 </mapper>
