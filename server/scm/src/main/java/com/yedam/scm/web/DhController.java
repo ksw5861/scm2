@@ -204,38 +204,6 @@ public class DhController {
     }
   }
 
-  /**
-   * 로그인
-   */
-  // @PostMapping("/auth")
-  // public ResponseEntity<?> authLogin(
-  //     @RequestBody LoginDTO login,
-  //     HttpServletResponse response
-  // ) {
-
-  //     LoginRes result = loginSvc.loginByEmailAndPassword(login);
-
-  //     if (result != null && Boolean.FALSE.equals(result.getVerifyRecaptcha())) {
-  //         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-  //                             .body(Map.of("message", "reCAPTCHA 검증 실패"));
-  //     }
-
-  //     if (result == null) {
-  //         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-  //                             .body(Map.of("message", "이메일 또는 비밀번호가 올바르지 않습니다."));
-  //     }
-
-  //     Cookie cookie = new Cookie("accessToken", result.getAccessToken());
-  //     cookie.setHttpOnly(true);
-  //     cookie.setSecure(false);
-  //     cookie.setPath("/");
-  //     cookie.setMaxAge(60 * 30);
-  //     response.addCookie(cookie);
-
-  //     return ResponseEntity.ok(result);
-  // }
-
-
   @PostMapping("/auth")
   public ResponseEntity<?> tempLogin(
       @RequestBody LoginDTO login,
@@ -269,7 +237,8 @@ public class DhController {
       return ResponseEntity.ok(Map.of(
               "message", "2차 인증 필요",
               "tempToken", tempToken,
-              "qrCodeImage", qrCodeBase64
+              "qrCodeImage", qrCodeBase64,
+              "smsUrl", smsUrl 
       ));
   }
 
