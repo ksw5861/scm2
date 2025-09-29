@@ -22,4 +22,16 @@
     WHERE account_id = #{accountId}
   </update>
   
+  <select id="selectAccountByAccountId" resultType="LoginRes">
+    SELECT account_id,
+           code,
+           name,
+           phone,
+           temp_password,
+           division as role
+      FROM account
+      WHERE account_id = #{accountId}
+        AND is_active = 'Y'
+  </select>
+
 </mapper>

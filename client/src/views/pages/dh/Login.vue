@@ -14,6 +14,7 @@ const password = ref('');
 const capsLockOn = ref(false);
 const emailInput = ref(null);
 const isDisabled = ref(false);
+const qrCode = ref(null);
 
 const handleKey = (event) => {
   capsLockOn.value = event.getModifierState && event.getModifierState('CapsLock');
@@ -68,32 +69,11 @@ const login = async () => {
       password: password.value,
       recaptcha: token
     };
-    console.log("서버 전송 데이터:", param);
 
     const result = await axios.post('/api/auth', param, { withCredentials: true });
-
-    if (result.status === 200) {
-      try {
-        const { data } = await axios.get('/api/auth/me', { withCredentials: true });
-        userStore.setUserInfo(data);
-        console.log('사용자 정보:', data);
-        toast("success", "로그인 성공", `${data.name}님 환영합니다!`);
-
-        if (data.tempPassword === 'Y') {
-          router.push('/change-password');
-        } else {
-          router.push('/');
-        }
-      } catch (e) {
-        console.error('사용자 정보 불러오기 실패:', e);
-        toast("success", "로그인 성공", `환영합니다.!`);
-        router.push('/');
-      }
-    }
+    qrCode.value = result.data.qrCodeImage;  // 서버에서 QR 이미지 받아옴
   } catch (e) {
     if (e.response) {
-      console.error('서버 응답 에러:', e.response);
-
       switch (e.response.status) {
         case 400:
           toast("error", "보안 경고", "reCAPTCHA 검증 실패. 새로고침 후 다시 시도해주세요.");
@@ -105,14 +85,45 @@ const login = async () => {
           toast("error", "로그인 실패", "알 수 없는 서버 오류가 발생했습니다.");
       }
     } else {
-      console.error('네트워크 오류:', e);
       toast("error", "로그인 실패", "서버에 연결할 수 없습니다. 네트워크를 확인해주세요.");
     }
 
     password.value = '';
+  } finally {
     isDisabled.value = false;
   }
 };
+
+const handleVerify = async () => {
+  try {
+    const res = await axios.post('/api/auth/login', null, { withCredentials: true });
+
+    if (res.status === 200) {
+      toast('success', '로그인 성공', '정상적으로 로그인되었습니다.');
+
+      const meRes = await axios.get('/api/auth/me', { withCredentials: true });
+      const user = meRes.data;
+
+      console.log(meRes);
+
+      userStore.setUserInfo(user);
+
+      if (meRes.data.tempPassword === 'Y') {
+        router.push('/change-password');
+      } else {
+        router.push('/');
+      }
+    }
+  } catch (err) {
+    const msg = err.response?.data?.message || '서버 오류';
+    toast('error', '인증 실패', msg);
+
+    if (msg === '인증되지 않은 사용자입니다.') {
+      qrCode.value = null;
+    }
+  }
+};
+
 
 onMounted(() => {
   nextTick(() => {
@@ -139,7 +150,8 @@ onBeforeUnmount(() => {
     <div
       class="flex flex-col items-center justify-center w-full h-screen sm:w-[36rem] sm:h-auto bg-surface-0 dark:bg-surface-900 py-10 px-12 sm:py-20 sm:px-20 rounded-none sm:rounded-lg shadow-[0_6px_60px_rgba(0,0,0,0.02)]"
     >
-      <form @submit.prevent="login" class="w-full max-w-md">
+
+      <form v-if="!qrCode" @submit.prevent="login" class="w-full max-w-md">
         <div class="text-left mb-10">
           <div class="text-surface-900 dark:text-surface-0 text-3xl font-semibold mb-4">로그인</div>
           <span class="text-muted-color font-medium">2조 SCM</span>
@@ -193,6 +205,20 @@ onBeforeUnmount(() => {
           :disabled="isDisabled"
         />
       </form>
+
+      <div v-else class="mt-6 flex flex-col items-center justify-center">
+        <h2 class="text-xl font-semibold text-center mb-4 text-surface-900 dark:text-surface-0">
+          모바일에서 QR을 스캔하여 인증하여주세요.
+        </h2>
+        <img :src="qrCode" alt="QR 코드" class="w-48 h-48 object-contain mb-8" />
+        <Button
+          label="인증 완료"
+          class="w-full h-14 rounded-md text-lg"
+          :disabled="isDisabled"
+          @click="handleVerify()"
+        />
+      </div>
+
     </div>
   </div>
 </template>

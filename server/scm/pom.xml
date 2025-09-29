@@ -128,6 +128,20 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- ZXing 코어 라이브러리 -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.4.1</version>
+        </dependency>
+
+        <!-- ZXing 자바 SE용 라이브러리 (이미지 변환 지원) -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.4.1</version>
+        </dependency>
+
     </dependencies>
 
     <build>

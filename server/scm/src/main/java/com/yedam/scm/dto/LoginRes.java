@@ -17,6 +17,9 @@ public class LoginRes {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String accountId;
 
+    @JsonIgnore
+    private String phone;
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String code;
 
