@@ -245,7 +245,7 @@ const requestPay = () => {
           const payload = {
             impUid: rsp.imp_uid,
             merchantUid: rsp.merchant_uid,
-            totalAmount: selectedTotal.value,
+            payAmount: selectedTotal.value,
             vendorId: userStore.code,
             paymentDetails: selectedOrders.value.map(order => ({
               dataType: 'ORDER',

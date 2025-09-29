@@ -30,7 +30,7 @@ public class PaymentVO {
     
     private String impUid;        // 아임포트 결제번호
     private String merchantUid;   // 가맹점 주문번호
-    private Integer totalAmount;  // 총 결제 금액
+   // 총 결제 금액
     private String memo;          // 메모
   
 
@@ -43,8 +43,8 @@ public class PaymentVO {
     public String getMerchantUid() { return merchantUid; }
     public void setMerchantUid(String merchantUid) { this.merchantUid = merchantUid; }
 
-    public Integer getTotalAmount() { return totalAmount; }
-    public void setTotalAmount(Integer totalAmount) { this.totalAmount = totalAmount; }
+    public Integer getTotalAmount() { return payAmount; }
+    public void setTotalAmount(Integer totalAmount) { this.payAmount = totalAmount; }
 
     public String getPayType() { return payType; }
     public void setPayType(String payType) { this.payType = payType; }
