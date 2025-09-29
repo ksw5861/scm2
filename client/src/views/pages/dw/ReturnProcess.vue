@@ -174,17 +174,27 @@ function fmtDate(d) {
           <Calendar v-model="search.expDate" placeholder="ADD01" showIcon dateFormat="yy-mm-dd" class="w-full" />
         </div>
 
-        <!-- ▶ 캡쳐처럼: 버튼 전용 행(맨 오른쪽 정렬) -->
+        <!-- ▶ 버튼행 (조회/초기화 + 승인/반려 같이 오른쪽) -->
         <div class="search-actions">
           <Button class="box-btn box-btn--ghost" icon="pi pi-refresh" label="초기화" @click="resetSearch" />
           <Button class="box-btn box-btn--green" icon="pi pi-search" label="조회" @click="applySearch" />
+          <Button label="반려" class="pill danger" :disabled="!hasSelection" @click="openReject" />
+          <Button label="승인" class="pill primary" :disabled="!hasSelection" @click="openApprove" />
         </div>
       </div>
     </div>
 
     <!-- 목록 -->
     <div class="card">
-      <DataTable :value="rows" v-model:selection="selected" selectionMode="multiple" dataKey="rtnId" size="small" responsiveLayout="scroll" class="rp-table">
+      <DataTable
+        :value="rows"
+        v-model:selection="selected"
+        selectionMode="multiple"
+        dataKey="rtnId"
+        size="small"
+        responsiveLayout="scroll"
+        class="rp-table"
+      >
         <Column selectionMode="multiple" headerStyle="width:40px" />
         <Column field="shipNo" header="출고번호" />
         <Column field="productName" header="제품명" />
@@ -196,29 +206,26 @@ function fmtDate(d) {
         <Column field="processedAt" header="처리일자" :headerClass="'th-center'" />
         <Column field="expDate" header="유통기한" :headerClass="'th-center'" />
         <Column field="manager" header="담당자" :headerClass="'th-center'" />
-
-        <!-- 상태확인 제거: 금액만 -->
         <Column header="반품금액" :headerClass="'th-right'">
-          <template #body="{ data }"
-            ><div class="td-num">{{ nf(data.returnAmount) }}</div></template
-          >
+          <template #body="{ data }"><div class="td-num">{{ nf(data.returnAmount) }}</div></template>
         </Column>
         <Column header="매출차감" :headerClass="'th-right'">
-          <template #body="{ data }"
-            ><div class="td-num">{{ nf(data.salesDeduct) }}</div></template
-          >
+          <template #body="{ data }"><div class="td-num">{{ nf(data.salesDeduct) }}</div></template>
         </Column>
       </DataTable>
-
-      <!-- 하단 액션 -->
-      <div class="table-actions">
-        <Button label="반려" class="pill danger" :disabled="!hasSelection" @click="openReject" />
-        <Button label="승인" class="pill primary" :disabled="!hasSelection" @click="openApprove" />
-      </div>
     </div>
 
     <!-- 공용 검색 모달 -->
-    <Modal :visible="modal.visible" :title="modal.title" :idField="modal.idField" :columns="modal.columns" :fetchData="modal.fetcher" :page-size="7" @select="handlePick" @close="modal.visible = false" />
+    <Modal
+      :visible="modal.visible"
+      :title="modal.title"
+      :idField="modal.idField"
+      :columns="modal.columns"
+      :fetchData="modal.fetcher"
+      :page-size="7"
+      @select="handlePick"
+      @close="modal.visible = false"
+    />
 
     <!-- 반려 사유 -->
     <Dialog v-model:visible="showReject" header="반려 사유 입력" modal style="width: 32rem">
@@ -239,6 +246,7 @@ function fmtDate(d) {
     </Dialog>
   </div>
 </template>
+
 
 <style scoped>
 /* Layout */

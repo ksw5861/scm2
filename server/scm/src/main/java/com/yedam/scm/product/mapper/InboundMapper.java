@@ -51,7 +51,7 @@ public interface InboundMapper {
         // 승인: 선택된 상세 라인들을 '승인'으로 업데이트
       
 
-        int approveDetails(@Param("ids") List<String> odetailIds);
+        int approveDetails(@Param("odetailIds") List<String> odetailIds);
         
         // 반려
         int rejectDetails(@Param("odetailIds") List<String> odetailIds);

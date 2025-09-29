@@ -182,13 +182,13 @@
     so.order_id,
     so.order_date,
     v.company_name,
-    MIN(sod.prod_status) AS prod_status
+    MIN(so.status) AS prod_status
   FROM sales_order so
     JOIN sales_order_detail sod
       ON so.order_id = sod.order_id
     LEFT JOIN vendor v
       ON so.vendor_id = v.vendor_id
-  WHERE sod.prod_status = '대기'
+  WHERE so.status = '대기' or so.status = '부분승인' or so.status = '부분반려'
   GROUP BY so.order_id, so.order_date, v.company_name
   ORDER BY so.order_date DESC
 </select>
@@ -207,6 +207,7 @@
     <result column="order_qty"       property="orderQty"/>
     <result column="prod_unit_price" property="prodUnitPrice"/>
     <result column="prod_status"     property="prodStatus"/>
+    
   </resultMap>
 
   <!-- 상세: 해당 주문의 '대기' 라인만 -->
@@ -225,29 +226,29 @@
       LEFT JOIN product p
         ON p.prod_id = sod.prod_id
     WHERE sod.order_id = #{orderId}
-      AND sod.prod_status = '대기'
     ORDER BY sod.odetail_id
   </select>
   
 
   <!-- 승인 업데이트: 선택 상세들을 '승인' -->
-  <update id="approveDetails">
+<!-- 승인 -->
+<update id="approveDetails">
   UPDATE sales_order_detail
      SET PROD_STATUS = '승인'
    WHERE ODETAIL_ID IN
-   <foreach collection="list" item="id" open="(" separator="," close=")">
+   <foreach collection="odetailIds" item="id" open="(" separator="," close=")">
      #{id}
    </foreach>
 </update>
 
-<!-- 반려 업데이트 -->
+<!-- 반려 -->
 <update id="rejectDetails">
   UPDATE sales_order_detail
-  SET prod_status = '반려'
-  WHERE odetail_id IN
-  <foreach collection="odetailIds" item="id" open="(" separator="," close=")">
-    #{id}
-  </foreach>
+     SET PROD_STATUS = '반려'
+   WHERE ODETAIL_ID IN
+   <foreach collection="odetailIds" item="id" open="(" separator="," close=")">
+     #{id}
+   </foreach>
 </update>
 
 

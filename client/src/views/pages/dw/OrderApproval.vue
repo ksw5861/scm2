@@ -227,7 +227,7 @@ onMounted(() => applySearch());
           <div class="detail-title">주문 상세</div>
           <div class="head-actions">
             <Button label="선택 승인" icon="pi pi-check" @click="approveSelected" :disabled="!selectedDetailRows.length" />
-            <Button label="선택 반려" icon="pi pi-times" class="p-button-danger"
+            <Button label="부분 반려" icon="pi pi-times" class="p-button-danger"
               @click="openRejectDialog" :disabled="!selectedDetailRows.length" />
           </div>
         </div>
@@ -252,6 +252,8 @@ onMounted(() => applySearch());
           <Column field="amount" header="금액">
             <template #body="{ data }">{{ fmtCurrency(data.amount) }}</template>
           </Column>
+          <Column field="prodStatus" header="상태"/>
+          
         </DataTable>
       </div>
     </div>
