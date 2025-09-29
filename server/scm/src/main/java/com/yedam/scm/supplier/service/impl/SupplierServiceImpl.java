@@ -55,9 +55,9 @@ public class SupplierServiceImpl implements SupplierService  {
     //출고등록
     @Transactional
     @Override
-    public int insertReleaseData(List<PurchaseMatVO> payload) {
+    public void insertReleaseData(List<PurchaseMatVO> payload) {
        //1) purId: row.id, /matId: row.matId, /orderNo: row.purNo, /outQty: row.outQty, /vendorId: vendorId.value 
-       
+
         for(PurchaseMatVO row : payload) {
             
             Long purId   = row.getPurId();
@@ -68,7 +68,7 @@ public class SupplierServiceImpl implements SupplierService  {
 
             //purchase_mat테이블 상태: 부분출고/전량출고로 상태값 변경 + 누적출고수량 updqate
             //이력테이블 이력, venderId, purID, 출고수량 입력.
-            mapper.callReleaseMatPoc(purId, outQty, vendorId);
+             mapper.callReleaseMatPoc(purId, outQty, vendorId);
         }
 
 
@@ -76,7 +76,6 @@ public class SupplierServiceImpl implements SupplierService  {
        //=============================================
        //2) 마스터 inert 후 입고테이블 아이디 받아오고
        // -> 받은 입고테이블아이디로 상세정보(for)로  
-    return 1;
     }
     
 }

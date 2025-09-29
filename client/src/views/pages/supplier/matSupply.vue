@@ -112,14 +112,14 @@ const outBound = async () => {
     purId: row.id,
     matId: row.matId,
     purNo: row.purNo,
-    outQty: row.outQty,
+    purStatusLogVO: {supOutQty: row.outQty}, //이걸 백 로그VO에 넣기위해!
     vendorId: vendorId.value //이렇게 넣으면 행 마다 다 들어감.
   }));
 
   console.log(payload);
 
   try {
-    const res = await axios.post('/api/supplier/releaseMatrial', payload);
+    const res = await axios.post('/api/supplier/shipMaterial', payload);
     //1차 (다품목 출고로 for문 돌면서 작업)
     // 자재요청테이블에 출고수량, 상태값 update
     //=> 프로시저로 파라미터로 들어온 출고수량 비교 후

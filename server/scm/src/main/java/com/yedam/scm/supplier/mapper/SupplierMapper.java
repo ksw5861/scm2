@@ -18,5 +18,5 @@ public interface SupplierMapper {
     //출고대기목록
     List <PurchaseMatVO> getMatWReleaseList(String vendorId);
     //출고정보등록
-    boolean callReleaseMatPoc(@Param("purId")Long purId, @Param("outQty")Long outQty, @Param("name")String vendorId);
+    void callReleaseMatPoc(@Param("purId")Long purId, @Param("outQty")Long outQty, @Param("name")String vendorId);
 }

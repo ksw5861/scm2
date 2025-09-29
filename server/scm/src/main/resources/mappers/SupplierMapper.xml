@@ -84,8 +84,7 @@ WHERE pm.vendor_id = #{vendorId}
         { call PROC_MAT_RELEASE(
             #{purId,    mode=IN, jdbcType=NUMERIC},  
             #{outQty,   mode=IN, jdbcType=NUMERIC},  
-            #{vendorId, mode=IN, jdbcType=VARCHAR}
+            #{name, mode=IN, jdbcType=VARCHAR}
         )}
-    </select>
- boolean callReleaseMatPoc(@Param("purId")Long purId, @Param("outQty")Long outQty, @Param("name")String vendorId);
+</select>
 </mapper>
