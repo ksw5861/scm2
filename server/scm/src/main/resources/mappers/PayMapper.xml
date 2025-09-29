@@ -200,7 +200,7 @@
   <!-- ==================================== -->
  <update id="updateOrderStatusToComplete">
     UPDATE sales_order
-    SET status = 'COMPLETE'
+    SET status = '완료'
     WHERE order_id IN
     <foreach collection="orderIdList" item="id" open="(" separator="," close=")">
         #{id}

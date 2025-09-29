@@ -9,6 +9,7 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -36,6 +37,9 @@ public class LoginServiceImpl implements LoginService {
     private final JwtUtil jwtUtil;
     private final RecaptchaService recaptchaService;
     private final PasswordEncoder passwordEncoder;
+
+    @Value("${spring.mail.username}")
+    private String serverEmail;
 
     @Override
     public LoginRes loginByEmailAndPassword(LoginDTO login) {
@@ -89,7 +93,7 @@ public class LoginServiceImpl implements LoginService {
     }
 
     @Override
-    public AuthRes processTempLogin(LoginDTO login, String serverEmail) throws Exception {
+    public AuthRes processTempLogin(LoginDTO login) throws Exception {
         LoginRes result = loginByEmailAndPassword(login);
 
         if (result != null && Boolean.FALSE.equals(result.getVerifyRecaptcha())) {

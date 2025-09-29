@@ -47,8 +47,6 @@ public class DhController {
   private final JwtUtil jwtUtil;
   private final MailService mailSvc;
 
-  @Value("${spring.mail.username}")
-  private String serverEmail;
   /**
    * 확장자 없이 요청 시 자동으로 탐색하여 이미지 반환
    * 예) GET /api/img/employee/EMP001
@@ -176,7 +174,7 @@ public class DhController {
   @PostMapping("/auth")
   public ResponseEntity<?> tempLogin(@RequestBody LoginDTO login, HttpServletResponse response) {
       try {
-          AuthRes authResponse = loginSvc.processTempLogin(login, serverEmail);
+          AuthRes authResponse = loginSvc.processTempLogin(login);
 
           Cookie cookie = new Cookie("tempToken", authResponse.getTempToken());
           cookie.setHttpOnly(true);
