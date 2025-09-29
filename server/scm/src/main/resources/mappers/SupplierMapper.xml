@@ -18,6 +18,7 @@
     <result property="dueDate" column="DUE_DATE"/>
 
    <association property="materialVO" resultMap="com.yedam.scm.common.CommonMapper.MaterialMap"/>
+   <association property="purStatusLogVO" resultMap="com.yedam.scm.common.CommonMapper.PurStatusLogMap"/>
 </resultMap>
 
 <!--자재구매목록-->
@@ -49,8 +50,33 @@ WHERE pur_id = #{purId}
 </update>
 <!--주문상태변경이력등록-->
 <insert id="insertStatusLog" parameterType="map">
-INSERT INTO purchase_status_log (pur_log_id, name, pur_mat_status, pur_det_id)
+INSERT INTO purchase_status_log (pur_status_id, name, pur_mat_status, pur_id)
 VALUES (seq_purchase_status_log.NEXTVAL, #{name}, 'ms2', #{purId})
 </insert>
 
+<!--출고대기목록-->
+<select id= "getMatWReleaseList" resultMap="purchaseMatMap">
+SELECT pm.pur_id,
+       pm.mat_id,
+       pm.req_qty,
+       pm.out_total_qty,
+       pm.due_date,
+       pm.emp_name,
+       pm.pur_no,
+       m.mat_name,
+       m.unit,
+       pm.pur_mat_status,
+       psl.re_date
+FROM purchase_mat pm
+JOIN material m
+  ON pm.mat_id = m.mat_id
+JOIN (
+    SELECT pur_id, MAX(re_date) AS re_date
+    FROM purchase_status_log
+    GROUP BY pur_id
+) psl
+  ON pm.pur_id = psl.pur_id
+WHERE pm.vendor_id = #{vendorId}
+  AND pm.pur_mat_status = 'ms2'
+</select>
 </mapper>

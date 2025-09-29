@@ -16,4 +16,13 @@
     <result property="unit"         column="UNIT"/>
 </resultMap>
 
+<!-- PurStatusLog 매핑 -->
+<resultMap id="PurStatusLogMap" type="PurStatusLogVO">
+    <id     property="purStatusId"   column="PUR_STATUS_ID"/>
+    <result property="reDate"        column="RE_DATE"/>
+    <result property="name"          column="NAME"/>
+    <result property="purMatStatus"  column="PUR_MAT_STATUS"/>
+    <result property="purId"         column="PUR_ID"/>
+</resultMap>
+
 </mapper>

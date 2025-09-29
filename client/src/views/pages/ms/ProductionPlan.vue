@@ -22,7 +22,6 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-
 //등록일 날짜출력[페이지로드시 오늘날짜 자동셋팅]
 const getNowDate = () => {
   const today = new Date();
@@ -132,7 +131,7 @@ const submit = async () => {
 <template>
   <div class="container">
     <div class="p-4">
-        <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
     <!--(master)상단박스 start-->
     <div class="card flex flex-col gap-4">
@@ -161,10 +160,10 @@ const submit = async () => {
       </div>
       <div class="flex sm:justify-end justify-start gap-2 mt-4">
         <div class="w-1/2 sm:w-32">
-          <Btn color="secondary" class="w-full" icon="refresh" label="초기화" @click="resetForm" outlined></Btn>
+          <Btn color="secondary" class="w-full" icon="refresh" label="초기화" @click="resetForm" outlined />
         </div>
         <div class="w-1/2 sm:w-32">
-          <Btn class="w-full" icon="add" severity="success" label="등록" variant="outlined" @click="submit">등록</Btn>
+          <Btn class="w-full" icon="add" severity="success" label="등록" variant="outlined" @click="submit" />
         </div>
       </div>
     </div>

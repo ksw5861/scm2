@@ -154,7 +154,7 @@
            m.unit,
            m.lead_time
     FROM mrp_detail md
-    JOIN  material m
+    JOIN material m
     ON md.mat_id = m.mat_id
     WHERE req_status = 're0'
     </select>
@@ -172,13 +172,13 @@
     <!--자재요청프로시저-->
        <select id="callReqestMatProc" parameterType="PurchaseMatVO" statementType="CALLABLE">
         { call PROC_REQ_MATERIAL(
-            #{mrpDetId, mode=IN, jdbcType=NUMERIC},
-            #{matId, mode=IN, jdbcType=VARCHAR},
-            #{reqQty, mode=IN, jdbcType=NUMERIC},
-            #{vendorId, mode=IN, jdbcType=VARCHAR},
-            #{total, mode=IN, jdbcType=NUMERIC},
-            #{dueDate, mode=IN, jdbcType=DATE},
-            #{empName, mode=IN, jdbcType=VARCHAR}
+            #{matId,    mode=IN, jdbcType=VARCHAR},  
+            #{reqQty,   mode=IN, jdbcType=NUMERIC},  
+            #{vendorId, mode=IN, jdbcType=VARCHAR}, 
+            #{total,    mode=IN, jdbcType=NUMERIC},  
+            #{dueDate,  mode=IN, jdbcType=DATE},     
+            #{mrpDetId, mode=IN, jdbcType=NUMERIC},  
+            #{empName,  mode=IN, jdbcType=VARCHAR}   
         )}
     </select>
 

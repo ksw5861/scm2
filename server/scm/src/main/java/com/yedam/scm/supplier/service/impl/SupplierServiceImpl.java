@@ -19,11 +19,13 @@ public class SupplierServiceImpl implements SupplierService  {
 
     final SupplierMapper mapper;
 
+    //주문목록
     @Override
     public List<PurchaseMatVO> getMatOerderList(String vendorId) {
         return mapper.getMatOerderList(vendorId);
     }
 
+    //주문승인
     @Transactional
     @Override
     public int updateOrderApprove(Map<String, Object> data) {
@@ -42,6 +44,24 @@ public class SupplierServiceImpl implements SupplierService  {
             mapper.insertStatusLog(purId, name);
         }
         return updatedCount;
+    }
+
+    //출고대기목록
+    @Override
+    public List<PurchaseMatVO> getMatWReleaseList(String vendorId) {
+        return mapper.getMatWReleaseList(vendorId);
+    }
+
+    //출고등록
+    @Override
+    public int insertReleaseData(List<PurchaseMatVO> payload) {
+       //1) purId: row.id, /matId: row.matId, /orderNo: row.orderNo, /outQty: row.outQty, /vendorId: vendorId.value 
+       
+       //프로시저 쓴다면??????? 1) 자재구매 테이블 업데이트 + 이력 insert 
+       //=============================================
+       //2) 마스터 inert 후 입고테이블 아이디 받아오고
+       // -> 받은 입고테이블아이디로 상세정보(for)로  
+    return 1;
     }
     
 }

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed} from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import btn from '@/components/common/Btn.vue';
 import selectTable from '@/components/common/checkBoxTable.vue';
@@ -26,13 +26,12 @@ const breadcrumbItems = computed(() => {
 });
 
 //공급처코드
-const vendorId = ref('VND2004');
-const startDate = ref();
-const endDate = ref();
+const vendorId = ref('VEN005');
+const dateRange = ref({ start: null, end: null });
 const materialName = ref();
 const statusList = ref([]);
 const matOrderData = ref([]);
-const selectedRows =ref([]);
+const selectedRows = ref([]);
 
 const matOrderColumns = [
   { label: '주문일자', field: 'orderDate', sortable: true },
@@ -47,60 +46,54 @@ const matOrderColumns = [
   { label: '구매처 담당자', field: 'buyerName', sortable: true }
 ];
 
-
 //주문목록
-const pageLoad = onMounted( async () => {
+const pageLoad = onMounted(async () => {
   try {
     const list = await axios.get(`/api/supplier/OrderList/${vendorId.value}`);
     matOrderData.value = list.data.map((item) => ({
-
-        id: item.purId,
-        orderDate: useDateFormat(item.regDate).value,
-        orderNo: item.purNo,
-        dueDate: useDateFormat(item.dueDate).value,
-        matId: item.matId,
-        matName: item.materialVO.matName,
-        orderQty: item.reqQty,
-        unit: item.materialVO.unit,
-        price: item.materialVO.matUnitPrice,
-        total: item.total,
-        buyerName: item.empName
-
+      id: item.purId,
+      orderDate: useDateFormat(item.regDate).value,
+      orderNo: item.purNo,
+      dueDate: useDateFormat(item.dueDate).value,
+      matId: item.matId,
+      matName: item.materialVO.matName,
+      orderQty: item.reqQty,
+      unit: item.materialVO.unit,
+      price: item.materialVO.matUnitPrice,
+      total: item.total,
+      buyerName: item.empName
     }));
   } catch (error) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
-
-
 });
 
-const approve= async () => {
+const approve = async () => {
+  const list = JSON.parse(JSON.stringify(selectedRows.value));
+  const idList = list.map((row) => row.id);
 
-    const list = JSON.parse(JSON.stringify(selectedRows.value));
-    const idList = list.map(row => row.id);
+  try {
+    const res = await axios.post('/api/supplier/approve', { purId: idList, name: vendorId.value });
+    toast('info', '승인 성공', res.value + '건 주문 승인 되었습니다.', '3000');
 
-    try{
-        const res = await axios.post('/api/supplier/approve',  {purId: idList, name: vendorId.value })
-        toast('info', '승인 성공', res.value + '건 주문 승인 되었습니다.', '3000');
-
-    } catch (error){
-        toast('error', '승인 실패', '주문 승인 실패:', '3000');
-    }
-
-  //발주테이블 상태값 변경[승인: ms2] => 발주아이디넘김 / 상태이력 남김 [상태이력일, ""담당자, 발주아이디""", 상태값: ms2]
-}
-
+    setTimeout(() => {
+      window.location.reload();
+    }, 500); // 0.5초 후 새로고침
+  } catch (error) {
+    toast('error', '승인 실패', '주문 승인 실패:', '3000');
+  }
+};
 </script>
 
 <template>
   <div class="container">
     <div class="p-4">
-        <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
     <div class="card flex flex-col gap-4">
       <div class="font-semibold text-xl">자재요청 조회</div>
       <Divider />
-       <!--search BOX 영역-->
+      <!--search BOX 영역-->
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
         <SearchField type="dateRange" label="요청일자" v-model="dateRange" />
         <SearchField type="textIcon" label="자재명" v-model="materialName" />
@@ -119,24 +112,24 @@ const approve= async () => {
 
         <!-- 버튼 영역 -->
         <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화"/>
-          <btn color="contrast" icon="pi pi-search" label="조회"/>
+          <btn color="secondary" icon="pi pi-undo" label="초기화" />
+          <btn color="contrast" icon="pi pi-search" label="조회" />
         </div>
       </div>
     </div>
     <!--검색박스 end-->
 
     <!--중간버튼영역-->
-    <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-      <btn color="contrast" icon="pi pi-plus" label="Excel 다운로드"/>
-      <btn color="warn" icon="pi pi-file-excel" label="반려"/>
-      <btn color="info" icon="pi pi-file-pdf" @click="approve" label="승인" />
-    </div>
     <div class="card flex flex-col gap-4">
-        <div class="font-semibold text-xl mb-5">조회 내역</div>
-          <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" />
-        </div>
+      <div class="my-3 flex flex-wrap items-center justify-end gap-2">
+        <btn color="contrast" icon="pi pi-plus" label="Excel 다운로드" />
+        <btn color="warn" icon="pi pi-file-excel" label="반려" />
+        <btn color="info" icon="pi pi-file-pdf" @click="approve" label="승인" />
+      </div>
+      <div class="font-semibold text-xl mb-5">조회 내역</div>
+      <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" />
     </div>
+  </div>
 </template>
 
 <style scoped></style>
