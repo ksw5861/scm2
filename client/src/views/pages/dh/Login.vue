@@ -107,6 +107,7 @@ const handleVerify = async () => {
       console.log(meRes);
 
       userStore.setUserInfo(user);
+      console.log(userStore.code)
 
       if (meRes.data.tempPassword === 'Y') {
         router.push('/change-password');

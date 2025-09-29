@@ -161,6 +161,7 @@ import { useToast } from 'primevue/usetoast'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
+const vendorId = ref(null);
 const toast = useToast()
 const today = new Date().toLocaleDateString('ko-KR')
 
@@ -207,9 +208,7 @@ const filteredOrders = computed(() => {
   )
 })
 
-const selectedTotal = computed(() =>
-  selectedOrders.value.reduce((sum, order) => sum + (order.totalPrice || 0), 0)
-)
+const selectedTotal = computed(() => selectedOrders.value.reduce((sum, order) => sum + (order.totalPrice || 0), 0))
 
 // ===== 카카오페이 결제 요청 =====
 onMounted(() => {
@@ -246,7 +245,8 @@ const requestPay = () => {
             impUid: rsp.imp_uid,
             merchantUid: rsp.merchant_uid,
             payAmount: selectedTotal.value,
-            vendorId: userStore.code,
+            vendorId: 'VEN001', // 수정해야함
+            payType: '카카오페이',
             paymentDetails: selectedOrders.value.map(order => ({
               dataType: 'ORDER',
               orderId: order.orderId,
@@ -254,6 +254,7 @@ const requestPay = () => {
             }))
           }
 
+          console.log(payload)
           await axios.post('/api/verify-payment', payload)
 
           toast.add({
@@ -300,6 +301,8 @@ const formatCurrency = (value) => {
 onMounted(() => {
   fetchSummary()
   fetchOrders()
+  vendorId.value = userStore.code
+  console.log(vendorId.value)
 })
 </script>
 
