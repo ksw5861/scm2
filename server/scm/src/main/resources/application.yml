@@ -52,3 +52,6 @@ file:
 jwt:
   secret: ENC(dzfcQtWysP6YaJ/3ZshuUyeqb/Jqc23jSsctfL6ZfFEZHFBIOtIJIvjoknh2MiWnPQN3a2bYnUxzSV51QCoQ0A==)
   expiration: 18000000
+
+recaptcha:
+  secret: ENC(zLwiX/LhEU83nbjggue9DwY5fObo+LNsjThVngMWZTa/TAGBTqXx0itpNH4Y10HplpqrHVppJXA=)
