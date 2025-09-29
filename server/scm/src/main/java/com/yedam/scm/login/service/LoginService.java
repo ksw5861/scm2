@@ -16,7 +16,7 @@ public interface LoginService {
     String generateQRCodeImage(String text, int width, int height) throws Exception;
 
     // 1차 로그인
-    AuthRes processTempLogin(LoginDTO login, String serverEmail) throws Exception;
+    AuthRes processTempLogin(LoginDTO login) throws Exception;
 
     // AccountId로 계정조회
     LoginRes getAccountByAccountId(String accountId);
