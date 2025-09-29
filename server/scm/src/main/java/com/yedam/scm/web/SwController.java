@@ -192,4 +192,81 @@ public class SwController {
             @RequestParam(required = false) String unitName) {
         return unitSvc.getUnitList();
     }
+
+    // =========================================================
+    // ================ Vendor API ============================
+    // =========================================================
+    @Autowired
+    com.yedam.scm.master.service.VendorService vendorSvc;
+
+    @GetMapping("/vendor")
+    public List<com.yedam.scm.vo.VendorVO> getVendorList(
+            @RequestParam(required = false) String vendorId,
+            @RequestParam(required = false) String companyName,
+            @RequestParam(required = false) String isActive,
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String ceoName,
+            @RequestParam(required = false) String phoneNumber
+    ) {
+        return vendorSvc.getVendorList(vendorId, companyName, isActive);
+        // 필요시 type, ceoName, phoneNumber 등 파라미터 추가하여 서비스/매퍼에 반영
+    }
+
+    @GetMapping("/vendor/{vendorId}")
+    public com.yedam.scm.vo.VendorVO getVendorDetail(@PathVariable String vendorId) {
+        return vendorSvc.getVendorDetail(vendorId);
+    }
+
+    @PostMapping("/vendor")
+    public int insertVendor(@RequestBody com.yedam.scm.vo.VendorVO vendorVO) {
+        return vendorSvc.insertVendor(vendorVO);
+    }
+
+    @PutMapping("/vendor/{vendorId}")
+    public int updateVendor(@PathVariable String vendorId, @RequestBody com.yedam.scm.vo.VendorVO vendorVO) {
+        vendorVO.setVendorId(vendorId);
+        return vendorSvc.updateVendor(vendorVO);
+    }
+
+    @DeleteMapping("/vendor/{vendorId}")
+    public int deleteVendor(@PathVariable String vendorId) {
+        return vendorSvc.deleteVendor(vendorId);
+    }
+
+    // =========================================================
+    // ================ MaterialVendor API =====================
+    // =========================================================
+    @Autowired
+    com.yedam.scm.master.service.MaterialVendorService materialVendorSvc;
+
+    // 자재별 거래처 목록 조회
+    @GetMapping("/material/{matId}/vendor")
+    public List<com.yedam.scm.vo.MaterialVendorVO> getMaterialVendorList(@PathVariable String matId) {
+        return materialVendorSvc.getMaterialVendorList(matId);
+    }
+
+    // 거래처 상세 조회
+    @GetMapping("/material/vendor/{matVendorId}")
+    public com.yedam.scm.vo.MaterialVendorVO getMaterialVendorDetail(@PathVariable String matVendorId) {
+        return materialVendorSvc.getMaterialVendorDetail(matVendorId);
+    }
+
+    // 거래처 등록
+    @PostMapping("/material/vendor")
+    public int insertMaterialVendor(@RequestBody com.yedam.scm.vo.MaterialVendorVO materialVendorVO) {
+        return materialVendorSvc.insertMaterialVendor(materialVendorVO);
+    }
+
+    // 거래처 수정
+    @PutMapping("/material/vendor/{matVendorId}")
+    public int updateMaterialVendor(@PathVariable String matVendorId, @RequestBody com.yedam.scm.vo.MaterialVendorVO materialVendorVO) {
+        materialVendorVO.setMatVendorId(matVendorId);
+        return materialVendorSvc.updateMaterialVendor(materialVendorVO);
+    }
+
+    // 거래처 삭제
+    @DeleteMapping("/material/vendor/{matVendorId}")
+    public int deleteMaterialVendor(@PathVariable String matVendorId) {
+        return materialVendorSvc.deleteMaterialVendor(matVendorId);
+    }
 }

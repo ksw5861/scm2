@@ -174,8 +174,8 @@
       pd.order_id,
       pd.total_price,
       pd.return_price,
-      so.total_price AS order_total_price,
-      TO_CHAR(so.order_date, 'YYYY-MM-DD') AS order_date,
+      so.total_price AS orderTotalPrice,
+      TO_CHAR(so.order_date, 'YYYY-MM-DD') AS orderDate,
       v.vendor_name
     FROM payment_detail pd
     JOIN sales_order so ON pd.order_id = so.order_id

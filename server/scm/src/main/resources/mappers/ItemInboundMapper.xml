@@ -96,7 +96,7 @@
 
 
 <!-- ============================================================
-     모달 - 총 건수 조회 (OR 조건 적용)
+     제품모달 - 총 건수 조회 (OR 조건 적용)
      ============================================================ -->
 <select id="selectInboundProductCountByCondition"
         resultType="long">
@@ -110,12 +110,147 @@
       )
     </if>
 </select>
-  <!-- 모달 부분 끝 -->
+  <!-- 제품모달 부분 끝 -->
+
+
+
+
+  <!-- ================================
+       창고 모달 - 목록 (제품 모달과 동일 패턴)
+       condition + 페이징(rn BETWEEN startRow AND endRow)
+       ================================ -->
+  <select id="selectWarehouseListByCondition"
+          resultType="WareHouseVO">
+    SELECT *
+    FROM (
+      SELECT
+        w.wh_id   AS whId,
+        w.wh_name AS whName,
+        ROW_NUMBER() OVER (ORDER BY w.wh_id DESC) AS rn
+      FROM warehouse w
+      WHERE 1 = 1
+        <if test="condition != null and condition != ''">
+          AND (
+               w.wh_id   LIKE '%' || #{condition} || '%'
+            OR w.wh_name LIKE '%' || #{condition} || '%'
+          )
+        </if>
+    )
+    WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
+  </select>
+
+  <!-- ================================
+      제품입고 창고 모달 - 총 건수
+       ================================ -->
+  <select id="selectWarehouseCountByCondition"
+          resultType="long">
+    SELECT COUNT(*)
+    FROM warehouse w
+    WHERE 1 = 1
+      <if test="condition != null and condition != ''">
+        AND (
+             w.wh_id   LIKE '%' || #{condition} || '%'
+          OR w.wh_name LIKE '%' || #{condition} || '%'
+        )
+      </if>
+  </select>
+  
+  
+
+
+ <!-- 주문승인 페이지 목록 불러오기 -->
+<!-- <select id="selectApprovalOrders"
+        resultType="com.yedam.scm.vo.SalesOrderVO">
+  SELECT
+      so.order_id,
+      so.order_date,
+      so.vendor_id,
+      v.company_name,
+      sod.prod_status
+  FROM sales_order so
+    JOIN sales_order_detail sod
+      ON so.order_id = sod.order_id
+    LEFT JOIN vendor v
+      ON so.vendor_id = v.vendor_id
+  ORDER BY so.order_date DESC
+</select> -->
+
+<!--주문승인 목록 상태자식-->
+<select id="selectApprovalOrders"
+        resultType="com.yedam.scm.vo.SalesOrderVO">
+  SELECT
+    so.order_id,
+    so.order_date,
+    v.company_name,
+    MIN(so.status) AS prod_status
+  FROM sales_order so
+    JOIN sales_order_detail sod
+      ON so.order_id = sod.order_id
+    LEFT JOIN vendor v
+      ON so.vendor_id = v.vendor_id
+  WHERE so.status = '대기' or so.status = '부분승인' or so.status = '부분반려'
+  GROUP BY so.order_id, so.order_date, v.company_name
+  ORDER BY so.order_date DESC
+</select>
 
 
 
   
+ <!-- Detail 매핑 (snake -> camel) 주문승인 상세-->
+  <resultMap id="SalesOrderDetailMap" type="com.yedam.scm.vo.SalesOrderDetailVO">
+    <id     column="odetail_id"      property="odetailId"/>
+    <result column="order_id"        property="orderId"/>
+    <result column="prod_id"         property="prodId"/>
+    <result column="prod_name"       property="prodName"/>
+    <result column="spec"            property="spec"/>
+    <result column="unit"            property="unit"/>
+    <result column="order_qty"       property="orderQty"/>
+    <result column="prod_unit_price" property="prodUnitPrice"/>
+    <result column="prod_status"     property="prodStatus"/>
+    
+  </resultMap>
+
+  <!-- 상세: 해당 주문의 '대기' 라인만 -->
+  <select id="selectApprovalDetails" resultMap="SalesOrderDetailMap">
+    SELECT
+      sod.odetail_id,
+      sod.order_id,
+      sod.prod_id,
+      p.prod_name,
+      p.spec,
+      p.unit,
+      sod.order_qty,
+      sod.prod_unit_price,
+      sod.prod_status
+    FROM sales_order_detail sod
+      LEFT JOIN product p
+        ON p.prod_id = sod.prod_id
+    WHERE sod.order_id = #{orderId}
+    ORDER BY sod.odetail_id
+  </select>
   
+
+  <!-- 승인 업데이트: 선택 상세들을 '승인' -->
+<!-- 승인 -->
+<update id="approveDetails">
+  UPDATE sales_order_detail
+     SET PROD_STATUS = '승인'
+   WHERE ODETAIL_ID IN
+   <foreach collection="odetailIds" item="id" open="(" separator="," close=")">
+     #{id}
+   </foreach>
+</update>
+
+<!-- 반려 -->
+<update id="rejectDetails">
+  UPDATE sales_order_detail
+     SET PROD_STATUS = '반려'
+   WHERE ODETAIL_ID IN
+   <foreach collection="odetailIds" item="id" open="(" separator="," close=")">
+     #{id}
+   </foreach>
+</update>
+
 
 
 

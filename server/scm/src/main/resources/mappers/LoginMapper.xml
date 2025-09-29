@@ -8,10 +8,30 @@
            password_hash,
            code,
            name,
+           temp_password,
            division as role
       FROM account
       WHERE email = #{email}
         AND is_active = 'Y'
   </select>
+
+  <update id="updateAccountPassword">
+    UPDATE account
+    SET password_hash = #{password},
+        temp_password = 'N'
+    WHERE account_id = #{accountId}
+  </update>
   
+  <select id="selectAccountByAccountId" resultType="LoginRes">
+    SELECT account_id,
+           code,
+           name,
+           phone,
+           temp_password,
+           division as role
+      FROM account
+      WHERE account_id = #{accountId}
+        AND is_active = 'Y'
+  </select>
+
 </mapper>

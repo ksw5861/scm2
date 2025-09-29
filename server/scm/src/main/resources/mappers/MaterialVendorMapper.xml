@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yedam.scm.master.mapper.MaterialVendor">
+
+    <!-- 거래처 목록 조회 (자재별, 거래처명 포함) -->
+  <select id="getMaterialVendorList" parameterType="string" resultType="com.yedam.scm.vo.MaterialVendorVO">
+    SELECT
+      mv.MAT_VENDOR_ID,
+      mv.CONTRACT_PRICE,
+      mv.MAT_ID,
+      mv.VENDOR_ID,
+      v.COMPANY_NAME AS vendorName,
+      mv.CREATED_BY,
+      mv.CREATED_AT,
+      mv.STATUS
+    FROM MATERIAL_VENDOR mv
+    LEFT JOIN VENDOR v ON mv.VENDOR_ID = v.VENDOR_ID
+    WHERE mv.MAT_ID = #{matId}
+    ORDER BY mv.CREATED_AT DESC
+  </select>
+
+  <!-- 거래처 상세 조회 -->
+  <select id="getMaterialVendorDetail" parameterType="string" resultType="com.yedam.scm.vo.MaterialVendorVO">
+    SELECT *
+    FROM MATERIAL_VENDOR
+    WHERE MAT_VENDOR_ID = #{matVendorId}
+  </select>
+
+  <!-- 거래처 등록 -->
+  <insert id="insertMaterialVendor" parameterType="com.yedam.scm.vo.MaterialVendorVO">
+    INSERT INTO MATERIAL_VENDOR (
+      MAT_VENDOR_ID,
+      CONTRACT_PRICE,
+      MAT_ID,
+      VENDOR_ID,
+      CREATED_BY,
+      CREATED_AT,
+      STATUS
+    ) VALUES (
+      next_code('MV'),
+      #{contractPrice},
+      #{matId},
+      #{vendorId},
+      #{createdBy},
+      sysdate,
+      #{status}
+    )
+  </insert>
+
+  <!-- 거래처 수정 -->
+  <update id="updateMaterialVendor" parameterType="com.yedam.scm.vo.MaterialVendorVO">
+    UPDATE MATERIAL_VENDOR
+    <set>
+      <if test="contractPrice != null">CONTRACT_PRICE = #{contractPrice},</if>
+      <if test="vendorId != null">VENDOR_ID = #{vendorId},</if>
+      <if test="status != null">STATUS = #{status},</if>
+    </set>
+    WHERE MAT_VENDOR_ID = #{matVendorId}
+  </update>
+
+  <!-- 거래처 삭제 -->
+  <delete id="deleteMaterialVendor" parameterType="string">
+    DELETE FROM MATERIAL_VENDOR
+    WHERE MAT_VENDOR_ID = #{matVendorId}
+  </delete>
+
+</mapper>

@@ -17,6 +17,9 @@ public class LoginRes {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String accountId;
 
+    @JsonIgnore
+    private String phone;
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String code;
 
@@ -25,4 +28,10 @@ public class LoginRes {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String role;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean verifyRecaptcha;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String tempPassword;
 }
