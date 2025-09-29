@@ -47,6 +47,7 @@
           <Column field="prodUnitPrice" header="단가" style="width:100px">
             <template #body="{ data }">{{ formatCurrency(data.prodUnitPrice) }}</template>
           </Column>
+          <Column field="orderQty" header="주문수량" style="width:80px; text-align:center;" />
 
           <!-- 반품 수량 -->
           <Column header="반품수량" style="width:120px">
@@ -54,8 +55,8 @@
               <InputNumber 
                 v-model="data.returnQty"
                 :min="0"
+                :max="data.orderQty"
                 showButtons
-                @input="data.returnTotal = (data.returnQty || 0) * data.prodUnitPrice"
               />
             </template>
           </Column>
@@ -83,7 +84,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import axios from 'axios'
 import DataTable from 'primevue/datatable'
 import Column from 'primevue/column'
@@ -133,7 +134,6 @@ const loadOrderDetails = async () => {
   if (!selectedOrder.value) return
   try {
     const { data } = await axios.get(`/api/orders/${selectedOrder.value.orderId}/details`)
-    console.log('API 응답', data) // 백엔드 응답 확인
     if (data.status === 'success') {
       orderDetailList.value = data.details.map(it => ({
         ...it,
@@ -148,8 +148,38 @@ const loadOrderDetails = async () => {
   }
 }
 
-// 3. 반품 등록
+// 3. 반품 수량 실시간 검증 (watch)
+
+watch(
+  orderDetailList,
+  (newList) => {
+    newList.forEach(item => {
+      // 주문 수량보다 많이 입력했을 경우
+      if (item.returnQty > item.orderQty) {
+        toast('warn', '반품 수량 자동 조정', 
+          `반품 수량은 주문 수량(${item.orderQty})을 초과할 수 없습니다. 자동으로 ${item.orderQty}로 조정되었습니다.`)
+        
+        // 초과 입력값을 주문 수량으로 자동 되돌림
+        item.returnQty = item.orderQty
+      }
+
+      // 합계 자동 계산
+      item.returnTotal = (item.returnQty || 0) * item.prodUnitPrice
+    })
+  },
+  { deep: true }  // 🔹 배열 내부의 모든 속성 변화 감시
+)
+
+
+// 4. 반품 등록
 const saveReturn = async () => {
+  // 초과 값이 있는지 최종 확인
+  const invalidItems = orderDetailList.value.filter(it => it.returnQty > it.orderQty)
+  if (invalidItems.length > 0) {
+    toast('error', '반품 수량 오류', '반품 수량은 주문 수량을 초과할 수 없습니다.')
+    return
+  }
+
   const validItems = orderDetailList.value.filter(it => it.returnQty > 0 && it.returnWhy.trim() !== '')
   if (validItems.length === 0) {
     toast('warn', '반품 등록', '반품할 항목을 선택하세요.')
@@ -159,7 +189,7 @@ const saveReturn = async () => {
   const payload = {
     returnId: 'RT' + Date.now(),
     vendorId: userStore.code,
-    status: 'REQ',
+    status: '대기',
     details: validItems.map(it => ({
       rdetailId: 'RD' + Date.now() + '_' + it.prodId,
       prodId: it.prodId,
@@ -184,6 +214,7 @@ const saveReturn = async () => {
     toast('error', '등록 실패', '서버 오류 발생')
   }
 }
+
 
 onMounted(fetchReturnableOrders)
 </script>

@@ -129,6 +129,41 @@ import { useUserStore } from '@/stores/user'
 const userStore = useUserStore();
 const vendorId = userStore.code; // 로그인한 가맹점 코드
 
+// 날짜 포맷 함수
+const formatDate = (dateStr) => {
+  if (!dateStr) return '' // 값이 없으면 빈 문자열
+  const date = new Date(dateStr)
+  if (isNaN(date.getTime())) return dateStr // 날짜가 유효하지 않으면 원본 반환
+  return date.toLocaleDateString('ko-KR') // YYYY.MM.DD 형식
+}
+const today = new Date().toISOString().substring(0, 10)
+
+// 금액 포맷
+const asKRW = (value) => {
+  if (value === null || value === undefined) return '0원'
+  return value.toLocaleString('ko-KR') + '원'
+}
+
+
+// 주문 상태에 따른 색상 매핑
+const statusColor = (status) => {
+  switch (status) {
+    case '대기':
+      return 'warning' // 노란색
+    case '완료':
+      return 'success' // 초록색
+    case '취소':
+      return 'danger'  // 빨간색
+    case '배송중':
+      return 'info'    // 파란색
+    case '배송완료':
+      return 'success' // 초록색
+    default:
+      return 'secondary' // 회색
+  }
+}
+
+
 // KPI
 const kpi = ref({ todaySales: 0, monthSales: 0, unshipped: 0, nextDueAmount: 0, nextDueDate: '' });
 const fetchKpi = async () => {
@@ -205,6 +240,7 @@ const fetchSalesTrend = async () => {
     console.error('매출 추이 조회 오류:', err);
   }
 };
+
 
 onMounted(() => {
   fetchKpi();
