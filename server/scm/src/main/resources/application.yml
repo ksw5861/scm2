@@ -53,5 +53,12 @@ jwt:
   secret: ENC(dzfcQtWysP6YaJ/3ZshuUyeqb/Jqc23jSsctfL6ZfFEZHFBIOtIJIvjoknh2MiWnPQN3a2bYnUxzSV51QCoQ0A==)
   expiration: 18000000
 
+# 아임포트 설정 은경
+iamport:
+  api:
+    key: 6222787125430866
+    secret: MtoLaGYTgCRZGnFelL3g6ocelyUjj7ByG7anJbxM7bU62O0MKNudEZDgt8bFs2GVKxet2YkqhlQ1XV1a
+
 recaptcha:
   secret: ENC(zLwiX/LhEU83nbjggue9DwY5fObo+LNsjThVngMWZTa/TAGBTqXx0itpNH4Y10HplpqrHVppJXA=)
+
