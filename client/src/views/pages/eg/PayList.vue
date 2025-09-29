@@ -171,7 +171,16 @@ const searchPayments = async () => {
     const res = await axios.get('/api/payments', { params })
     console.log('납부내역 조회 결과:', res.data)
 
-    payList.value = Array.isArray(res.data) ? res.data : []
+    // ✅ 백엔드 데이터 매핑
+    payList.value = (res.data.list || []).map(item => ({
+      paymentNo: item.PAYMENTNO,
+      payDate: item.PAYDATE,
+      outstandingAmount: item.OUTSTANDINGAMOUNT,
+      payAmount: item.PAYAMOUNT,
+      finalBalance: item.FINALBALANCE,
+      creditBalance: item.CREDITBALANCE,
+      payRmk: item.PAYRMK || ''
+    }))
   } catch (error) {
     console.error('납부내역 조회 실패:', error)
     payList.value = []
@@ -183,6 +192,7 @@ const searchPayments = async () => {
     })
   }
 }
+
 
 // ===== 초기화 버튼 =====
 const resetFilters = () => {

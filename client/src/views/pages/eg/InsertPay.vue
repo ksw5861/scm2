@@ -58,13 +58,6 @@
       >
         납부 처리
       </button>
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'summary' }"
-        @click="activeTab = 'summary'"
-      >
-        거래 요약
-      </button>
     </div>
 
     <!-- ===== [탭] 미결제 내역 ===== -->
@@ -140,62 +133,15 @@
         </div>
       </div>
 
-    <!-- 우측 카카오페이 결제 버튼 -->
-    <div class="pay-form">
-      <h3 class="section-title"><i class="pi pi-wallet"></i> 카카오페이 결제</h3>
-      <Button
-        :label="'₩' + formatCurrency(selectedTotal) + ' 결제하기'"
-        class="w-full pay-btn"
-        @click="requestPay"
+      <!-- 우측 카카오페이 결제 버튼 -->
+      <div class="pay-form">
+        <h3 class="section-title"><i class="pi pi-wallet"></i> 카카오페이 결제</h3>
+        <Button
+          :label="'₩' + formatCurrency(selectedTotal) + ' 결제하기'"
+          class="w-full pay-btn"
+          @click="requestPay"
         />
       </div>
-    </div>
-
-
-    <!-- ===== [탭] 거래 요약 ===== -->
-    <div v-else-if="activeTab === 'summary'" class="tab-content">
-      <div class="summary-grid">
-        <div class="card green">
-          <p class="label">완료된 납부 총액</p>
-          <p class="amount">₩{{ formatCurrency(summaryReport.completedAmount) }}</p>
-        </div>
-        <div class="card blue">
-          <p class="label">완료된 거래</p>
-          <p class="amount">{{ summaryReport.completedCount }}건</p>
-        </div>
-        <div class="card orange">
-          <p class="label">대기중인 거래</p>
-          <p class="amount">{{ summaryReport.pendingCount }}건</p>
-        </div>
-      </div>
-
-      <div class="table-toolbar between">
-        <div class="search-container">
-          <i class="pi pi-search search-icon"></i>
-          <InputText
-            v-model="searchSummary"
-            placeholder="납부번호 검색..."
-            class="search-input"
-          />
-        </div>
-      </div>
-
-      <DataTable
-        :value="filteredSummaryList"
-        paginator
-        :rows="10"
-        class="custom-table"
-      >
-        <Column field="payId" header="납부번호" style="width:180px;" />
-        <Column field="payAmount" header="납부금액" style="width:140px; text-align:right;">
-          <template #body="{ data }">
-            ₩{{ formatCurrency(data.payAmount) }}
-          </template>
-        </Column>
-        <Column field="payDate" header="납부일자" style="width:120px;" />
-        <Column field="payType" header="결제방법" style="width:120px;" />
-        <Column field="payRmk" header="메모" />
-      </DataTable>
     </div>
 
     <Toast />
@@ -226,12 +172,6 @@ const summary = ref({
   totalUnpaid: 0,
   thisMonthReturnAmount: 0,
   upcomingAmount: 0
-})
-
-const summaryReport = ref({
-  completedAmount: 0,
-  completedCount: 0,
-  pendingCount: 0
 })
 
 const fetchSummary = async () => {
@@ -346,25 +286,6 @@ const requestPay = () => {
   )
 }
 
-// ===== 거래 요약 =====
-const summaryList = ref([])
-const searchSummary = ref('')
-
-const fetchSummaryList = async () => {
-  try {
-    const res = await axios.get('/api/paymentsummarylist')
-    summaryList.value = res.data || []
-  } catch (error) {
-    console.error('거래 요약 불러오기 실패:', error)
-  }
-}
-
-const filteredSummaryList = computed(() => {
-  return summaryList.value.filter(item =>
-    !searchSummary.value || (item.payId && item.payId.includes(searchSummary.value))
-  )
-})
-
 // ===== 날짜 & 금액 포맷 =====
 const formatDate = (date) => {
   if (!date) return ''
@@ -379,9 +300,9 @@ const formatCurrency = (value) => {
 onMounted(() => {
   fetchSummary()
   fetchOrders()
-  fetchSummaryList()
 })
 </script>
+
 
 
 
