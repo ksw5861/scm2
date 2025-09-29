@@ -15,6 +15,8 @@ const capsLockOn = ref(false);
 const emailInput = ref(null);
 const isDisabled = ref(false);
 const qrCode = ref(null);
+const smsUrl = ref(null);
+const isMobile = ref(false);
 
 const handleKey = (event) => {
   capsLockOn.value = event.getModifierState && event.getModifierState('CapsLock');
@@ -72,6 +74,7 @@ const login = async () => {
 
     const result = await axios.post('/api/auth', param, { withCredentials: true });
     qrCode.value = result.data.qrCodeImage;  // 서버에서 QR 이미지 받아옴
+    smsUrl.value = result.data.smsUrl
   } catch (e) {
     if (e.response) {
       switch (e.response.status) {
@@ -95,6 +98,7 @@ const login = async () => {
 };
 
 const handleVerify = async () => {
+  isDisabled.value = true;
   try {
     const res = await axios.post('/api/auth/login', null, { withCredentials: true });
 
@@ -121,11 +125,24 @@ const handleVerify = async () => {
     if (msg === '인증되지 않은 사용자입니다.') {
       qrCode.value = null;
     }
+  } finally {
+    isDisabled.value = false;
   }
 };
 
+const isStrictMobile = () => {
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 1;
+
+  return (
+    isTouch &&
+    /iPhone|iPad|iPod|Android/i.test(ua) &&
+    !/Windows|Macintosh|Linux/i.test(ua)
+  );
+};
 
 onMounted(() => {
+  isMobile.value = isStrictMobile();
   nextTick(() => {
     emailInput.value?.querySelector('input')?.focus();
   });
@@ -206,18 +223,29 @@ onBeforeUnmount(() => {
         />
       </form>
 
-      <div v-else class="mt-6 flex flex-col items-center justify-center">
+        <div v-else class="mt-6 flex flex-col items-center justify-center">
         <h2 class="text-xl font-semibold text-center mb-4 text-surface-900 dark:text-surface-0">
-          모바일에서 QR을 스캔하여 인증하여주세요.
+            모바일에서 QR을 스캔하여 인증하여주세요.
         </h2>
-        <img :src="qrCode" alt="QR 코드" class="w-48 h-48 object-contain mb-8" />
+
+        <img :src="qrCode" alt="QR 코드" class="w-[316px] h-[316px] object-contain mb-6" />
+
+        <a
+            v-if="isMobile && smsUrl"
+            :href="smsUrl"
+            class="w-full h-14 mb-4 rounded-md text-lg flex items-center justify-center bg-primary text-white font-medium hover:bg-primary-700 transition-colors"
+        >
+            문자로 인증 요청하기
+        </a>
+
         <Button
-          label="인증 완료"
-          class="w-full h-14 rounded-md text-lg"
-          :disabled="isDisabled"
-          @click="handleVerify()"
+            label="인증 완료"
+            class="w-full h-14 rounded-md text-lg"
+            :disabled="isDisabled"
+            @click="handleVerify()"
         />
-      </div>
+        </div>
+
 
     </div>
   </div>
