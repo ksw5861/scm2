@@ -25,4 +25,10 @@ public class LoginRes {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String role;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Boolean verifyRecaptcha;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private String tempPassword;
 }

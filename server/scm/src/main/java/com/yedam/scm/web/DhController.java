@@ -203,26 +203,30 @@ public class DhController {
    */
   @PostMapping("/auth")
   public ResponseEntity<?> authLogin(
-    @RequestBody LoginDTO login,
-    HttpServletResponse response
+      @RequestBody LoginDTO login,
+      HttpServletResponse response
   ) {
 
-    LoginRes result = loginSvc.loginByEmailAndPassword(login);
+      LoginRes result = loginSvc.loginByEmailAndPassword(login);
 
-    if (result != null) {
+      if (result != null && Boolean.FALSE.equals(result.getVerifyRecaptcha())) {
+          return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                              .body(Map.of("message", "reCAPTCHA 검증 실패"));
+      }
 
-        Cookie cookie = new Cookie("accessToken", result.getAccessToken());
-        cookie.setHttpOnly(true);
-        cookie.setSecure(false);
-        cookie.setPath("/");
-        cookie.setMaxAge(60 * 30);
+      if (result == null) {
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                              .body(Map.of("message", "이메일 또는 비밀번호가 올바르지 않습니다."));
+      }
 
-        response.addCookie(cookie);
+      Cookie cookie = new Cookie("accessToken", result.getAccessToken());
+      cookie.setHttpOnly(true);
+      cookie.setSecure(false);
+      cookie.setPath("/");
+      cookie.setMaxAge(60 * 30);
+      response.addCookie(cookie);
 
-        return ResponseEntity.ok().build();
-    } else {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-    }
+      return ResponseEntity.ok(result);
   }
 
   @GetMapping("/auth/me")
@@ -238,8 +242,72 @@ public class DhController {
       user.setName((String) claims.get("name"));
       user.setCode((String) claims.get("code"));
       user.setRole((String) claims.get("role"));
+      user.setTempPassword((String) claims.get("tempPassword"));
 
       return ResponseEntity.ok(user);
   }
+
+  @PostMapping("/auth/change-password")
+  public ResponseEntity<?> modifyAccountPassword(
+      @CookieValue(value = "accessToken", required = false) String token,
+      @RequestBody Map<String, String> body,
+      HttpServletResponse response
+  ) {
+      if (token == null || !jwtUtil.validateToken(token)) {
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "인증되지 않은 사용자입니다."));
+      }
+
+      String newPassword = body.get("newPassword");
+      if (newPassword == null || newPassword.trim().isEmpty()) {
+          return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "새 비밀번호가 필요합니다."));
+      }
+
+      Claims claims = jwtUtil.getClaims(token);
+      String accountId = claims.getSubject();
+
+      try {
+          boolean changed = loginSvc.modifyAccountPassword(accountId, newPassword);
+      if (changed) {
+          String name = (String) claims.get("name");
+          String code = (String) claims.get("code");
+          String role = (String) claims.get("role");
+
+          LoginRes info = new LoginRes();
+
+          info.setAccountId(accountId);
+          info.setName(name);
+          info.setCode(code);
+          info.setRole(role);
+          info.setTempPassword("N");
+
+          String newToken = jwtUtil.generateToken(info);
+
+          Cookie cookie = new Cookie("accessToken", newToken);
+          cookie.setHttpOnly(true);
+          cookie.setSecure(false);
+          cookie.setPath("/");
+          cookie.setMaxAge(60 * 30);
+          response.addCookie(cookie);
+
+          return ResponseEntity.ok(Map.of("status", "success", "message", "비밀번호가 변경되었습니다."));
+      } else {
+              return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("status", "fail", "message", "비밀번호 변경에 실패했습니다."));
+          }
+      } catch (Exception e) {
+          e.printStackTrace();
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+      }
+  }
+
+  @PostMapping("/auth/logout")
+  public ResponseEntity<?> logout(HttpServletResponse response) {
+      Cookie cookie = new Cookie("accessToken", "");
+      cookie.setPath("/");
+      cookie.setHttpOnly(true);
+      cookie.setMaxAge(0);
+      response.addCookie(cookie);
+      return ResponseEntity.ok().body(Map.of("message", "로그아웃 되었습니다."));
+  }
+
 
 }
