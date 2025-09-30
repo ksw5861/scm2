@@ -3,7 +3,6 @@ const iconMap = {
   edit: 'pi pi-pencil',
   delete: 'pi pi-trash',
   refresh: 'pi pi-refresh',
-  list: 'pi pi-bars',
   download: 'pi pi-download',
   print: 'pi pi-print',
   search: 'pi pi-search',
