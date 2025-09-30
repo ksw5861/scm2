@@ -1,4 +1,4 @@
-package com.yedam.scm.common;
+package com.yedam.scm.common.service.impl;
 
 import jakarta.mail.*;
 import jakarta.mail.internet.InternetAddress;
@@ -10,12 +10,13 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import com.yedam.scm.common.service.MailService;
 import com.yedam.scm.dto.EmailDTO;
 
 import java.util.*;
 
 @Service
-public class MailService {
+public class MailServiceImpl implements MailService {
 
     private final JavaMailSender mailSender;
 
@@ -25,7 +26,7 @@ public class MailService {
     @Value("${spring.mail.password}")
     private String password;
 
-    public MailService(JavaMailSender mailSender) {
+    public MailServiceImpl(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 
@@ -33,6 +34,7 @@ public class MailService {
      * 비동기 이메일 발송
      */
     @Async
+    @Override
     public void sendMailAsync(String to, String subject, String htmlContent, String from) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -53,6 +55,7 @@ public class MailService {
     /**
      * 최근 수신된 이메일 목록 (최신 10개까지) 가져오기
      */
+    @Override
     public List<EmailDTO> fetchRecentEmails() throws Exception {
         List<EmailDTO> emailList = new ArrayList<>();
 

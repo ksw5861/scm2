@@ -239,30 +239,30 @@ public class EgController {
 // =================================================================
 // 6. 대금 결제 등록
 // =================================================================
-@PostMapping("/payments")
-public ResponseEntity<Map<String, Object>> insertPayment(@RequestBody PaymentVO paymentVO) {
-    Map<String, Object> response = new HashMap<>();
+// @PostMapping("/payments")
+// public ResponseEntity<Map<String, Object>> insertPayment(@RequestBody PaymentVO paymentVO) {
+//     Map<String, Object> response = new HashMap<>();
 
-    try {
-        // service 호출 (마스터 + 상세 + 주문 상태 변경)
-        String result = paymentSvc.insertPayment(paymentVO);
+//     try {
+//         // service 호출 (마스터 + 상세 + 주문 상태 변경)
+//         String result = paymentSvc.insertPayment(paymentVO);
 
-        if ("SUCCESS".equalsIgnoreCase(result)) {
-            response.put("status", "success");
-            response.put("paymentId", paymentVO.getPayId());
-            return ResponseEntity.ok(response);
-        } else {
-            response.put("status", "error");
-            response.put("message", "결제 등록에 실패했습니다.");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
-    } catch (Exception e) {
-        e.printStackTrace();
-        response.put("status", "error");
-        response.put("message", "서버 오류로 결제 등록에 실패했습니다.");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
-}
+//         if ("SUCCESS".equalsIgnoreCase(result)) {
+//             response.put("status", "success");
+//             response.put("paymentId", paymentVO.getPayId());
+//             return ResponseEntity.ok(response);
+//         } else {
+//             response.put("status", "error");
+//             response.put("message", "결제 등록에 실패했습니다.");
+//             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+//         }
+//     } catch (Exception e) {
+//         e.printStackTrace();
+//         response.put("status", "error");
+//         response.put("message", "서버 오류로 결제 등록에 실패했습니다.");
+//         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+//     }
+// }
 
 // =================================================================
 // 7. 납부 내역 조회
@@ -405,7 +405,7 @@ public ResponseEntity<Map<String, Object>> getReturnableOrderDetails(@PathVariab
 // 13. 아임포트 결제 검증 및 저장
 // =================================================================
 
-@PostMapping("/verify-payment")
+ @PostMapping("/verify-payment")
 public ResponseEntity<Map<String, Object>> verifyPayment(@RequestBody PaymentVO req) {
     Map<String, Object> response = new HashMap<>();
 

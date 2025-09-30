@@ -12,18 +12,24 @@ import java.util.Map;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpHeaders;
 
-import com.yedam.scm.common.MailService;
+import com.yedam.scm.common.service.MailService;
 import com.yedam.scm.dto.EmployeeListRes;
 import com.yedam.scm.dto.EmployeeSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.master.mapper.EmployeeMapper;
 import com.yedam.scm.master.service.EmployeeService;
 import com.yedam.scm.vo.EmployeeVO;
+
+import org.springframework.core.io.Resource;
 
 import lombok.RequiredArgsConstructor;
 
@@ -190,5 +196,30 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     return sb.toString();
   }
+
+    @Override
+    public ResponseEntity<Resource> getEmployeeImage(String employeeId) throws IOException {
+        String[] extensions = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"};
+
+        for (String ext : extensions) {
+            Path filePath = Paths.get(uploadDir, employeeId + ext);
+            File file = filePath.toFile();
+
+            if (file.exists() && file.isFile()) {
+                FileSystemResource resource = new FileSystemResource(file);
+
+                String contentType = Files.probeContentType(filePath);
+                if (contentType == null) {
+                    contentType = "application/octet-stream";
+                }
+
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.CONTENT_TYPE, contentType)
+                        .body(resource);
+            }
+        }
+        // 파일이 없으면 404 반환
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
 
 }

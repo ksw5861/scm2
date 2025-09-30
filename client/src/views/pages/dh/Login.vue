@@ -14,6 +14,7 @@ const password = ref('');
 const capsLockOn = ref(false);
 const emailInput = ref(null);
 const isDisabled = ref(false);
+const isVerifying = ref(false);
 const qrCode = ref(null);
 const smsUrl = ref(null);
 const isMobile = ref(false);
@@ -75,6 +76,7 @@ const login = async () => {
     const result = await axios.post('/api/auth', param, { withCredentials: true });
     qrCode.value = result.data.qrCodeImage;  // 서버에서 QR 이미지 받아옴
     smsUrl.value = result.data.smsUrl
+    console.log(smsUrl.value);
   } catch (e) {
     if (e.response) {
       switch (e.response.status) {
@@ -99,6 +101,8 @@ const login = async () => {
 
 const handleVerify = async () => {
   isDisabled.value = true;
+  isVerifying.value = true;
+
   try {
     const res = await axios.post('/api/auth/login', null, { withCredentials: true });
 
@@ -108,11 +112,9 @@ const handleVerify = async () => {
       const meRes = await axios.get('/api/auth/me', { withCredentials: true });
       const user = meRes.data;
 
-      console.log(meRes);
-
       userStore.setUserInfo(user);
 
-      if (meRes.data.tempPassword === 'Y') {
+      if (user.tempPassword === 'Y') {
         router.push('/change-password');
       } else {
         router.push('/');
@@ -127,6 +129,7 @@ const handleVerify = async () => {
     }
   } finally {
     isDisabled.value = false;
+    isVerifying.value = false;
   }
 };
 
@@ -216,9 +219,10 @@ onBeforeUnmount(() => {
         </div>
 
         <Button
-          label="로그인하기"
+          :label="isDisabled ? '로그인 중...' : '로그인하기'"
           type="submit"
           class="w-full h-14 rounded-md text-lg"
+          :loading="isDisabled"
           :disabled="isDisabled"
         />
       </form>
@@ -239,11 +243,13 @@ onBeforeUnmount(() => {
         </a>
 
         <Button
-            label="인증 완료"
-            class="w-full h-14 rounded-md text-lg"
-            :disabled="isDisabled"
-            @click="handleVerify()"
+          :label="isVerifying ? '인증 중...' : '인증 완료'"
+          class="w-full h-14 rounded-md text-lg"
+          :disabled="isDisabled"
+          @click="handleVerify()"
+          :loading="isVerifying"
         />
+
         </div>
 
 

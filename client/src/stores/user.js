@@ -32,4 +32,7 @@ export const useUserStore = defineStore('user', () => {
     setUserInfo,
     clearUserInfo,
   };
+},
+{
+  persist: true
 });

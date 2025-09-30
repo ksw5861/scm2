@@ -2,7 +2,8 @@ package com.yedam.scm.web;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import com.yedam.scm.common.MailService;
+import com.yedam.scm.common.service.MailService;
+import com.yedam.scm.dto.AuthRes;
 import com.yedam.scm.dto.EmailDTO;
 import com.yedam.scm.dto.EmployeeListRes;
 import com.yedam.scm.dto.EmployeeSearchDTO;
@@ -19,19 +20,13 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -52,47 +47,19 @@ public class DhController {
   private final JwtUtil jwtUtil;
   private final MailService mailSvc;
 
-  @Value("${file.upload.employee-dir}")
-  private String employeeUploadDir;
-
-  @Value("${spring.mail.username}")
-  private String serverEmail;
   /**
    * 확장자 없이 요청 시 자동으로 탐색하여 이미지 반환
    * 예) GET /api/img/employee/EMP001
    */
+
   @GetMapping("/img/employee/{employeeId}")
-  public ResponseEntity<Resource> getEmployeePhoto(
-    @PathVariable String employeeId
-  ) {
-    try {
-      // 지원되는 확장자 목록
-      String[] extensions = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"};
-
-      for (String ext : extensions) {
-        Path filePath = Paths.get(employeeUploadDir, employeeId + ext);
-        File file = filePath.toFile();
-
-        if (file.exists()) {
-          FileSystemResource resource = new FileSystemResource(file);
-
-          String contentType = Files.probeContentType(filePath);
-          if (contentType == null) {
-            contentType = "application/octet-stream";
-          }
-
-          return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_TYPE, contentType)
-            .body(resource);
-        }
+  public ResponseEntity<Resource> getEmployeePhoto(@PathVariable String employeeId) {
+      try {
+          return employeeSvc.getEmployeeImage(employeeId);
+      } catch (IOException e) {
+          e.printStackTrace();
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
       }
-
-      return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-
-    } catch (Exception e) {
-      e.printStackTrace();
-      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-    }
   }
 
   /**
@@ -205,41 +172,26 @@ public class DhController {
   }
 
   @PostMapping("/auth")
-  public ResponseEntity<?> tempLogin(
-      @RequestBody LoginDTO login,
-      HttpServletResponse response
-  ) throws Exception {
-      LoginRes result = loginSvc.loginByEmailAndPassword(login);
+  public ResponseEntity<?> tempLogin(@RequestBody LoginDTO login, HttpServletResponse response) {
+      try {
+          AuthRes authResponse = loginSvc.processTempLogin(login);
 
-      if (result != null && Boolean.FALSE.equals(result.getVerifyRecaptcha())) {
-          return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                  .body(Map.of("message", "reCAPTCHA 검증 실패"));
-      }
+          Cookie cookie = new Cookie("tempToken", authResponse.getTempToken());
+          cookie.setHttpOnly(true);
+          cookie.setSecure(false); // 배포 환경에서는 true
+          cookie.setPath("/");
+          cookie.setMaxAge(60);
+          response.addCookie(cookie);
 
-      if (result == null) {
+          return ResponseEntity.ok(authResponse);
+      } catch (IllegalArgumentException e) {
           return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                  .body(Map.of("message", "이메일 또는 비밀번호가 올바르지 않습니다."));
+              .body(Map.of("message", e.getMessage()));
+      } catch (Exception e) {
+          e.printStackTrace();
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body(Map.of("message", "서버 오류가 발생했습니다."));
       }
-
-      String tempToken = jwtUtil.generateTempToken(result.getAccountId());
-
-      Cookie cookie = new Cookie("tempToken", tempToken);
-      cookie.setHttpOnly(true);
-      cookie.setSecure(false);
-      cookie.setPath("/");
-      cookie.setMaxAge(60);
-      response.addCookie(cookie);
-
-      String smsUrl = "sms:" + serverEmail + "?body=" + java.net.URLEncoder.encode(tempToken, "UTF-8");
-
-      String qrCodeBase64 = loginSvc.generateQRCodeImage(smsUrl, 300, 300);
-
-      return ResponseEntity.ok(Map.of(
-              "message", "2차 인증 필요",
-              "tempToken", tempToken,
-              "qrCodeImage", qrCodeBase64,
-              "smsUrl", smsUrl 
-      ));
   }
 
   @PostMapping("/auth/login")
@@ -404,6 +356,5 @@ public class DhController {
       response.addCookie(cookie);
       return ResponseEntity.ok().body(Map.of("message", "로그아웃 되었습니다."));
   }
-
 
 }
