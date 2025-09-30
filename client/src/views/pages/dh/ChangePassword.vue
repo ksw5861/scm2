@@ -73,6 +73,9 @@ const changePassword = async () => {
       class="flex flex-col items-center justify-center w-full h-screen sm:w-[36rem] sm:h-auto bg-surface-0 dark:bg-surface-900 py-10 px-12 sm:py-20 sm:px-20 rounded-none sm:rounded-lg shadow-[0_6px_60px_rgba(0,0,0,0.02)]"
     >
       <form @submit.prevent="changePassword" class="w-full max-w-md">
+        <div class="mb-4">
+            <i class="pi pi-key text-primary p-1" style="font-size: 2.5rem;"></i>
+        </div>
         <div class="text-left mb-10">
           <div class="text-surface-900 dark:text-surface-0 text-3xl font-semibold mb-4">
             비밀번호 변경

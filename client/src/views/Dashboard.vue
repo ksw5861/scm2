@@ -31,9 +31,8 @@ const logout = async () => {
 </script>
 
 <template>
+  <Btn color="danger" label="로그아웃" icon="signout" class="mb-4" @click="logout"></Btn>
   <div class="grid grid-cols-12 gap-8">
-    <Btn color="danger" label="로그아웃" @click="logout"></Btn>
-
     <StatsWidget />
 
     <div class="col-span-12 xl:col-span-6">
