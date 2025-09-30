@@ -56,27 +56,41 @@ public class SupplierServiceImpl implements SupplierService  {
     @Transactional
     @Override
     public void insertReleaseData(List<PurchaseMatVO> payload) {
-       //1) purId: row.id, /matId: row.matId, /orderNo: row.purNo, /outQty: row.outQty, /vendorId: vendorId.value 
-        
+       //payload담긴 값: purId: row.id, /matId: row.matId, /orderNo: row.purNo, /outQty: row.outQty, /vendorId: vendorId.value 
+       // 1) urchase_mat테이블 상태: 부분출고/전량출고로 상태값 변경 + 누적출고수량 updqate
+       // 2) 이력테이블 이력, venderId, purID, 출고수량 입력. 
+
+        String vendorId = null;
+       
        //자재구매요청 상태값 업데이트
         for(PurchaseMatVO row : payload) {
             
             Long purId   = row.getPurId();
-            String matId = row.getMatId();
-            String purNo = row.getPurNo(); //발주번호 = 주문번호
             Long outQty = row.getPurStatusLogVO().getSupOutQty(); //이력관리VO에 있음.
-            String vendorId = row.getVendorId();
+            vendorId = row.getVendorId();
 
-            //purchase_mat테이블 상태: 부분출고/전량출고로 상태값 변경 + 누적출고수량 updqate
-            //이력테이블 이력, venderId, purID, 출고수량 입력.
             mapper.callReleaseMatPoc(purId, outQty, vendorId);
         }
 
+        //입고마스터 PK가지고 옴. 
+        Long inboundMasterPK = mapper.getInboundMasterPK(); 
+        
+        //1) 마스터테이블 isert [PK/verderId]
+        mapper.insertInboundMaster(inboundMasterPK, vendorId);
 
-       //프로시저 쓴다면??????? 1) 자재구매 테이블 업데이트 + 이력 insert 
-       //=============================================
-       //2) 마스터 inert 후 입고테이블 아이디 받아오고
-       // -> 받은 입고테이블아이디로 상세정보(for)로  
+        //2) 디테일테이블 (for순환)[입고마스터PK/발주아이디/출고수량/제품코드/vnderId]
+        for(PurchaseMatVO row : payload) {
+            
+            Long purId   = row.getPurId();
+            String matId = row.getMatId();
+            //String purNo = row.getPurNo(); //발주번호 = 주문번호
+            Long outQty = row.getPurStatusLogVO().getSupOutQty(); //이력관리VO에 있음.
+            vendorId = row.getVendorId();
+
+            mapper.insertInboundDetail(inboundMasterPK, purId, matId, outQty, vendorId);
+
+        }
+
     }
     
 }

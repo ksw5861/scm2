@@ -79,7 +79,10 @@ JOIN (
 WHERE pm.vendor_id = #{vendorId}
   AND pm.pur_mat_status in ('ms2', 'ms5')
 </select>
-<!--purchase_mat출고상태값 변경[부분출고], 출고수량누적합 + 상태log테이블 insert-->
+
+<!--공급처출고-->
+<!--공급처출고등록시: 1) 주문테이블 update + 상태값 변경(프로시저) 2)입고마스터테이블 seq 3)입고마스터테이블insert 4)입고상세테이블insert-->
+<!--1)purchase_mat출고상태값 변경[부분출고], 출고수량누적합 + 상태log테이블 insert-->
 <select id="callReleaseMatPoc" parameterType="map" statementType="CALLABLE">
         { call PROC_MAT_RELEASE(
             #{purId,    mode=IN, jdbcType=NUMERIC},  
@@ -87,4 +90,22 @@ WHERE pm.vendor_id = #{vendorId}
             #{name, mode=IN, jdbcType=VARCHAR}
         )}
 </select>
+
+<!--2)마스터 seq"GET"-->
+<select id="getInboundMasterPK" resultType="long">
+SELECT seq_inbound.NEXTVAL FROM dual
+</select>
+
+<!--3)공급처 출고시 입고마스터 insert [위에서 받은 seq + 공급처코드]-->
+<insert id="insertInboundMaster" parameterType="map">
+INSERT INTO inbound(inbound_id, inbound_no, vendor_id, ven_out_no)
+VALUES (#{inboundId}, next_date_code('MI'), #{vendorId}, next_date_code('VO'))
+</insert>
+
+<!--4)입고상세테이블 insert-->
+<insert id="insertInboundDetail" parameterType="map">
+INSERT INTO inbound_detail(inbound_det_id, inbound_id, pur_id, out_qty, vendor_id, mat_id )
+VALUES (seq_inbound_detail.NEXTVAL, #{inboundId}, #{purId}, #{outQty}, #{vendorId}, #{matId})
+</insert>
+
 </mapper>
