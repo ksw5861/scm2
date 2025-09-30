@@ -218,7 +218,6 @@
 
 
 
-
   
  <!-- Detail 매핑 (snake -> camel) 주문승인 상세-->
   <resultMap id="SalesOrderDetailMap" type="com.yedam.scm.vo.SalesOrderDetailVO">
@@ -277,22 +276,52 @@
 
 
 
-  <!-- ✅ 반품 목록 조회 -->
-  <select id="selectReturnList" resultType="com.yedam.scm.vo.ReturnVO">
+      <!-- 반품 목록 조회 판매처,상태값 빼고뜸 백업용 -->
+<!-- <select id="selectReturnList" resultType="com.yedam.scm.vo.ReturnVO">
   SELECT
-      r.return_id,
-      r.return_date,
-      v.company_name,
-      d.rdetail_status
+    r.return_id    AS returnId,
+    r.return_date  AS returnDate,
+    v.company_name AS companyName,
+    CASE
+      WHEN SUM(CASE WHEN d.rdetail_status = '대기' THEN 1 ELSE 0 END) > 0
+           THEN '대기'
+      ELSE '처리완료'
+    END AS returnStatus
   FROM return r
-    JOIN return_detail d ON r.return_id = d.return_id
-    JOIN vendor v        ON r.vendor_id = v.vendor_id
+  JOIN return_detail d
+    ON d.return_id = r.return_id
+  LEFT JOIN vendor v                
+    ON v.vendor_id = r.vendor_id
   GROUP BY r.return_id, r.return_date, v.company_name
   ORDER BY r.return_date DESC
+</select> -->
+
+
+
+
+      <!-- 반품 목록 조회 -->
+<select id="selectReturnList" resultType="com.yedam.scm.vo.ReturnVO">
+  SELECT 
+    r.return_id    AS returnId,
+    r.return_date  AS returnDate,
+    v.company_name AS companyName,
+    CASE
+      WHEN SUM(CASE WHEN d.rdetail_status = '대기' THEN 1 ELSE 0 END) > 0 
+           THEN '대기'
+      ELSE '처리완료'
+    END AS returnStatus
+  FROM return r
+  JOIN return_detail d 
+    ON r.return_id = d.return_id
+  LEFT JOIN vendor v 
+    ON v.vendor_id = r.vendor_id
+  GROUP BY r.return_id, r.return_date, v.company_name
+  ORDER BY r.return_date DESC
+
 </select>
 
 
-  
+      
 
 </mapper>
 
