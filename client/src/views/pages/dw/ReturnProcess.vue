@@ -56,6 +56,7 @@ async function applySearch() {
   selectedDetailRows.value = [];
   currentReturnId.value = null;
 }
+
 function resetSearch() {
   searchForm.value = { prodId: '', prodName: '', custName: '', expDate: null };
   applySearch();
@@ -238,7 +239,7 @@ onMounted(() => applySearch());
           <Column field="returnDate" header="반품일자" :body="(r)=>fmtDate(r.returnDate)" />
           <Column field="customerName" header="판매처명" />
           <Column field="returnCode" header="반품코드" />
-          <Column field="status" header="상태" />
+          <Column field="rdetailStatus" header="상태" />
         </DataTable>
       </div>
 
@@ -272,6 +273,7 @@ onMounted(() => applySearch());
             <template #body="{data}">{{ nf(data.returnAmount) }}</template>
           </Column>
           <Column field="status" header="상태" />
+          <Column field="test" header="테스트" />
         </DataTable>
       </div>
     </div>

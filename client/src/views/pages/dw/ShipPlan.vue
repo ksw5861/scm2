@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import InputText from 'primevue/inputtext';
 import InputGroup from 'primevue/inputgroup';
@@ -34,20 +34,11 @@ const rightSelected = ref([]);
 const showVendorModal = ref(false);
 const showOrderModal = ref(false);
 
-const fetchVendors = async () => [
-  { vendorId: 'V001', vendorName: '스타벅스 송도달점' },
-  { vendorId: 'V002', vendorName: '스타벅스 종로점' },
-  { vendorId: 'V003', vendorName: '이디야 신촌점' }
-];
-const fetchOrders = async () => [
-  { orderNo: 'SO2025-09-17-002', vendorName: '스타벅스 송도달점', orderDate: '2025-09-16' },
-  { orderNo: 'SO2025-09-17-001', vendorName: '스타벅스 종로점', orderDate: '2025-09-16' }
-];
-
-function pickVendor(r) {
+const pickVendor = (r) => {
   search.value.vendorName = r.vendorName;
   showVendorModal.value = false;
-}
+};
+
 function pickOrder(r) {
   search.value.orderNo = r.orderNo;
   showOrderModal.value = false;
@@ -60,6 +51,7 @@ function dstr(d) {
   const day = String(t.getDate()).padStart(2, '0');
   return `${t.getFullYear()}-${m}-${day}`;
 }
+
 function applySearch() {
   const date = search.value.scheduledDate ? dstr(search.value.scheduledDate) : null;
   const v = (search.value.vendorName || '').trim().toLowerCase();
@@ -73,6 +65,7 @@ function applySearch() {
   });
   leftSelected.value = [];
 }
+
 function resetSearch() {
   search.value = { scheduledDate: null, vendorName: '', orderNo: '' };
   leftList.value = [...allApprovedOrders.value];
@@ -111,6 +104,40 @@ function createInstruction() {
   sessionStorage.setItem('shippingInstructionItems', JSON.stringify(rightList.value));
   router.push('/shipping-register');
 }
+
+/* ===== API 호출 ====== */
+
+const fetchLeftList = async () => {
+
+  try {
+    const { data } = await axios.get('/api/sadsadasdasdasds');
+    if (data.retCode === "success") {
+      // 요청 성공시
+    } else {
+      // 요청 실패시
+    }
+    
+  } catch (e) {
+    console.err(e);
+    // return Toast();
+  } 
+  // finally {}
+  
+};
+
+const fetchVendors = async () => [
+  { vendorId: 'V001', vendorName: '스타벅스 송도달점' },
+  { vendorId: 'V002', vendorName: '스타벅스 종로점' },
+  { vendorId: 'V003', vendorName: '이디야 신촌점' }
+];
+const fetchOrders = async () => [
+  { orderNo: 'SO2025-09-17-002', vendorName: '스타벅스 송도달점', orderDate: '2025-09-16' },
+  { orderNo: 'SO2025-09-17-001', vendorName: '스타벅스 종로점', orderDate: '2025-09-16' }
+];
+
+
+
+onMounted(fetchLeftList);
 </script>
 
 <template>
@@ -184,6 +211,7 @@ function createInstruction() {
           <Column field="orderNo" header="주문번호" />
           <Column field="warehouse" header="출고창고" />
           <Column field="vendor" header="판매처명" />
+          <Column field="testtest" header="부분출고"/>
           <Column field="scheduledDate" header="출하예정일" />
           <Column field="manager" header="담당자" />
         </DataTable>

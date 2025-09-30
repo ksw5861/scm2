@@ -13,6 +13,7 @@ import com.yedam.scm.product.mapper.InboundMapper;
 import com.yedam.scm.product.service.InboundService;
 import com.yedam.scm.vo.ItemInboundVO;
 import com.yedam.scm.vo.ProductVO;
+import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 import com.yedam.scm.vo.WareHouseVO;
@@ -48,7 +49,7 @@ public class InboundServiceImpl implements InboundService {
         // "employeeId": "asd",
         // "totalQty": 10,
         // "whId": "asd"
-        // "rowCount": "1"
+        // "rowCount": 1
         // }
 
         return ((int) inbound.get("rowCount")) > 0; // 실행 성공하면 true 리턴
@@ -126,5 +127,14 @@ public class InboundServiceImpl implements InboundService {
         if (odetailIds == null || odetailIds.isEmpty()) return 0;
         return inboundMapper.rejectDetails(odetailIds);
     }
+
+
+
+        //반품승인 페이지 목록불러오기
+     @Override
+    public List<ReturnVO> getReturnList() {
+        return inboundMapper.selectReturnList();
+    }
+
 
 } // end
