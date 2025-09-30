@@ -35,6 +35,13 @@ public interface ReturnMapper {
 
 
     // 5. 반품 상태 변경
-     int updateStatus(@Param("returnId") String returnId,
-                     @Param("status") String status);
+    int updateReturnStatusParent(@Param("returnId") String returnId,
+                                 @Param("status") String status);
+
+    int updateReturnStatusChildren(@Param("returnId") String returnId,
+                                   @Param("status") String status);
+
+
+
+
 }
