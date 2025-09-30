@@ -66,6 +66,25 @@ public class LoginServiceImpl implements LoginService {
         }
     }
 
+    @Override
+    public LoginRes loginAdminByEmailAndPassword(LoginDTO login) {
+
+        LoginRes dbUser = mapper.selectAdminAccountByEmailAndPassword(login);
+
+        if (dbUser == null) {
+            return null;
+        }
+
+        boolean isMatch = passwordEncoder.matches(login.getPassword(), dbUser.getPasswordHash());
+
+        if (isMatch) {
+            dbUser.setAccessToken(jwtUtil.generateToken(dbUser));
+            return dbUser;
+        } else {
+            return null;
+        }
+    }
+
 
     @Override
     public boolean modifyAccountPassword(String accountId, String password) {

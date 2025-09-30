@@ -193,6 +193,39 @@ public class DhController {
       }
   }
 
+  @PostMapping("/auth/devlogin")
+  public ResponseEntity<?> devLogin(@RequestBody LoginDTO login, HttpServletResponse response) {
+      try {
+          LoginRes account = loginSvc.loginAdminByEmailAndPassword(login);
+
+          if (account == null) {
+              return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                  .body(Map.of("message", "이메일 또는 비밀번호가 올바르지 않습니다."));
+          }
+
+          String accessToken = jwtUtil.generateToken(account);
+
+          Cookie accessCookie = new Cookie("accessToken", accessToken);
+          accessCookie.setHttpOnly(true);
+          accessCookie.setSecure(false); // 배포 시 true
+          accessCookie.setPath("/");
+          accessCookie.setMaxAge(60 * 60); // 1시간
+          response.addCookie(accessCookie);
+
+          return ResponseEntity.ok(Map.of(
+              "message", "로그인 성공",
+              "accessToken", accessToken
+          ));
+      } catch (IllegalArgumentException e) {
+          return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+              .body(Map.of("message", e.getMessage()));
+      } catch (Exception e) {
+          e.printStackTrace();
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+              .body(Map.of("message", "서버 오류가 발생했습니다."));
+      }
+  }
+
   @PostMapping("/auth/login")
   public ResponseEntity<?> completeLogin(
       @CookieValue(value = "tempToken", required = false) String tempToken,
