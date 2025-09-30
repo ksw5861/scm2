@@ -58,4 +58,14 @@ public interface OrderMapper {
     // 7. 제품 전체 개수 조회
     // --------------------------
     int getProductCount();
+
+
+    // --------------------------
+    // 8. 주문 상태 변경
+    // --------------------------
+    int updateStatus(@Param("orderId") String orderId,
+                    @Param("status") String status);
+    
+
+
 }

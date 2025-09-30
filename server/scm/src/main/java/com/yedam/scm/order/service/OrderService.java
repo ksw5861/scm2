@@ -63,4 +63,14 @@ public interface OrderService {
      * 전체 제품 개수 조회
      */
     int getProductCount();
+
+    /**
+     * 주문 상태 변경
+     * @param orderId 주문 ID
+     * @param status 변경할 상태
+     * @return true = 성공, false = 실패
+     */   
+    boolean updateOrderStatus(String orderId, String status);    
+
+
 }

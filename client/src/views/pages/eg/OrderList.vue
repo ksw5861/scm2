@@ -8,7 +8,15 @@
         <Button label="조회" icon="pi pi-search" class="p-button-primary" @click="fetchOrders" />
         <Button label="엑셀 다운로드" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel" />
         <Button label="PDF 출력" icon="pi pi-file-pdf" class="p-button-danger" @click="exportPDF" />
-      </div>
+     
+        <Button 
+          label="배송완료 처리" 
+          icon="pi pi-check" 
+          class="p-button-success" 
+          :disabled="!selectedOrder || selectedOrder.status !== '배송중'"
+          @click="markAsDelivered"
+        />
+       </div>
     </div>
 
     <!-- 검색 영역 -->
@@ -44,6 +52,9 @@
         <InputText v-model="filters.orderId" placeholder="주문번호 검색" />
       </div>
     </div>
+
+
+  
 
     <!-- 목록 & 상세 -->
     <div class="content-section">
@@ -245,6 +256,38 @@ watch(
     }
   }
 )
+
+// ===== 선택된 주문 상태값 배송완료로 변경 =====
+
+const markAsDelivered = async () => {
+  if (!selectedOrder.value) {
+    alert("먼저 주문을 선택하세요.")
+    return
+  }
+
+  if (selectedOrder.value.status !== "배송중") {
+    alert("배송중 상태만 완료 처리할 수 있습니다.")
+    return
+  }
+
+  try {
+    const { data } = await axios.put(`/api/orders/${selectedOrder.value.orderId}/status`, {
+      status: "배송완료"
+    })
+
+    if (data.status === "success") {
+      alert("배송완료로 변경되었습니다.")
+      // 화면 갱신
+      fetchOrders()
+      fetchOrderDetail(selectedOrder.value.orderId)
+    } else {
+      alert(data.message || "상태 변경 실패")
+    }
+  } catch (error) {
+    console.error("상태 변경 오류:", error)
+    alert("서버 오류로 상태를 변경하지 못했습니다.")
+  }
+}
 
 
 

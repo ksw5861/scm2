@@ -1,5 +1,6 @@
 package com.yedam.scm.vo;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -19,7 +20,7 @@ public class SalesOrderVO {
     Date paydueDate;
     Long returnPrice;
     String dataType; // 'ORDER' or 'RETURN'
-
+    BigDecimal finalAmount;
     // 추가된 대표 제품명 필드
     private String prodName;
 

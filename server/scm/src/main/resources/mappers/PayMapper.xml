@@ -60,20 +60,21 @@
     )
   </insert>
 
+
 <!-- ==================================== -->
-<!-- 3. 결제 대기중인 주문건 조회 -->
+<!-- 3. 결제 대기중인 주문건 조회 (반품금액 포함) -->
 <!-- ==================================== -->
 <select id="selectPendingOrders" resultType="SalesOrderVO">
- WITH order_data AS (
     SELECT 
         so.order_id AS orderId,
         so.order_date AS orderDate,
         so.send_date AS sendDate,
         ROUND(so.total_price, 2) AS totalPrice,
+        ROUND(NVL(so.return_price, 0), 2) AS returnPrice,   
+        ROUND(so.total_price - NVL(so.return_price, 0), 2) AS finalAmount,
         so.pay_status AS payStatus,
-        so.status AS orderStatus,
+        so.status AS status,
         so.paydue_date AS paydueDate,
-        'ORDER' AS dataType,
         CASE 
             WHEN COUNT(sod.prod_name) > 1 THEN 
                 MAX(sod.prod_name) || ' 외 ' || (COUNT(sod.prod_name)-1) || '건'
@@ -82,43 +83,12 @@
         END AS prodName
     FROM SALES_ORDER so
     JOIN SALES_ORDER_DETAIL sod ON so.order_id = sod.order_id
-    WHERE so.pay_status <![CDATA[<>]]> '완료'
+    WHERE so.pay_status <![CDATA[<>]]> '결제완료'
       AND so.order_date BETWEEN TRUNC(ADD_MONTHS(SYSDATE, -1)) AND SYSDATE
     GROUP BY 
-        so.order_id, so.order_date, so.send_date, 
-        so.total_price, so.pay_status, so.status, so.paydue_date
-),
-
-return_data AS (
-    SELECT 
-        r.return_id AS orderId,
-        r.return_date AS orderDate,
-        NULL AS sendDate,
-        ROUND(SUM(rd.return_qty * rd.prod_unit_price), 2) AS totalPrice,
-        r.return_pay_status AS payStatus,    
-        r.return_status AS orderStatus,
-        NULL AS paydueDate,
-        'RETURN' AS dataType,
-        CASE 
-            WHEN COUNT(p.prod_name) > 1 THEN 
-                MAX(p.prod_name) || ' 외 ' || (COUNT(p.prod_name)-1) || '건'
-            ELSE 
-                MAX(p.prod_name)
-        END AS prodName
-    FROM RETURN r
-    JOIN RETURN_DETAIL rd ON r.return_id = rd.return_id
-    JOIN PRODUCT p ON rd.prod_id = p.prod_id
-    WHERE r.return_pay_status <![CDATA[<>]]> '완료'
-      AND r.return_date BETWEEN TRUNC(ADD_MONTHS(SYSDATE, -1)) AND SYSDATE
-    GROUP BY r.return_id, r.return_date, r.return_pay_status, r.return_status
-)
-
-SELECT *
-FROM order_data
-UNION ALL
-SELECT *
-FROM return_data
-ORDER BY 2 DESC
+        so.order_id, so.order_date, so.send_date, so.total_price,
+        so.return_price, so.pay_status, so.status, so.paydue_date
+    ORDER BY so.order_date DESC
 </select>
 
 
@@ -228,7 +198,7 @@ ORDER BY 2 DESC
 
  
  <!-- ==================================== -->
- <!-- 결제 상태를 완료로 업데이트 -->
+ <!-- 결제시  결제상태(주문건)를 완료로 업데이트 -->
   <!-- ==================================== -->
 <update id="updateOrderStatusToComplete">
     UPDATE sales_order
@@ -240,7 +210,7 @@ ORDER BY 2 DESC
 </update>
 
   <!-- ==================================== -->
-  <!-- 8. 반품 상태 COMPLETE 업데이트 -->
+  <!-- 8. 결제시 결제상태(반품건) 완료로 업데이트 -->
   <!-- ==================================== -->
   <update id="updateReturnStatusToComplete">
     UPDATE RETURN
@@ -254,33 +224,8 @@ ORDER BY 2 DESC
   <!-- ==================================== -->
   <!-- 9. 납부등록페이지 - 상단카드 합계내용들 -->
   <!-- ==================================== -->
-  <select id="selectSummaryData" resultType="PaymentVO">
-    SELECT 
-        a.totalUnpaid,           
-        a.overdueAmount,          
-        a.upcomingAmount,        
-        b.thisMonthReturnAmount   
-    FROM 
-    (
-        SELECT
-            NVL(SUM(CASE WHEN o.pay_status IN ('대기', '연체') THEN o.total_price END), 0) AS totalUnpaid,
-            NVL(SUM(CASE WHEN o.pay_status = '연체' AND o.paydue_date &lt; SYSDATE THEN o.total_price END), 0) AS overdueAmount,
-            NVL(SUM(CASE 
-                WHEN o.pay_status = '대기' 
-                     AND o.paydue_date BETWEEN TRUNC(SYSDATE, 'MM') AND TRUNC(SYSDATE)
-                THEN o.total_price 
-            END), 0) AS upcomingAmount
-        FROM sales_order o
-    ) a,
-    (
-        SELECT
-            NVL(SUM(rd.return_qty * rd.prod_unit_price), 0) AS thisMonthReturnAmount
-        FROM RETURN r
-        JOIN RETURN_DETAIL rd ON r.return_id = rd.return_id
-        WHERE r.return_status = '승인'
-          AND r.return_date BETWEEN TRUNC(SYSDATE, 'MM') AND TRUNC(SYSDATE)
-    ) b
-  </select>
+  
+
 
   <!-- ==================================== -->
   <!-- 10. 납부등록페이지 - 거래요약탭 집계 -->

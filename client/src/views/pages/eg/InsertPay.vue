@@ -14,7 +14,7 @@
       <!-- 총 미결제 금액 -->
       <div class="card red">
         <p class="label">총 미결제 금액</p>
-        <p class="amount">₩{{ formatCurrency(summary.totalUnpaid) }}</p>
+        <p class="amount">₩{{ formatCurrency(summaryComputed.totalUnpaid) }}</p>
       </div>
 
       <div class="formula-icon">➖</div>
@@ -22,23 +22,21 @@
       <!-- 승인된 반품 총액 -->
       <div class="card green">
         <p class="label">승인된 반품 총액</p>
-        <p class="amount">₩{{ formatCurrency(summary.thisMonthReturnAmount) }}</p>
+        <p class="amount">₩{{ formatCurrency(summaryComputed.thisMonthReturnAmount) }}</p>
       </div>
 
       <div class="formula-icon">=</div>
 
-      <!-- 최종 납부 예정 금액 -->
+      <!-- 이번 납부 예정 금액 -->
       <div class="card blue">
         <p class="label">이번 납부 예정 금액</p>
-        <p class="amount">
-          ₩{{ formatCurrency(summary.totalUnpaid - summary.thisMonthReturnAmount) }}
-        </p>
+        <p class="amount">₩{{ formatCurrency(summaryComputed.currentPayable) }}</p>
       </div>
 
       <!-- 다음 납부 예정 금액 -->
       <div class="card orange">
         <p class="label">다음 납부 예정 금액</p>
-        <p class="amount">₩{{ formatCurrency(summary.upcomingAmount) }}</p>
+        <p class="amount">₩{{ formatCurrency(summaryComputed.upcomingAmount) }}</p>
       </div>
     </section>
 
@@ -62,7 +60,7 @@
 
     <!-- ===== [탭] 미결제 내역 ===== -->
     <div v-if="activeTab === 'pending'" class="tab-content">
-      <h4 class="section-title">미결제 주문, 반품 내역</h4>
+      <h4 class="section-title">미결제 주문 내역</h4>
 
       <div class="table-toolbar">
         <div class="search-container">
@@ -87,24 +85,45 @@
         <template #header>
           <div v-if="selectedOrders.length > 0" class="selected-summary">
             <span>{{ selectedOrders.length }}개 항목 선택됨</span>
-            <span>총 선택 금액: <strong>₩{{ formatCurrency(selectedTotal) }}</strong></span>
+            <span>
+              총 선택 금액:
+              <strong>₩{{ formatCurrency(selectedTotal) }}</strong>
+            </span>
           </div>
         </template>
 
         <Column selectionMode="multiple" headerStyle="width:50px" />
         <Column field="orderId" header="주문번호" style="width:140px;" />
         <Column field="prodName" header="제품명" style="width:240px;" />
-        <Column field="totalPrice" header="주문금액" style="width:150px; text-align:right;">
+
+        <!-- 총 주문 금액 -->
+        <Column field="totalPrice" header="총 주문금액" style="width:150px; text-align:right;">
           <template #body="{ data }">
             ₩{{ formatCurrency(data.totalPrice) }}
           </template>
         </Column>
+
+        <!-- 반품 금액 -->
+        <Column field="returnPrice" header="반품금액" style="width:150px; text-align:right;">
+          <template #body="{ data }">
+            ₩{{ formatCurrency(data.returnPrice) }}
+          </template>
+        </Column>
+
+        <!-- 실결제 금액 -->
+        <Column field="finalAmount" header="실결제금액" style="width:150px; text-align:right;">
+          <template #body="{ data }">
+            ₩{{ formatCurrency(data.finalAmount) }}
+          </template>
+        </Column>
+
         <Column field="sendDate" header="출고일자" style="width:140px;">
           <template #body="{ data }">
             {{ formatDate(data.sendDate) }}
           </template>
         </Column>
-        <Column field="orderStatus" header="주문상태" style="width:140px;" />
+
+        <Column field="status" header="주문상태" style="width:140px;" />
         <Column field="paydueDate" header="결제기한" style="width:140px;">
           <template #body="{ data }">
             {{ formatDate(data.paydueDate) }}
@@ -113,7 +132,6 @@
       </DataTable>
     </div>
 
-    
     <!-- ===== [탭] 납부 처리 ===== -->
     <div v-else-if="activeTab === 'pay'" class="tab-content pay-section">
       <!-- 좌측 납부 요약 -->
@@ -121,8 +139,8 @@
         <h3 class="section-title"><i class="pi pi-check-circle"></i> 납부 요약</h3>
         <div class="summary-list">
           <div v-for="order in selectedOrders" :key="order.orderId" class="summary-item">
-            <span>{{ order.prodName }} + 외 {{ order.extraCount }}건</span>
-            <span>₩{{ formatCurrency(order.totalPrice) }}</span>
+            <span>{{ order.prodName }}</span>
+            <span>₩{{ formatCurrency(order.finalAmount) }}</span>
           </div>
         </div>
         <div class="summary-total">
@@ -161,36 +179,19 @@ import { useToast } from 'primevue/usetoast'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
-const vendorId = ref(null);
+const vendorId = ref(null)
 const toast = useToast()
 const today = new Date().toLocaleDateString('ko-KR')
 
 // ===== 탭 상태 =====
 const activeTab = ref('pending')
 
-// ===== 상단 카드 데이터 =====
-const summary = ref({
-  totalUnpaid: 0,
-  thisMonthReturnAmount: 0,
-  upcomingAmount: 0
-})
-
-const fetchSummary = async () => {
-  try {
-    const res = await axios.get('/api/paymentsummary')
-    if (res.data && res.data.status === 'success') {
-      summary.value = res.data.data || {}
-    }
-  } catch (error) {
-    console.error('상단 카드 데이터 불러오기 실패:', error)
-  }
-}
-
 // ===== 미결제 내역 =====
 const orders = ref([])
 const selectedOrders = ref([])
 const searchQuery = ref('')
 
+// 미결제 데이터 가져오기
 const fetchOrders = async () => {
   try {
     const res = await axios.get('/api/pendingorders')
@@ -200,6 +201,7 @@ const fetchOrders = async () => {
   }
 }
 
+// 검색 필터
 const filteredOrders = computed(() => {
   if (!searchQuery.value) return orders.value
   return orders.value.filter(order =>
@@ -208,7 +210,35 @@ const filteredOrders = computed(() => {
   )
 })
 
-const selectedTotal = computed(() => selectedOrders.value.reduce((sum, order) => sum + (order.totalPrice || 0), 0))
+// 선택한 항목 합계
+const selectedTotal = computed(() => 
+  selectedOrders.value.reduce((sum, order) => sum + (order.finalAmount || 0), 0)
+)
+
+// ===== 상단 카드 계산 =====
+const summaryComputed = computed(() => {
+  const totalUnpaid = orders.value.reduce((sum, order) => sum + (order.totalPrice || 0), 0)
+  const thisMonthReturnAmount = orders.value.reduce((sum, order) => sum + (order.returnPrice || 0), 0)
+
+  // 이번 납부 예정 금액
+  const currentPayable = totalUnpaid - thisMonthReturnAmount
+
+  // 다음 납부 예정 금액 (예: 이번 달 이후 출고 건)
+  const upcomingAmount = orders.value
+    .filter(order => {
+      const sendDate = new Date(order.sendDate)
+      const today = new Date()
+      return sendDate.getMonth() > today.getMonth() // 다음 달 이후 출고
+    })
+    .reduce((sum, order) => sum + (order.finalAmount || 0), 0)
+
+  return {
+    totalUnpaid,
+    thisMonthReturnAmount,
+    currentPayable,
+    upcomingAmount
+  }
+})
 
 // ===== 카카오페이 결제 요청 =====
 onMounted(() => {
@@ -223,7 +253,6 @@ const requestPay = () => {
   }
 
   const IMP = window.IMP
-  const orderIds = selectedOrders.value.map(o => o.orderId).join(',')
 
   IMP.request_pay(
     {
@@ -245,16 +274,16 @@ const requestPay = () => {
             impUid: rsp.imp_uid,
             merchantUid: rsp.merchant_uid,
             payAmount: selectedTotal.value,
-            vendorId: 'VEN001', // 수정해야함
+            vendorId: vendorId.value,
             payType: '카카오페이',
             paymentDetails: selectedOrders.value.map(order => ({
-              dataType: 'ORDER',
               orderId: order.orderId,
-              totalPrice: order.totalPrice
+              totalPrice: order.totalPrice,
+              returnPrice: order.returnPrice,
+              finalAmount: order.finalAmount
             }))
           }
 
-          console.log(payload)
           await axios.post('/api/verify-payment', payload)
 
           toast.add({
@@ -298,20 +327,15 @@ const formatCurrency = (value) => {
   return value ? value.toLocaleString('ko-KR') : '0'
 }
 
+// ===== 초기 로드 =====
 onMounted(() => {
-  fetchSummary()
   fetchOrders()
   vendorId.value = userStore.code
-  console.log(vendorId.value)
 })
 </script>
 
-
-
-
 <style scoped>
 /* ===== 공통 스타일 ===== */
-
 .header {
   display: flex;
   justify-content: space-between;
@@ -330,18 +354,15 @@ onMounted(() => {
   color: #333;
 }
 
-
-/* ===== 상단 카드 - 균등 + 아이콘 작게 ===== */
+/* ===== 상단 카드 ===== */
 .summary-cards-formula {
   display: grid;
-  grid-template-columns: 2fr 0.3fr 2fr 0.3fr 2fr 2fr; /* 카드 넓게, 아이콘 작게 */
+  grid-template-columns: 2fr 0.3fr 2fr 0.3fr 2fr 2fr;
   align-items: stretch;
   gap: 12px;
   margin: 20px 0;
   width: 100%;
 }
-
-/* ===== 카드 공통 ===== */
 .summary-cards-formula .card {
   min-width: 160px;
   min-height: 140px;
@@ -357,11 +378,9 @@ onMounted(() => {
   transition: transform 0.2s ease, background 0.2s ease;
   height: 100%;
 }
-
 .summary-cards-formula .card:hover {
   transform: translateY(-4px);
 }
-
 .card .label {
   color: #666;
   font-size: 0.9rem;
@@ -372,60 +391,38 @@ onMounted(() => {
   font-weight: bold;
 }
 
-/* ===== 색상 ===== */
-.red .amount {
-  color: #e74c3c;
-}
-.green .amount {
-  color: #27ae60;
-}
-.blue .amount {
-  color: #2980b9;
-}
-.orange .amount {
-  color: #f39c12;
-}
+/* 색상 */
+.red .amount { color: #e74c3c; }
+.green .amount { color: #27ae60; }
+.blue .amount { color: #2980b9; }
+.orange .amount { color: #f39c12; }
 
-/* ===== ➖, = 아이콘 ===== */
 .formula-icon {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1.4rem; /* 작게 */
+  font-size: 1.4rem;
   font-weight: bold;
   color: #888;
   height: 100%;
   min-height: 140px;
-  background: transparent; /* 배경 제거 */
+  background: transparent;
   box-shadow: none;
 }
 
-/* ===== 반응형 ===== */
-
-/* 태블릿 이하: 2열 */
+/* 반응형 */
 @media (max-width: 1024px) {
   .summary-cards-formula {
     grid-template-columns: repeat(2, 1fr);
   }
   .formula-icon {
-    display: none; /* 태블릿부터 아이콘 숨김 */
+    display: none;
   }
 }
-
-/* 모바일 이하: 1열 */
 @media (max-width: 480px) {
   .summary-cards-formula {
     grid-template-columns: 1fr;
   }
-}
-
-
-/* ===== 거래 요약 3개 카드 ===== */
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin: 20px 0;
 }
 
 /* ===== 탭 ===== */
@@ -456,16 +453,10 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 10px;
 }
-
-.table-toolbar.between {
-  justify-content: space-between;
-}
-
 .search-container {
   position: relative;
   width: 280px;
 }
-
 .search-icon {
   position: absolute;
   left: 10px;
@@ -479,33 +470,6 @@ onMounted(() => {
   height: 34px;
   width: 100%;
   border: 1px solid #ccc;
-}
-
-.filters {
-  display: flex;
-  gap: 10px;
-}
-.export-btn {
-  background: #f4f4f4;
-  border: none;
-  color: #333;
-}
-
-/* ===== 상태 뱃지 ===== */
-.status-badge {
-  padding: 3px 8px;
-  border-radius: 6px;
-  color: white;
-  font-size: 0.8rem;
-}
-.status-badge.완료 {
-  background: #27ae60;
-}
-.status-badge.대기중 {
-  background: #f39c12;
-}
-.status-badge.실패 {
-  background: #e74c3c;
 }
 
 /* ===== 납부 처리 ===== */
@@ -525,13 +489,6 @@ onMounted(() => {
   font-weight: bold;
   margin-bottom: 12px;
 }
-
-.radio-group {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
 .pay-btn {
   background-color: #000;
   color: #fff;
@@ -544,8 +501,6 @@ onMounted(() => {
 .pay-btn:hover {
   background-color: #333;
 }
-
-/* ===== 결제 요약 ===== */
 .summary-list {
   display: flex;
   flex-direction: column;
@@ -558,7 +513,6 @@ onMounted(() => {
   border-bottom: 1px solid #eee;
   font-size: 0.9rem;
 }
-
 .summary-total {
   margin-top: 12px;
   padding-top: 8px;
@@ -570,7 +524,6 @@ onMounted(() => {
   font-weight: bold;
   font-size: 1.1rem;
 }
-
 .selected-summary {
   display: flex;
   justify-content: flex-end;
@@ -578,5 +531,4 @@ onMounted(() => {
   font-size: 1rem;
   padding: 4px 10px;
 }
-
 </style>

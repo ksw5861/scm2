@@ -32,4 +32,9 @@ public interface ReturnMapper {
         @Param("prodName") String prodName
     );
     List<ReturnDetailVO> getReturnableOrderDetails(@Param("orderId") String orderId);
+
+
+    // 5. 반품 상태 변경
+     int updateStatus(@Param("returnId") String returnId,
+                     @Param("status") String status);
 }

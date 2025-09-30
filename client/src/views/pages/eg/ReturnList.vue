@@ -8,6 +8,26 @@
         <Button label="조회" icon="pi pi-search" class="p-button-primary" @click="fetchReturns" />
         <Button label="엑셀 다운로드" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel" />
         <Button label="PDF 출력" icon="pi pi-file-pdf" class="p-button-danger" @click="exportPDF" />
+         <!-- 대기 상태일 때만 "배송중 처리" 버튼 -->
+        <Button 
+          v-if="selectedReturn && selectedReturn.returnStatus === '대기'" 
+          label="배송중 처리" 
+          icon="pi pi-truck" 
+          class="p-button-warning" 
+          @click="updateReturnStatus('배송중')" 
+        />
+
+
+
+        <!-- 배송중 상태일 때만 "배송완료 처리" 버튼 -->
+        <Button 
+          v-if="selectedReturn && selectedReturn.returnStatus === '배송중'" 
+          label="배송완료 처리" 
+          icon="pi pi-check" 
+          class="p-button-success" 
+          @click="updateReturnStatus('배송완료')" 
+        />
+        
       </div>
     </div>
 
@@ -25,9 +45,9 @@
       <div class="filter-group">
         <span class="filter-label">반품상태</span>
         <div class="status-buttons">
-          <Button label="대기" :class="{selected: filters.status === 'REQ'}" @click="() => { filters.status = 'REQ'; fetchReturns(); }" />
-          <Button label="승인" :class="{selected: filters.status === 'APPROVE'}" @click="() => { filters.status = 'APPROVE'; fetchReturns(); }" />
-          <Button label="반려" :class="{selected: filters.status === 'REJECT'}" @click="() => { filters.status = 'REJECT'; fetchReturns(); }" />
+          <Button label="대기" :class="{selected: filters.status === '대기'}" @click="() => { filters.status = '대기'; fetchReturns(); }" />
+          <Button label="승인" :class="{selected: filters.status === '승인'}" @click="() => { filters.status = '승인'; fetchReturns(); }" />
+          <Button label="반려" :class="{selected: filters.status === '반려'}" @click="() => { filters.status = '반려'; fetchReturns(); }" />
         </div>
       </div>
 
@@ -112,7 +132,7 @@
           <Column field="returnWhy" header="반품사유" style="width:150px;" />
 
           <!-- 상태 컬럼 -->
-          <Column field="rdetailStatus" header="상태" style="width:100px; text-align:center;">
+          <Column field="rdetailStatus" header="개별상태" style="width:100px; text-align:center;">
             <template #body="slotProps">
               <span :class="statusClass(slotProps.data.rdetailStatus)">
                 {{ statusLabel(slotProps.data.rdetailStatus) }}
@@ -186,19 +206,19 @@ const formatDateForAPI = (date) => {
 /* ===== 상태 라벨 ===== */
 const statusLabel = (status) => {
   switch (status) {
-    case 'REQ': return '대기'
-    case 'APPROVE': return '승인'
-    case 'REJECT': return '반려'
-    default: return status || '-'
+    case '대기': return '대기'
+    case '승인': return '승인'
+    case '반려': return '반려'
+    default: return status || ''
   }
 }
 
 /* ===== 상태별 CSS 클래스 ===== */
 const statusClass = (status) => {
   return {
-    'status-wait': status === 'REQ',
-    'status-approve': status === 'APPROVE',
-    'status-reject': status === 'REJECT'
+    'status-wait': status === '대기',
+    'status-approve': status === '승인',
+    'status-reject': status === '반려'
   }
 }
 
@@ -271,6 +291,30 @@ watch(
     }
   }
 )
+/* ===== 반품 상태 업데이트 ===== */
+const updateReturnStatus = async (newStatus) => {
+  if (!selectedReturn.value) {
+    alert("반품 건을 먼저 선택하세요.")
+    return
+  }
+
+  try {
+    const { data } = await axios.put(`/api/returns/${selectedReturn.value.returnId}/status`, {
+      status: newStatus
+    })
+
+    if (data.status === "success") {
+      alert(`반품 상태가 '${newStatus}'(으)로 변경되었습니다.`)
+      // 화면 갱신
+      fetchReturns()
+    } else {
+      alert(data.message || "상태 변경 실패")
+    }
+  } catch (error) {
+    console.error("반품 상태 변경 오류:", error)
+    alert("서버 오류로 상태를 변경하지 못했습니다.")
+  }
+}
 
 /* ===== 초기화 ===== */
 const resetFilters = () => {

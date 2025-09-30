@@ -111,4 +111,12 @@ public class OrderServiceImpl implements OrderService {
     public int getProductCount() {
         return orderMapper.getProductCount();
     }
+
+    // ===============================================================
+    // 8. 주문 상태 변경
+    // ===============================================================
+    @Override
+    public boolean updateOrderStatus(String orderId, String status) {
+        return orderMapper.updateStatus(orderId, status) > 0;
+    }
 }
