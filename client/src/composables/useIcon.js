@@ -22,7 +22,9 @@ const iconMap = {
   phone: 'pi pi-phone',
   id: 'pi pi-id-card',
   cancel: 'pi pi-times',
-  minus: 'pi pi-minus'
+  minus: 'pi pi-minus',
+  signout: 'pi pi-sign-out',
+  login: 'pi pi-sign-in'
 };
 
 export const useIcon = (name) => {
