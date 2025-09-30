@@ -99,8 +99,8 @@ const handleEmployeeSelect = (item) => {
   >
 
   <!-- 창고 모달 (프론트엔드 페이징) -->
-  <Modal :visible="isWarehouseModalVisible" 
-  title="창고 검색" 
+  <Modal :visible="isWarehouseModalVisible"
+  title="창고 검색"
   :columns="warehouseColumns"
    dataKey="whId" :fetchData="fetchWarehouseList" :pageSize="5" :frontPagination="true"
     @select="handleWarehouseSelect" @close="isWarehouseModalVisible = false" />
@@ -108,6 +108,6 @@ const handleEmployeeSelect = (item) => {
   <!-- 사원 모달 (백엔드 페이징) -->
   <Modal :visible="isEmployeeModalVisible" title="사원 검색" :columns="employeeColumns"
    dataKey="employeeId" :fetchData="fetchEmployeeList" :pageSize="3" :frontPagination="false"
-  @select="handleEmployeeSelect" 
+  @select="handleEmployeeSelect"
   @close="isEmployeeModalVisible = false" />
 </template>

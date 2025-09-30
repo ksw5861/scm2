@@ -32,31 +32,36 @@ const breadcrumbItems = computed(() => {
 
 const matOutColumns = [
   { label: '납기요청일', field: 'dueDate' },
-  { label: '주문번호', field: 'orderNo' },
+  { label: '주문번호', field: 'purNo' },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
   { label: '구매처 담당자', field: 'buyerName' },
   { label: '주문수량', field: 'orderQty' },
   { label: '단위', field: 'unit' },
+  { label: '잔여수량', field: 'restQty' },
   { label: '출고수량', field: 'outQty', inputText: true },
-  { label: '남은수량', field: 'restQty' },
+  //{ label: '배송지', field: 'outQty', select: true },
+  { label: '누적출고수량', field: 'outTotalQty' },
   { label: '상태', field: 'releaseStatus' },
-  { label: '승인일', field: 'approveDate' }
+  { label: '출고승인일', field: 'approveDate' }
 ];
 
-onMounted(async () => {
+const pageLoad = async () => {
   try {
     const list = await axios.get(`/api/supplier/releaseList/${vendorId.value}`);
+    console.log(list);
+
     matOutData.value = list.data.map((item) => ({
       id: item.purId,
       dueDate: useDateFormat(item.dueDate).value,
-      orderNo: item.purNo,
+      purNo: item.purNo,
       matId: item.matId,
       matName: item.materialVO.matName,
       buyerName: item.empName,
       orderQty: item.reqQty,
       unit: item.materialVO.unit,
-      outQty: item.outTotalQty,
+      outQty: '',
+      outTotalQty: item.outTotalQty,
       restQty: item.reqQty - item.outTotalQty,
       releaseStatus: item.purMatStatus,
       approveDate: useDateFormat(item.purStatusLogVO.reDate).value
@@ -64,37 +69,13 @@ onMounted(async () => {
   } catch (error) {
     toast('error', '리스트 로드 실패', '리스트 불러오기 실패:', '3000');
   }
+};
+//vp
+onMounted(() => {
+  pageLoad();
 });
 
-//1) 전량출고, 2) 부분출고 => 프로시저써서 분기
-// 출고시에 입고테이블 데이터 넣고, 입고는 마스터+ 디테일로 나뉨. => 1) 입고마스터 insert하고 데이터 받아서, 2) 디테일을 순환하면서 insert
-
-/*
- 
-보내야 할 데이터 [ 거래처코드, [자재코드들(복수)+출고수량] =>  ]
-
-
-pur_id로 식별
-1) 누적출고수량(out_total_qty),   
-  상태값(pur_mat+status)
-
-=> 유효성검사 -> req값보다 많으면 안됨. (프론트)   
-=> req랑 (out_total_qty+outQty) 비교후 
-if 1) 일치= 출고완료'ms4' 
-    2) 자재구매이력
-  pur_id, 거래처코드, 상태값
-
-out_total_qty도 insert
-  
-else 2) 불일치 부분출고로 상태값'ms5'
-      2) 자재구매이력
-         pur_id, 거래처코드, 상태값
-
-out_total_qty도 insert
-
- */
-
-const outBound = async () => {
+const shipment = async () => {
   //선택행 없으면 출고처리 선택 안내
   //   if (!matOutData.value.orderQty) {
   //   toast('info', '유효성 검사', '출고 수량을 입력해 주세요.', '3000');
@@ -106,28 +87,23 @@ const outBound = async () => {
   //   return;
   // }
 
+  //잔여수량대비 많으면 안됨.
+
   const list = JSON.parse(JSON.stringify(selectedRows.value));
 
   const payload = list.map((row) => ({
     purId: row.id,
     matId: row.matId,
-    orderNo: row.orderNo,
-    outQty: row.outQty,
+    purNo: row.purNo,
+    purStatusLogVO: { supOutQty: row.outQty }, //이걸 백 로그VO에 넣기위해!
     vendorId: vendorId.value //이렇게 넣으면 행 마다 다 들어감.
   }));
 
   console.log(payload);
 
   try {
-    const res = await axios.post('/api/supplier/releaseMatrial', payload);
-    //1차 (다품목 출고로 for문 돌면서 작업)
-    // 자재요청테이블에 출고수량, 상태값 update
-    //=> 프로시저로 파라미터로 들어온 출고수량 비교 후
-    // 부분출고(ms5), 전량출고(ms4)
-    //상태값 log insert
-    //2차 입고테이블 insert [마스터: 입고대기/디테일: 입고대기]
-    //1) 마스터테이블 데이터 insert 후 반환값 or 가장최근 마스터테이블 아이디 seq값 받아서
-    //2) 디테일 품목들 insert 함.(for문)
+    const res = await axios.post('/api/supplier/shipMaterial', payload);
+    pageLoad();
   } catch (error) {
     toast('error', '출고등록 실패', '출고등록  실패:', '3000');
   }
@@ -170,7 +146,7 @@ const outBound = async () => {
     <!--테이블영역--><!--테이블영역-->
     <div class="card flex flex-col gap-4">
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="info" icon="pi pi-file-pdf" @click="outBound" label="승인" />
+        <btn color="info" icon="pi pi-file-pdf" @click="shipment" label="승인" />
       </div>
       <div class="font-semibold text-xl mb-5">출고대기 목록</div>
       <selectTable v-model:selection="selectedRows" :columns="matOutColumns" :data="matOutData" :paginator="true" :rows="15" />

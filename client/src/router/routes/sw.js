@@ -22,9 +22,9 @@ const sw = {
       }
     },
     {
-      path: '/warehouse1',
+      path: '/warehouse',
       name: '창고관리',
-      component: () => import('@/views/pages/sw/WareHouse1.vue'),
+      component: () => import('@/views/pages/sw/WareHouse.vue'),
       meta: {
         requiresAuth: true,
         roles: ['admin']

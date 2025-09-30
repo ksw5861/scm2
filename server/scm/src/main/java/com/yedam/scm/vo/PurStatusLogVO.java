@@ -12,4 +12,5 @@ public class PurStatusLogVO {
     private String name;         // NAME
     private String purMatStatus; // PUR_MAT_STATUS
     private Long purId;          // PUR_ID
+    private Long supOutQty;      //공급처 출고수량 (for 부분출고)
 }

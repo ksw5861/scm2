@@ -45,9 +45,9 @@ public class SupplierController {
     }
     
     //출고처리
-    @PostMapping("/releaseMaterial")
-    public int insertReleaseData(@RequestBody List<PurchaseMatVO> payload) {
-        return service.insertReleaseData(payload);
+    @PostMapping("/shipMaterial")
+    public void insertReleaseData(@RequestBody List<PurchaseMatVO> payload) {
+         service.insertReleaseData(payload);
     }
 
 }
