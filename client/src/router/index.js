@@ -140,7 +140,7 @@ const router = createRouter({
 
 const changePasswordPath = '/change-password';
 
-const publicPages = ['/login'];
+const publicPages = ['/login', '/devlogin'];
 
 router.beforeEach(async (to, from, next) => {
   if (publicPages.includes(to.path)) {

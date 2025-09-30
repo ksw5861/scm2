@@ -15,6 +15,14 @@ const login = {
       meta: {
         requiresAuth: true
       }
+    },
+    {
+      path: '/devlogin',
+      name: '관리자 로그인',
+      component: () => import('@/views/pages/dh/DevLogin.vue'),
+      meta: {
+        requiresAuth: false,
+      }
     }
   ]
 };
