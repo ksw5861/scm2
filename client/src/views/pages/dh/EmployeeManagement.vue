@@ -965,8 +965,17 @@ onMounted(fetchEmployeeList);
       </div>
     </div>
 
-    <Dialog v-model:visible="isImageModalVisible " modal header="사진 보기" :style="{ width: '400px' }">
-      <img :src="modalImage || defaultPhoto" class="w-full object-contain rounded-lg" alt="확대 이미지" @error="handleImageError" />
+    <Dialog v-model:visible="isImageModalVisible" modal :style="{ width: '400px' }" :closable="false" @hide="close">
+
+        <template #header>
+            <div class="text-lg font-bold flex justify-between items-center w-full">
+                프로필 사진
+                <Button icon="pi pi-times" class="p-button-text" @click="isImageModalVisible = false" />
+            </div>
+        </template>
+
+        <img :src="modalImage || defaultPhoto" class="w-full object-contain rounded-lg" alt="확대 이미지" @error="handleImageError" />
+
     </Dialog>
   </Fluid>
 </template>
