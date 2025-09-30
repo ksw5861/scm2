@@ -15,6 +15,19 @@
         AND is_active = 'Y'
   </select>
 
+  <select id="selectAdminAccountByEmailAndPassword" parameterType="LoginDTO" resultType="LoginRes">
+    SELECT account_id,
+           password_hash,
+           code,
+           name,
+           temp_password,
+           division as role
+      FROM account
+      WHERE email = #{email}
+        AND is_active = 'Y'
+        AND division = '0'
+  </select>
+
   <update id="updateAccountPassword">
     UPDATE account
     SET password_hash = #{password},

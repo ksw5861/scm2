@@ -72,7 +72,8 @@
           </Column>
 
           <Column field="deliveryDate" header="배송예정일" style="width:140px; text-align:center;" />
-          <Column field="status" header="상태" style="width:120px; text-align:center;" />
+          <Column field="status" header="주문상태" style="width:120px; text-align:center;" />
+          <Column field="payStatus" header="결제상태" style="width:120px; text-align:center;" />
         </DataTable>
       </div>
 
@@ -201,7 +202,9 @@ const fetchOrders = async () => {
         prodName: item.prodName || '-',
         totalPrice: item.totalPrice || 0,
         deliveryDate: addDays(item.orderDate, 2),
-        status: item.status || '-'
+        status: item.status || '-',
+        payStatus: item.payStatus || '-'
+      
       }))
     } else {
       alert(data.message || '주문 목록을 불러오지 못했습니다.')

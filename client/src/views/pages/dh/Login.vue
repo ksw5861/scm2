@@ -19,6 +19,10 @@ const qrCode = ref(null);
 const smsUrl = ref(null);
 const isMobile = ref(false);
 
+const countdown = ref(60);
+const countdownInterval = ref(null);
+const qrExpired = ref(false);
+
 const handleKey = (event) => {
   capsLockOn.value = event.getModifierState && event.getModifierState('CapsLock');
 };
@@ -75,8 +79,21 @@ const login = async () => {
 
     const result = await axios.post('/api/auth', param, { withCredentials: true });
     qrCode.value = result.data.qrCodeImage;  // 서버에서 QR 이미지 받아옴
-    smsUrl.value = result.data.smsUrl
-    console.log(smsUrl.value);
+    smsUrl.value = result.data.smsUrl;
+
+    // 카운트다운 초기화 및 시작
+    countdown.value = 60;
+    qrExpired.value = false;
+    if (countdownInterval.value) clearInterval(countdownInterval.value);
+    countdownInterval.value = setInterval(() => {
+      if (countdown.value > 0) {
+        countdown.value--;
+      } else {
+        clearInterval(countdownInterval.value);
+        qrExpired.value = true;
+      }
+    }, 1000);
+
   } catch (e) {
     if (e.response) {
       switch (e.response.status) {
@@ -126,6 +143,9 @@ const handleVerify = async () => {
 
     if (msg === '인증되지 않은 사용자입니다.') {
       qrCode.value = null;
+      qrExpired.value = false;
+      countdown.value = 60;
+      if (countdownInterval.value) clearInterval(countdownInterval.value);
     }
   } finally {
     isDisabled.value = false;
@@ -142,6 +162,19 @@ const isStrictMobile = () => {
     /iPhone|iPad|iPod|Android/i.test(ua) &&
     !/Windows|Macintosh|Linux/i.test(ua)
   );
+};
+
+const resetLogin = () => {
+  qrCode.value = null;
+  smsUrl.value = null;
+  qrExpired.value = false;
+  countdown.value = 60;
+  if (countdownInterval.value) {
+    clearInterval(countdownInterval.value);
+    countdownInterval.value = null;
+  }
+  password.value = '';
+  isDisabled.value = false;
 };
 
 onMounted(() => {
@@ -162,6 +195,10 @@ onBeforeUnmount(() => {
   if (badge) {
     badge.remove();
   }
+
+  if (countdownInterval.value) {
+    clearInterval(countdownInterval.value);
+  }
 });
 </script>
 
@@ -172,9 +209,14 @@ onBeforeUnmount(() => {
     >
 
       <form v-if="!qrCode" @submit.prevent="login" class="w-full max-w-md">
+        <div class="mb-4">
+            <i class="pi pi-user text-primary p-1" style="font-size: 2.5rem;"></i>
+        </div>
         <div class="text-left mb-10">
-          <div class="text-surface-900 dark:text-surface-0 text-3xl font-semibold mb-4">로그인</div>
-          <span class="text-muted-color font-medium">2조 SCM</span>
+        <div class="flex items-center text-surface-900 dark:text-surface-0 text-3xl font-semibold mb-4">
+            로그인
+        </div>
+        <span class="text-muted-color font-medium">2조 SCM</span>
         </div>
 
         <label for="email" class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-3">
@@ -227,22 +269,31 @@ onBeforeUnmount(() => {
         />
       </form>
 
-        <div v-else class="mt-6 flex flex-col items-center justify-center">
+      <div v-else class="mt-6 flex flex-col items-center justify-center">
         <h2 class="text-xl font-semibold text-center mb-4 text-surface-900 dark:text-surface-0">
-            모바일에서 QR을 스캔하여 인증하여주세요.
+          모바일에서 QR을 스캔하여 인증해주세요.
         </h2>
 
         <img :src="qrCode" alt="QR 코드" class="w-[316px] h-[316px] object-contain mb-6" />
 
+        <p class="text-gray-500 text-sm mb-4" v-if="!qrExpired">
+          QR 인증 유효 시간: <span class="font-medium">{{ countdown }}</span>초
+        </p>
+
+        <p class="text-red-500 text-sm mb-4" v-if="qrExpired">
+          ⚠ 인증 시간이 만료되었습니다.
+        </p>
+
         <a
-            v-if="isMobile && smsUrl"
-            :href="smsUrl"
-            class="w-full h-14 mb-4 rounded-md text-lg flex items-center justify-center bg-primary text-white font-medium hover:bg-primary-700 transition-colors"
+          v-if="isMobile && smsUrl && !qrExpired"
+          :href="smsUrl"
+          class="w-full h-14 mb-4 rounded-md text-lg flex items-center justify-center bg-primary text-white font-medium hover:bg-primary-700 transition-colors"
         >
-            문자로 인증 요청하기
+          문자로 인증 요청하기
         </a>
 
         <Button
+          v-if="!qrExpired"
           :label="isVerifying ? '인증 중...' : '인증 완료'"
           class="w-full h-14 rounded-md text-lg"
           :disabled="isDisabled"
@@ -250,8 +301,13 @@ onBeforeUnmount(() => {
           :loading="isVerifying"
         />
 
-        </div>
-
+        <Button
+          v-if="qrExpired"
+          label="다시 로그인하기"
+          class="w-full h-14 rounded-md text-lg"
+          @click="resetLogin"
+        />
+      </div>
 
     </div>
   </div>
@@ -265,6 +321,6 @@ onBeforeUnmount(() => {
 
 .pi-eye-slash {
   transform: scale(1.6);
-  margin-right: 1rem;
+  margin-right: 1;
 }
 </style>

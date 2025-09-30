@@ -9,6 +9,9 @@ public interface LoginService {
     // 이메일과 비밀번호로 로그인
     LoginRes loginByEmailAndPassword(LoginDTO login);
 
+    // 개발용 관리자 계정 로그인 (2차 인증 없음)
+    LoginRes loginAdminByEmailAndPassword(LoginDTO login);
+
     // 비밀번호 변경
     boolean modifyAccountPassword(String accountId, String newPassword);
 

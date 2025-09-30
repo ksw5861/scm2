@@ -69,6 +69,7 @@
             so.order_date,
             so.delivery_date,
             so.status,
+            so.pay_status,
             NVL(SUM(d.order_qty * d.prod_unit_price), 0) AS totalPrice,
 
             (
@@ -106,7 +107,7 @@
               AND so.order_id LIKE '%' || #{orderId} || '%'
           </if>
 
-        GROUP BY so.order_id, so.order_date, so.delivery_date, so.status
+        GROUP BY so.order_id, so.order_date, so.delivery_date, so.status, so.pay_status
         ORDER BY so.order_date DESC
     </select>
 
