@@ -14,6 +14,7 @@ import com.yedam.scm.common.service.MailService;
 import com.yedam.scm.dto.EmailDTO;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class MailServiceImpl implements MailService {
@@ -57,8 +58,6 @@ public class MailServiceImpl implements MailService {
      */
     @Override
     public List<EmailDTO> fetchRecentEmails() throws Exception {
-        List<EmailDTO> emailList = new ArrayList<>();
-
         Properties props = new Properties();
         props.put("mail.store.protocol", "imaps");
         props.put("mail.imaps.host", "imap.gmail.com");
@@ -72,30 +71,24 @@ public class MailServiceImpl implements MailService {
         Folder inbox = store.getFolder("INBOX");
         inbox.open(Folder.READ_ONLY);
 
-        Message[] messages = inbox.getMessages();
-        int count = messages.length;
+        int messageCount = inbox.getMessageCount();
+        int start = Math.max(1, messageCount - 9); // 최신 10개만
+        Message[] messages = inbox.getMessages(start, messageCount);
 
-        // 최신 메일 10개만 가져오기 (역순)
-        for (int i = count - 1; i >= Math.max(0, count - 10); i--) {
-            Message message = messages[i];
-            System.out.println(message);
+        FetchProfile fetchProfile = new FetchProfile();
+        fetchProfile.add(FetchProfile.Item.ENVELOPE);
+        fetchProfile.add(FetchProfile.Item.CONTENT_INFO);
+        inbox.fetch(messages, fetchProfile);
 
-            String from = Arrays.stream(message.getFrom())
-                                .filter(InternetAddress.class::isInstance)
-                                .map(addr -> ((InternetAddress) addr).getAddress())
-                                .findFirst()
-                                .orElse("unknown");
+        // 최신순으로 정렬
+        List<Message> latestMessages = Arrays.asList(messages);
+        Collections.reverse(latestMessages);
 
-            String subject = message.getSubject();
-            String body = extractTextFromMessage(message);
-
-            EmailDTO dto = new EmailDTO();
-            dto.setFrom(from);
-            dto.setSubject(subject);
-            dto.setBody(body);
-
-            emailList.add(dto);
-        }
+        // 병렬로 안전하게 DTO 변환
+        List<EmailDTO> emailList = latestMessages.parallelStream()
+            .map(this::toEmailDtoSafely)
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
 
         inbox.close(false);
         store.close();
@@ -104,25 +97,67 @@ public class MailServiceImpl implements MailService {
     }
 
     /**
-     * 메일 내용 텍스트 추출
+     * 메시지를 안전하게 EmailDTO로 변환 (예외 처리 포함)
+     */
+    private EmailDTO toEmailDtoSafely(Message message) {
+        try {
+            String from = Arrays.stream(message.getFrom())
+                    .filter(InternetAddress.class::isInstance)
+                    .map(addr -> ((InternetAddress) addr).getAddress())
+                    .findFirst()
+                    .orElse("unknown");
+
+            String subject = message.getSubject();
+            String body = extractTextFromMessage(message);
+
+            // 본문 미리보기 길이 제한
+            if (body.length() > 500) {
+                body = body.substring(0, 500) + "...";
+            }
+
+            EmailDTO dto = new EmailDTO();
+            dto.setFrom(from);
+            dto.setSubject(subject);
+            dto.setBody(body);
+
+            return dto;
+        } catch (Exception e) {
+            System.err.println("메일 파싱 실패: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 메일 내용 텍스트 추출 (text/plain 우선, 없으면 html)
      */
     private String extractTextFromMessage(Message message) throws Exception {
-        Object content = message.getContent();
-        if (content instanceof String) {
-            return (String) content;
+        if (message.isMimeType("text/plain")) {
+            return message.getContent().toString();
+        } else if (message.isMimeType("text/html")) {
+            return message.getContent().toString(); // 필요 시 HTML 제거 가능
+        } else if (message.isMimeType("multipart/*")) {
+            return extractFromMultipart((MimeMultipart) message.getContent());
         }
-
-        if (content instanceof MimeMultipart) {
-            MimeMultipart multipart = (MimeMultipart) content;
-            StringBuilder result = new StringBuilder();
-
-            for (int i = 0; i < multipart.getCount(); i++) {
-                BodyPart part = multipart.getBodyPart(i);
-                result.append(part.getContent().toString());
-            }
-            return result.toString();
-        }
-
         return "";
+    }
+
+    private String extractFromMultipart(MimeMultipart mimeMultipart) throws Exception {
+        String html = null;
+
+        for (int i = 0; i < mimeMultipart.getCount(); i++) {
+            BodyPart bodyPart = mimeMultipart.getBodyPart(i);
+
+            if (bodyPart.isMimeType("text/plain")) {
+                return bodyPart.getContent().toString();
+            } else if (bodyPart.isMimeType("text/html")) {
+                if (html == null) {
+                    html = bodyPart.getContent().toString();
+                }
+            } else if (bodyPart.getContent() instanceof MimeMultipart) {
+                return extractFromMultipart((MimeMultipart) bodyPart.getContent());
+            }
+        }
+
+        return html != null ? html : "";
     }
 }
