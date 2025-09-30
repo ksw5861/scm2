@@ -122,4 +122,15 @@ public class ReturnServiceImpl implements ReturnService {
     public List<ReturnDetailVO> getReturnableOrderDetails(String orderIds) {
         return returnMapper.getReturnableOrderDetails(orderIds);
     }
+
+    /**
+     * =============================================================
+     * 7. 반품 상태 변경
+     * =============================================================
+     */ 
+    @Override
+    public boolean updateReturnStatus(String returnId, String status) {
+        return returnMapper.updateStatus(returnId, status) > 0;
+    }
+
 }

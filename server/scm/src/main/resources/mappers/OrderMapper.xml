@@ -195,4 +195,15 @@
         LEFT JOIN payment p ON so.vendor_id = p.vendor_id
     </select>
 
+    <!-- ============================= -->
+    <!-- 배송완료건에 대한 주문상태 변경 : 배송중->배송완료 -->
+    <!-- ============================= -->
+    <update id="updateStatus">
+        UPDATE SALES_ORDER
+        SET STATUS = #{status}
+        WHERE ORDER_ID = #{orderId}
+    </update>
+
+
+
 </mapper>

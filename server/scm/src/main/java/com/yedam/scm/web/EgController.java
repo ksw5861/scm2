@@ -158,6 +158,29 @@ public class EgController {
     }
 
     // =================================================================
+    // 3-2. 주문 상태 변경 (예: 배송중 -> 배송완료)
+    // =================================================================
+
+        @PutMapping("/orders/{orderId}/status")
+        public ResponseEntity<?> updateOrderStatus(
+                @PathVariable String orderId,
+                @RequestBody Map<String, String> body) {
+
+            String newStatus = body.get("status");
+            boolean success = orderSvc.updateOrderStatus(orderId, newStatus);
+
+            if (success) {
+                return ResponseEntity.ok(Map.of("status", "success"));
+            } else {
+                return ResponseEntity.badRequest()
+                                    .body(Map.of("status", "fail", "message", "업데이트 실패"));
+            }
+        }
+
+
+
+
+    // =================================================================
     // 4. 반품 등록
     // =================================================================
     @PostMapping("/insertreturn")
@@ -235,6 +258,27 @@ public class EgController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+    // =================================================================
+    // 5-2. 반품 상태 변경 (예: 대기 -> 배송중 -> 배송완료)
+    // =================================================================
+
+       @PutMapping("/returns/{returnId}/status")
+        public ResponseEntity<?> updateReturnStatus(
+        @PathVariable String returnId,
+        @RequestBody Map<String, String> body) {
+
+        String newStatus = body.get("status");
+        boolean success = returnSvc.updateReturnStatus(returnId, newStatus);
+
+        if (success) {
+            return ResponseEntity.ok(Map.of("status", "success"));
+        } else {
+            return ResponseEntity.badRequest()
+                                .body(Map.of("status", "fail", "message", "업데이트 실패"));
+        }
+    }
+
 
 // =================================================================
 // 6. 대금 결제 등록

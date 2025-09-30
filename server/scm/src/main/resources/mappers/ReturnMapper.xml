@@ -170,4 +170,14 @@
 </select>
 
 
+<!-- ============================================================= -->
+ <!-- 6. 반품 상태 변경 -->
+ <!-- ============================================================= -->
+ <update id="updateStatus">
+    UPDATE RETURN_ORDER
+    SET STATUS = #{status}
+    WHERE RETURN_ID = #{returnId}
+</update>
+
+
 </mapper>

@@ -11,7 +11,7 @@ public class ReturnVO {
     private String returnDate;       // 반품일자
     private String vendorId;       // 거래처 ID
     private Long returnPrice;      // 반품 총액
-    private String status;         // 반품 상태 (예: 반품접수, 반품완료)
+    private String returnStatus;         // 반품 상태 (예: 반품접수, 반품완료)
     
     // =========== 주문(반품) 조회용 필드 ===========
     private String orderId;

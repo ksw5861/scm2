@@ -72,4 +72,9 @@ public interface ReturnService {
      */
     List<ReturnDetailVO> getReturnableOrderDetails(String orderId);
 
+
+    /**
+     * 반품 상태 변경
+     */
+    boolean updateReturnStatus(String returnId, String status);
 }
