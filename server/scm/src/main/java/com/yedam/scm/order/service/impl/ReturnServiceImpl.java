@@ -128,9 +128,14 @@ public class ReturnServiceImpl implements ReturnService {
      * 7. 반품 상태 변경
      * =============================================================
      */ 
+    @Transactional
     @Override
     public boolean updateReturnStatus(String returnId, String status) {
-        return returnMapper.updateStatus(returnId, status) > 0;
+        int parent = returnMapper.updateReturnStatusParent(returnId, status);
+        int children = returnMapper.updateReturnStatusChildren(returnId, status);
+
+        // 부모 업데이트 성공 여부 기준으로 반환
+        return parent > 0;
     }
 
 }

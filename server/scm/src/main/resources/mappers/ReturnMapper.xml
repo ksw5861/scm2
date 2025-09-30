@@ -171,11 +171,19 @@
 
 
 <!-- ============================================================= -->
- <!-- 6. 반품 상태 변경 -->
+ <!-- 6. 반품 상태 변경 (대기->배송중)-->
  <!-- ============================================================= -->
- <update id="updateStatus">
-    UPDATE RETURN_ORDER
-    SET STATUS = #{status}
+<!-- 부모 업데이트 -->
+<update id="updateReturnStatusParent" parameterType="map">
+    UPDATE RETURN
+    SET RETURN_STATUS = #{status}
+    WHERE RETURN_ID = #{returnId}
+</update>
+
+<!-- 자식 업데이트 -->
+<update id="updateReturnStatusChildren" parameterType="map">
+    UPDATE RETURN_DETAIL
+    SET RDETAIL_STATUS = #{status}
     WHERE RETURN_ID = #{returnId}
 </update>
 
