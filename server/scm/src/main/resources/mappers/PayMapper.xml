@@ -60,34 +60,65 @@
     )
   </insert>
 
-
 <!-- ==================================== -->
-<!-- 3. 결제 대기중인 주문건 조회 (반품 제외) -->
+<!-- 3. 결제 대기중인 주문건 조회 -->
 <!-- ==================================== -->
 <select id="selectPendingOrders" resultType="SalesOrderVO">
+ WITH order_data AS (
     SELECT 
         so.order_id AS orderId,
         so.order_date AS orderDate,
         so.send_date AS sendDate,
-        CAST(so.total_price AS NUMBER(12,2)) AS totalPrice,
+        ROUND(so.total_price, 2) AS totalPrice,
         so.pay_status AS payStatus,
-        so.status AS status,                
-        so.paydue_date AS paydueDate,       
+        so.status AS orderStatus,
+        so.paydue_date AS paydueDate,
         'ORDER' AS dataType,
+        CASE 
+            WHEN COUNT(sod.prod_name) > 1 THEN 
+                MAX(sod.prod_name) || ' 외 ' || (COUNT(sod.prod_name)-1) || '건'
+            ELSE 
+                MAX(sod.prod_name)
+        END AS prodName
+    FROM SALES_ORDER so
+    JOIN SALES_ORDER_DETAIL sod ON so.order_id = sod.order_id
+    WHERE so.pay_status <![CDATA[<>]]> '완료'
+      AND so.order_date BETWEEN TRUNC(ADD_MONTHS(SYSDATE, -1)) AND SYSDATE
+    GROUP BY 
+        so.order_id, so.order_date, so.send_date, 
+        so.total_price, so.pay_status, so.status, so.paydue_date
+),
+
+return_data AS (
+    SELECT 
+        r.return_id AS orderId,
+        r.return_date AS orderDate,
+        NULL AS sendDate,
+        ROUND(SUM(rd.return_qty * rd.prod_unit_price), 2) AS totalPrice,
+        r.return_pay_status AS payStatus,    
+        r.return_status AS orderStatus,
+        NULL AS paydueDate,
+        'RETURN' AS dataType,
         CASE 
             WHEN COUNT(p.prod_name) > 1 THEN 
                 MAX(p.prod_name) || ' 외 ' || (COUNT(p.prod_name)-1) || '건'
             ELSE 
                 MAX(p.prod_name)
         END AS prodName
-    FROM SALES_ORDER so
-    JOIN SALES_ORDER_DETAIL sod ON so.order_id = sod.order_id
-    JOIN PRODUCT p ON sod.prod_id = p.prod_id
-    WHERE so.pay_status &lt;&gt; '완료'  
-    GROUP BY 
-        so.order_id, so.order_date, so.send_date, 
-        so.total_price, so.pay_status, so.status, so.paydue_date
-    ORDER BY so.order_date DESC
+    FROM RETURN r
+    JOIN RETURN_DETAIL rd ON r.return_id = rd.return_id
+    JOIN PRODUCT p ON rd.prod_id = p.prod_id
+    WHERE r.return_pay_status <![CDATA[<>]]> '완료'
+      AND r.return_date BETWEEN TRUNC(ADD_MONTHS(SYSDATE, -1)) AND SYSDATE
+    GROUP BY r.return_id, r.return_date, r.return_pay_status, r.return_status
+)
+
+SELECT *
+FROM order_data
+UNION ALL
+SELECT *
+FROM return_data
+ORDER BY 2 DESC
 </select>
 
 
@@ -195,12 +226,13 @@
     DELETE FROM payment_detail WHERE pay_id = #{payId}
   </delete>
 
+ 
+ <!-- ==================================== -->
+ <!-- 결제 상태를 완료로 업데이트 -->
   <!-- ==================================== -->
-  <!-- 7. 주문 상태 COMPLETE 업데이트 -->
-  <!-- ==================================== -->
- <update id="updateOrderStatusToComplete">
+<update id="updateOrderStatusToComplete">
     UPDATE sales_order
-    SET status = '완료'
+    SET pay_status = '완료'
     WHERE order_id IN
     <foreach collection="orderIdList" item="id" open="(" separator="," close=")">
         #{id}
