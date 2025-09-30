@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.yedam.scm.order.service.BranchDashService;
 import com.yedam.scm.order.service.IamportService;
 import com.yedam.scm.order.service.OrderService;
 import com.yedam.scm.order.service.ReturnService;
@@ -46,6 +47,10 @@ public class EgController {
 
     @Autowired
     private IamportService iamportService;
+
+    @Autowired
+    private BranchDashService branchDashService;
+
 
     // =================================================================
     // 1. 제품 목록 조회 (모달용)
@@ -514,6 +519,15 @@ public ResponseEntity<Map<String, Object>> verifyPayment(@RequestBody PaymentVO 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }
+
+// =================================================================
+// 대시보드 - 그래프 매출추이
+// =================================================================
+    @GetMapping("/salestrend")
+    public List<Map<String, Object>> getSalesTrend(@RequestParam String vendorId,
+                                                   @RequestParam String range) {
+        return branchDashService.getSalesTrend(vendorId, range);
+    }
 
 
 }

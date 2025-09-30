@@ -8,15 +8,16 @@ import branchDash from "./eg/branchDash";
 
 const order =
   {
-    label: '주문',
+    label: '판매처',
     items: [
+        branchDash,
         insertOrder,
         orderList,
         insertReturn,
         returnList,
         insertPay,
-        payList,
-        branchDash
+        payList
+       
     ]
   };
 
