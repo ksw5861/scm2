@@ -16,6 +16,6 @@ public interface SupplierService {
     //출고대기목록
     List<PurchaseMatVO> getMatWReleaseList(String vendorId);
     //출고등록
-    int insertReleaseData(List<PurchaseMatVO> payload);
+    void insertReleaseData(List<PurchaseMatVO> payload);
 
 }
