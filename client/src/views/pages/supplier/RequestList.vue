@@ -79,7 +79,7 @@ const approve = async () => {
 
   try {
     const res = await axios.post('/api/supplier/approve', { purId: idList, name: vendorId.value });
-    toast('info', '승인 성공', res.value + '건 주문 승인 되었습니다.', '3000');
+    toast('info', '승인 성공', res.value + '주문 승인 성공:', '3000');
 
     pageLoad();
   } catch (error) {

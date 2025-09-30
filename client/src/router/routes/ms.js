@@ -14,8 +14,17 @@ const ms = {
         },
         {
             path: '/purchase',
-            name: '구매등록',
+            name: '주문등록',
             component: () => import('@/views/pages/ms/Purchase.vue'),
+            meta: {
+                requiresAuth: true,
+                roles: ['admin', 'employee']
+            }
+        },
+        {
+            path: '/purchaseList',
+            name: '주문 목록',
+            component: () => import('@/views/pages/ms/PurchaseList.vue'),
             meta: {
                 requiresAuth: true,
                 roles: ['admin', 'employee']

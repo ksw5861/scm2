@@ -18,7 +18,7 @@ const breadcrumbItems = computed(() => {
   const matched = route.matched.filter((r) => r.meta);
   if (!matched.length) return [];
   const current = matched[matched.length - 1];
-  const parentLabel = current.meta?.breadcrumb?.parent || '생산 계획';
+  const parentLabel = current.meta?.breadcrumb?.parent || '자재 입고';
   const currentLabel = current.name || '';
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
