@@ -54,10 +54,16 @@
       <Card class="kpi"><template #title>다음 결제기한 금액</template><template #content><div class="kpi-value">{{ asKRW(kpi.nextDueAmount) }}</div><div class="kpi-sub"><i class="pi pi-clock"></i> 기준일: {{ formatDate(kpi.nextDueDate) }}</div></template></Card>
     </div>
 
-    <!-- 매출 차트 -->
+   <!-- 매출 차트 -->
     <Card class="chart-card">
-      <template #title>최근 30일 매출 추이</template>
-      <template #content><Chart type="line" :data="chartData" :options="chartOptions" /></template>
+      <template #title>
+        매출 추이
+        <Dropdown v-model="selectedRange" :options="rangeOptions" optionLabel="label" 
+                  optionValue="value" class="ml-2" size="small" @change="fetchSalesTrend" />
+      </template>
+      <template #content>
+        <Chart type="line" :data="chartData" :options="chartOptions" />
+      </template>
     </Card>
 
     <!-- 미결제 주문/반품 요약 (카멜케이스) -->
@@ -217,18 +223,35 @@ const fetchNotices = async () => {
   }
 };
 
+
+
+// 단위 선택
+const selectedRange = ref('daily'); 
+const rangeOptions = [
+  { label: '일별', value: 'daily' },
+  { label: '주별', value: 'weekly' },
+  { label: '월별', value: 'monthly' },
+  { label: '연별', value: 'yearly' }
+];
+
 // 매출 추이
 const chartData = ref({ labels: [], datasets: [] });
+
+
 const fetchSalesTrend = async () => {
   try {
-    const { data } = await axios.get('/api/dashboard/sales-trend', {
-      params: { vendorId, days: 30 }
+    const { data } = await axios.get('/api/salestrend', {
+      params: { vendorId, range: selectedRange.value }
     });
+
+    console.log('매출 추이 응답:', data); // ✅ 구조 확인
+
+
     chartData.value = {
-      labels: data.map(d => d.date),
+      labels: data.map(d => d.label || d.LABEL), // API에서 라벨(날짜/주차/월/연) 제공
       datasets: [{
         label: '매출',
-        data: data.map(d => d.amount),
+        data: data.map(d => d.amount || d.AMOUNT),
         borderColor: '#4F46E5',
         backgroundColor: 'rgba(79,70,229,0.08)',
         fill: true,
@@ -240,6 +263,22 @@ const fetchSalesTrend = async () => {
     console.error('매출 추이 조회 오류:', err);
   }
 };
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        callback: function (value) {
+          return (value / 10000).toLocaleString() + '만 원';
+        }
+      }
+    }
+  }
+};
+
 
 
 onMounted(() => {
