@@ -24,7 +24,12 @@ const iconMap = {
   cancel: 'pi pi-times',
   minus: 'pi pi-minus',
   signout: 'pi pi-sign-out',
-  login: 'pi pi-sign-in'
+  login: 'pi pi-sign-in',
+  vendor: 'pi pi-building',
+  box: 'pi pi-box',
+  tags: 'pi pi-tags',
+  bom: 'pi pi-sitemap',
+  inventory: 'pi pi-th-large'
 };
 
 export const useIcon = (name) => {

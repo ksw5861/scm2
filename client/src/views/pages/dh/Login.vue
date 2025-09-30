@@ -124,10 +124,11 @@ const handleVerify = async () => {
     const res = await axios.post('/api/auth/login', null, { withCredentials: true });
 
     if (res.status === 200) {
-      toast('success', '로그인 성공', '정상적으로 로그인되었습니다.');
 
       const meRes = await axios.get('/api/auth/me', { withCredentials: true });
       const user = meRes.data;
+
+      toast('success', '로그인 성공', `${meRes.data.name}님 환영합니다.`);
 
       userStore.setUserInfo(user);
 

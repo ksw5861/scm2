@@ -1,8 +1,37 @@
 <script setup>
+import { ref } from 'vue';
 import { useLayout } from '@/layout/composables/layout';
-import AppConfigurator from './AppConfigurator.vue';
+import { useRouter } from 'vue-router';
+import { useUserStore } from '@/stores/user';
+import { useAppToast } from '@/composables/useAppToast';
+import axios from 'axios';
 
 const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
+const userStore = useUserStore();
+const { toast } = useAppToast();
+const router = useRouter();
+
+const profilePopover = ref(null);
+
+const toggleProfileMenu = (event) => {
+  profilePopover.value.toggle(event);
+};
+
+const logout = async () => {
+  try {
+    const result = await axios.post('/api/auth/logout', {}, { withCredentials: true });
+
+    if (result.status === 200) {
+        userStore.clearUserInfo?.();
+        router.push('/login');
+        toast('info', '로그아웃 완료', '안전하게 로그아웃 되었습니다.');
+    }
+  } catch (error) {
+    console.error('로그아웃 실패:', error);
+    toast('error', '오류', '로그아웃 중 문제가 발생했습니다.');
+  }
+};
+
 </script>
 
 <template>
@@ -39,7 +68,7 @@ const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
                 <button type="button" class="layout-topbar-action" @click="toggleDarkMode">
                     <i :class="['pi', { 'pi-moon': isDarkTheme, 'pi-sun': !isDarkTheme }]"></i>
                 </button>
-                <div class="relative">
+                <!-- <div class="relative">
                     <button
                         v-styleclass="{ selector: '@next', enterFromClass: 'hidden', enterActiveClass: 'animate-scalein', leaveToClass: 'hidden', leaveActiveClass: 'animate-fadeout', hideOnOutsideClick: true }"
                         type="button"
@@ -48,7 +77,7 @@ const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
                         <i class="pi pi-palette"></i>
                     </button>
                     <AppConfigurator />
-                </div>
+                </div> -->
             </div>
 
             <button
@@ -61,17 +90,24 @@ const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
             <div class="layout-topbar-menu hidden lg:block">
                 <div class="layout-topbar-menu-content">
                     <button type="button" class="layout-topbar-action">
-                        <i class="pi pi-calendar"></i>
-                        <span>Calendar</span>
-                    </button>
-                    <button type="button" class="layout-topbar-action">
                         <i class="pi pi-inbox"></i>
-                        <span>Messages</span>
+                        <span>공지사항</span>
                     </button>
-                    <button type="button" class="layout-topbar-action">
+
+                    <button type="button" class="layout-topbar-action" @click="toggleProfileMenu">
                         <i class="pi pi-user"></i>
-                        <span>Profile</span>
+                        <span>로그인 정보</span>
                     </button>
+
+                    <Popover ref="profilePopover" style="width: 180px;">
+                        <div class="p-3 flex flex-col gap-2 items-center">
+                            <button type="button" class="layout-topbar-action">
+                            회원정보
+                            </button>
+                            <Btn label="로그아웃" color="danger" icon="signout" @click="logout"></Btn>
+                        </div>
+                    </Popover>
+
                 </div>
             </div>
         </div>
