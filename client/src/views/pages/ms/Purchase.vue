@@ -33,7 +33,7 @@ const purchaseList = ref([
 const empName = ref('로그인');
 
 //생산계획목록
-onMounted(async () => {
+const pageLoadplan = async () => {
   try {
     const list = await axios.get('/api/mat/planMasterList');
     planMasterList.value = list.data.map((item) => ({
@@ -48,10 +48,10 @@ onMounted(async () => {
   } catch (error) {
     toast('error', '리스트 로드 실패', '생산계획 리스트 불러오기 실패:', '3000');
   }
-});
+};
 
 //mrp목록
-onMounted(async () => {
+const pageLoadMrp = async () => {
   try {
     const list = await axios.get('/api/mat/mrpList');
     mrpList.value = list.data.map((item) => ({
@@ -65,6 +65,11 @@ onMounted(async () => {
   } catch (error) {
     toast('error', '리스트 로드 실패', 'mrp 리스트 불러오기 실패:', '3000');
   }
+};
+
+onMounted(() => {
+  pageLoadplan();
+  pageLoadMrp();
 });
 
 //자재별 공급처
@@ -117,6 +122,7 @@ const addToPurchase = (row) => {
 
 const calculatMrp = () => {
   console.log('mrp산출');
+  pageLoadplan();
 };
 
 const reqSubmit = async () => {
@@ -134,9 +140,7 @@ const reqSubmit = async () => {
     await axios.post('/api/mat/reqMaterial', reqList);
 
     toast('info', '등록 성공', '자재주문 등록 성공', '5000');
-    setTimeout(() => {
-      window.location.reload();
-    }, 500); // 0.5초 후 새로고침
+    pageLoadMrp();
   } catch (error) {
     toast('error', '등록 실패', '자재주문 등록 실패:', '500');
   }

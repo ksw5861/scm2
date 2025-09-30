@@ -57,7 +57,8 @@ public class SupplierServiceImpl implements SupplierService  {
     @Override
     public void insertReleaseData(List<PurchaseMatVO> payload) {
        //1) purId: row.id, /matId: row.matId, /orderNo: row.purNo, /outQty: row.outQty, /vendorId: vendorId.value 
-
+        
+       //자재구매요청 상태값 업데이트
         for(PurchaseMatVO row : payload) {
             
             Long purId   = row.getPurId();
@@ -68,7 +69,7 @@ public class SupplierServiceImpl implements SupplierService  {
 
             //purchase_mat테이블 상태: 부분출고/전량출고로 상태값 변경 + 누적출고수량 updqate
             //이력테이블 이력, venderId, purID, 출고수량 입력.
-             mapper.callReleaseMatPoc(purId, outQty, vendorId);
+            mapper.callReleaseMatPoc(purId, outQty, vendorId);
         }
 
 

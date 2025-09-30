@@ -46,8 +46,8 @@ const matOrderColumns = [
   { label: '구매처 담당자', field: 'buyerName', sortable: true }
 ];
 
-//주문목록
-const pageLoad = onMounted(async () => {
+//주문목록(페이지로드시)
+const pageLoad = async () => {
   try {
     const list = await axios.get(`/api/supplier/OrderList/${vendorId.value}`);
     matOrderData.value = list.data.map((item) => ({
@@ -66,8 +66,13 @@ const pageLoad = onMounted(async () => {
   } catch (error) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
+};
+
+onMounted(() => {
+  pageLoad();
 });
 
+//주문승인
 const approve = async () => {
   const list = JSON.parse(JSON.stringify(selectedRows.value));
   const idList = list.map((row) => row.id);
@@ -76,9 +81,7 @@ const approve = async () => {
     const res = await axios.post('/api/supplier/approve', { purId: idList, name: vendorId.value });
     toast('info', '승인 성공', res.value + '건 주문 승인 되었습니다.', '3000');
 
-    setTimeout(() => {
-      window.location.reload();
-    }, 500); // 0.5초 후 새로고침
+    pageLoad();
   } catch (error) {
     toast('error', '승인 실패', '주문 승인 실패:', '3000');
   }

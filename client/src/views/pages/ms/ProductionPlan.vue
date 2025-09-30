@@ -48,7 +48,7 @@ const productionPlans = ref([{ id: columnId.value, prodId: '', prdName: '', proQ
 //드롭다운옵션용
 const productOptions = ref([]);
 
-onMounted(async () => {
+const pageLoad = async () => {
   try {
     const res = await axios.get('/api/mat/productsList');
     productOptions.value = res.data.map((item) => ({
@@ -59,6 +59,10 @@ onMounted(async () => {
   } catch (error) {
     toast('error', '리스트 로드 실패', '제품 리스트 불러오기 실패:', '3000');
   }
+};
+
+onMounted(() => {
+  pageLoad();
 });
 
 //옵션선택시 컬럼반영
@@ -80,7 +84,7 @@ const detailColumns = computed(() => [
 
 //상단박스버튼
 const resetForm = () => {
-  planType = {};
+  planType = '';
   memo = [];
   dateRange.value = { start: null, end: null };
   productionPlans.value = [{ id: columnId.value, prodId: '', prdName: '', proQty: null, unit: '', proDate: '' }];
@@ -119,6 +123,7 @@ const submit = async () => {
   try {
     const response = await axios.post('/api/mat/productionPlan', plan);
     toast('info', '등록 성공', '생산 계획등록 성공:', '3000');
+    resetForm();
   } catch (error) {
     toast('error', '등록 실패', '생산 계획등록 실패:', '3000');
   }
