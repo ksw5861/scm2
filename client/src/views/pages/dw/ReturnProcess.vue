@@ -1,368 +1,310 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 
 import InputText from 'primevue/inputtext';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
-import Modal from '@/components/common/Modal.vue';
-// (Button / Calendar / DataTable / Column / Dialog / Textarea 전역 등록 가정)
+import Calendar from 'primevue/calendar';
+import Button from 'primevue/button';
+import DataTable from 'primevue/datatable';
+import Column from 'primevue/column';
+import Dialog from 'primevue/dialog';
+import Textarea from 'primevue/textarea';
 
-/* ── 검색 폼 ──────────────────────────────────────── */
-const search = ref({
-  productName: '',
-  productCode: '',
-  customerName: '',
+/* ------------------ 상태 ------------------ */
+// 검색폼
+const searchForm = ref({
+  prodId: '',
+  prodName: '',
+  custName: '',
   expDate: null
 });
 
-/* ── 목록/선택 ─────────────────────────────────────── */
-const rows = ref([
-  { rtnId: 1, shipNo: 'RTN001', productName: '아라비카 원두', productCode: 'P001', customerName: '스타벅스', reason: '파손', qty: 100, status: '대기', processedAt: '-', expDate: '-', manager: '-', returnAmount: 100000, salesDeduct: 100000 },
-  { rtnId: 2, shipNo: 'RTN002', productName: '리베리카 원두', productCode: 'P002', customerName: '이디야', reason: '유통기한임박', qty: 80, status: '승인', processedAt: '2025-09-15', expDate: '2026-09-16', manager: '김관리', returnAmount: 120000, salesDeduct: 120000 },
-  { rtnId: 3, shipNo: 'RTN003', productName: '리베리카 원두', productCode: 'P002', customerName: '이디야', reason: '잘못된 발주', qty: 50, status: '반려', processedAt: '2025-09-14', expDate: '2026-09-15', manager: '김사원', returnAmount: 100000, salesDeduct: 100000 }
-]);
-const selected = ref([]);
-const hasSelection = computed(() => selected.value.length > 0);
+// 목록/상세
+const returnList = ref([]);          // 반품 목록
+const selectedReturns = ref([]);     // 선택된 반품 (좌측)
+const detailRows = ref([]);          // 상세 데이터 (우측)
+const selectedDetailRows = ref([]);  // 상세 선택
+const currentReturnId = ref(null);
 
-/* ── 공용 검색 모달(팀 스타일) ───────────────────── */
-const modal = ref({ visible: false, title: '', idField: '', columns: [], fetcher: null });
+// 반려 모달
+const rejectDialog = ref(false);
+const rejectReason = ref('');
 
-const fetchProducts = async () => [
-  { prodCode: 'P001', prodName: '아라비카 원두' },
-  { prodCode: 'P002', prodName: '리베리카 원두' },
-  { prodCode: 'P003', prodName: '케냐 원두' }
-];
-const fetchCustomers = async () => [
-  { custId: 'C001', custName: '스타벅스' },
-  { custId: 'C002', custName: '이디야' }
-];
-
-function openLookup(type) {
-  if (type === 'product' || type === 'productCode') {
-    modal.value = {
-      visible: true,
-      title: '제품 검색',
-      idField: 'prodCode',
-      columns: [
-        { key: 'prodCode', label: '제품코드' },
-        { key: 'prodName', label: '제품명' }
-      ],
-      fetcher: fetchProducts
-    };
-  } else if (type === 'customer') {
-    modal.value = {
-      visible: true,
-      title: '거래처 검색',
-      idField: 'custId',
-      columns: [
-        { key: 'custId', label: '거래처ID' },
-        { key: 'custName', label: '거래처명' }
-      ],
-      fetcher: fetchCustomers
-    };
-  }
+/* ------------------ 유틸 ------------------ */
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = new Date(d);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
-function handlePick(row) {
-  if (row.prodCode) {
-    search.value.productCode = row.prodCode;
-    search.value.productName = row.prodName;
-  }
-  if (row.custId) {
-    search.value.customerName = row.custName;
-  }
-  modal.value.visible = false;
-}
+const nf = (n) => new Intl.NumberFormat('ko-KR').format(Number(n) || 0);
 
-/* ── 조회/초기화 ───────────────────────────────────── */
+/* ------------------ 목록 조회 ------------------ */
 async function applySearch() {
   const params = {
-    productName: search.value.productName || undefined,
-    productCode: search.value.productCode || undefined,
-    customerName: search.value.customerName || undefined,
-    expDate: search.value.expDate ? fmtDate(search.value.expDate) : undefined
+    productCode: searchForm.value.prodId || '',
+    productName: searchForm.value.prodName || '',
+    customerName: searchForm.value.custName || '',
+    expDate: searchForm.value.expDate ? fmtDate(searchForm.value.expDate) : '',
+    page: 1, size: 10
   };
-  try {
-    // const { data } = await axios.get('/api/return-process', { params })
-    // rows.value = data
-    selected.value = [];
-  } catch {
-    alert('조회 실패');
-  }
+  const { data } = await axios.get('/api/return-list', { params });
+  returnList.value = Array.isArray(data) ? data : (data?.data ?? []);
+  detailRows.value = [];
+  selectedReturns.value = [];
+  selectedDetailRows.value = [];
+  currentReturnId.value = null;
 }
 function resetSearch() {
-  search.value = { productName: '', productCode: '', customerName: '', expDate: null };
-  selected.value = [];
+  searchForm.value = { prodId: '', prodName: '', custName: '', expDate: null };
+  applySearch();
 }
 
-/* ── 반려/승인 ─────────────────────────────────────── */
-const showReject = ref(false);
-const rejectReason = ref('');
-const showApprove = ref(false);
+/* ------------------ 상세 조회 ------------------ */
+async function loadDetails(row) {
+  if (!row) {
+    detailRows.value = [];
+    selectedDetailRows.value = [];
+    currentReturnId.value = null;
+    return;
+  }
+  if (currentReturnId.value === row.rtnId) {
+    detailRows.value = [];
+    selectedDetailRows.value = [];
+    currentReturnId.value = null;
+    return;
+  }
+  const { data } = await axios.get('/api/return-details', { params: { rtnId: row.rtnId } });
+  detailRows.value = Array.isArray(data) ? data : (data?.data ?? []);
+  currentReturnId.value = row.rtnId;
+}
 
-function openReject() {
-  if (!hasSelection.value) return;
+/* ------------------ 목록 선택 ------------------ */
+async function onReturnSelectionChange(e) {
+  const arr = Array.isArray(e?.value) ? e.value : [];
+  if (!arr.length) {
+    selectedReturns.value = [];
+    await loadDetails(null);
+    return;
+  }
+  const last = arr[arr.length - 1];
+  selectedReturns.value = [last];
+  await loadDetails(last);
+}
+async function onReturnRowClick(e) {
+  const row = e.data;
+  selectedReturns.value = [row];
+  await loadDetails(row);
+}
+
+/* ------------------ 상세 선택 ------------------ */
+function toggleDetailSelection(row) {
+  const idx = selectedDetailRows.value.findIndex(r => r.detailId === row.detailId);
+  if (idx >= 0) selectedDetailRows.value.splice(idx, 1);
+  else selectedDetailRows.value.push(row);
+}
+
+/* ------------------ 승인/반려 ------------------ */
+async function approveSelected() {
+  if (!selectedDetailRows.value.length) {
+    alert('승인할 항목을 선택하세요');
+    return;
+  }
+  const ids = selectedDetailRows.value.map(r => r.detailId);
+  const res = await axios.post('/api/return/approve', { ids });
+  if (res?.status === 200 && res.data.retCode === 'success') {
+    alert('승인 완료');
+    await applySearch();
+  } else alert('승인 실패');
+}
+
+function openRejectDialog() {
+  if (!selectedDetailRows.value.length) {
+    alert('반려할 항목을 선택하세요');
+    return;
+  }
   rejectReason.value = '';
-  showReject.value = true;
+  rejectDialog.value = true;
 }
-async function submitReject() {
-  try {
-    // await axios.post('/api/return-process/reject', { ids:selected.value.map(r=>r.rtnId), reason:rejectReason.value })
-    showReject.value = false;
-    await applySearch();
-  } catch {
-    alert('반려 실패');
+async function confirmReject() {
+  if (!rejectReason.value.trim()) {
+    alert('반려 사유를 입력하세요');
+    return;
   }
-}
-function openApprove() {
-  if (!hasSelection.value) return;
-  showApprove.value = true;
-}
-async function submitApprove() {
-  try {
-    // await axios.post('/api/return-process/approve', { ids:selected.value.map(r=>r.rtnId) })
-    showApprove.value = false;
+  const ids = selectedDetailRows.value.map(r => r.detailId);
+  const res = await axios.post('/api/return/reject', { ids, reason: rejectReason.value });
+  if (res?.status === 200 && res.data.retCode === 'success') {
+    alert('반려 완료');
+    rejectDialog.value = false;
     await applySearch();
-  } catch {
-    alert('승인 실패');
-  }
+  } else alert('반려 실패');
 }
 
-/* ── 유틸 ─────────────────────────────────────────── */
-const nf = (n) => new Intl.NumberFormat('ko-KR').format(n ?? 0);
-function fmtDate(d) {
-  const t = new Date(d);
-  const m = String(t.getMonth() + 1).padStart(2, '0');
-  const day = String(t.getDate()).padStart(2, '0');
-  return `${t.getFullYear()}-${m}-${day}`;
+/* ------------------ 모달 열기 ------------------ */
+function openProdModal() {
+  alert('제품 검색 모달 오픈');
 }
+function openCustModal() {
+  alert('거래처 검색 모달 오픈');
+}
+
+onMounted(() => applySearch());
 </script>
 
 <template>
-  <div class="rp-wrap">
-    <div class="section-title">반품승인처리</div>
+  <div class="page-wrap">
+    <div class="page-title">반품 승인 처리</div>
 
-    <!-- 검색 영역 -->
-    <div class="card">
-      <div class="grid grid--search">
+    <!-- 검색폼 -->
+    <div class="box">
+      <div class="box-title">반품 검색</div>
+      <div class="form-grid-4">
+        <!-- 제품명 -->
         <div class="field">
           <label>제품명</label>
           <InputGroup>
-            <InputText v-model="search.productName" placeholder="ADD01" />
-            <InputGroupAddon><Button icon="pi pi-search" class="btn-icon" @click="openLookup('product')" /></InputGroupAddon>
+            <InputText
+              v-model="searchForm.prodName"
+              placeholder="제품명"
+              readonly
+              @click="openProdModal"
+            />
+            <InputGroupAddon>
+              <Button icon="pi pi-search" class="p-button-text p-button-plain" @click="openProdModal" />
+            </InputGroupAddon>
           </InputGroup>
         </div>
 
+        <!-- 제품코드 -->
         <div class="field">
           <label>제품코드</label>
           <InputGroup>
-            <InputText v-model="search.productCode" placeholder="ADD01" />
-            <InputGroupAddon><Button icon="pi pi-search" class="btn-icon" @click="openLookup('productCode')" /></InputGroupAddon>
+            <InputText
+              v-model="searchForm.prodId"
+              placeholder="제품코드"
+              readonly
+              @click="openProdModal"
+            />
+            <InputGroupAddon>
+              <Button icon="pi pi-search" class="p-button-text p-button-plain" @click="openProdModal" />
+            </InputGroupAddon>
           </InputGroup>
         </div>
 
+        <!-- 거래처명 -->
         <div class="field">
           <label>거래처명</label>
           <InputGroup>
-            <InputText v-model="search.customerName" placeholder="ADD01" />
-            <InputGroupAddon><Button icon="pi pi-search" class="btn-icon" @click="openLookup('customer')" /></InputGroupAddon>
+            <InputText
+              v-model="searchForm.custName"
+              placeholder="거래처명"
+              readonly
+              @click="openCustModal"
+            />
+            <InputGroupAddon>
+              <Button icon="pi pi-search" class="p-button-text p-button-plain" @click="openCustModal" />
+            </InputGroupAddon>
           </InputGroup>
         </div>
 
+        <!-- 유통기한 -->
         <div class="field">
           <label>유통기한</label>
-          <Calendar v-model="search.expDate" placeholder="ADD01" showIcon dateFormat="yy-mm-dd" class="w-full" />
+          <Calendar v-model="searchForm.expDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
         </div>
-
-        <!-- ▶ 버튼행 (조회/초기화 + 승인/반려 같이 오른쪽) -->
-        <div class="search-actions">
-          <Button class="box-btn box-btn--ghost" icon="pi pi-refresh" label="초기화" @click="resetSearch" />
-          <Button class="box-btn box-btn--green" icon="pi pi-search" label="조회" @click="applySearch" />
-          <Button label="반려" class="pill danger" :disabled="!hasSelection" @click="openReject" />
-          <Button label="승인" class="pill primary" :disabled="!hasSelection" @click="openApprove" />
-        </div>
+      </div>
+      <div class="actions">
+        <Button label="초기화" icon="pi pi-refresh" @click="resetSearch" />
+        <Button label="조회" icon="pi pi-search" @click="applySearch" />
       </div>
     </div>
 
-    <!-- 목록 -->
-    <div class="card">
-      <DataTable
-        :value="rows"
-        v-model:selection="selected"
-        selectionMode="multiple"
-        dataKey="rtnId"
-        size="small"
-        responsiveLayout="scroll"
-        class="rp-table"
-      >
-        <Column selectionMode="multiple" headerStyle="width:40px" />
-        <Column field="shipNo" header="출고번호" />
-        <Column field="productName" header="제품명" />
-        <Column field="productCode" header="제품코드" />
-        <Column field="customerName" header="거래처명" />
-        <Column field="reason" header="반품사유" />
-        <Column field="qty" header="수량" :headerClass="'th-center'" :bodyClass="'td-num'" />
-        <Column field="status" header="상태" :headerClass="'th-center'" />
-        <Column field="processedAt" header="처리일자" :headerClass="'th-center'" />
-        <Column field="expDate" header="유통기한" :headerClass="'th-center'" />
-        <Column field="manager" header="담당자" :headerClass="'th-center'" />
-        <Column header="반품금액" :headerClass="'th-right'">
-          <template #body="{ data }"><div class="td-num">{{ nf(data.returnAmount) }}</div></template>
-        </Column>
-        <Column header="매출차감" :headerClass="'th-right'">
-          <template #body="{ data }"><div class="td-num">{{ nf(data.salesDeduct) }}</div></template>
-        </Column>
-      </DataTable>
+    <!-- 목록 + 상세 -->
+    <div class="split">
+      <!-- 목록 -->
+      <div class="list-box">
+        <div class="sub-title">반품 목록</div>
+        <DataTable
+          :value="returnList"
+          dataKey="rtnId"
+          v-model:selection="selectedReturns"
+          :metaKeySelection="false"
+          @selection-change="onReturnSelectionChange"
+          @row-click="onReturnRowClick"
+          paginator :rows="10"
+        >
+          <Column selectionMode="multiple" />
+          <Column field="returnDate" header="반품일자" :body="(r)=>fmtDate(r.returnDate)" />
+          <Column field="customerName" header="판매처명" />
+          <Column field="returnCode" header="반품코드" />
+          <Column field="status" header="상태" />
+        </DataTable>
+      </div>
+
+      <!-- 상세 -->
+      <div class="detail-box">
+        <div class="detail-head">
+          <div class="detail-title">반품 상세</div>
+          <div class="head-actions">
+            <Button label="승인" icon="pi pi-check" @click="approveSelected" :disabled="!selectedDetailRows.length" />
+            <Button label="반려" icon="pi pi-times" class="p-button-danger" @click="openRejectDialog" :disabled="!selectedDetailRows.length" />
+          </div>
+        </div>
+        <DataTable
+          :value="detailRows"
+          dataKey="detailId"
+          v-model:selection="selectedDetailRows"
+          selectionMode="multiple"
+          :metaKeySelection="false"
+          @row-click="toggleDetailSelection($event.data)"
+          paginator :rows="10"
+        >
+          <Column selectionMode="multiple" />
+          <Column field="productCode" header="제품코드" />
+          <Column field="productName" header="제품명" />
+          <Column field="expDate" header="유통기한" :body="(r)=>fmtDate(r.expDate)" />
+          <Column field="manager" header="담당자" />
+          <Column field="qty" header="반품수량" />
+          <Column field="reason" header="사유" />
+          <Column field="processedAt" header="처리일자" :body="(r)=>fmtDate(r.processedAt)" />
+          <Column field="returnAmount" header="반품금액">
+            <template #body="{data}">{{ nf(data.returnAmount) }}</template>
+          </Column>
+          <Column field="status" header="상태" />
+        </DataTable>
+      </div>
     </div>
 
-    <!-- 공용 검색 모달 -->
-    <Modal
-      :visible="modal.visible"
-      :title="modal.title"
-      :idField="modal.idField"
-      :columns="modal.columns"
-      :fetchData="modal.fetcher"
-      :page-size="7"
-      @select="handlePick"
-      @close="modal.visible = false"
-    />
-
-    <!-- 반려 사유 -->
-    <Dialog v-model:visible="showReject" header="반려 사유 입력" modal style="width: 32rem">
-      <Textarea v-model="rejectReason" rows="4" autoResize placeholder="반려 사유는 필수입니다." />
-      <div class="dlg-actions">
-        <Button label="취소" outlined @click="showReject = false" />
-        <Button label="반려" class="pill danger" :disabled="!rejectReason.trim()" @click="submitReject" />
-      </div>
-    </Dialog>
-
-    <!-- 승인 안내 -->
-    <Dialog v-model:visible="showApprove" header="승인 처리" modal style="width: 30rem">
-      <p class="m-0">승인 시 <b>반품금액만큼 매출 차감</b>이 반영됩니다.</p>
-      <div class="dlg-actions">
-        <Button label="취소" outlined @click="showApprove = false" />
-        <Button label="승인" class="pill primary" @click="submitApprove" />
-      </div>
+    <!-- 반려 모달 -->
+    <Dialog v-model:visible="rejectDialog" modal header="반려 사유 입력" :style="{ width: '400px' }">
+      <Textarea v-model="rejectReason" rows="5" class="w-full" placeholder="반려 사유를 입력해 주세요" />
+      <template #footer>
+        <Button label="취소" icon="pi pi-times" class="p-button-text" @click="rejectDialog=false" />
+        <Button label="반려" icon="pi pi-check" class="p-button-danger" @click="confirmReject" />
+      </template>
     </Dialog>
   </div>
 </template>
 
-
 <style scoped>
-/* Layout */
-.rp-wrap {
-  padding: 12px 14px;
-  background: #f5f7fb;
-}
-.section-title {
-  font-size: 18px;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-.card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 14px;
-  margin-bottom: 12px;
-}
-
-/* Search form */
-.grid--search {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(280px, 1fr));
-  gap: 12px 20px;
-}
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-width: 520px;
-}
-.field label {
-  font-size: 12px;
-  font-weight: 700;
-  color: #374151;
-}
-.btn-icon {
-  padding: 0 10px !important;
-  height: 36px !important;
-}
-
-/* ▶ 오른쪽 끝으로 보내는 버튼 전용 행 */
-.search-actions {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 2px;
-}
-
-/* 네모 박스 버튼 */
-.box-btn {
-  height: 38px !important;
-  border-radius: 8px !important;
-  padding: 0 14px !important;
-  font-weight: 700;
-}
-.box-btn--ghost {
-  background: #fff !important;
-  border: 1px solid #22c55e !important;
-  color: #22c55e !important;
-}
-.box-btn--green {
-  background: #22c55e !important;
-  border: 1px solid #22c55e !important;
-  color: #fff !important;
-}
-
-/* Table */
-.rp-table :deep(.p-datatable-thead > tr > th) {
-  background: #f8fafc;
-  padding: 10px;
-}
-.rp-table :deep(.p-datatable-tbody > tr > td) {
-  padding: 10px;
-  vertical-align: middle;
-}
-.th-center {
-  text-align: center !important;
-}
-.th-right {
-  text-align: right !important;
-}
-.td-num {
-  text-align: right;
-  min-width: 80px;
-}
-
-/* Bottom actions */
-.table-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 8px;
-}
-.pill {
-  border-radius: 999px !important;
-  padding: 6px 14px !important;
-}
-.pill.primary {
-  background: #22c55e !important;
-  color: #fff !important;
-  border: none !important;
-}
-.pill.danger {
-  background: #ef4444 !important;
-  color: #fff !important;
-  border: none !important;
-}
-
-/* Prime tweaks */
-:deep(.p-inputtext) {
-  height: 36px;
-}
-:deep(.p-button) {
-  border-radius: 10px;
+.page-wrap { padding: 16px; background: #f5f7fb; }
+.page-title { font-weight: 700; font-size: 18px; margin-bottom: 12px; }
+.box { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+.box-title { font-weight: 700; margin-bottom: 12px; }
+.form-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+.split { display: grid; grid-template-columns: 1.1fr 1.4fr; gap: 14px; }
+.list-box, .detail-box { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px; }
+.sub-title { font-weight: 700; margin-bottom: 8px; }
+.detail-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.detail-title { font-weight: 700; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.head-actions { display: flex; gap: 8px; }
+:deep(.list-box .p-datatable-tbody > tr:hover),
+:deep(.detail-box .p-datatable-tbody > tr:hover) {
+  background: #f9fafb;
+  cursor: pointer;
+  transition: background 120ms ease-in-out;
 }
 </style>
