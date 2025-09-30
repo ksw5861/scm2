@@ -19,6 +19,7 @@ import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.WarehouseListRes;
 import com.yedam.scm.product.service.InboundService;
 import com.yedam.scm.vo.ItemInboundVO;
+import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 
@@ -129,6 +130,12 @@ public class DwController {
         return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
     }
 
+
+    //반품승인페이지 목록불러오기
+    @GetMapping("/return-list")
+    public List<ReturnVO> getReturnList() {
+        return service.getReturnList();
+    }
     
 
 

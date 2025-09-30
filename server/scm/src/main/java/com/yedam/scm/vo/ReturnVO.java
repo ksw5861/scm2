@@ -22,5 +22,12 @@ public class ReturnVO {
 
     // =========== 상세 리스트 ===========
     private List<ReturnDetailVO> details;  // 반품 상세 정보
+
+
+    // 0930 동원 추가
+
+    private String companyName; // 판매처명
+
+
 }
 

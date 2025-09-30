@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.Param;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.vo.ItemInboundVO;
 import com.yedam.scm.vo.ProductVO;
+import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 import com.yedam.scm.vo.WareHouseVO;
@@ -55,5 +56,14 @@ public interface InboundMapper {
         
         // 반려
         int rejectDetails(@Param("odetailIds") List<String> odetailIds);
+
+
+        //반품승인 페이지 목록불러오기
+
+
+         // ✅ 반품 목록 조회
+          List<ReturnVO> selectReturnList();
+
+
 
 }// end

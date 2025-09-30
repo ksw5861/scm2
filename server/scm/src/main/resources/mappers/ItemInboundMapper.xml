@@ -175,8 +175,8 @@
   ORDER BY so.order_date DESC
 </select> -->
 
-<!--주문승인 목록 상태자식-->
-<select id="selectApprovalOrders"
+<!--주문승인 목록 상태자식 이거안쓸건데 참고용-->
+<!-- <select id="selectApprovalOrders"
         resultType="com.yedam.scm.vo.SalesOrderVO">
   SELECT
     so.order_id,
@@ -191,7 +191,31 @@
   WHERE so.status = '대기' or so.status = '부분승인' or so.status = '부분반려'
   GROUP BY so.order_id, so.order_date, v.company_name
   ORDER BY so.order_date DESC
+</select> -->
+
+
+
+
+  <!-- 주문승인 목록 처리중 으로 완료-->
+  <select id="selectApprovalOrders"
+        resultType="com.yedam.scm.vo.SalesOrderVO">
+  SELECT
+    so.order_id,
+    so.order_date,
+    v.company_name,
+    so.status prod_status  
+  FROM sales_order so
+  LEFT JOIN vendor v
+    ON so.vendor_id = v.vendor_id
+  WHERE so.status = '처리중'          
+  ORDER BY so.order_date DESC
 </select>
+
+
+
+
+
+
 
 
 
@@ -253,6 +277,26 @@
 
 
 
+  <!-- ✅ 반품 목록 조회 -->
+  <select id="selectReturnList" resultType="com.yedam.scm.vo.ReturnVO">
+  SELECT
+      r.return_id,
+      r.return_date,
+      v.company_name,
+      d.rdetail_status
+  FROM return r
+    JOIN return_detail d ON r.return_id = d.return_id
+    JOIN vendor v        ON r.vendor_id = v.vendor_id
+  GROUP BY r.return_id, r.return_date, v.company_name
+  ORDER BY r.return_date DESC
+</select>
 
+
+  
 
 </mapper>
+
+
+
+
+

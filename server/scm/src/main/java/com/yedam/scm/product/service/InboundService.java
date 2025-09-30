@@ -7,6 +7,7 @@ import com.yedam.scm.dto.InboundListRes;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.WarehouseListRes;
 import com.yedam.scm.vo.ItemInboundVO;
+import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 
@@ -42,5 +43,9 @@ public interface InboundService {
 
   // 주문승인 반려 처리
 int rejectDetails(List<String> odetailIds);
+
+
+    //  반품 목록 조회
+    List<ReturnVO> getReturnList();
 
 }
