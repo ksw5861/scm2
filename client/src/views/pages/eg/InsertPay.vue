@@ -62,7 +62,7 @@
 
     <!-- ===== [탭] 미결제 내역 ===== -->
     <div v-if="activeTab === 'pending'" class="tab-content">
-      <h4 class="section-title">미결제 주문내역</h4>
+      <h4 class="section-title">미결제 주문, 반품 내역</h4>
 
       <div class="table-toolbar">
         <div class="search-container">
@@ -104,7 +104,7 @@
             {{ formatDate(data.sendDate) }}
           </template>
         </Column>
-        <Column field="status" header="주문상태" style="width:140px;" />
+        <Column field="orderStatus" header="주문상태" style="width:140px;" />
         <Column field="paydueDate" header="결제기한" style="width:140px;">
           <template #body="{ data }">
             {{ formatDate(data.paydueDate) }}
