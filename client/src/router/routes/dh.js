@@ -4,12 +4,12 @@ const dh = {
   component: AppLayout,
   children: [
     {
-      path: '/warehouse',
-      name: '창고 관리',
-      component: () => import('@/views/pages/dh/WareHouse.vue'),
+      path: '/test',
+      name: '테스트',
+      component: () => import('@/views/pages/dh/test.vue'),
       meta: {
         requiresAuth: true,
-        roles: ['admin', 'employee']
+        roles: ['admin']
       }
     },
     {
@@ -21,7 +21,7 @@ const dh = {
           parent: '기준 정보'
         },
         requiresAuth: true,
-        roles: ['admin', 'employee']
+        roles: ['admin']
       }
     },
     {
@@ -33,7 +33,7 @@ const dh = {
           parent: '기준 정보'
         },
         requiresAuth: true,
-        roles: ['admin', 'employee']
+        roles: ['admin']
       }
     }
   ]

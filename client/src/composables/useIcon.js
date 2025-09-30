@@ -3,7 +3,6 @@ const iconMap = {
   edit: 'pi pi-pencil',
   delete: 'pi pi-trash',
   refresh: 'pi pi-refresh',
-  list: 'pi pi-bars',
   download: 'pi pi-download',
   print: 'pi pi-print',
   search: 'pi pi-search',
@@ -24,7 +23,12 @@ const iconMap = {
   cancel: 'pi pi-times',
   minus: 'pi pi-minus',
   signout: 'pi pi-sign-out',
-  login: 'pi pi-sign-in'
+  login: 'pi pi-sign-in',
+  vendor: 'pi pi-building',
+  box: 'pi pi-box',
+  tags: 'pi pi-tags',
+  bom: 'pi pi-sitemap',
+  inventory: 'pi pi-th-large'
 };
 
 export const useIcon = (name) => {

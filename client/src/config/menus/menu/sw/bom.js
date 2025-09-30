@@ -1,8 +1,8 @@
 import { useIcon } from '@/composables/useIcon';
 
 const Bom = {
-  label: 'bom 관리',
-  icon: useIcon('info'),
+  label: 'BOM 관리',
+  icon: useIcon('bom'),
   to: '/bom',
   roles: ['admin']
 };

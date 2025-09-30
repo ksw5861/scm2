@@ -1,10 +1,10 @@
 import { useIcon } from '@/composables/useIcon';
 
-const wareHouse1 = {
+const wareHouse = {
   label: '창고 관리',
-  icon: useIcon('info'),
-  to: '/warehouse1',
+  icon: useIcon('inventory'),
+  to: '/warehouse',
   roles: ['admin']
 };
 
-export default wareHouse1;
+export default wareHouse;

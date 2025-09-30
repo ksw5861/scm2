@@ -2,7 +2,7 @@ import { useIcon } from '@/composables/useIcon';
 
 const Product = {
   label: '제품 관리',
-  icon: useIcon('info'),
+  icon: useIcon('tags'),
   to: '/product',
   roles: ['admin']
 };
