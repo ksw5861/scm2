@@ -83,7 +83,6 @@
         columnResizeMode="fit"
         class="payment-table"
       >
-        <!-- 컬럼 구조 최신화 -->
         <Column field="paymentNo" header="결제번호" style="width:140px;" />
         <Column field="payDate" header="결제일자" style="width:140px;" />
 
@@ -133,17 +132,19 @@ import { useUserStore } from '@/stores/user'
 const userStore = useUserStore()
 const toast = useToast()
 
-// ===== 검색 조건 =====
+// -----------------------------
+// 상태 관리
+// -----------------------------
 const filters = ref({
   paymentNo: '',
   startDate: null,
   endDate: null
 })
-
-// ===== 납부내역 데이터 =====
 const payList = ref([])
 
-// ===== 날짜 포맷 =====
+// -----------------------------
+// 유틸 함수
+// -----------------------------
 const formatDate = (date) => {
   if (!date) return ''
   const d = new Date(date)
@@ -153,13 +154,14 @@ const formatDate = (date) => {
   return `${year}-${month}-${day}`
 }
 
-// ===== 금액 포맷 =====
 const formatCurrency = (value) => {
   if (value === null || value === undefined) return '0 원'
   return value.toLocaleString('ko-KR') + ' 원'
 }
 
-// ===== 납부내역 조회 API =====
+// -----------------------------
+// API 핸들링
+// -----------------------------
 const searchPayments = async () => {
   try {
     const params = {
@@ -171,8 +173,7 @@ const searchPayments = async () => {
     const res = await axios.get('/api/payments', { params })
     console.log('납부내역 조회 결과:', res.data)
 
-    // ✅ 백엔드 데이터 매핑
-    payList.value = (res.data.list || []).map(item => ({
+    payList.value = (res.data.list || []).map((item) => ({
       paymentNo: item.PAYMENTNO,
       payDate: item.PAYDATE,
       outstandingAmount: item.OUTSTANDINGAMOUNT,
@@ -193,8 +194,9 @@ const searchPayments = async () => {
   }
 }
 
-
-// ===== 초기화 버튼 =====
+// -----------------------------
+// 기타 기능
+// -----------------------------
 const resetFilters = () => {
   filters.value.paymentNo = ''
   filters.value.startDate = null
@@ -202,7 +204,6 @@ const resetFilters = () => {
   payList.value = []
 }
 
-// ===== PDF 출력 =====
 const exportPDF = () => {
   toast.add({
     severity: 'info',
@@ -212,7 +213,6 @@ const exportPDF = () => {
   })
 }
 
-// ===== 엑셀 다운로드 =====
 const exportExcel = () => {
   toast.add({
     severity: 'info',
@@ -222,6 +222,9 @@ const exportExcel = () => {
   })
 }
 
+// -----------------------------
+// lifecycle
+// -----------------------------
 onMounted(searchPayments)
 </script>
 
@@ -328,7 +331,7 @@ onMounted(searchPayments)
   padding: 8px 10px;
 }
 
-/* 반응형 */
+/* ===== 반응형 ===== */
 @media (max-width: 768px) {
   .search-form {
     flex-direction: column;
@@ -344,7 +347,7 @@ onMounted(searchPayments)
   }
 }
 
-/* 금액 음수 색상 */
+/* ===== 금액 음수 색상 ===== */
 .negative {
   color: #e74c3c;
   font-weight: bold;

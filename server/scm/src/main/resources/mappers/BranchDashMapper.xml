@@ -1,62 +1,51 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper
   PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.yedam.scm.order.mapper.BranchDashMapper">
 
-  <!-- 매출 추이 조회 -->
-  <select id="selectSalesTrend" parameterType="map" resultType="map">
-    SELECT 
-      <choose>
-        <!-- 일별 -->
-        <when test="range == 'daily'">
-          TO_CHAR(order_date, 'YYYY-MM-DD') AS label,
-        </when>
-        <!-- 주별 -->
-        <when test="range == 'weekly'">
-          TO_CHAR(order_date, 'IYYY-IW') AS label,
-        </when>
-        <!-- 월별 -->
-        <when test="range == 'monthly'">
-          TO_CHAR(order_date, 'YYYY-MM') AS label,
-        </when>
-        <!-- 연별 -->
-        <when test="range == 'yearly'">
-          TO_CHAR(order_date, 'YYYY') AS label,
-        </when>
-      </choose>
-      SUM(total_price) AS amount
-    FROM sales_order
+  <!-- 일별 -->
+  <select id="selectDailySales" resultType="map">
+    SELECT TO_CHAR(order_date, 'YYYY-MM-DD') AS LABEL,
+           SUM(total_amount) AS AMOUNT
+    FROM orders
     WHERE vendor_id = #{vendorId}
-    <choose>
-      <!-- 최근 30일 -->
-      <when test="range == 'daily'">
-        AND order_date >= SYSDATE - 30
-        GROUP BY TO_CHAR(order_date, 'YYYY-MM-DD')
-        ORDER BY label
-      </when>
+      AND order_date <![CDATA[ >= ]]> ADD_MONTHS(TRUNC(SYSDATE), -1)
+    GROUP BY TO_CHAR(order_date, 'YYYY-MM-DD')
+    ORDER BY LABEL
+  </select>
 
-      <!-- 최근 12주 -->
-      <when test="range == 'weekly'">
-        AND order_date >= TRUNC(SYSDATE, 'IW') - (7 * 12)
-        GROUP BY TO_CHAR(order_date, 'IYYY-IW')
-        ORDER BY label
-      </when>
+  <!-- 주별 -->
+  <select id="selectWeeklySales" resultType="map">
+    SELECT TO_CHAR(TRUNC(order_date, 'IW'), 'YYYY-MM-DD') AS LABEL,
+           SUM(total_amount) AS AMOUNT
+    FROM orders
+    WHERE vendor_id = #{vendorId}
+      AND order_date <![CDATA[ >= ]]> ADD_MONTHS(TRUNC(SYSDATE), -3)
+    GROUP BY TRUNC(order_date, 'IW')
+    ORDER BY LABEL
+  </select>
 
-      <!-- 최근 12개월 -->
-      <when test="range == 'monthly'">
-        AND order_date >= ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -12)
-        GROUP BY TO_CHAR(order_date, 'YYYY-MM')
-        ORDER BY label
-      </when>
+  <!-- 월별 -->
+  <select id="selectMonthlySales" resultType="map">
+    SELECT TO_CHAR(TRUNC(order_date, 'MM'), 'YYYY-MM-DD') AS LABEL,
+           SUM(total_amount) AS AMOUNT
+    FROM orders
+    WHERE vendor_id = #{vendorId}
+      AND order_date <![CDATA[ >= ]]> ADD_MONTHS(TRUNC(SYSDATE), -12)
+    GROUP BY TRUNC(order_date, 'MM')
+    ORDER BY LABEL
+  </select>
 
-      <!-- 연별 전체 -->
-      <when test="range == 'yearly'">
-        GROUP BY TO_CHAR(order_date, 'YYYY')
-        ORDER BY label
-      </when>
-    </choose>
+  <!-- 연별 -->
+  <select id="selectYearlySales" resultType="map">
+    SELECT TO_CHAR(TRUNC(order_date, 'YYYY'), 'YYYY-MM-DD') AS LABEL,
+           SUM(total_amount) AS AMOUNT
+    FROM orders
+    WHERE vendor_id = #{vendorId}
+    GROUP BY TRUNC(order_date, 'YYYY')
+    ORDER BY LABEL
   </select>
 
 </mapper>

@@ -58,39 +58,38 @@
     </insert>
 
     <!-- ============================================================= -->
-    <!-- 3. 반품 목록 조회 (마스터 기준, 총액 포함) -->
+    <!-- 3. 반품 했는 목록 조회 (마스터 기준, 총액 포함) -->
     <!-- ============================================================= -->
     <select id="getReturnList" parameterType="map" resultType="ReturnVO">
-    SELECT 
-        r.return_id AS returnId,
-        TO_CHAR(r.return_date, 'YYYY-MM-DD') AS returnDate,
-        r.return_status AS returnStatus,
-        NVL(SUM(rd.return_qty * rd.prod_unit_price), 0) AS returnPrice,
-
-        CASE 
-            WHEN COUNT(rd.prod_id) > 1 THEN MIN(p.prod_name) || ' 외 ' || (COUNT(rd.prod_id)-1) || '건'
-            ELSE MIN(p.prod_name)
-        END AS prodName
-
-    FROM RETURN r
-    LEFT JOIN RETURN_DETAIL rd ON r.return_id = rd.return_id
-    LEFT JOIN PRODUCT p ON rd.prod_id = p.prod_id
-    WHERE 1=1
-        <if test="startDate != null and startDate != ''">
-            AND r.return_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
-        </if>
-        <if test="endDate != null and endDate != ''">
-            AND r.return_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
-        </if>
-        <if test="returnId != null and returnId != ''">
-            AND r.return_id LIKE '%' || #{returnId} || '%'
-        </if>
-        <if test="returnStatus != null and returnStatus != ''">
-            AND r.return_status = #{returnStatus}
-        </if>
-    GROUP BY r.return_id, r.return_date, r.return_status
-    ORDER BY r.return_date DESC
-</select>
+        SELECT 
+            r.return_id AS returnId,
+            TO_CHAR(r.return_date, 'YYYY-MM-DD') AS returnDate,
+            r.return_status AS returnStatus,
+            NVL(SUM(rd.return_qty * rd.prod_unit_price), 0) AS returnPrice,
+            CASE 
+                WHEN COUNT(rd.prod_id) > 1 
+                     THEN MIN(p.prod_name) || ' 외 ' || (COUNT(rd.prod_id) - 1) || '건'
+                ELSE MIN(p.prod_name)
+            END AS prodName
+        FROM RETURN r
+        LEFT JOIN RETURN_DETAIL rd ON r.return_id = rd.return_id
+        LEFT JOIN PRODUCT p ON rd.prod_id = p.prod_id
+        WHERE 1=1
+          <if test="startDate != null and startDate != ''">
+              AND r.return_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
+          </if>
+          <if test="endDate != null and endDate != ''">
+              AND r.return_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
+          </if>
+          <if test="returnId != null and returnId != ''">
+              AND r.return_id LIKE '%' || #{returnId} || '%'
+          </if>
+          <if test="returnStatus != null and returnStatus != ''">
+              AND r.return_status = #{returnStatus}
+          </if>
+        GROUP BY r.return_id, r.return_date, r.return_status
+        ORDER BY r.return_date DESC
+    </select>
 
     <!-- ============================================================= -->
     <!-- 4. 반품 마스터 단건 조회 -->
@@ -128,64 +127,92 @@
         ORDER BY rd.rdetail_id
     </select>
 
-
- <!-- ============================================================= -->
-    <!-- . 반품 모달 리스트 조회 -->
     <!-- ============================================================= -->
-
+    <!-- 6. 반품 가능 주문 목록 조회 (모달/페이지 공용) //구현단계에서는 60일로 해두고 나중에 출고일자 기준으로 10일로 변경하기-->
+    <!-- ============================================================= -->
 <select id="getReturnableOrders" resultType="ReturnVO">
-    SELECT 
-        so.order_id AS orderId,
-        so.order_date AS orderDate,
-        so.vendor_id AS vendorId,
-        so.status AS status,
-        so.delivery_date AS deliveryDate,
-        so.total_price AS totalPrice
-    FROM SALES_ORDER so
+    SELECT DISTINCT
+        so.order_id       AS orderId,
+        so.order_date     AS orderDate,
+        so.vendor_id      AS vendorId,
+        so.status         AS status,
+        so.delivery_date  AS deliveryDate,
+        so.total_price    AS totalPrice
+    FROM sales_order so
     WHERE so.vendor_id = #{vendorId}
       AND so.status = '배송완료'
-      AND so.delivery_date >= SYSDATE - 60
+      AND so.delivery_date <![CDATA[>=]]> TRUNC(SYSDATE) - 60
+      AND NOT EXISTS (
+          SELECT 1
+          FROM return r
+          JOIN return_detail rd ON r.return_id = rd.return_id
+          JOIN sales_order_detail d ON rd.odetail_id = d.odetail_id
+          WHERE d.order_id = so.order_id
+      )
     ORDER BY so.delivery_date DESC
 </select>
 
-<select id="getReturnableOrderDetails" parameterType="list" resultType="ReturnDetailVO">
-    SELECT 
-        d.ODETAIL_ID,
-        d.ORDER_ID,
-        d.PROD_ID,
-        p.PROD_NAME,
-        p.SPEC,
-        p.UNIT,
-        d.ORDER_QTY,
-        d.PROD_UNIT_PRICE,
-        d.PROD_STATUS
-    FROM SALES_ORDER_DETAIL d
-    JOIN PRODUCT p ON d.PROD_ID = p.PROD_ID
-    WHERE d.ORDER_ID IN 
-    <foreach collection="list" item="orderId" open="(" separator="," close=")">
-        #{id}
-    </foreach>
-   
-
-</select>
 
 
-<!-- ============================================================= -->
- <!-- 6. 반품 상태 변경 (대기->배송중)-->
- <!-- ============================================================= -->
-<!-- 부모 업데이트 -->
-<update id="updateReturnStatusParent" parameterType="map">
-    UPDATE RETURN
-    SET RETURN_STATUS = #{status}
-    WHERE RETURN_ID = #{returnId}
-</update>
 
-<!-- 자식 업데이트 -->
-<update id="updateReturnStatusChildren" parameterType="map">
-    UPDATE RETURN_DETAIL
-    SET RDETAIL_STATUS = #{status}
-    WHERE RETURN_ID = #{returnId}
-</update>
+    <!-- ============================================================= -->
+    <!-- 7. 반품 가능 주문 상세 조회 (단일 주문) -->
+    <!--  - 진행/완료 상태의 반품수량을 returnedQty로 합산 -->
+    <!--  - 반려/취소 상태는 집계 제외 //조건 추가하다 열받아서 포기함. 나중에 여유될때 재도전각-->
+    <!-- ============================================================= -->
 
+    <select id="getReturnableOrderDetails" parameterType="String" resultType="ReturnDetailVO">
+        SELECT
+            d.odetail_id        AS odetailId,
+            d.order_id          AS orderId,
+            d.prod_id           AS prodId,
+            p.prod_name         AS prodName,
+            p.spec              AS spec,
+            p.unit              AS unit,
+            d.order_qty         AS orderQty,
+            d.prod_unit_price   AS prodUnitPrice,
+            d.prod_status       AS prodStatus,
+            NVL(SUM(
+                CASE 
+                    WHEN r.return_status IN ('대기','승인','배송중','배송완료','완료') 
+                    THEN rd.return_qty 
+                    ELSE 0 
+                END
+            ), 0)               AS returnedQty,
+            (d.order_qty - NVL(SUM(
+                CASE 
+                    WHEN r.return_status IN ('대기','승인','배송중','배송완료','완료') 
+                    THEN rd.return_qty 
+                    ELSE 0 
+                END
+            ), 0))              AS remainQty
+        FROM sales_order_detail d
+        JOIN product p 
+        ON d.prod_id = p.prod_id
+        LEFT JOIN return_detail rd 
+        ON d.odetail_id = rd.odetail_id
+        LEFT JOIN return r 
+        ON rd.return_id = r.return_id
+        WHERE d.order_id = #{orderId}
+        GROUP BY d.odetail_id, d.order_id, d.prod_id, p.prod_name, p.spec, p.unit, 
+                d.order_qty, d.prod_unit_price, d.prod_status
+    </select>
+
+    <!-- ============================================================= -->
+    <!-- 8. 반품 상태 변경 (마스터 + 상세) -->
+    <!-- ============================================================= -->
+    <!-- 부모 상태 업데이트 -->
+    <update id="updateReturnStatusParent" parameterType="map">
+        UPDATE RETURN
+        SET RETURN_STATUS = #{status}
+        WHERE RETURN_ID = #{returnId}
+    </update>
+
+    <!-- 자식 상태 업데이트 -->
+    <update id="updateReturnStatusChildren" parameterType="map">
+        UPDATE RETURN_DETAIL
+        SET RDETAIL_STATUS = #{status}
+        WHERE RETURN_ID = #{returnId}
+    </update>
 
 </mapper>

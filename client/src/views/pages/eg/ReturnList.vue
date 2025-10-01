@@ -1,6 +1,6 @@
 <template>
   <div class="return-list">
-    <!-- 헤더 -->
+    <!-- ===== 헤더 ===== -->
     <div class="header">
       <h2>반품 조회 (판매처)</h2>
       <div class="header-actions">
@@ -8,30 +8,26 @@
         <Button label="조회" icon="pi pi-search" class="p-button-primary" @click="fetchReturns" />
         <Button label="엑셀 다운로드" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel" />
         <Button label="PDF 출력" icon="pi pi-file-pdf" class="p-button-danger" @click="exportPDF" />
-         <!-- 대기 상태일 때만 "배송중 처리" 버튼 -->
-        <Button 
-          v-if="selectedReturn && selectedReturn.returnStatus === '대기'" 
-          label="배송중 처리" 
-          icon="pi pi-truck" 
-          class="p-button-warning" 
-          @click="updateReturnStatus('배송중')" 
+
+        <!-- 조건부 노출 버튼 -->
+        <Button
+          v-if="selectedReturn && selectedReturn.returnStatus === '대기'"
+          label="배송중 처리"
+          icon="pi pi-truck"
+          class="p-button-warning"
+          @click="updateReturnStatus('배송중')"
         />
-
-
-
-        <!-- 배송중 상태일 때만 "배송완료 처리" 버튼 -->
-        <Button 
-          v-if="selectedReturn && selectedReturn.returnStatus === '배송중'" 
-          label="배송완료 처리" 
-          icon="pi pi-check" 
-          class="p-button-success" 
-          @click="updateReturnStatus('배송완료')" 
+        <Button
+          v-if="selectedReturn && selectedReturn.returnStatus === '배송중'"
+          label="배송완료 처리"
+          icon="pi pi-check"
+          class="p-button-success"
+          @click="updateReturnStatus('배송완료')"
         />
-        
       </div>
     </div>
 
-    <!-- 검색 영역 -->
+    <!-- ===== 검색 영역 ===== -->
     <div class="filter-section">
       <!-- 반품일자 -->
       <div class="filter-group">
@@ -45,9 +41,9 @@
       <div class="filter-group">
         <span class="filter-label">반품상태</span>
         <div class="status-buttons">
-          <Button label="대기" :class="{selected: filters.status === '대기'}" @click="() => { filters.status = '대기'; fetchReturns(); }" />
-          <Button label="승인" :class="{selected: filters.status === '승인'}" @click="() => { filters.status = '승인'; fetchReturns(); }" />
-          <Button label="반려" :class="{selected: filters.status === '반려'}" @click="() => { filters.status = '반려'; fetchReturns(); }" />
+          <Button label="대기" :class="{ selected: filters.status === '대기' }" @click="() => { filters.status = '대기'; fetchReturns(); }" />
+          <Button label="승인" :class="{ selected: filters.status === '승인' }" @click="() => { filters.status = '승인'; fetchReturns(); }" />
+          <Button label="반려" :class="{ selected: filters.status === '반려' }" @click="() => { filters.status = '반려'; fetchReturns(); }" />
         </div>
       </div>
 
@@ -58,7 +54,7 @@
       </div>
     </div>
 
-    <!-- 목록 & 상세 -->
+    <!-- ===== 목록 & 상세 ===== -->
     <div class="content-section">
       <!-- 좌측 반품 목록 -->
       <div class="return-list-table">
@@ -114,24 +110,18 @@
           <Column field="prodName" header="제품명" style="width:150px;" />
           <Column field="spec" header="규격" style="width:100px; text-align:center;" />
           <Column field="unit" header="단위" style="width:80px; text-align:center;" />
-
           <Column field="prodUnitPrice" header="제품단가" style="width:120px; text-align:right;">
             <template #body="slotProps">
               {{ formatCurrency(slotProps.data.prodUnitPrice) }}
             </template>
           </Column>
-          
           <Column field="returnQty" header="반품수량" style="width:80px; text-align:center;" />
-
           <Column field="returnTotal" header="합계" style="width:120px; text-align:right;">
             <template #body="slotProps">
               {{ formatCurrency(slotProps.data.returnTotal) }}
             </template>
           </Column>
-
           <Column field="returnWhy" header="반품사유" style="width:150px;" />
-
-          <!-- 상태 컬럼 -->
           <Column field="rdetailStatus" header="개별상태" style="width:100px; text-align:center;">
             <template #body="slotProps">
               <span :class="statusClass(slotProps.data.rdetailStatus)">
@@ -162,48 +152,42 @@ import { useAppToast } from '@/composables/useAppToast'
 
 const { toast } = useAppToast()
 
-/* ===== 검색 조건 ===== */
+// -----------------------------
+// 상태 관리
+// -----------------------------
 const filters = ref({
   startDate: null,
   endDate: null,
   status: '',
   returnId: ''
 })
-
-/* ===== 반품 목록 ===== */
 const returns = ref([])
-
-/* ===== 선택된 반품 ===== */
 const selectedReturn = ref(null)
-
-/* ===== 반품 상세 ===== */
 const returnDetails = ref([])
 
-/* ===== 합계 계산 ===== */
-const detailTotal = computed(() => {
-  return returnDetails.value.reduce((acc, item) => acc + (item.returnTotal || 0), 0)
-})
+// -----------------------------
+// 계산 속성
+// -----------------------------
+const detailTotal = computed(() =>
+  returnDetails.value.reduce((acc, item) => acc + (item.returnTotal || 0), 0)
+)
 
-/* ===== 통화 포맷 ===== */
+// -----------------------------
+// 유틸 함수
+// -----------------------------
 const formatCurrency = (value) => {
   if (value === null || value === undefined) return '0 원'
   return value.toLocaleString('ko-KR') + ' 원'
 }
-
-/* ===== 날짜 포맷 ===== */
 const formatDate = (dateString) => {
   if (!dateString) return '-'
   const date = new Date(dateString)
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
-
-/* ===== API 날짜 포맷 ===== */
 const formatDateForAPI = (date) => {
   if (!date) return null
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
-
-/* ===== 상태 라벨 ===== */
 const statusLabel = (status) => {
   switch (status) {
     case '대기': return '대기'
@@ -212,17 +196,15 @@ const statusLabel = (status) => {
     default: return status || ''
   }
 }
+const statusClass = (status) => ({
+  'status-wait': status === '대기',
+  'status-approve': status === '승인',
+  'status-reject': status === '반려'
+})
 
-/* ===== 상태별 CSS 클래스 ===== */
-const statusClass = (status) => {
-  return {
-    'status-wait': status === '대기',
-    'status-approve': status === '승인',
-    'status-reject': status === '반려'
-  }
-}
-
-/* ===== 반품 목록 조회 ===== */
+// -----------------------------
+// API 핸들링
+// -----------------------------
 const fetchReturns = async () => {
   try {
     const { data } = await axios.get('/api/returnlist', {
@@ -234,23 +216,20 @@ const fetchReturns = async () => {
       }
     })
 
-    // 서버 응답 검증
     if (data.status !== 'success' || !Array.isArray(data.list)) {
       toast('error', '반품 목록 조회 실패', '서버에서 올바른 데이터를 반환하지 않았습니다.')
       return
     }
 
-    // 백엔드 데이터 그대로 저장 (프론트에서 화면만 가공)
-    returns.value = data.list.map(item => ({
+    returns.value = data.list.map((item) => ({
       returnId: item.returnId,
-      prodName: item.prodName,           // 대표제품명
-      prodCount: item.prodCount,         // 총 제품 개수
+      prodName: item.prodName,
+      prodCount: item.prodCount,
       returnDate: formatDate(item.returnDate),
       returnPrice: item.returnPrice || 0,
       returnStatus: item.returnStatus
     }))
 
-    // 초기화
     selectedReturn.value = null
     returnDetails.value = []
   } catch (error) {
@@ -259,8 +238,6 @@ const fetchReturns = async () => {
   }
 }
 
-
-/* ===== 반품 상세 조회 ===== */
 const fetchReturnDetail = async (returnId) => {
   try {
     const { data } = await axios.get(`/api/returns/${returnId}/details`)
@@ -270,7 +247,7 @@ const fetchReturnDetail = async (returnId) => {
       return
     }
 
-    returnDetails.value = data.details.map(item => ({
+    returnDetails.value = data.details.map((item) => ({
       ...item,
       returnTotal: item.prodUnitPrice * item.returnQty
     }))
@@ -280,7 +257,9 @@ const fetchReturnDetail = async (returnId) => {
   }
 }
 
-/* ===== 선택된 반품 변경 감시 ===== */
+// -----------------------------
+// watch
+// -----------------------------
 watch(
   () => selectedReturn.value,
   (newReturn) => {
@@ -291,10 +270,13 @@ watch(
     }
   }
 )
-/* ===== 반품 상태 업데이트 ===== */
+
+// -----------------------------
+// 상태 업데이트
+// -----------------------------
 const updateReturnStatus = async (newStatus) => {
   if (!selectedReturn.value) {
-    alert("반품 건을 먼저 선택하세요.")
+    alert('반품 건을 먼저 선택하세요.')
     return
   }
 
@@ -303,20 +285,21 @@ const updateReturnStatus = async (newStatus) => {
       status: newStatus
     })
 
-    if (data.status === "success") {
+    if (data.status === 'success') {
       alert(`반품 상태가 '${newStatus}'(으)로 변경되었습니다.`)
-      // 화면 갱신
       fetchReturns()
     } else {
-      alert(data.message || "상태 변경 실패")
+      alert(data.message || '상태 변경 실패')
     }
   } catch (error) {
-    console.error("반품 상태 변경 오류:", error)
-    alert("서버 오류로 상태를 변경하지 못했습니다.")
+    console.error('반품 상태 변경 오류:', error)
+    alert('서버 오류로 상태를 변경하지 못했습니다.')
   }
 }
 
-/* ===== 초기화 ===== */
+// -----------------------------
+// 기타 기능
+// -----------------------------
 const resetFilters = () => {
   filters.value = {
     startDate: null,
@@ -326,12 +309,13 @@ const resetFilters = () => {
   }
   fetchReturns()
 }
+const exportExcel = () => console.log('엑셀 다운로드 실행 (추후 구현)')
+const exportPDF = () => console.log('PDF 출력 실행 (추후 구현)')
 
+// -----------------------------
+// lifecycle
+// -----------------------------
 onMounted(fetchReturns)
-
-/* ===== PDF & 엑셀 ===== */
-const exportExcel = () => console.log('엑셀 다운로드 실행')
-const exportPDF = () => console.log('PDF 출력 실행')
 </script>
 
 <style scoped>
@@ -343,7 +327,6 @@ const exportPDF = () => console.log('PDF 출력 실행')
   padding: 10px; border: 1px solid #dcdcdc; border-radius: 8px;
   background: #f9f9f9; margin-bottom: 20px;
 }
-
 .filter-group { display: flex; align-items: center; gap: 10px; }
 .filter-label { font-weight: 600; min-width: 70px; text-align: right; }
 .status-buttons button { margin-right: 5px; }
