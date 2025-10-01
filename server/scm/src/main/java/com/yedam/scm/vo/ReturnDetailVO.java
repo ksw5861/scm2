@@ -1,6 +1,5 @@
 package com.yedam.scm.vo;
 
-
 import lombok.Data;
 
 @Data
@@ -26,14 +25,19 @@ public class ReturnDetailVO {
     private String rdetailStatus;  // 반품 상세 상태 (REQ: 요청, APPROVE: 승인, COMPLETE: 완료)
 
     // ====== 주문 조회 시 필요한 추가 필드 ======
-    private String orderId;        // 관련된 주문 번호 (SALES_ORDER_DETAIL -> SALES_ORDER)
+    private String orderId;        // 관련된 주문 번호
     private int orderQty;          // 기존 주문 수량
     private String prodStatus;     // 상품 상태 (배송완료 등)
+
+
+    private Integer returnedQty;   // 이미 반품된 수량 (대기 포함)
+    private Integer remainQty;     // 남은 반품 가능 수량 = orderQty - returnedQty
 
 
 
     // 1011 동원 추가// 
      private String companyName; 
+
 
 
 
