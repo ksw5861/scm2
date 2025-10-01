@@ -3,88 +3,8 @@
 
 <mapper namespace="com.yedam.scm.master.mapper.EmployeeMapper">
 
-  <select id="selectEmployeeSimpleListByCondition" resultType="EmployeeVO">
-    SELECT 
-      e.employee_id,
-      e.name,
-      e.phone
-    FROM (
-      SELECT 
-        employee_id,
-        name,
-        phone,
-
-        <choose>
-          <when test="condition.sortField == 'employeeId'">
-            ROW_NUMBER() OVER (
-              ORDER BY employee_id
-              <choose>
-                <when test="condition.sortOrder == 1">ASC</when>
-                <when test="condition.sortOrder == -1">DESC</when>
-                <otherwise>ASC</otherwise>
-              </choose>
-            ) AS rn
-          </when>
-          <when test="condition.sortField == 'name'">
-            ROW_NUMBER() OVER (
-              ORDER BY name
-              <choose>
-                <when test="condition.sortOrder == 1">ASC</when>
-                <when test="condition.sortOrder == -1">DESC</when>
-                <otherwise>ASC</otherwise>
-              </choose>
-            ) AS rn
-          </when>
-          <otherwise>
-            ROW_NUMBER() OVER (ORDER BY employee_id DESC) AS rn
-          </otherwise>
-        </choose>
-
-      FROM employee
-      WHERE 1 = 1
-
-      <if test="condition.empName != null and condition.empName != ''">
-        AND name LIKE '%' || #{condition.empName} || '%'
-      </if>
-
-      <if test="condition.phone != null and condition.phone != ''">
-        AND phone LIKE '%' || #{condition.phone} || '%'
-      </if>
-
-      <if test="condition.empId != null and condition.empId != ''">
-        AND employee_id LIKE '%' || #{condition.empId} || '%'
-      </if>
-
-      <if test="condition.status != null and condition.status.size() > 0">
-        AND status IN
-        <foreach item="st" collection="condition.status" open="(" separator="," close=")">
-          #{st}
-        </foreach>
-      </if>
-
-      <if test="condition.isActive != null and condition.isActive.size() > 0">
-        AND is_active IN
-        <foreach item="active" collection="condition.isActive" open="(" separator="," close=")">
-          #{active}
-        </foreach>
-      </if>
-
-      <if test="condition.startHireDate != null and condition.startHireDate != ''">
-        AND hire_date &gt;= TO_DATE(#{condition.startHireDate}, 'YYYY-MM-DD')
-      </if>
-
-      <if test="condition.endHireDate != null and condition.endHireDate != ''">
-        AND hire_date &lt;= TO_DATE(#{condition.endHireDate}, 'YYYY-MM-DD')
-      </if>
-    ) e
-    WHERE e.rn BETWEEN #{paging.startRow} AND #{paging.endRow}
-  </select>
-
-  <select id="selectEmployeeCountByCondition" resultType="long">
-    SELECT COUNT(*)
-    FROM employee
-    WHERE 1 = 1
-
+  <!-- 공통 조건 분리 -->
+  <sql id="employeeConditions">
     <if test="condition.empName != null and condition.empName != ''">
       AND name LIKE '%' || #{condition.empName} || '%'
     </if>
@@ -118,8 +38,63 @@
     <if test="condition.endHireDate != null and condition.endHireDate != ''">
       AND hire_date &lt;= TO_DATE(#{condition.endHireDate}, 'YYYY-MM-DD')
     </if>
+  </sql>
+
+  <!-- 사원 간단 목록 조회 -->
+  <select id="selectEmployeeSimpleListByCondition" resultType="EmployeeVO">
+    SELECT 
+      e.employee_id,
+      e.name,
+      e.phone
+    FROM (
+      SELECT 
+        employee_id,
+        name,
+        phone,
+
+        <!-- 정렬 처리 -->
+        <choose>
+          <when test="condition.sortField == 'employeeId'">
+            ROW_NUMBER() OVER (
+              ORDER BY employee_id
+              <choose>
+                <when test="condition.sortOrder == 1">ASC</when>
+                <when test="condition.sortOrder == -1">DESC</when>
+                <otherwise>ASC</otherwise>
+              </choose>
+            ) AS rn
+          </when>
+          <when test="condition.sortField == 'name'">
+            ROW_NUMBER() OVER (
+              ORDER BY name
+              <choose>
+                <when test="condition.sortOrder == 1">ASC</when>
+                <when test="condition.sortOrder == -1">DESC</when>
+                <otherwise>ASC</otherwise>
+              </choose>
+            ) AS rn
+          </when>
+          <otherwise>
+            ROW_NUMBER() OVER (ORDER BY employee_id DESC) AS rn
+          </otherwise>
+        </choose>
+
+      FROM employee
+      WHERE 1 = 1
+      <include refid="employeeConditions"/>
+    ) e
+    WHERE e.rn BETWEEN #{paging.startRow} AND #{paging.endRow}
   </select>
 
+  <!-- 사원 목록 총 개수 -->
+  <select id="selectEmployeeCountByCondition" resultType="java.lang.Long">
+    SELECT COUNT(*)
+    FROM employee
+    WHERE 1 = 1
+    <include refid="employeeConditions"/>
+  </select>
+
+  <!-- 사원 상세 조회 -->
   <select id="selectEmployeeById" resultType="EmployeeVO">
     SELECT 
       employee_id,
@@ -135,43 +110,47 @@
     WHERE employee_id = #{empId}
   </select>
 
-<insert id="insertEmployee" parameterType="EmployeeVO" statementType="CALLABLE">
-  <selectKey keyProperty="employeeId" resultType="string" order="BEFORE">
-    SELECT next_code('emp') FROM dual
-  </selectKey>
+  <!-- 사원 등록 -->
+  <insert id="insertEmployee" parameterType="EmployeeVO" statementType="CALLABLE">
+    <selectKey keyProperty="employeeId" resultType="string" order="BEFORE">
+      SELECT next_code('emp') FROM dual
+    </selectKey>
+    
+    { CALL insert_employee_with_account(
+      #{employeeId, mode=IN, jdbcType=VARCHAR},
+      #{name, mode=IN, jdbcType=VARCHAR},
+      #{phone, mode=IN, jdbcType=VARCHAR},
+      #{email, mode=IN, jdbcType=VARCHAR},
+      #{status, mode=IN, jdbcType=VARCHAR},
+      #{isActive, mode=IN, jdbcType=CHAR},
+      #{hireDate, mode=IN, jdbcType=DATE},
+      #{resignDate, mode=IN, jdbcType=DATE},
+      #{tempPassword, mode=IN, jdbcType=VARCHAR}
+    ) }
+  </insert>
 
-  { CALL insert_employee_with_account(
-    #{employeeId, mode=IN, jdbcType=VARCHAR},
-    #{name, mode=IN, jdbcType=VARCHAR},
-    #{phone, mode=IN, jdbcType=VARCHAR},
-    #{email, mode=IN, jdbcType=VARCHAR},
-    #{status, mode=IN, jdbcType=VARCHAR},
-    #{isActive, mode=IN, jdbcType=CHAR},
-    #{hireDate, mode=IN, jdbcType=DATE},
-    #{resignDate, mode=IN, jdbcType=DATE},
-    #{tempPassword, mode=IN, jdbcType=VARCHAR}
-  ) }
-</insert>
+  <!-- 사원 수정 -->
+  <update id="updateEmployeeById" statementType="CALLABLE">
+    { CALL update_employee_with_account(
+      #{employeeId, mode=IN, jdbcType=VARCHAR},
+      #{name, mode=IN, jdbcType=VARCHAR},
+      #{phone, mode=IN, jdbcType=VARCHAR},
+      #{email, mode=IN, jdbcType=VARCHAR},
+      #{status, mode=IN, jdbcType=VARCHAR},
+      #{isActive, mode=IN, jdbcType=CHAR},
+      #{hireDate, mode=IN, jdbcType=DATE},
+      #{resignDate, mode=IN, jdbcType=DATE},
+      #{hasPhoto, mode=IN, jdbcType=CHAR},
+      #{rowCount, mode=OUT, jdbcType=NUMERIC, javaType=java.lang.Integer}
+    ) }
+  </update>
 
-<update id="updateEmployeeById" statementType="CALLABLE">
-  { CALL update_employee_with_account(
-    #{employeeId, mode=IN, jdbcType=VARCHAR},
-    #{name, mode=IN, jdbcType=VARCHAR},
-    #{phone, mode=IN, jdbcType=VARCHAR},
-    #{email, mode=IN, jdbcType=VARCHAR},
-    #{status, mode=IN, jdbcType=VARCHAR},
-    #{isActive, mode=IN, jdbcType=CHAR},
-    #{hireDate, mode=IN, jdbcType=DATE},
-    #{resignDate, mode=IN, jdbcType=DATE},
-    #{hasPhoto, mode=IN, jdbcType=CHAR},
-    #{rowCount, mode=OUT, jdbcType=NUMERIC, javaType=java.lang.Integer}
-  )}
-</update>
-
-<delete id="deleteEmployeeById" statementType="CALLABLE">
+  <!-- 사원 삭제 -->
+  <delete id="deleteEmployeeById" statementType="CALLABLE">
     CALL delete_employee_with_account(
       #{param.empId, mode=IN, jdbcType=VARCHAR},
       #{param.rowCount, mode=OUT, jdbcType=NUMERIC, javaType=java.lang.Integer}
     )
-</delete>
+  </delete>
+
 </mapper>

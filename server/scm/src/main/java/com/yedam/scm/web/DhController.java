@@ -37,6 +37,14 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+
+/**
+ * DhController
+ * ============================================================
+ * 사원 관리 기능 관련 전체 API Controller
+ * 로그인 기능 전체 API Controller
+ * ============================================================
+ */
 @RestController
 @RequiredArgsConstructor
 public class DhController {

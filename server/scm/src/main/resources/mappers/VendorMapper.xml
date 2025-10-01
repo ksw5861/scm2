@@ -2,47 +2,97 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.yedam.scm.master.mapper.VendorMapper">
 
+  <!-- 공통 조건 블록 -->
+  <sql id="vendorConditions">
+    <if test="condition.type != null and condition.type.size() > 0">
+      AND type IN
+      <foreach item="st" collection="condition.type" open="(" separator="," close=")">
+        #{st}
+      </foreach>
+    </if>
+
+    <if test="condition.isActive != null and condition.isActive.size() > 0">
+      AND is_active IN
+      <foreach item="st" collection="condition.isActive" open="(" separator="," close=")">
+        #{st}
+      </foreach>
+    </if>
+
+    <if test="condition.companyName != null and condition.companyName != ''">
+      AND company_name LIKE '%' || #{condition.companyName} || '%'
+    </if>
+
+    <if test="condition.name != null and condition.name != ''">
+      AND (
+        ceo_name LIKE '%' || #{condition.name} || '%'
+        OR owner_name LIKE '%' || #{condition.name} || '%'
+      )
+    </if>
+
+    <if test="condition.phoneNumber != null and condition.phoneNumber != ''">
+      AND (
+        phone_number LIKE '%' || #{condition.phoneNumber} || '%'
+        OR owner_tel LIKE '%' || #{condition.phoneNumber} || '%'
+      )
+    </if>
+
+    <if test="condition.businessRegistration != null and condition.businessRegistration != ''">
+      AND business_registration LIKE '%' || #{condition.businessRegistration} || '%'
+    </if>
+  </sql>
+
   <!-- 거래처 목록 조회 -->
-  <select id="getVendorList" resultType="com.yedam.scm.vo.VendorVO">
-    SELECT *
-    FROM VENDOR
-    <where>
-      <if test="vendorId != null and vendorId != ''">
-        VENDOR_ID = #{vendorId}
-      </if>
-      <if test="companyName != null and companyName != ''">
-        AND COMPANY_NAME LIKE '%' || #{companyName} || '%'
-      </if>
-      <if test="isActive != null and isActive != ''">
-        AND IS_ACTIVE = #{isActive}
-      </if>
-    </where>
-    ORDER BY CREATED_AT DESC
+  <select id="getVendorList" resultType="VendorVO">
+    SELECT 
+      e.type,
+      e.company_name,
+      e.business_registration,
+      e.vendor_id
+    FROM (
+      SELECT 
+        type,
+        company_name,
+        business_registration,
+        vendor_id,
+        ROW_NUMBER() OVER (ORDER BY vendor_id DESC) AS rn
+      FROM vendor
+      WHERE 1 = 1
+      <include refid="vendorConditions"/>
+    ) e
+    WHERE e.rn BETWEEN #{paging.startRow} AND #{paging.endRow}
+  </select>
+
+  <!-- 거래처 목록 카운트 -->
+  <select id="getVendorListTotalCount" resultType="Long">
+    SELECT count(*)
+    FROM vendor
+    WHERE 1 = 1
+    <include refid="vendorConditions"/>
   </select>
 
   <!-- 거래처 상세 조회 -->
   <select id="getVendorDetail" parameterType="string" resultType="com.yedam.scm.vo.VendorVO">
     SELECT *
-    FROM VENDOR
-    WHERE VENDOR_ID = #{vendorId}
+    FROM vendor
+    WHERE vendor_id = #{vendorId}
   </select>
 
   <!-- 거래처 등록 -->
   <insert id="insertVendor" parameterType="com.yedam.scm.vo.VendorVO">
-    INSERT INTO VENDOR (
-      VENDOR_ID,
-      BUSINESS_REGISTRATION,
-      COMPANY_NAME,
-      CEO_NAME,
-      PHONE_NUMBER,
-      ADDRESS,
-      IS_ACTIVE,
-      CREATED_AT,
-      UPDATED_AT,
-      TYPE,
-      OWNER_NAME,
-      OWNER_EMAIL,
-      OWNER_TEL
+    INSERT INTO vendor (
+      vendor_id,
+      business_registration,
+      company_name,
+      ceo_name,
+      phone_number,
+      address,
+      is_active,
+      created_at,
+      updated_at,
+      type,
+      owner_name,
+      owner_email,
+      owner_tel
     ) VALUES (
       next_code('VEN'),
       #{businessRegistration},
@@ -52,7 +102,7 @@
       #{address},
       #{isActive},
       sysdate,
-      #{updatedAt},
+      sysdate,
       #{type},
       #{ownerName},
       #{ownerEmail},
@@ -62,27 +112,27 @@
 
   <!-- 거래처 수정 -->
   <update id="updateVendor" parameterType="com.yedam.scm.vo.VendorVO">
-    UPDATE VENDOR
+    UPDATE vendor
     <set>
-      <if test="businessRegistration != null">BUSINESS_REGISTRATION = #{businessRegistration},</if>
-      <if test="companyName != null">COMPANY_NAME = #{companyName},</if>
-      <if test="ceoName != null">CEO_NAME = #{ceoName},</if>
-      <if test="phoneNumber != null">PHONE_NUMBER = #{phoneNumber},</if>
-      <if test="address != null">ADDRESS = #{address},</if>
-      <if test="isActive != null">IS_ACTIVE = #{isActive},</if>
-      <if test="updatedAt != null">UPDATED_AT = sysdate,</if>
-      <if test="type != null">TYPE = #{type},</if>
-      <if test="ownerName != null">OWNER_NAME = #{ownerName},</if>
-      <if test="ownerEmail != null">OWNER_EMAIL = #{ownerEmail},</if>
-      <if test="ownerTel != null">OWNER_TEL = #{ownerTel},</if>
+      <if test="businessRegistration != null">business_registration = #{businessRegistration},</if>
+      <if test="companyName != null">company_name = #{companyName},</if>
+      <if test="ceoName != null">ceo_name = #{ceoName},</if>
+      <if test="phoneNumber != null">phone_number = #{phoneNumber},</if>
+      <if test="address != null">address = #{address},</if>
+      <if test="isActive != null">is_active = #{isActive},</if>
+      <if test="type != null">type = #{type},</if>
+      <if test="ownerName != null">owner_name = #{ownerName},</if>
+      <if test="ownerEmail != null">owner_email = #{ownerEmail},</if>
+      <if test="ownerTel != null">owner_tel = #{ownerTel},</if>
+      updated_at = sysdate
     </set>
-    WHERE VENDOR_ID = #{vendorId}
+    WHERE vendor_id = #{vendorId}
   </update>
 
   <!-- 거래처 삭제 -->
   <delete id="deleteVendor" parameterType="string">
-    DELETE FROM VENDOR
-    WHERE VENDOR_ID = #{vendorId}
+    DELETE FROM vendor
+    WHERE vendor_id = #{vendorId}
   </delete>
 
 </mapper>
