@@ -29,4 +29,12 @@ public class ReturnDetailVO {
     private String orderId;        // 관련된 주문 번호 (SALES_ORDER_DETAIL -> SALES_ORDER)
     private int orderQty;          // 기존 주문 수량
     private String prodStatus;     // 상품 상태 (배송완료 등)
+
+
+
+    // 1011 동원 추가// 
+     private String companyName; 
+
+
+
 }
