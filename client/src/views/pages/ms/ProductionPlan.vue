@@ -35,8 +35,8 @@ const getNowDate = () => {
 const empName = ref('로그인');
 const dateRange = ref({ start: null, end: null });
 const resDate = ref(getNowDate());
-const planType = ref([]);
-const memo = ref([]);
+const planType = ref();
+const memo = ref('');
 
 //테이블 행 key값
 const columnId = ref(1);
@@ -84,8 +84,8 @@ const detailColumns = computed(() => [
 
 //상단박스버튼
 const resetForm = () => {
-  planType = '';
-  memo = [];
+  //planType = null;
+  //memo = [];
   dateRange.value = { start: null, end: null };
   productionPlans.value = [{ id: columnId.value, prodId: '', prdName: '', proQty: null, unit: '', proDate: '' }];
   columnId.value = 1;

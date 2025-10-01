@@ -23,28 +23,18 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-// const shipDetailList = ref();
+const shipDetailList = ref();
 
-// const pageLoad = async () => {
-//   try {
-//     const list = await axios.get('/api/mat/purchaseList');
-//     purchaseList.value = list.data.map((row) => ({
-//       id: row.purId,
-//       regDate: useDateFormat(row.regDate).value,
-//       purNo: row.purNo,
-//       matName: row.materialVO.matName,
-//       reqQty: row.reqQty,
-//       companyName: row.vendorVO.companyName,
-//       empName: row.empName
-//     }));
-//   } catch (error) {
-//     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
-//   }
-// };
+const pageLoad = async () => {
+  try {
+  } catch (err) {
+    toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
+  }
+};
 
-// onMounted(() => {
-//   pageLoad();
-// });
+onMounted(() => {
+  pageLoad();
+});
 
 const shipmentListColumn = [
   { label: '출고일', field: 'regDate' },
@@ -69,7 +59,7 @@ const shipDetailColumn = [
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
     <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">입고 등록</div>
+      <div class="font-semibold text-xl">하차 등록</div>
       <Divider />
       <!--search BOX 영역-->
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
@@ -100,7 +90,7 @@ const shipDetailColumn = [
         <div class="card flex flex-col gap-4 h-full">
           <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">입고대기 목록</div>
+            <div class="font-semibold text-m">하차대기 목록</div>
             <Divider />
             <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipmentListColumn" :data="shipmentList" :paginator="false" :showCheckbox="true" @row-select="detailInfo" />
           </div>

@@ -9,6 +9,7 @@ import com.yedam.scm.vo.MrpDetailVO;
 import com.yedam.scm.vo.PrdPlanDetailVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
+import com.yedam.scm.vo.PurStatusLogVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
 @Mapper
@@ -31,6 +32,12 @@ public interface PurchaseMatMapper {
     //자재주문등록
     boolean callReqestMatProc(PurchaseMatVO requestList);
    
+    //자재주문목록
+    List<PurchaseMatVO> getPurchaseList();
+
+    //자재주문상태목록
+     List<PurStatusLogVO> getPurchaseStatus(Long purId);
+
     /*==========================
      * 드롭다운/모달용
      ===========================*/

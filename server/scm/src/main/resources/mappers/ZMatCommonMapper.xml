@@ -26,4 +26,29 @@
     <result property="supOutQty"     column="SUP_OUT_QTY"/>
 </resultMap>
 
+<!--거래처 resultMap -->
+<resultMap id="VendorMap" type="VendorVO">
+    <result property="vendorId" column="VENDOR_ID"/>
+    <result property="businessRegistration" column="BUSINESS_REGISTRATION"/>
+    <result property="companyName" column="COMPANY_NAME"/>
+    <result property="ceoName" column="CEO_NAME"/>
+    <result property="phoneNumber" column="PHONE_NUMBER"/>
+    <result property="address" column="ADDRESS"/>
+    <result property="isActive" column="IS_ACTIVE"/>
+    <result property="createdAt" column="CREATED_AT"/>
+    <result property="updatedAt" column="UPDATED_AT"/>
+</resultMap>
+
+<!--제품 resultMap-->
+<resultMap id="ProductMap" type="ProductVO">
+  <id property="prodId" column="prod_id"/>
+  <result property="prodName" column="prod_name"/>
+  <result property="prodExpireDate" column="exp"/>
+  <result property="safeStock" column="safe_stock"/>
+  <result property="spec" column="spec"/>
+  <result property="prodUnitPrice" column="prod_unit_price"/>
+  <result property="unit" column="unit"/>
+  <result property="status" column="status"/>
+</resultMap>
+
 </mapper>
