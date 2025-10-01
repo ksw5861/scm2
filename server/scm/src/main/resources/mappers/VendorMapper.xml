@@ -31,13 +31,13 @@
 
     <if test="condition.phoneNumber != null and condition.phoneNumber != ''">
       AND (
-        phone_number LIKE '%' || #{condition.phoneNumber} || '%'
-        OR owner_tel LIKE '%' || #{condition.phoneNumber} || '%'
+        REPLACE(phone_number, '-', '') LIKE '%' || REPLACE(#{condition.phoneNumber}, '-', '') || '%'
+        OR REPLACE(owner_tel, '-', '') LIKE '%' || REPLACE(#{condition.phoneNumber}, '-', '') || '%'
       )
     </if>
 
     <if test="condition.businessRegistration != null and condition.businessRegistration != ''">
-      AND business_registration LIKE '%' || #{condition.businessRegistration} || '%'
+      AND REPLACE(business_registration, '-', '') LIKE '%' || REPLACE(#{condition.businessRegistration}, '-', '') || '%'
     </if>
   </sql>
 
