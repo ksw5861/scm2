@@ -8,6 +8,7 @@ import com.yedam.scm.vo.MrpDetailVO;
 import com.yedam.scm.vo.PrdPlanDetailVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
+import com.yedam.scm.vo.PurStatusLogVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
 import lombok.RequiredArgsConstructor;
@@ -63,9 +64,21 @@ public class MsController {
         return purchaseMatService.callReqestMatProc(requestList);
     }
     
+    //주문목록
+    @GetMapping("/purchaseList")
+    public List<PurchaseMatVO> getPurchaseList() {
+        return purchaseMatService.getPurchaseList();
+    }
     
+    //주문상세조회
+    @GetMapping("/purchaseListStatus")
+    public List<PurStatusLogVO> getPurchaseStatus(@RequestParam Long purId) {
+        return purchaseMatService.getPurchaseStatus(purId);
+    }
+    
+
     /*======================
-    모달용   
+    드롭다운/모달용   
     ======================*/
     @GetMapping("/productsList")
     public List<ProductVO> getProductList(){

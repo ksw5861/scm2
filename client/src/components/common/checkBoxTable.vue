@@ -34,7 +34,7 @@ watch(
 );
 
 // 선택된 행
-const selectedRows = ref([]);
+const selectedRows = ref();
 
 // 이벤트 핸들러
 const onRowSelect = (event) => {
@@ -89,9 +89,20 @@ const onSort = (event) => {
       <!--드롭다운-->
       <Column v-else-if="col.select" :field="col.field" :header="col.label" :style="col.style" :sortable="col.sortable ?? false">
         <template #body="slotProps">
-          <Select v-model="slotProps.data[col.field]" :options="typeof col.option === 'function'
-              ? col.option(slotProps.data)   // 행별 옵션
-              : (col.option?.value || col.option || [])" optionLabel="label" optionValue="value" :placeholder="col.placeholder" checkmark class="w-full" @change="(e) => col.change?.(slotProps.data, e.value)" />
+          <Select
+            v-model="slotProps.data[col.field]"
+            :options="
+              typeof col.option === 'function'
+                ? col.option(slotProps.data) // 행별 옵션
+                : col.option?.value || col.option || []
+            "
+            optionLabel="label"
+            optionValue="value"
+            :placeholder="col.placeholder"
+            checkmark
+            class="w-full"
+            @change="(e) => col.change?.(slotProps.data, e.value)"
+          />
         </template>
       </Column>
 

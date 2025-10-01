@@ -15,6 +15,7 @@ public class InboundVO {
     private String vendorId;      // VANDER_ID (공급처코드)
     private String venOutNo;      // VAN_OUT_NO (출고번호)
     private Integer count;        // COUNT (품목수량)
+    private String rejMemo;       //REJ_MEMO (거부사유)
 
     InboundDetailVO inboundDetailVO;
 }
