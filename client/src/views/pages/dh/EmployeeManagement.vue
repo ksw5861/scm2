@@ -545,6 +545,8 @@ onMounted(fetchEmployeeList);
           </InputGroup>
         </div>
 
+        <div class="hidden lg:block lg:w-1/2 xl:w-full"></div>
+
         <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
           <label class="font-semibold mb-1">재직 상태</label>
           <div class="flex flex-wrap gap-4">
