@@ -9,7 +9,7 @@ import lombok.Data;
 public class ReturnVO {
     private String returnId; // 반품번호
     // private String returnDate; // 반품일자
-    private Date returnDate; // 반품일자
+    private String returnDate; // 반품일자
     private String vendorId; // 거래처 ID
     private Long returnPrice; // 반품 총액
     private String returnStatus; // 반품 상태 (예: 반품접수, 반품완료)
