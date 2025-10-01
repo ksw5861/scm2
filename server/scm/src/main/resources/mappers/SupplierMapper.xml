@@ -16,6 +16,7 @@
     <result property="purNo" column="PUR_NO"/>
     <result property="total" column="TOTAL"/>
     <result property="dueDate" column="DUE_DATE"/>
+    <result property="expectDate" column="EXPECT_DATE"/>
 
    <association property="materialVO" resultMap="com.yedam.scm.common.CommonMapper.MaterialMap"/>
    <association property="purStatusLogVO" resultMap="com.yedam.scm.common.CommonMapper.PurStatusLogMap"/>
@@ -54,7 +55,7 @@ INSERT INTO purchase_status_log (pur_status_id, name, pur_mat_status, pur_id)
 VALUES (seq_purchase_status_log.NEXTVAL, #{name}, 'ms2', #{purId})
 </insert>
 
-<!--출고대기목록-->
+<!--출고지시대기목록-->
 <select id= "getMatWReleaseList" resultMap="purchaseMatMap">
 SELECT pm.pur_id,
        pm.mat_id,
@@ -80,18 +81,22 @@ WHERE pm.vendor_id = #{vendorId}
   AND pm.pur_mat_status in ('ms2', 'ms5')
 </select>
 
-<!--공급처출고-->
-<!--공급처출고등록시: 1) 주문테이블 update + 상태값 변경(프로시저) 2)입고마스터테이블 seq 3)입고마스터테이블insert 4)입고상세테이블insert-->
+
+<!--공급처 출고지시[출고수량/출고일 등록]-->
 <!--1)purchase_mat출고상태값 변경[부분출고], 출고수량누적합 + 상태log테이블 insert-->
 <select id="callReleaseMatPoc" parameterType="map" statementType="CALLABLE">
         { call PROC_MAT_RELEASE(
             #{purId,    mode=IN, jdbcType=NUMERIC},  
             #{outQty,   mode=IN, jdbcType=NUMERIC},  
-            #{name, mode=IN, jdbcType=VARCHAR}
+            #{vendorId,   mode=IN, jdbcType=VARCHAR},
+            #{expectDate, mode=IN, jdbcType=VARCHAR}
         )}
 </select>
 
-<!--2)마스터 seq"GET"-->
+
+<!--공급처출고-->
+<!--공급처출고등록시:  1)입고마스터테이블 seq 2)입고마스터테이블insert 3)입고상세테이블insert  4)배송정보등록-->
+<!--1)마스터 seq"GET"-->
 <select id="getInboundMasterPK" resultType="long">
 SELECT seq_inbound.NEXTVAL FROM dual
 </select>

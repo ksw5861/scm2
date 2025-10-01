@@ -20,6 +20,7 @@ public class PurchaseMatVO {
     private String purNo;
     private Long total;
     private Date dueDate;
+    private Date expectDate;
 
     MaterialVO materialVO;
     VendorVO vendorVO;

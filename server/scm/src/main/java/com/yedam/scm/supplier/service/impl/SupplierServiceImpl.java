@@ -1,6 +1,7 @@
 package com.yedam.scm.supplier.service.impl;
 
 import java.beans.Transient;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -46,7 +47,7 @@ public class SupplierServiceImpl implements SupplierService  {
         return updatedCount;
     }
 
-    //출고대기목록
+    //출고지시대기목록
     @Override
     public List<PurchaseMatVO> getMatWReleaseList(String vendorId) {
         return mapper.getMatWReleaseList(vendorId);
@@ -66,31 +67,33 @@ public class SupplierServiceImpl implements SupplierService  {
         for(PurchaseMatVO row : payload) {
             
             Long purId   = row.getPurId();
-            Long outQty = row.getPurStatusLogVO().getSupOutQty(); //이력관리VO에 있음.
+            Long outQty = row.getPurStatusLogVO().getSupOutQty(); //이력관리VO에 있음.[메인은 누적출고량만 기록하기때문에 이력등록시 매번 출고수량등록]
             vendorId = row.getVendorId();
+            Date expectDate =row.getExpectDate();
 
-            mapper.callReleaseMatPoc(purId, outQty, vendorId);
-        }
-
-        //입고마스터 PK가지고 옴. 
-        Long inboundMasterPK = mapper.getInboundMasterPK(); 
-        
-        //1) 마스터테이블 isert [PK/verderId]
-        mapper.insertInboundMaster(inboundMasterPK, vendorId);
-
-        //2) 디테일테이블 (for순환)[입고마스터PK/발주아이디/출고수량/제품코드/vnderId]
-        for(PurchaseMatVO row : payload) {
-            
-            Long purId   = row.getPurId();
-            String matId = row.getMatId();
-            //String purNo = row.getPurNo(); //발주번호 = 주문번호
-            Long outQty = row.getPurStatusLogVO().getSupOutQty(); //이력관리VO에 있음.
-            vendorId = row.getVendorId();
-
-            mapper.insertInboundDetail(inboundMasterPK, purId, matId, outQty, vendorId);
-
+            mapper.callReleaseMatPoc(purId, outQty, vendorId, expectDate);
         }
 
     }
     
 }
+
+
+// //입고마스터 PK가지고 옴. 
+//         Long inboundMasterPK = mapper.getInboundMasterPK(); 
+        
+//         //1) 마스터테이블 isert [PK/verderId]
+//         mapper.insertInboundMaster(inboundMasterPK, vendorId);
+
+//         //2) 디테일테이블 (for순환)[입고마스터PK/발주아이디/출고수량/제품코드/vnderId]
+//         for(PurchaseMatVO row : payload) {
+            
+//             Long purId   = row.getPurId();
+//             String matId = row.getMatId();
+//             //String purNo = row.getPurNo(); //발주번호 = 주문번호
+//             Long outQty = row.getPurStatusLogVO().getSupOutQty(); //이력관리VO에 있음.
+//             vendorId = row.getVendorId();
+
+//             mapper.insertInboundDetail(inboundMasterPK, purId, matId, outQty, vendorId);
+
+//         }

@@ -40,7 +40,7 @@ const matOutColumns = [
   { label: '단위', field: 'unit' },
   { label: '잔여수량', field: 'restQty' },
   { label: '출고수량', field: 'outQty', inputText: true },
-  { label: '출고예정일', field: 'expectDate', datePicker: true },
+  { label: '배송지', field: 'outQty', select: true },
   { label: '누적출고수량', field: 'outTotalQty' },
   { label: '상태', field: 'releaseStatus' },
   { label: '출고승인일', field: 'approveDate' }
@@ -61,7 +61,6 @@ const pageLoad = async () => {
       orderQty: item.reqQty,
       unit: item.materialVO.unit,
       outQty: '',
-      expectDate:'',
       outTotalQty: item.outTotalQty,
       restQty: item.reqQty - item.outTotalQty,
       releaseStatus: item.purMatStatus,
@@ -77,51 +76,41 @@ onMounted(() => {
 });
 
 const shipment = async () => {
+  //선택행 없으면 출고처리 선택 안내
+  //   if (!matOutData.value.orderQty) {
+  //   toast('info', '유효성 검사', '출고 수량을 입력해 주세요.', '3000');
+  //   return;
+  // }
 
-    //선택행 없으면 출고처리 선택 안내
-    if (!selectedRows.value){
-        toast('info', '유효성 검사', '출고 지시 제품을 선택해 주세요.', '3000');
-        return;
-    }
-    // //출고수량 null
-    // if (!matOutData.value.orderQty || matOutData.value.orderQty == 0) {
-    // toast('info', '유효성 검사', '출고 수량을 입력해 주세요.', '3000');
-    // return;
-    // }
+  // if (matOutData.value.outQty > matOutData.value.orderQty) {
+  //   toast('info', '유효성 검사', '주문수량 대비 출고수량이 많습니다.', '3000');
+  //   return;
+  // }
 
-    // if (!matOutData.value.expectDate) {
-    // toast('info', '유효성 검사', '출고 예정일을 입력해 주세요.', '3000');
-    // return;
-    // }
+  //잔여수량대비 많으면 안됨.
 
-    // //잔여수량대비 유효성검사
-    // if (matOutData.value.outQty > matOutData.value.orderQty) {
-    // toast('info', '유효성 검사', '주문수량 대비 출고수량이 많습니다.', '3000');
-    // return;
-    // }
+  const list = JSON.parse(JSON.stringify(selectedRows.value));
 
-    const list = JSON.parse(JSON.stringify(selectedRows.value));
+  const payload = list.map((row) => ({
+    purId: row.id,
+    matId: row.matId,
+    purNo: row.purNo,
+    expectDate: row.expectDate,
+    purStatusLogVO: { supOutQty: row.outQty }, //이걸 백 로그VO에 넣기위해!
+    vendorId: vendorId.value //이렇게 넣으면 행 마다 다 들어감.
+  }));
 
-    const payload = list.map((row) => ({
-        purId: row.id,
-        matId: row.matId,
-        purNo: row.purNo,
-        purStatusLogVO: { supOutQty: row.outQty }, //이걸 백 로그VO에 넣기위해!
-        expectDate: row.expectDate,
-        vendorId: vendorId.value //이렇게 넣으면 행 마다 다 들어감.
-    }));
+  console.log(payload);
 
-    console.log(payload);
+  try {
+    await axios.post('/api/supplier/shipMaterial', payload);
+    toast('info', '등록 성공', '출고등록  성공:', '3000');
+    selectedRows.value = [];
+    await pageLoad();
 
-    try {
-        const res = await axios.post('/api/supplier/shipMaterial', payload);
-        toast('info', '등록 성공', '출고등록  성공:', '3000');
-        selectedRows.value = [];
-        await pageLoad();
-
-    } catch (error) {
-        toast('error', '등록 실패', '출고등록  실패:', '3000');
-    }
+  } catch (error) {
+    toast('error', '등록 실패', '출고등록  실패:', '3000');
+  }
 };
 </script>
 

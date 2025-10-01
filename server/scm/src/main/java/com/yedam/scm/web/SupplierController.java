@@ -38,13 +38,13 @@ public class SupplierController {
         return service.updateOrderApprove(data);
     }
     
-    //출고대기목록
+    //출고대기목록(출고지시등록페이지 로드시 출력되는 목록)
     @GetMapping("/releaseList/{vendorId}")
     public List<PurchaseMatVO> getMatWReleaseList (@PathVariable String vendorId) {
         return service. getMatWReleaseList(vendorId);
     }
     
-    //출고처리
+    //출고지시
     @PostMapping("/shipMaterial")
     public void insertReleaseData(@RequestBody List<PurchaseMatVO> payload) {
          service.insertReleaseData(payload);

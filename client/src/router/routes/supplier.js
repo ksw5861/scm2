@@ -14,8 +14,17 @@ const supplier = {
     },
     {
       path: '/matSupply',
-      name: '자재 배송',
+      name: '출고 승인',
       component: () => import('@/views/pages/supplier/matSupply.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    },
+    {
+      path: '/matShipment',
+      name: '출고 등록',
+      component: () => import('@/views/pages/supplier/MatShipment.vue'),
       meta: {
         requiresAuth: true,
         roles: ['admin', 'employee']
