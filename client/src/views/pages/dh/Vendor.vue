@@ -92,31 +92,23 @@ const getStatusLabels = (typeArray) => {
 const getIsActiveLabel = (value) =>
     ACTIVE_OPTIONS.find(opt => opt.value === value)?.label || '';
 
-// =========================================================================
-// 💡 [수정됨] 사업자등록번호 포매팅 및 10자리 제한 강화
-// =========================================================================
 const formatBusinessRegistration = (value) => {
     if (!value) return '';
-    let numbers = value.toString().replace(/\D/g, ''); // 숫자만 남김
+    let numbers = value.toString().replace(/\D/g, '');
 
-    // ✅ 강화된 길이 제한: 10자리를 초과하면 즉시 10자리까지만 유지
     if (numbers.length > 10) {
         numbers = numbers.slice(0, 10);
     }
 
     if (numbers.length < 4) return numbers;
     if (numbers.length < 6) return numbers.replace(/(\d{3})(\d+)/, '$1-$2');
-    return numbers.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3'); // 000-00-00000
+    return numbers.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3');
 };
 
-// =========================================================================
-// 💡 [수정됨] 전화번호 포매팅 및 11자리 제한 강화
-// =========================================================================
 const formatPhone = (value) => {
     if (!value) return '';
-    let numbers = value.toString().replace(/\D/g, ''); // 숫자만 남김
+    let numbers = value.toString().replace(/\D/g, '');
 
-    // ✅ 강화된 길이 제한: 11자리를 초과하면 즉시 11자리까지만 유지
     if (numbers.length > 11) {
         numbers = numbers.slice(0, 11);
     }
@@ -124,21 +116,19 @@ const formatPhone = (value) => {
     if (numbers.length < 4) return numbers;
 
     if (numbers.length === 11) {
-        // 휴대폰 번호 010-xxxx-xxxx
         return numbers.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
     }
+
     if (numbers.length === 10) {
-        // 지역번호 02-xxxx-xxxx 또는 0xx-xxx-xxxx
         if (numbers.startsWith('02')) {
             return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
         }
         return numbers.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
     }
-    // 4자리 이상 9자리 이하 (일반 전화번호)
     if (numbers.length > 7) {
         return numbers.replace(/(\d{2,3})(\d{3,4})(\d{4})/, '$1-$2-$3');
     }
-    return numbers.replace(/(\d{3})(\d+)/, '$1-$2'); // 짧은 번호 처리 (ex: 031-123)
+    return numbers.replace(/(\d{3})(\d+)/, '$1-$2');
 };
 
 const emailError = ref('');
@@ -147,11 +137,6 @@ const validateEmail = (email) => {
     emailError.value = email && !emailRegex.test(email) ? '유효한 이메일 주소를 입력하세요.' : '';
 };
 
-/**
- * @description 등록/수정 시 editForm.type 배열을 서버 전송용 문자열로 변환 (0, 1 모두 선택 시 '2'로 변환)
- * @param {Array<number>} typeArray
- * @returns {string} 서버 전송용 type 문자열
- */
 const getVendorTypePayload = (typeArray) => {
     if (!Array.isArray(typeArray) || typeArray.length === 0) {
         return '';
@@ -159,19 +144,15 @@ const getVendorTypePayload = (typeArray) => {
 
     const types = new Set(typeArray.map(Number));
 
-    // 💡 1. '판매처'(0)와 '공급처'(1)가 모두 포함된 경우, '2' 전송
     if (types.has(0) && types.has(1)) {
         return '2';
     }
 
-    // 2. 그 외의 경우 (단일 선택, 2만 선택, 또는 0/1 중 하나만 선택)
     return Array.from(types).join(',');
 };
 
 
 const validateVendorForm = () => {
-    // 💡 입력 마스크가 적용되었으므로, 하이픈이 제거된 순수 숫자 기준으로 길이를 체크하는 것이 더 정확할 수 있습니다.
-    // 여기서는 포매팅된 값의 존재 여부만 체크합니다.
     if (!editForm.businessRegistration) return '사업자 등록 번호를 입력해주세요.';
     if (!editForm.companyName) return '거래처명을 입력해주세요.';
     if (!editForm.ceoName) return '대표자명을 입력해주세요.';
@@ -268,9 +249,8 @@ const confirmEditLoss = (message) => {
 const fetchVendorList = async () => {
     loading.value = true;
     try {
-        let finalType = [...searchParams.type].map(Number); // 검색 파라미터 복사 (숫자 배열)
+        let finalType = [...searchParams.type].map(Number);
 
-        // 💡 검색 로직 수정: 0(판매처)과 1(공급처)이 모두 선택되면 2(복합)를 추가하여 검색
         const hasVendor = finalType.includes(0);
         const hasSupplier = finalType.includes(1);
 
@@ -280,7 +260,6 @@ const fetchVendorList = async () => {
             }
         }
 
-        // 배열 내 중복 제거 및 최종 유형 배열 정리
         finalType = [...new Set(finalType)];
 
         const cleanSearchParams = Object.fromEntries(
@@ -296,7 +275,6 @@ const fetchVendorList = async () => {
                 page: page.value.page,
                 size: page.value.size,
                 ...cleanSearchParams,
-                // 💡 최종 가공된 type 배열을 쉼표 문자열로 변환하여 API에 전달
                 ...(finalType.length > 0 && { type: finalType.join(',') })
             }
         });
@@ -329,11 +307,11 @@ const fetchVendorDetail = async (vendorId) => {
         if (typeof vendorData.type === 'string') {
             vendorData.type = vendorData.type.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
         } else if (typeof vendorData.type === 'number') {
-            vendorData.type = [vendorData.type]; // 단일 숫자 타입이면 배열로 변환
+            vendorData.type = [vendorData.type];
         } else if (!Array.isArray(vendorData.type)) {
-            vendorData.type = []; // 기타 유효하지 않은 값이면 빈 배열로 초기화
+            vendorData.type = [];
         } else {
-             vendorData.type = vendorData.type.map(v => parseInt(v)); // 배열이더라도 내부 요소를 숫자로 변환
+             vendorData.type = vendorData.type.map(v => parseInt(v));
         }
 
         vendorDetail.value = vendorData;
@@ -354,21 +332,18 @@ const addVendor = async () => {
     if (!confirm("등록하시겠습니까?")) return;
 
     try {
-        // 💡 type 배열 변환 로직 적용: 0, 1 포함 시 '2'로 변환
         const payload = {
              ...editForm,
-             type: getVendorTypePayload(editForm.type) // 배열을 문자열로 변환
+             type: getVendorTypePayload(editForm.type)
         };
 
         const response = await axios.post('/api/vendor', payload);
-        const responseData = response.data.data ?? response.data; // API 응답 형식에 맞게 조정
+        const responseData = response.data.data ?? response.data;
 
         if (response.status === 200 || response.status === 201) {
             toast('success', '등록 성공', '새로운 거래처가 성공적으로 등록되었습니다.');
             await fetchVendorList();
 
-            // 등록 후 상세 정보 표시
-            // 등록된 거래처 ID를 응답에서 추출 (vendorId 키가 존재한다고 가정)
             const newVendorId = responseData.vendorId;
 
             selectedVendor.value = vendors.value.find(v => v.vendorId === newVendorId);
@@ -399,10 +374,9 @@ const modifyVendor = async () => {
     }
 
     try {
-        // 💡 type 배열 변환 로직 적용: 0, 1 포함 시 '2'로 변환
         const payload = {
              ...editForm,
-             type: getVendorTypePayload(editForm.type) // 배열을 문자열로 변환
+             type: getVendorTypePayload(editForm.type)
         };
 
         const response = await axios.put(`/api/vendor/${vendorDetail.value.vendorId}`, payload);
@@ -454,7 +428,6 @@ const handleSearch = () => {
 };
 
 const handlePageChange = ({ page: newPage, size }) => {
-    // 페이지네이션 버튼 작동을 위해 page.value의 속성을 직접 업데이트
     page.value.page = newPage;
     page.value.size = size;
     fetchVendorList();
@@ -472,7 +445,6 @@ const handleRowSelect = (vendor) => {
     prevSelectedVendor.value = vendor;
     selectedVendor.value = vendor;
     cardMode.value = 'view';
-    // vendorId가 데이터 키라고 가정하고 상세 정보 조회
     fetchVendorDetail(vendor.vendorId);
 };
 
@@ -506,7 +478,7 @@ const handleResetForm = () => {
         editForm.ownerEmail ||
         editForm.ownerPhone ||
         editForm.type.length > 0 ||
-        editForm.isActive !== 'N'; // 초기값('N')과 다를 경우
+        editForm.isActive !== 'N';
 
     if (isFormDirty) {
         if (confirm('현재 입력 중인 내용이 저장되지 않습니다. 계속 진행하시겠습니까?')) {
@@ -523,7 +495,7 @@ const handleEdit = () => {
     Object.assign(editForm, {
          ...vendorDetail.value,
          type: Array.isArray(vendorDetail.value.type) ? vendorDetail.value.type : (vendorDetail.value.type ? [vendorDetail.value.type] : []),
-         isActive: vendorDetail.value.isActive || 'N' // isActive 보장
+         isActive: vendorDetail.value.isActive || 'N'
     });
 
     cardMode.value = 'edit';
@@ -558,7 +530,6 @@ onMounted(fetchVendorList);
 
         <SearchCard title="거래처 검색" @search="handleSearch" @reset="handleReset">
             <div class="flex flex-wrap w-full">
-
                 <div class="flex flex-wrap p-2 gap-4 xl:gap-0 w-full xl:w-full">
                     <div class="flex flex-col gap-2 w-full xl:w-1/4 lg:w-1/2">
                         <label class="font-semibold mb-1">거래처 유형</label>
@@ -610,53 +581,52 @@ onMounted(fetchVendorList);
 
                 <div class="flex flex-col gap-2 p-2 w-full xl:w-1/4 lg:w-1/2">
                     <InputGroup>
-                    <InputGroupAddon><i :class="icons.vendor" /></InputGroupAddon>
-                    <IftaLabel>
-                        <InputText v-model="searchParams.companyName" inputId="searchCompanyName" />
-                        <label for="searchCompanyName">거래처명</label>
-                    </IftaLabel>
+                        <InputGroupAddon><i :class="icons.vendor" /></InputGroupAddon>
+                        <IftaLabel>
+                            <InputText v-model="searchParams.companyName" inputId="searchCompanyName" />
+                            <label for="searchCompanyName">거래처명</label>
+                        </IftaLabel>
                     </InputGroup>
                 </div>
 
                 <div class="flex flex-col gap-2 p-2 w-full xl:w-1/4 lg:w-1/2">
                     <InputGroup>
-                    <InputGroupAddon><i :class="icons.id" /></InputGroupAddon>
-                    <IftaLabel>
-                        <InputText
-                            v-model="searchParams.businessRegistration"
-                            inputId="searchBusinessRegistration"
-                            @input="searchParams.businessRegistration = formatBusinessRegistration(searchParams.businessRegistration)"
-                        />
-                        <label for="searchBusinessRegistration">사업자 등록 번호</label>
-                    </IftaLabel>
+                        <InputGroupAddon><i :class="icons.id" /></InputGroupAddon>
+                        <IftaLabel>
+                            <InputText
+                                v-model="searchParams.businessRegistration"
+                                inputId="searchBusinessRegistration"
+                                @input="searchParams.businessRegistration = formatBusinessRegistration(searchParams.businessRegistration)"
+                                maxlength="12" />
+                            <label for="searchBusinessRegistration">사업자 등록 번호</label>
+                        </IftaLabel>
                     </InputGroup>
                 </div>
 
                 <div class="flex flex-col gap-2 p-2 w-full xl:w-1/4 lg:w-1/2">
                     <InputGroup>
-                    <InputGroupAddon><i :class="icons.employee" /></InputGroupAddon>
-                    <IftaLabel>
-                        <InputText v-model="searchParams.ceoName" inputId="searchCeoName" />
-                        <label for="searchCeoName">대표자/담당자</label>
-                    </IftaLabel>
+                        <InputGroupAddon><i :class="icons.employee" /></InputGroupAddon>
+                        <IftaLabel>
+                            <InputText v-model="searchParams.ceoName" inputId="searchCeoName" />
+                            <label for="searchCeoName">대표자/담당자</label>
+                        </IftaLabel>
                     </InputGroup>
                 </div>
 
                 <div class="flex flex-col gap-2 p-2 w-full xl:w-1/4 lg:w-1/2">
                     <InputGroup>
-                    <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
-                    <IftaLabel>
-                        <InputText
-                            v-model="searchParams.phoneNumber"
-                            inputId="searchPhoneNumber"
-                            @input="searchParams.phoneNumber = formatPhone(searchParams.phoneNumber)"
-                        />
-                        <label for="searchPhoneNumber">전화번호</label>
-                    </IftaLabel>
+                        <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
+                        <IftaLabel>
+                            <InputText
+                                v-model="searchParams.phoneNumber"
+                                inputId="searchPhoneNumber"
+                                @input="searchParams.phoneNumber = formatPhone(searchParams.phoneNumber)"
+                                maxlength="13" />
+                            <label for="searchPhoneNumber">전화번호</label>
+                        </IftaLabel>
                     </InputGroup>
                 </div>
             </div>
-
         </SearchCard>
 
         <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
@@ -832,8 +802,8 @@ onMounted(fetchVendorList);
                                         :key="type"
                                         class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
                                         :class="{
-                                            'bg-blue-500': type == 0, // 판매처
-                                            'bg-pink-500': type == 1, // 공급처
+                                            'bg-blue-500': type == 0, // 판매처 (원래 0)
+                                            'bg-pink-500': type == 1, // 공급처 (원래 1)
                                         }"
                                     >
                                         {{ getStatusLabel(type) }}
@@ -899,7 +869,7 @@ onMounted(fetchVendorList);
                                         :disabled="cardMode === 'edit'"
                                         inputId="editBusinessRegistration"
                                         @input="editForm.businessRegistration = formatBusinessRegistration(editForm.businessRegistration)"
-                                    />
+                                        maxlength="12" />
                                     <label for="editBusinessRegistration">사업자 등록번호</label>
                                 </IftaLabel>
                             </InputGroup>
@@ -927,7 +897,7 @@ onMounted(fetchVendorList);
                                         v-model="editForm.phoneNumber"
                                         @input="editForm.phoneNumber = formatPhone(editForm.phoneNumber)"
                                         inputId="editPhoneNumber"
-                                    />
+                                        maxlength="13" />
                                     <label for="editPhoneNumber">전화번호</label>
                                 </IftaLabel>
                             </InputGroup>
@@ -1008,7 +978,7 @@ onMounted(fetchVendorList);
                                             v-model="editForm.ownerPhone"
                                             @input="editForm.ownerPhone = formatPhone(editForm.ownerPhone)"
                                             inputId="editOwnerPhone"
-                                        />
+                                            maxlength="13" />
                                         <label for="editOwnerPhone">담당자 연락처</label>
                                     </IftaLabel>
                                 </InputGroup>
