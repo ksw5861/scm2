@@ -207,7 +207,7 @@
   FROM sales_order so
   LEFT JOIN vendor v
     ON so.vendor_id = v.vendor_id
-  WHERE so.status = '처리중'          
+  WHERE so.status in ('대기', '처리중')
   ORDER BY so.order_date DESC
 </select>
 
@@ -301,24 +301,67 @@
 
       <!-- 반품 목록 조회 -->
 <select id="selectReturnList" resultType="com.yedam.scm.vo.ReturnVO">
-  SELECT 
-    r.return_id    AS returnId,
-    r.return_date  AS returnDate,
-    v.company_name AS companyName,
-    CASE
-      WHEN SUM(CASE WHEN d.rdetail_status = '대기' THEN 1 ELSE 0 END) > 0 
-           THEN '대기'
-      ELSE '처리완료'
-    END AS returnStatus
+  SELECT
+    r.return_id,
+    r.return_date,
+    v.company_name,
+    r.return_status
   FROM return r
-  JOIN return_detail d 
-    ON r.return_id = d.return_id
-  LEFT JOIN vendor v 
-    ON v.vendor_id = r.vendor_id
-  GROUP BY r.return_id, r.return_date, v.company_name
+  LEFT JOIN vendor v
+    ON r.vendor_id = v.vendor_id
+  WHERE r.return_status IN ('대기','처리중')
   ORDER BY r.return_date DESC
-
 </select>
+
+
+
+<!-- ========================= -->
+<!-- 반품 상세 조회 (vendor join) -->
+<!-- ========================= -->
+<select id="selectReturnDetails" resultType="ReturnDetailVO">
+  SELECT
+    d.rdetail_id       AS rdetailId,       
+    d.return_id        AS returnId,       
+    d.prod_id          AS prodId,          
+    p.prod_name        AS prodName,        
+    d.return_qty       AS returnQty,       
+    d.prod_unit_price  AS prodUnitPrice,   
+    (d.return_qty * d.prod_unit_price) AS amt,
+    d.return_why       AS returnWhy,       
+    d.rdetail_status   AS rdetailStatus,   
+    v.company_name     AS companyName      
+  FROM return_detail d
+  JOIN product p
+    ON d.prod_id = p.prod_id              
+  LEFT JOIN return r
+    ON d.return_id = r.return_id
+  LEFT JOIN vendor v
+    ON r.vendor_id = v.vendor_id
+  WHERE d.return_id = #{returnId}
+</select>
+
+
+<!-- 승인 -->
+<update id="approveReturnDetails">
+  UPDATE return_detail
+     SET rdetail_status = '승인'
+   WHERE rdetail_id IN
+   <foreach collection="ids" item="id" open="(" separator="," close=")">
+     #{id}
+   </foreach>
+</update>
+
+<!-- 반려 -->
+<update id="rejectReturnDetails">
+  UPDATE return_detail
+     SET rdetail_status = '반려',
+         return_why = #{reason}
+   WHERE rdetail_id IN
+   <foreach collection="ids" item="id" open="(" separator="," close=")">
+     #{id}
+   </foreach>
+</update>
+
 
 
       
