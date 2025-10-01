@@ -29,7 +29,16 @@ public class ReturnDetailVO {
     private int orderQty;          // 기존 주문 수량
     private String prodStatus;     // 상품 상태 (배송완료 등)
 
-    // ====== 반품 가능 계산용 ======
+
     private Integer returnedQty;   // 이미 반품된 수량 (대기 포함)
     private Integer remainQty;     // 남은 반품 가능 수량 = orderQty - returnedQty
+
+
+
+    // 1011 동원 추가// 
+     private String companyName; 
+
+
+
+
 }

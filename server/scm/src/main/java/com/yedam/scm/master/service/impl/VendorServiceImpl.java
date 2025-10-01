@@ -1,10 +1,13 @@
 package com.yedam.scm.master.service.impl;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.dto.VendorSearchDTO;
 import com.yedam.scm.master.mapper.VendorMapper;
 import com.yedam.scm.master.service.VendorService;
 import com.yedam.scm.vo.VendorVO;
@@ -16,8 +19,12 @@ public class VendorServiceImpl implements VendorService {
     private VendorMapper vendorMapper;
 
     @Override
-    public List<VendorVO> getVendorList(String vendorId, String companyName, String isActive) {
-        return vendorMapper.getVendorList(vendorId, companyName, isActive);
+    public Map<String, Object> getVendorList(VendorSearchDTO condition, PageDTO paging) {
+        Map<String, Object> res = new HashMap<>();
+        paging.updatePageInfo(vendorMapper.getVendorListTotalCount(condition));
+        res.put("data", vendorMapper.getVendorList(condition, paging));
+        res.put("page", paging);
+        return res;
     }
 
     @Override

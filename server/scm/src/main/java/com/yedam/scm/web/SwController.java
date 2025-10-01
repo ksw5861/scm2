@@ -10,8 +10,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.yedam.scm.master.service.MaterialService;
 import com.yedam.scm.master.service.ProductService;
 import com.yedam.scm.master.service.WareHouseService1;
+import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.dto.VendorSearchDTO;
 import com.yedam.scm.master.service.BomService;
 import com.yedam.scm.master.service.UnitService;
+import com.yedam.scm.master.service.VendorService;
 import com.yedam.scm.vo.MaterialVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.UnitVO;
@@ -20,6 +23,7 @@ import com.yedam.scm.vo.BomVO;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -197,19 +201,15 @@ public class SwController {
     // ================ Vendor API ============================
     // =========================================================
     @Autowired
-    com.yedam.scm.master.service.VendorService vendorSvc;
+    VendorService vendorSvc;
 
     @GetMapping("/vendor")
-    public List<com.yedam.scm.vo.VendorVO> getVendorList(
-            @RequestParam(required = false) String vendorId,
-            @RequestParam(required = false) String companyName,
-            @RequestParam(required = false) String isActive,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) String ceoName,
-            @RequestParam(required = false) String phoneNumber
+    public Map<String, Object> getVendorList(
+        @ModelAttribute VendorSearchDTO condition,
+        @ModelAttribute PageDTO paging
     ) {
-        return vendorSvc.getVendorList(vendorId, companyName, isActive);
-        // 필요시 type, ceoName, phoneNumber 등 파라미터 추가하여 서비스/매퍼에 반영
+
+        return vendorSvc.getVendorList(condition, paging);
     }
 
     @GetMapping("/vendor/{vendorId}")
