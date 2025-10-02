@@ -15,8 +15,8 @@ public interface SupplierService {
     int updateOrderApprove( Map<String, Object> data);
     //출고지시대기목록
     List<PurchaseMatVO> getMatWReleaseList(String vendorId);
-    //출고지시
+    //출고지시(출고수량/출고예정일 입력)
     void insertReleaseData(List<PurchaseMatVO> payload);
-    //출고등록
-
+    //출고승인목록 출력
+    List<PurchaseMatVO> getApprovedShipmentList (String vendorId);
 }

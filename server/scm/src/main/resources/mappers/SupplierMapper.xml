@@ -17,6 +17,8 @@
     <result property="total" column="TOTAL"/>
     <result property="dueDate" column="DUE_DATE"/>
     <result property="expectDate" column="EXPECT_DATE"/>
+    <result property="shipOrderNo" column="SHIP_ORDER_NO"/>
+    <result property="outQty" column="OUT_QTY"/>
 
    <association property="materialVO" resultMap="com.yedam.scm.common.CommonMapper.MaterialMap"/>
    <association property="purStatusLogVO" resultMap="com.yedam.scm.common.CommonMapper.PurStatusLogMap"/>
@@ -51,7 +53,7 @@ WHERE pur_id = #{purId}
 </update>
 <!--주문상태변경이력등록-->
 <insert id="insertStatusLog" parameterType="map">
-INSERT INTO purchase_status_log (pur_status_id, name, pur_mat_status, pur_id)
+INSERT INTO purchase_status_log (pur_status_id, log_name, log_pur_mat_status, log_pur_id)
 VALUES (seq_purchase_status_log.NEXTVAL, #{name}, 'ms2', #{purId})
 </insert>
 
@@ -72,11 +74,11 @@ FROM purchase_mat pm
 JOIN material m
   ON pm.mat_id = m.mat_id
 JOIN (
-    SELECT pur_id, MAX(re_date) AS re_date
+    SELECT log_pur_id, MAX(re_date) AS re_date
     FROM purchase_status_log
-    GROUP BY pur_id
+    GROUP BY log_pur_id
 ) psl
-  ON pm.pur_id = psl.pur_id
+  ON pm.pur_id = psl.log_pur_id
 WHERE pm.vendor_id = #{vendorId}
   AND pm.pur_mat_status in ('ms2', 'ms5')
 </select>
@@ -89,13 +91,38 @@ WHERE pm.vendor_id = #{vendorId}
             #{purId,    mode=IN, jdbcType=NUMERIC},  
             #{outQty,   mode=IN, jdbcType=NUMERIC},  
             #{vendorId,   mode=IN, jdbcType=VARCHAR},
-            #{expectDate, mode=IN, jdbcType=VARCHAR}
+            #{expectDate, mode=IN, jdbcType=DATE}
         )}
 </select>
 
 
 <!--공급처출고-->
-<!--공급처출고등록시:  1)입고마스터테이블 seq 2)입고마스터테이블insert 3)입고상세테이블insert  4)배송정보등록-->
+<!--공급처출고등록시:  1)출고승인목록 출력 2)입고마스터테이블 INSERT 3)입고마스터테이블데이터insert 3)입고상세테이블insert  4)배송정보테이블insert-->
+<!--출고승인목록-->
+<select id="getApprovedShipmentList" parameterType="string" resultType="com.yedam.scm.vo.ZApprovedShipmentRowVO">
+SELECT 
+    pm.pur_id         AS purId,
+    psl.log_expect_date    AS expectDate,
+    psl.log_sup_out_qty AS outQty,
+    psl.log_ship_order_no AS logShipOrderNo,
+    pm.mat_id         AS matId,
+    pm.emp_name       AS empName,
+    pm.vendor_id      AS vendorId,
+    m.mat_name        AS matName,
+    m.unit            AS unit,
+    psl.pur_status_id AS purStatusId
+FROM purchase_mat pm
+JOIN material m
+  ON pm.mat_id = m.mat_id
+JOIN purchase_status_log psl
+  ON psl.log_pur_id = pm.pur_id
+WHERE pm.pur_mat_status IN ('ms4','ms5')
+  AND psl.log_pur_mat_status IN ('ms4','ms5')
+  AND psl.final_ship_con = 'N'
+  AND pm.vendor_id = #{vendorId}
+ORDER BY pm.expect_date ASC, psl.re_date ASC
+</select>
+
 <!--1)마스터 seq"GET"-->
 <select id="getInboundMasterPK" resultType="long">
 SELECT seq_inbound.NEXTVAL FROM dual

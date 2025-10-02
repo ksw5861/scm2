@@ -14,6 +14,7 @@ import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
 import com.yedam.scm.vo.PurStatusLogVO;
 import com.yedam.scm.vo.PurchaseMatVO;
+import com.yedam.scm.vo.WareHouseVO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -57,12 +58,6 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
         return mapper.getMrpDetailList();
     }
     
-    //자재별공급처
-    @Override
-    public List<MatVendorVO> getMatVendorList(String matId) {
-        return mapper.getMatVendorList(matId);
-    }
-
     //자재주문등록
     @Override
     @Transactional
@@ -101,5 +96,15 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
         return mapper.getProductList();
     }
 
-   
+    //자재별공급처
+    @Override
+    public List<MatVendorVO> getMatVendorList(String matId) {
+        return mapper.getMatVendorList(matId);
+    }
+
+    //창고리스트
+    @Override
+    public List<WareHouseVO> getWarehouseList() {
+        return mapper.getWarehouseList();
+    }  
 }

@@ -9,8 +9,8 @@ public class PurchaseMatVO {
     
     private Long purId;
     private String matId;
-    private Long reqQty;
-    private Long outTotalQty;
+    private Long reqQty;  //주문수량
+    private Long outTotalQty;   //누적출고수량
     private String purMatStatus;
     private String resonComm;
     private Long mrpDetId;
@@ -21,6 +21,8 @@ public class PurchaseMatVO {
     private Long total;
     private Date dueDate;
     private Date expectDate;
+    private String shipOrderNo;
+    private Long outQty; //출고승인시 입력되는 출고수량 (부분출고시 매번 바뀜)
 
     MaterialVO materialVO;
     VendorVO vendorVO;

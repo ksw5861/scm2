@@ -11,6 +11,7 @@ import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
 import com.yedam.scm.vo.PurStatusLogVO;
 import com.yedam.scm.vo.PurchaseMatVO;
+import com.yedam.scm.vo.WareHouseVO;
 
 @Mapper
 public interface PurchaseMatMapper {
@@ -26,9 +27,6 @@ public interface PurchaseMatMapper {
     //mrp목록
     List<MrpDetailVO> getMrpDetailList();
 
-    //자재별목록
-    List<MatVendorVO> getMatVendorList(String matId);
-
     //자재주문등록
     boolean callReqestMatProc(PurchaseMatVO requestList);
    
@@ -41,5 +39,12 @@ public interface PurchaseMatMapper {
     /*==========================
      * 드롭다운/모달용
      ===========================*/
+    //제품리스트
     List<ProductVO> getProductList();
+
+    //자재별 계약 거래처 리스트
+    List<MatVendorVO> getMatVendorList(String matId);
+
+    //창고리스트
+    List<WareHouseVO> getWarehouseList();
 }

@@ -45,7 +45,7 @@ const getNextId = () => {
 };
 // 디테일 1행출력 [페이지로드시 1행 자동셋팅]
 const productionPlans = ref([{ id: columnId.value, prodId: '', prdName: '', proQty: null, unit: '', proDate: '' }]);
-//드롭다운옵션용
+//드롭다운용 (제품선택용/제품리스트)
 const productOptions = ref([]);
 
 const pageLoad = async () => {

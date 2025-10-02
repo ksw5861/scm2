@@ -20,7 +20,12 @@ public interface SupplierMapper {
     List <PurchaseMatVO> getMatWReleaseList(String vendorId);
     //출고지시등록
     void callReleaseMatPoc(@Param("purId")Long purId, @Param("outQty")Long outQty, @Param("vendorId")String vendorId, @Param("expectDate")Date expectDate);
+    
     //[공급처출고등록시: 1)입고마스터테이블 seq 2)입고마스터테이블insert 3)입고상세테이블insert 4)배송정보등록]
+    //1)
+     List <PurchaseMatVO>getApprovedShipmentList(String vendorId);
+    
+    
     //1)입고마스터테이블 GET'seq'
     Long getInboundMasterPK(); 
     //2)입고마스터테이블 입력

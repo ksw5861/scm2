@@ -61,7 +61,7 @@ const pageLoad = async () => {
       orderQty: item.reqQty,
       unit: item.materialVO.unit,
       outQty: '',
-      expectDate:'',
+      expectDate: '',
       outTotalQty: item.outTotalQty,
       restQty: item.reqQty - item.outTotalQty,
       releaseStatus: item.purMatStatus,
@@ -76,52 +76,50 @@ onMounted(() => {
   pageLoad();
 });
 
-const shipment = async () => {
+const approvedShip = async () => {
+  //선택행 없으면 출고처리 선택 안내
+  if (!selectedRows.value) {
+    toast('info', '유효성 검사', '출고 지시 제품을 선택해 주세요.', '3000');
+    return;
+  }
+  // //출고수량 null
+  // if (!matOutData.value.orderQty || matOutData.value.orderQty == 0) {
+  // toast('info', '유효성 검사', '출고 수량을 입력해 주세요.', '3000');
+  // return;
+  // }
 
-    //선택행 없으면 출고처리 선택 안내
-    if (!selectedRows.value){
-        toast('info', '유효성 검사', '출고 지시 제품을 선택해 주세요.', '3000');
-        return;
-    }
-    // //출고수량 null
-    // if (!matOutData.value.orderQty || matOutData.value.orderQty == 0) {
-    // toast('info', '유효성 검사', '출고 수량을 입력해 주세요.', '3000');
-    // return;
-    // }
+  // if (!matOutData.value.expectDate) {
+  // toast('info', '유효성 검사', '출고 예정일을 입력해 주세요.', '3000');
+  // return;
+  // }
 
-    // if (!matOutData.value.expectDate) {
-    // toast('info', '유효성 검사', '출고 예정일을 입력해 주세요.', '3000');
-    // return;
-    // }
+  // //잔여수량대비 유효성검사
+  // if (matOutData.value.outQty > matOutData.value.orderQty) {
+  // toast('info', '유효성 검사', '주문수량 대비 출고수량이 많습니다.', '3000');
+  // return;
+  // }
 
-    // //잔여수량대비 유효성검사
-    // if (matOutData.value.outQty > matOutData.value.orderQty) {
-    // toast('info', '유효성 검사', '주문수량 대비 출고수량이 많습니다.', '3000');
-    // return;
-    // }
+  const list = JSON.parse(JSON.stringify(selectedRows.value));
 
-    const list = JSON.parse(JSON.stringify(selectedRows.value));
+  const payload = list.map((row) => ({
+    purId: row.id,
+    matId: row.matId,
+    purNo: row.purNo,
+    purStatusLogVO: { logSupOutQty: row.outQty }, //이걸 백 로그VO에 넣기위해!
+    expectDate: row.expectDate,
+    vendorId: vendorId.value //이렇게 넣으면 행 마다 다 들어감.
+  }));
 
-    const payload = list.map((row) => ({
-        purId: row.id,
-        matId: row.matId,
-        purNo: row.purNo,
-        purStatusLogVO: { supOutQty: row.outQty }, //이걸 백 로그VO에 넣기위해!
-        expectDate: row.expectDate,
-        vendorId: vendorId.value //이렇게 넣으면 행 마다 다 들어감.
-    }));
+  console.log(payload);
 
-    console.log(payload);
-
-    try {
-        const res = await axios.post('/api/supplier/shipMaterial', payload);
-        toast('info', '등록 성공', '출고등록  성공:', '3000');
-        selectedRows.value = [];
-        await pageLoad();
-
-    } catch (error) {
-        toast('error', '등록 실패', '출고등록  실패:', '3000');
-    }
+  try {
+    const res = await axios.post('/api/supplier/shipMaterial', payload);
+    toast('info', '등록 성공', '출고등록  성공:', '3000');
+    selectedRows.value = [];
+    await pageLoad();
+  } catch (error) {
+    toast('error', '등록 실패', '출고등록  실패:', '3000');
+  }
 };
 </script>
 
@@ -131,7 +129,7 @@ const shipment = async () => {
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
     <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">자재공급</div>
+      <div class="font-semibold text-xl">출고 지시</div>
       <Divider />
 
       <!--search BOX 영역-->
@@ -161,7 +159,7 @@ const shipment = async () => {
     <!--테이블영역--><!--테이블영역-->
     <div class="card flex flex-col gap-4">
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="info" icon="pi pi-file-pdf" @click="shipment" label="승인" />
+        <btn color="info" icon="pi pi-file-pdf" @click="approvedShip" label="승인" />
       </div>
       <div class="font-semibold text-xl mb-5">출고대기 목록</div>
       <selectTable v-model:selection="selectedRows" :columns="matOutColumns" :data="matOutData" :paginator="true" :rows="15" />

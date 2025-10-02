@@ -10,6 +10,7 @@ import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
 import com.yedam.scm.vo.PurStatusLogVO;
 import com.yedam.scm.vo.PurchaseMatVO;
+import com.yedam.scm.vo.WareHouseVO;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -52,12 +53,6 @@ public class MsController {
         return purchaseMatService.getMrpDetailList();
     }
 
-    //자재별 공급처
-    @GetMapping("/matVendorList")
-    public List<MatVendorVO> getMatVendor(@RequestParam String matId) {
-        return purchaseMatService.getMatVendorList(matId);
-    }
-
     //자재주문등록
     @PostMapping("/reqMaterial")
     public boolean callReqestMaterial(@RequestBody List<PurchaseMatVO> requestList) {      
@@ -76,13 +71,31 @@ public class MsController {
         return purchaseMatService.getPurchaseStatus(purId);
     }
     
+    //입고대기목록
+    
+    //입고등록
+
+    //재고조정
 
     /*======================
     드롭다운/모달용   
     ======================*/
+    //생산계획시 제품 드롭다운
     @GetMapping("/productsList")
     public List<ProductVO> getProductList(){
         return purchaseMatService.getProductList();
+    }
+
+     //자재주문시 계약된 공급처 드롭다운
+    @GetMapping("/matVendorList")
+    public List<MatVendorVO> getMatVendor(@RequestParam String matId) {
+        return purchaseMatService.getMatVendorList(matId);
+    }
+
+    //창고리스트 드롭다운 
+    @GetMapping("/warehouseList")
+    public List<WareHouseVO> getWarehouseList(){
+        return purchaseMatService.getWarehouseList();
     }
 }
 

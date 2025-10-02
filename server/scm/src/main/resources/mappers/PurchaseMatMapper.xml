@@ -154,16 +154,6 @@
     WHERE req_status = 're0'
     </select>
 
-    <select id="getMatVendorList" parameterType="string" resultMap="MatVendorMap">
-    SELECT mv.vendor_id,
-           v.company_name,
-           mv.contract_price
-    FROM material_vendor mv
-    JOIN vendor v
-    ON mv.vendor_id = v.vendor_id
-    Where mv.mat_id = #{matId}
-    </select>
-
     <!--자재주문프로시저-->
        <select id="callReqestMatProc" parameterType="PurchaseMatVO" statementType="CALLABLE">
         { call PROC_REQ_MATERIAL(
@@ -196,11 +186,11 @@
     <!--자재주문상세이력-->
     <select id ="getPurchaseStatus" parameterType="long" resultType = "PurStatusLogVO">
     SELECT psl.re_date,
-           psl.name,
-           psl.pur_mat_status,
-           NVL(psl.sup_out_qty,0) as sup_out_qty
+           psl.log_name,
+           psl.log_pur_mat_status,
+           NVL(psl.log_sup_out_qty,0) as sup_out_qty
     FROM purchase_status_log psl
-    WHERE pur_id = #{purId}
+    WHERE log_pur_id = #{purId}
     ORDER BY re_date DESC
     </select>
 <!--드롭다운/모달용===============================================================================-->
@@ -210,8 +200,33 @@
            prod_name,
            unit
     FROM product
-    WHERE status = '사용'
+    WHERE status = 'Y'
 </select>
+
+
+<!--자재별 계약거래처-->
+  <select id="getMatVendorList" parameterType="string" resultMap="MatVendorMap">
+    SELECT mv.vendor_id,
+           v.company_name,
+           mv.contract_price
+    FROM material_vendor mv
+    JOIN vendor v
+    ON mv.vendor_id = v.vendor_id
+    Where mv.mat_id = #{matId}
+ </select>
+
+
+<!--창고목록-->
+<select id ="getWarehouseList" resultType="WareHouseVO">
+SELECT wh_id,
+       wh_name,
+       wh_address,
+       wh_owner,
+       owner_tel
+FROM warehouse
+WHERE status = '정상'
+</select>
+
 
 </mapper>
 
