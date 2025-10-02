@@ -253,7 +253,7 @@ onMounted(() => applySearch());
             <template #body="{ data }">{{ fmtCurrency(data.amount) }}</template>
           </Column>
           <Column field="prodStatus" header="상태"/>
-          
+
         </DataTable>
       </div>
     </div>
