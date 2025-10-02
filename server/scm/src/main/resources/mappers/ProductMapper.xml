@@ -14,7 +14,8 @@
       STATUS,
       UNIT,
       EXP,
-      PROD_UNIT_PRICE
+      PROD_UNIT_PRICE,
+      CREATED_AT
     FROM PRODUCT
     <where>
       <if test="prodId != null and prodId != ''">
@@ -42,6 +43,21 @@
     WHERE PROD_ID = #{prodId}
   </select>
 
+  <!-- 참조 여부 먼저 확인-->
+  <select id="countReferences" parameterType="string" resultType="int">
+    SELECT (
+      (SELECT COUNT(*) FROM BOM WHERE PROD_ID = #{prodId})
+    + (SELECT COUNT(*) FROM ITEM_INBOUND WHERE PROD_ID = #{prodId})
+    + (SELECT COUNT(*) FROM ITEM_OUTBOUND WHERE PROD_ID = #{prodId})
+    + (SELECT COUNT(*) FROM PRODUCT_LOT WHERE PROD_ID = #{prodId})
+    + (SELECT COUNT(*) FROM PRODUCT_PLAN_DETAIL WHERE PROD_ID = #{prodId})
+    + (SELECT COUNT(*) FROM PRODUCT_VENDOR WHERE PROD_ID = #{prodId})
+    + (SELECT COUNT(*) FROM RETURN_DETAIL WHERE PROD_ID = #{prodId})
+    + (SELECT COUNT(*) FROM SALES_ORDER_DETAIL WHERE PROD_ID = #{prodId})
+    ) AS totalCount
+    FROM dual
+</select>
+
   <!-- ==================================== -->
   <!-- 3. 선택된 제품 삭제 -->
   <!-- ==================================== -->
@@ -62,7 +78,8 @@
       SPEC,
       UNIT,
       EXP,
-      PROD_UNIT_PRICE
+      PROD_UNIT_PRICE,
+      CREATED_AT
     )
     VALUES (
       next_code('P'),
@@ -73,7 +90,8 @@
       #{spec},
       #{unit},
       #{exp},
-      #{prodUnitPrice}
+      #{prodUnitPrice},
+      sysdate
     )
   </insert>
 

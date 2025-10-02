@@ -1,5 +1,6 @@
 package com.yedam.scm.web;
 
+import java.sql.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,9 +81,21 @@ public class SwController {
 
     // 자재 정보 삭제
     @DeleteMapping("/material/{matId}")
-    public int deleteMaterial(@PathVariable String matId) {
-        return materialSvc.deleteMaterial(matId);
+    public ResponseEntity<?> deleteMaterial(@PathVariable String matId) {
+    try {
+        materialSvc.deleteMaterial(matId); // 참조 있으면 IllegalStateException 발생
+        return ResponseEntity.ok(Map.of("status", "success"));
+    } catch (IllegalStateException e) {
+        // 자재가 참조 중일 때 → 409 Conflict
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("status", "error", "message", e.getMessage()));
+    } catch (Exception e) {
+        // 그 외 DB 오류 등 → 500 Internal Server Error
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
     }
+
     // 정보 등록
     @PostMapping("/material")
     public Map<String, Object> insertMaterial(@RequestBody MaterialVO materialVO) {    
@@ -119,8 +132,9 @@ public class SwController {
             @RequestParam(required = false) String prodId,
             @RequestParam(required = false) String prodName,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String unit) {
-        return productSvc.getProductList(prodId, prodName, status, unit);
+            @RequestParam(required = false) String unit,
+            @RequestParam(required = false) Date createdAt) {
+        return productSvc.getProductList(prodId, prodName, status, unit, createdAt);
     }
 
     @GetMapping("/product/{prodId}")
@@ -129,8 +143,19 @@ public class SwController {
     }
 
     @DeleteMapping("/product/{prodId}")
-    public int deleteProduct(@PathVariable String prodId) {
-        return productSvc.deleteProduct(prodId);
+    public ResponseEntity<?> deleteProduct(@PathVariable String prodId) {
+        try{
+            productSvc.deleteProduct(prodId); // 참조있으면 IllegalStateException 발생
+            return ResponseEntity.ok(Map.of("status", "success"));
+        } catch(IllegalStateException e){
+            // 자재가 참조 중일 때 -> 409 conflict
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("status", "error", "message", e.getMessage()));
+        } catch (Exception e){
+            // 그 외 DB오류 등 -> 500 Internal Server Error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
     }
 
     @PostMapping("/product")

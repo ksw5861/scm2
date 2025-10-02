@@ -14,9 +14,7 @@ const ms = {
     },
     {
       path: '/purchase',
-
       name: '주문 등록',
-
       component: () => import('@/views/pages/ms/Purchase.vue'),
       meta: {
         requiresAuth: true,

@@ -37,12 +37,12 @@ const activeTabIndex = ref(0);
 const loading = ref(false);
 
 // 검색 및 선택
-const searchFilters = ref({ prodName: '', prodCode: '' });
+const searchFilters = ref({ prodName: '', prodId: '' });
 const prodList = ref([]);
 const selectedProd = ref(null);
 
 // Form
-const form = ref({ prodId: '', prodName: '', spec: '', unit: '', bomVersion: '' });
+const form = ref({ prodId: '', prodName: '', spec: '', unit: '', createdAt: '' });
 
 // BOM
 const bomList = ref([]);
@@ -58,7 +58,8 @@ const currentBom = ref({
   prodId: '',
   matId: '',
   qty: 0,
-  material: { unit: '' }
+  material: { unit: '' },
+  createdAt: new Date()
 });
 
 // 자재 선택 모달
@@ -100,7 +101,7 @@ const fetchProdList = async () => {
 // --- 제품 선택 ---
 const selectProduct = async (prod) => {
   selectedProd.value = prod || null;
-  form.value = selectedProd.value ? { prodId: prod.prodId, prodName: prod.prodName, spec: prod.spec, unit: prod.unit, bomVersion: prod.bomVersion } : { prodId: '', prodName: '', spec: '', unit: '', bomVersion: '' };
+  form.value = selectedProd.value ? { prodId: prod.prodId, prodName: prod.prodName, spec: prod.spec, unit: prod.unit, createdAt: prod.createdAt } : { prodId: '', prodName: '', spec: '', unit: '', createdAt: '' };
 
   if (selectedProd.value) await fetchBomList(selectedProd.value.prodId);
   else bomList.value = [];
@@ -127,12 +128,12 @@ const fetchBomList = async (prodId) => {
 // --- 검색 초기화 ---
 const resetSearch = () => {
   // 검색 조건 리셋
-  searchFilters.value = { prodName: '', prodCode: '' };
+  searchFilters.value = { prodName: '', prodId: '' };
   fetchProdList();
 
   // 오른쪽 영역 처음 상태로 리셋
   selectedProd.value = null;
-  form.value = { prodId: '', prodName: '', spec: '', unit: '', bomVersion: '' };
+  form.value = { prodId: '', prodName: '', spec: '', unit: '', bomVersion: '', createdAt: '' };
   bomList.value = [];
 };
 
@@ -149,7 +150,8 @@ const initNewBom = () => {
     prodId: selectedProd.value ? selectedProd.value.prodId : '',
     matId: '',
     qty: 0,
-    material: { unit: '' }
+    material: { unit: '' },
+    createdAt: ''
   };
 };
 
@@ -212,7 +214,6 @@ const deleteBom = async (bomId) => {
     } else {
       toast('error', '삭제 실패', 'BOM 삭제에 실패했습니다.');
     }
-
   } catch (e) {
     toast('error', '삭제 실패', 'BOM 삭제 중 오류가 발생했습니다.');
   }
@@ -238,32 +239,32 @@ const openMaterialDialog = async () => {
 // --- 자재 선택 ---
 const selectMaterial = (material) => {
   currentBom.value.matId = material.matId;
-  currentBom.value.material = { ...material, unit: currentBom.value.material.unit || '' };
+  currentBom.value.material = { ...material };
   materialDialogVisible.value = false;
 };
 
-// --- 단위 목록 fetch ---
-const fetchUnitList = async () => {
-  try {
-    const res = await axios.get('/api/unit');
-    unitList.value = Array.isArray(res.data) ? res.data : [];
-  } catch (e) {
-    toast('error', '조회 실패', '단위 정보를 가져오지 못했습니다.');
-    unitList.value = [];
-  }
-};
+// // --- 단위 목록 fetch ---
+// const fetchUnitList = async () => {
+//   try {
+//     const res = await axios.get('/api/unit');
+//     unitList.value = Array.isArray(res.data) ? res.data : [];
+//   } catch (e) {
+//     toast('error', '조회 실패', '단위 정보를 가져오지 못했습니다.');
+//     unitList.value = [];
+//   }
+// };
 
-// --- 단위 선택 모달 열기 ---
-const openUnitDialog = async () => {
-  await fetchUnitList();
-  unitDialogVisible.value = true;
-};
+// // --- 단위 선택 모달 열기 ---
+// const openUnitDialog = async () => {
+//   await fetchUnitList();
+//   unitDialogVisible.value = true;
+// };
 
-// --- 단위 선택 ---
-const selectUnit = (unit) => {
-  currentBom.value.material.unit = unit.unitName;
-  unitDialogVisible.value = false;
-};
+// // --- 단위 선택 ---
+// const selectUnit = (unit) => {
+//   currentBom.value.material.unit = unit.unitName;
+//   unitDialogVisible.value = false;
+// };
 
 // 자동으로 신규탭(인덱스 2)에 진입하면 신규 BOM 초기화
 watch(activeTabIndex, (idx) => {
@@ -299,7 +300,7 @@ onMounted(() => fetchProdList());
                 </template>
               </Toolbar>
 
-              <DataTable :value="prodList" selectionMode="single" dataKey="prodId" :loading="loading" @row-click="selectProduct($event.data)" stripedRows paginator :rows="prodRows" class="flex-grow-1 overflow-auto">
+              <DataTable :value="prodList" selectionMode="single" dataKey="prodId" v-model:selection="selectedProd" :loading="loading" @row-select="selectProduct($event.data)" stripedRows paginator :rows="prodRows" class="flex-grow-1 overflow-auto">
                 <Column field="prodId" header="제품코드" />
                 <Column field="prodName" header="제품명" />
               </DataTable>
@@ -314,18 +315,32 @@ onMounted(() => fetchProdList());
               <TabView v-model:activeIndex="activeTabIndex" class="h-full flex flex-column" :key="selectedProd ? selectedProd.prodId : 'empty'">
                 <!-- 제품 상세정보 -->
                 <TabPanel header="제품 상세정보">
-                  <div v-if="selectedProd" class="flex flex-column h-full">
+                  <div class="flex flex-column h-full">
                     <Fieldset legend="제품 상세정보">
                       <div class="p-fluid grid gap-2">
-                        <div class="flex flex-column"><label>제품코드</label><InputText v-model="form.prodId" class="w-full h-10" disabled /></div>
-                        <div class="flex flex-column"><label>제품명</label><InputText v-model="form.prodName" class="w-full h-10" disabled /></div>
-                        <div class="flex flex-column"><label>규격</label><InputText v-model="form.spec" class="w-full h-10" disabled /></div>
-                        <div class="flex flex-column"><label>단위</label><InputText v-model="form.unit" class="w-full h-10" disabled /></div>
-                        <div class="flex flex-column"><label>BOM 버전</label><InputText v-model="form.bomVersion" class="w-full h-10" disabled /></div>
+                        <div class="flex flex-column">
+                          <label>제품코드</label>
+                          <InputText v-model="form.prodId" class="w-full h-10" :disabled="!selectedProd" readonly />
+                        </div>
+                        <div class="flex flex-column">
+                          <label>제품명</label>
+                          <InputText v-model="form.prodName" class="w-full h-10" :disabled="!selectedProd" readonly />
+                        </div>
+                        <div class="flex flex-column">
+                          <label>단위</label>
+                          <InputText v-model="form.unit" class="w-full h-10" :disabled="!selectedProd" readonly />
+                        </div>
+                        <div class="flex flex-column">
+                          <label>등록날짜</label>
+                          <InputText v-model="form.createdAt" class="w-full h-10" :disabled="!selectedProd" readonly />
+                        </div>
+                        <div class="flex flex-column">
+                          <label>마지막 수정날짜</label>
+                          <InputText v-model="form.lastModifyAt" class="w-full h-10" :disabled="!selectedProd" readonly />
+                        </div>
                       </div>
                     </Fieldset>
                   </div>
-                  <div v-else>제품 선택 필요</div>
                 </TabPanel>
 
                 <!-- BOM 관리: 수정/삭제만 (신규 버튼 제거) -->
@@ -421,19 +436,18 @@ onMounted(() => fetchProdList());
 
                         <div>
                           <label class="block text-sm mb-1">규격</label>
-                          <InputText v-model="currentBom.material.spec" class="w-full h-10" readonly />
+                          <InputText v-model="currentBom.material.spec" class="w-full h-10" />
                         </div>
 
                         <div>
                           <label class="block text-sm mb-1">단위</label>
                           <div class="flex gap-2">
                             <InputText v-model="currentBom.material.unit" class="w-full h-10" readonly />
-                            <Button label="단위 선택" icon="pi pi-search" @click="openUnitDialog()" />
                           </div>
                         </div>
 
                         <div>
-                          <label class="block text-sm mb-1">수량</label>
+                          <label class="block text-sm mb-1">비율(%)</label>
                           <InputNumber v-model="currentBom.qty" class="w-full" mode="decimal" />
                         </div>
 
@@ -489,7 +503,6 @@ onMounted(() => fetchProdList());
             <label>단위</label>
             <div class="flex gap-2">
               <InputText v-model="currentBom.material.unit" disabled />
-              <Button label="단위 선택" icon="pi pi-search" @click="openUnitDialog()" />
             </div>
           </div>
           <div class="flex flex-column">
@@ -519,15 +532,7 @@ onMounted(() => fetchProdList());
         <DataTable :value="materialList" selectionMode="single" dataKey="matId" @row-click="selectMaterial($event.data)" paginator :rows="8">
           <Column field="matId" header="자재코드" />
           <Column field="matName" header="자재명" />
-          <Column field="spec" header="규격" />
-        </DataTable>
-      </Dialog>
-
-      <!-- 단위 선택 Dialog -->
-      <Dialog v-model:visible="unitDialogVisible" header="단위 선택" modal>
-        <DataTable :value="unitList" selectionMode="single" dataKey="unitId" @row-click="selectUnit($event.data)" paginator :rows="8">
-          <Column field="unitId" header="단위코드" />
-          <Column field="unitName" header="단위명" />
+          <Column field="unit" header="단위" />
         </DataTable>
       </Dialog>
     </div>
