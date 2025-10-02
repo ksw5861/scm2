@@ -25,6 +25,8 @@ public class ProductServiceImpl implements ProductService {
     return mapper.getProductDetail(prodId);
   }
 
+  //TODO 주문이 들어와있는상태(건수조회) 이면 지울 수 없음.
+  //TODO 사용중인 제품인지 확인 후에 삭제또는 삭제불가.
   @Override
   public int deleteProduct(String prodId) {
     return mapper.deleteProduct(prodId);

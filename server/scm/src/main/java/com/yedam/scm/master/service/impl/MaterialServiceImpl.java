@@ -26,6 +26,9 @@ public class MaterialServiceImpl implements MaterialService {
 
   @Override
   public int deleteMaterial(String matId){
+    // 자재사용여부 확인
+    // 자재거래업체삭제후
+    // 자재삭제
     return mapper.deleteMaterial(matId);
   }
 
