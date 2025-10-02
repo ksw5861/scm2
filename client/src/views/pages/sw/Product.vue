@@ -343,11 +343,6 @@ onMounted(() => fetchProductList());
               <InputText v-model="productForm.prodStoreCond" class="w-full h-10" placeholder="보관조건" />
             </div>
 
-            <div>
-              <label class="text-sm block mb-1">안전재고</label>
-              <InputText v-model="productForm.safeStock" class="w-full h-10" placeholder="안전재고" />
-            </div>
-
             <!-- 상태 라디오 버튼 -->
             <div>
               <label class="text-sm block mb-1">상태</label>
