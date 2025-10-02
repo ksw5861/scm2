@@ -197,4 +197,20 @@
         WHERE ORDER_ID = #{orderId}
     </update>
 
+    <!-- ========================================================== -->
+    <!-- 12. 주문 취소 (주문마스터 상태가 대기, 주문상세먼저삭제후 마스터삭제고려)-->
+    <!-- ========================================================== -->
+    <delete id="deleteOrderDetails" parameterType="String">
+    DELETE FROM sales_order_detail
+    WHERE order_id = #{orderId}
+    </delete>
+
+    <delete id="deleteOrder" parameterType="String">
+    DELETE FROM sales_order
+    WHERE order_id = #{orderId}
+    AND status = '대기'
+    </delete>
+
+
+
 </mapper>

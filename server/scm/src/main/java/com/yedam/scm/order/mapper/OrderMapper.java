@@ -59,4 +59,13 @@ public interface OrderMapper {
     int updateStatus(@Param("orderId") String orderId,
                      @Param("status") String status);
 
+    // =============================================================
+    // 주문 삭제
+    // =============================================================
+    // 주문 상세 삭제
+    int deleteOrderDetails(String orderId);
+
+    // 주문 삭제
+    int deleteOrder(String orderId);
+
 }

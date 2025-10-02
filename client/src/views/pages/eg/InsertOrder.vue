@@ -52,23 +52,20 @@
       </Column>
 
       <!-- 주문수량 -->
-      <template>
-  <Column header="주문수량" style="text-align: center;">
-    <template #body="{ data }">
-      <InputNumber
-        v-model="data.orderQty"
-        :min="0"
-        @input="data.orderQty = $event.value" 
-        showButtons
-        buttonLayout="horizontal"
-        decrementButtonClass="p-button-outlined p-button-sm"
-        incrementButtonClass="p-button-outlined p-button-sm"
-        :inputStyle="{ width: '20px', textAlign: 'center', padding: '4px' }"
-      />
-    </template>
-  </Column>
-
-</template>
+      <Column header="주문수량" style="text-align: center;">
+        <template #body="{ data }">
+          <InputNumber
+            v-model="data.orderQty"
+            :min="0"
+            @input="data.orderQty = $event.value" 
+            showButtons
+            buttonLayout="horizontal"
+            decrementButtonClass="p-button-outlined p-button-sm"
+            incrementButtonClass="p-button-outlined p-button-sm"
+            :inputStyle="{ width: '20px', textAlign: 'center', padding: '4px' }"
+          />
+        </template>
+      </Column>
 
       <!-- 합계 -->
       <Column header="합계">
@@ -85,10 +82,20 @@
       :style="{ width: '600px' }"
       modal
     >
+      <!-- 🔍 검색창 -->
+      <div class="mb-3">
+        <InputText 
+          v-model="search" 
+          placeholder="제품명 검색" 
+          class="w-full"
+        />
+      </div>
+
+      <!-- 🔍 검색된 리스트 -->
       <DataTable
-        :value="productList"
+        :value="filteredProducts"
         paginator
-        :rows="5"
+        :rows="20"
         responsiveLayout="scroll"
         selectionMode="single"
         v-model:selection="selectedProduct"
@@ -98,7 +105,11 @@
         <Column field="prodName" header="제품명" />
         <Column field="spec" header="규격" />
         <Column field="unit" header="단위" />
-        <Column field="prodUnitPrice" header="제품가격" />
+        <Column field="prodUnitPrice" header="제품가격">
+          <template #body="{ data }">
+            <div class="text-right">{{ formatCurrency(data.prodUnitPrice) }}</div>
+          </template>
+        </Column>
       </DataTable>
     </Dialog>
   </div>
@@ -112,6 +123,7 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
 import Dialog from 'primevue/dialog'
+import InputText from 'primevue/inputtext'
 import { useAppToast } from '@/composables/useAppToast'
 import { useUserStore } from '@/stores/user'
 
@@ -128,6 +140,7 @@ const orderDetailList = ref([])         // 주문 상세 목록
 const deliveryDate = ref('2025-10-01')  // 납기일자
 const returnPrice = ref(1)              // 반품 관련 가격
 const returnStatus = ref('대기')        // 반품 상태
+const search = ref('')                  // 검색어
 
 // -----------------------------
 // 계산 & 유틸
@@ -142,19 +155,26 @@ const formatCurrency = (value) =>
 const calculateRowTotal = (row) => {
   row.total =
     (Number(row.orderQty) || 0) * (Number(row.prodUnitPrice) || 0)
-  console.log('합계 계산:', row.total)
 }
+
+// -----------------------------
+// 필터링된 제품 목록
+// -----------------------------
+const filteredProducts = computed(() => {
+  if (!search.value) return productList.value
+  return productList.value.filter(item =>
+    item.prodName?.toLowerCase().includes(search.value.toLowerCase())
+  )
+})
 
 // -----------------------------
 // API & 데이터 핸들링
 // -----------------------------
-// 제품 목록 조회
 const fetchProducts = async () => {
   try {
     const { data } = await axios.get('/api/products', {
       params: { page: 1, pageSize: 50 }
     })
-    console.log('제품 목록 API 응답:', data)
     productList.value = data.items || []
   } catch (err) {
     console.error('제품 목록 조회 오류:', err)
@@ -196,39 +216,25 @@ const handleSelect = () => {
 
 // 주문 저장
 const saveOrder = async () => {
-  console.log('✅ saveOrder 실행됨')
-
   const payload = {
     orderDate: new Date().toISOString().slice(0, 10),
     deliveryDate: deliveryDate.value,
     totalPrice: totalAmount.value,
-    status: '대기',      // 서버에서 기본값 처리 가능
-    payStatus: '대기',   // 서버에서 기본값 처리 가능
+    status: '대기',
+    payStatus: '대기',
     vendorId: userStore.code,
     returnPrice: returnPrice.value || 1,
     returnStatus: returnStatus.value || '대기',
     details: JSON.parse(JSON.stringify(orderDetailList.value))
   }
 
-  console.log('📤 전송되는 데이터:', payload)
-
   try {
     const { data } = await axios.post('/api/insertorder', payload)
-    console.log('📥 응답 데이터:', data)
-
     if (data.status === 'success') {
-      toast(
-        'success',
-        '주문 등록',
-        data.message || '주문이 성공적으로 등록되었습니다.'
-      )
+      toast('success', '주문 등록', data.message || '주문이 성공적으로 등록되었습니다.')
       orderDetailList.value = []
     } else {
-      toast(
-        'warn',
-        '등록 실패',
-        data.message || '주문 등록에 실패했습니다.'
-      )
+      toast('warn', '등록 실패', data.message || '주문 등록에 실패했습니다.')
     }
   } catch (err) {
     console.error('❌ API 오류:', err)
@@ -250,7 +256,6 @@ watch(
   { deep: true }
 )
 </script>
-
 
 <style scoped>
 .order-register {

@@ -44,7 +44,8 @@
             RETURN_QTY,
             PROD_UNIT_PRICE,
             RETURN_WHY,
-            RDETAIL_STATUS
+            RDETAIL_STATUS,
+            odetail_id
         )
         VALUES (
             #{rdetailId},
@@ -53,7 +54,8 @@
             #{returnQty},
             #{prodUnitPrice},
             #{returnWhy},
-            '대기'
+            '대기',
+            #{odetailId}
         )
     </insert>
 
@@ -151,6 +153,7 @@
       )
     ORDER BY so.delivery_date DESC
 </select>
+
 
 
 

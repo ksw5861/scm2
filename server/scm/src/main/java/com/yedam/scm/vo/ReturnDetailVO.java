@@ -14,7 +14,7 @@ public class ReturnDetailVO {
     private String prodName;       // 상품명
     private String spec;           // 규격
     private String unit;           // 단위
-
+    private String odetailId;      // 관련된 주문 상세 번호 (SalesOrderDetailVO의 odetailId)
     // ====== 수량 및 금액 ======
     private int returnQty;         // 반품 수량
     private int prodUnitPrice;     // 반품 당시 단가 (스냅샷)

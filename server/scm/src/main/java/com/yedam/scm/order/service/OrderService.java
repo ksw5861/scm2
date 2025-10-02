@@ -44,4 +44,8 @@ public interface OrderService {
     // --- 주문 상태 변경 ---
     boolean updateOrderStatus(String orderId, String status);
 
+    // --- 주문 취소 ---
+    int deleteOrderWithDetails(String orderId);
+    
+
 }
