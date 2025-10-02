@@ -179,6 +179,24 @@ public class EgController {
         }
     }
 
+
+
+    // =================================================================
+    // 3-2. 주문 취소 (주문마스터의 상태가 대기에 한해서)
+    // =================================================================
+    @DeleteMapping("/orders/{orderId}")
+    public ResponseEntity<?> deleteOrder(@PathVariable String orderId) {
+        int result = orderSvc.deleteOrderWithDetails(orderId);
+        if(result > 0) {
+            return ResponseEntity.ok(Map.of("status", "success"));
+        } else {
+            return ResponseEntity.ok(Map.of("status", "fail", "message", "삭제할 주문이 없습니다."));
+        }
+    }
+
+
+
+
     // =================================================================
     // 4. 반품 등록
     // =================================================================

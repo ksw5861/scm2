@@ -6,21 +6,24 @@
 <mapper namespace="com.yedam.scm.order.mapper.BranchDashMapper">
 
   <!-- 일별 -->
-  <select id="selectDailySales" resultType="map">
-    SELECT TO_CHAR(order_date, 'YYYY-MM-DD') AS LABEL,
-           SUM(total_amount) AS AMOUNT
-    FROM orders
-    WHERE vendor_id = #{vendorId}
-      AND order_date <![CDATA[ >= ]]> ADD_MONTHS(TRUNC(SYSDATE), -1)
-    GROUP BY TO_CHAR(order_date, 'YYYY-MM-DD')
-    ORDER BY LABEL
-  </select>
+<select id="selectDailySales" resultType="map">
+  SELECT TO_CHAR(order_date, 'YYYY-MM-DD') AS LABEL,
+         SUM(total_price) AS AMOUNT
+  FROM sales_order
+  WHERE vendor_id = #{vendorId}
+    AND order_date <![CDATA[ >= ]]> TRUNC(SYSDATE) - 30
+    AND order_date <![CDATA[ <= ]]> TRUNC(SYSDATE)
+  GROUP BY TO_CHAR(order_date, 'YYYY-MM-DD')
+  ORDER BY LABEL
+</select>
+
+
 
   <!-- 주별 -->
   <select id="selectWeeklySales" resultType="map">
     SELECT TO_CHAR(TRUNC(order_date, 'IW'), 'YYYY-MM-DD') AS LABEL,
-           SUM(total_amount) AS AMOUNT
-    FROM orders
+           SUM(total_price) AS AMOUNT
+    FROM sales_order
     WHERE vendor_id = #{vendorId}
       AND order_date <![CDATA[ >= ]]> ADD_MONTHS(TRUNC(SYSDATE), -3)
     GROUP BY TRUNC(order_date, 'IW')
@@ -30,8 +33,8 @@
   <!-- 월별 -->
   <select id="selectMonthlySales" resultType="map">
     SELECT TO_CHAR(TRUNC(order_date, 'MM'), 'YYYY-MM-DD') AS LABEL,
-           SUM(total_amount) AS AMOUNT
-    FROM orders
+           SUM(total_price) AS AMOUNT
+    FROM sales_order
     WHERE vendor_id = #{vendorId}
       AND order_date <![CDATA[ >= ]]> ADD_MONTHS(TRUNC(SYSDATE), -12)
     GROUP BY TRUNC(order_date, 'MM')
@@ -41,8 +44,8 @@
   <!-- 연별 -->
   <select id="selectYearlySales" resultType="map">
     SELECT TO_CHAR(TRUNC(order_date, 'YYYY'), 'YYYY-MM-DD') AS LABEL,
-           SUM(total_amount) AS AMOUNT
-    FROM orders
+           SUM(total_price) AS AMOUNT
+    FROM sales_order
     WHERE vendor_id = #{vendorId}
     GROUP BY TRUNC(order_date, 'YYYY')
     ORDER BY LABEL

@@ -116,4 +116,14 @@ public class OrderServiceImpl implements OrderService {
     public boolean updateOrderStatus(String orderId, String status) {
         return orderMapper.updateStatus(orderId, status) > 0;
     }
+
+    // =============================================================
+    // 주문 취소
+    // =============================================================
+    @Transactional
+    public int deleteOrderWithDetails(String orderId) {
+        orderMapper.deleteOrderDetails(orderId);
+        return orderMapper.deleteOrder(orderId);
+    }   
+
 }

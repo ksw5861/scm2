@@ -23,6 +23,14 @@
           :disabled="!selectedOrder || selectedOrder.status !== '배송중'"
           @click="markAsDelivered"
         />
+        <Button 
+          label="주문취소" 
+          icon="pi pi-times" 
+          class="p-button-danger" 
+          :disabled="!selectedOrder || selectedOrder.status !== '대기'"
+          @click="cancelOrder"
+        />
+
       </div>
     </div>
 
@@ -299,6 +307,41 @@ const markAsShipping = async () => {
     alert('서버 오류로 상태를 변경하지 못했습니다.')
   }
 }
+
+// -----------------------------
+// 주문취소 처리
+// -----------------------------
+const cancelOrder = async () => {
+  if (!selectedOrder.value) {
+    alert('먼저 주문을 선택하세요.')
+    return
+  }
+  if (selectedOrder.value.status !== '대기') {
+    alert('대기 상태인 주문만 취소(삭제)할 수 있습니다.')
+    return
+  }
+
+  if (!confirm('해당 주문을 정말 삭제하시겠습니까?')) {
+    return
+  }
+
+  try {
+    const { data } = await axios.delete(`/api/orders/${selectedOrder.value.orderId}`)
+    if (data.status === 'success') {
+      alert('주문이 삭제되었습니다.')
+      fetchOrders()
+      orderDetails.value = []
+    } else {
+      alert(data.message || '주문 삭제 실패')
+    }
+  } catch (error) {
+    console.error('주문 삭제 오류:', error)
+    alert('서버 오류로 주문을 삭제하지 못했습니다.')
+  }
+}
+
+
+
 
 // -----------------------------
 // PDF / 엑셀 / 초기화
