@@ -29,7 +29,8 @@ const iconMap = {
   tags: 'pi pi-tags',
   bom: 'pi pi-sitemap',
   inventory: 'pi pi-th-large',
-  address: 'pi pi-map-marker'
+  address: 'pi pi-map-marker',
+  account: 'pi pi-shield'
 };
 
 export const useIcon = (name) => {

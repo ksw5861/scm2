@@ -35,6 +35,18 @@ const dh = {
         requiresAuth: true,
         roles: ['admin']
       }
+    },
+    {
+      path: '/account',
+      name: '계정 관리',
+      component: () => import('@/views/pages/dh/AccountManagement.vue'),
+      meta: {
+        breadcrumb: {
+          parent: '기준 정보'
+        },
+        requiresAuth: true,
+        roles: ['admin']
+      }
     }
   ]
 };
