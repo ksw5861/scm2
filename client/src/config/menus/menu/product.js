@@ -9,7 +9,7 @@ import shipRegister from './dw/shipRegister';
 
 const product = {
   label: '제품',
-  items: [productInbound, orderApproval, orderInquiry,  returnProcess, returnHistory, shipRegister, shipPlan]
+  items: [productInbound, orderApproval, orderInquiry,  returnProcess, returnHistory, shipPlan,shipRegister ]
 };
 
 export default product;

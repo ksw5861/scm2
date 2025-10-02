@@ -11,52 +11,53 @@ import com.yedam.scm.vo.ReturnDetailVO;
 import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
+import com.yedam.scm.vo.ShipOrderVO;
 
 public interface InboundService {
-  List<ItemInboundVO> selectInboundLots(ItemInboundVO vo);
 
-  int deleteInbound(String inboundId);
+    /* ===================== 제품입고 ===================== */
+    List<ItemInboundVO> selectInboundLots(ItemInboundVO vo);
 
-  boolean registerInbound(Map<String, Object> inbound);
+    int deleteInbound(String inboundId);
 
-  // 인터페이스 작성 후 클래스 작성시 유의사항
-  // 1. return data type
-  // 2. args data 갯수
-  // 3. args data type
+    boolean registerInbound(Map<String, Object> inbound);
 
-  // => 위 내용에 따라서 메소드 이름이 같더라도
-  // 다 다른 메소드
+    // 모달에서 사용할 제품 목록 조회
+    InboundListRes getInboundProductList(String condition, PageDTO paging);
 
-  // 모달에서 사용할 제품 목록 조회
-  InboundListRes getInboundProductList(String condition, PageDTO paging);
-
-  // 제품입고 창고모달
-  WarehouseListRes getWarehouseList(String condition, PageDTO paging);
-
-  List<SalesOrderVO> getApprovalList(SalesOrderVO vo);
-
-  // 주문승인 상세
-  List<SalesOrderDetailVO> getApprovalDetails(String orderId);
-
-  // 주문승인 트리거
-  int approveDetails(List<String> odetailIds);
+    // 제품입고 창고모달
+    WarehouseListRes getWarehouseList(String condition, PageDTO paging);
 
 
-  // 주문승인 반려 처리
-int rejectDetails(List<String> odetailIds);
+    /* ===================== 주문승인 ===================== */
+    List<SalesOrderVO> getApprovalList(SalesOrderVO vo);
+
+    List<SalesOrderDetailVO> getApprovalDetails(String orderId);
+
+    int approveDetails(List<String> odetailIds);
+
+    int rejectDetails(List<String> odetailIds);
 
 
-    //  반품 목록 조회
+    /* ===================== 반품승인 ===================== */
     List<ReturnVO> getReturnList();
 
+    List<ReturnDetailVO> getReturnDetails(String returnId);
 
-    //상세쪽 바인딩 및 승인,반려
-       // 반품 상세 조회
-      List<ReturnDetailVO> getReturnDetails(String returnId);
-
-    // 승인 처리
     int approveReturnDetails(List<String> ids);
 
-    // 반려 처리
     int rejectReturnDetails(List<String> ids, String reason);
-    }
+
+
+/* ===================== 출하지시 ===================== */
+
+// 출하지시 대상 목록 (주문건 기준)
+List<SalesOrderVO> getShipOrders(SalesOrderVO vo);
+
+// 여러 주문건 출하지시 등록 (헤더 단위)
+int createShipOrders(List<SalesOrderVO> orders);
+
+// 단일 주문 부분출고 등록 (상세 단위)
+int createShipOrderDetails(List<SalesOrderDetailVO> details);
+
+}

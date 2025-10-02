@@ -17,6 +17,7 @@ import com.yedam.scm.vo.ReturnDetailVO;
 import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
+import com.yedam.scm.vo.ShipOrderVO;
 import com.yedam.scm.vo.WareHouseVO;
 
 import lombok.RequiredArgsConstructor;
@@ -27,100 +28,56 @@ public class InboundServiceImpl implements InboundService {
 
     private final InboundMapper inboundMapper;
 
+    /* ===================== 제품입고 ===================== */
     @Override
     public List<ItemInboundVO> selectInboundLots(ItemInboundVO vo) {
         return inboundMapper.selectInboundLots(vo);
-
     }
 
     @Override
     public boolean registerInbound(Map<String, Object> inbound) {
-
-        // {
-        // "prodNo": "PNO20250924-004",
-        // "employeeId": "asd",
-        // "totalQty": 10,
-        // "whId": "asd"
-        // }
-
         inboundMapper.callInsertInbound(inbound);
-
-        // {
-        // "prodNo": "PNO20250924-004",
-        // "employeeId": "asd",
-        // "totalQty": 10,
-        // "whId": "asd"
-        // "rowCount": 1
-        // }
-
-        return ((int) inbound.get("rowCount")) > 0; // 실행 성공하면 true 리턴
+        return ((int) inbound.get("rowCount")) > 0;
     }
 
-    // 제품입고 페이지 삭제버튼
     @Override
     public int deleteInbound(String inboundId) {
         return inboundMapper.deleteInbound(inboundId);
     }
 
-    // 모달 부분
     @Override
     public InboundListRes getInboundProductList(String condition, PageDTO paging) {
-        // 목록 조회
         List<ProductVO> data = inboundMapper.selectInboundProductListByCondition(condition, paging);
-
-        // 전체 건수 조회 후 PageDTO 업데이트
         long total = inboundMapper.selectInboundProductCountByCondition(condition);
         paging.updatePageInfo(total);
-
-        // 응답 DTO 구성
         return new InboundListRes(data, paging);
-        // 모달 부분//
-
     }
-
-    // 제품입고창고 모달
 
     @Override
     public WarehouseListRes getWarehouseList(String condition, PageDTO paging) {
-        // 목록
         List<WareHouseVO> data = inboundMapper.selectWarehouseListByCondition(condition, paging);
-        // 총건수
         long total = inboundMapper.selectWarehouseCountByCondition(condition);
-        // 페이징 채움
         paging.updatePageInfo(total);
-        // 응답
         return new WarehouseListRes(data, paging);
     }
 
-    // 주문승인페이지 목록불러오기
-
+    /* ===================== 주문승인 ===================== */
     @Override
     public List<SalesOrderVO> getApprovalList(SalesOrderVO vo) {
         return inboundMapper.selectApprovalOrders(vo);
     }
 
-
-
-
-    // 주문승인 상세
     @Override
     public List<SalesOrderDetailVO> getApprovalDetails(String orderId) {
         return inboundMapper.selectApprovalDetails(orderId);
     }
 
-
-    //주문승인 트리거
     @Override
     @Transactional
     public int approveDetails(List<String> odetailIds) {
-        if (odetailIds == null || odetailIds.isEmpty())
-            return 0;
-        // 자식(DETAIL)만 업데이트 → 트리거가 부모(SALES_ORDER) 상태 동기화
+        if (odetailIds == null || odetailIds.isEmpty()) return 0;
         return inboundMapper.approveDetails(odetailIds);
     }
-
-
-    //주문반려
 
     @Override
     @Transactional
@@ -129,37 +86,52 @@ public class InboundServiceImpl implements InboundService {
         return inboundMapper.rejectDetails(odetailIds);
     }
 
-
-
-        //반품승인 페이지 목록불러오기
-     @Override
+    /* ===================== 반품승인 ===================== */
+    @Override
     public List<ReturnVO> getReturnList() {
         return inboundMapper.selectReturnList();
     }
-    /////////
-    
-            //반품 승인 상세로 바인딩 및 승인,반려
-            @Override
-        public List<ReturnDetailVO> getReturnDetails(String returnId) {
-            return inboundMapper.selectReturnDetails(returnId);
-        }
 
-        @Override
-        @Transactional
-        public int approveReturnDetails(List<String> ids) {
-            if (ids == null || ids.isEmpty()) return 0;
-            // 상세 라인 상태 변경 → 트리거가 return 테이블 상태 자동 업데이트
-            return inboundMapper.approveReturnDetails(ids);
-        }
+    @Override
+    public List<ReturnDetailVO> getReturnDetails(String returnId) {
+        return inboundMapper.selectReturnDetails(returnId);
+    }
 
-        @Override
-        @Transactional
-        public int rejectReturnDetails(List<String> ids, String reason) {
-            if (ids == null || ids.isEmpty()) return 0;
-            return inboundMapper.rejectReturnDetails(ids, reason);
-        }
+    @Override
+    @Transactional
+    public int approveReturnDetails(List<String> ids) {
+        if (ids == null || ids.isEmpty()) return 0;
+        return inboundMapper.approveReturnDetails(ids);
+    }
 
+    @Override
+    @Transactional
+    public int rejectReturnDetails(List<String> ids, String reason) {
+        if (ids == null || ids.isEmpty()) return 0;
+        return inboundMapper.rejectReturnDetails(ids, reason);
+    }
 
+    /* ===================== 출하지시 ===================== */
+// 출하지시 대상 조회
+@Override
+public List<SalesOrderVO> getShipOrders(SalesOrderVO vo) {
+    return inboundMapper.selectShippingOrders(vo);
+}
 
+// 여러 주문건 출하지시 등록 (헤더 단위)
+@Override
+@Transactional
+public int createShipOrders(List<SalesOrderVO> orders) {
+    if (orders == null || orders.isEmpty()) return 0;
+    return inboundMapper.insertShipOrders(orders);
+}
+
+// 단일 주문 부분출고 등록 (상세 단위)
+@Override
+@Transactional
+public int createShipOrderDetails(List<SalesOrderDetailVO> details) {
+    if (details == null || details.isEmpty()) return 0;
+    return inboundMapper.insertShipOrderDetails(details);
+}
 
 } // end
