@@ -15,11 +15,11 @@ public interface VendorService {
     VendorVO getVendorDetail(String vendorId);
 
     // 거래처 등록
-    int insertVendor(VendorVO vendorVO);
+    boolean insertVendor(VendorVO vendor);
 
     // 거래처 수정
-    int updateVendor(VendorVO vendorVO);
+    boolean updateVendor(VendorVO vendor);
 
     // 거래처 삭제
-    int deleteVendor(String vendorId);
+    boolean deleteVendor(String vendorId);
 }

@@ -112,12 +112,8 @@
 
   <!-- 사원 등록 -->
   <insert id="insertEmployee" parameterType="EmployeeVO" statementType="CALLABLE">
-    <selectKey keyProperty="employeeId" resultType="string" order="BEFORE">
-      SELECT next_code('emp') FROM dual
-    </selectKey>
-    
     { CALL insert_employee_with_account(
-      #{employeeId, mode=IN, jdbcType=VARCHAR},
+      #{employeeId, mode=OUT, jdbcType=VARCHAR},
       #{name, mode=IN, jdbcType=VARCHAR},
       #{phone, mode=IN, jdbcType=VARCHAR},
       #{email, mode=IN, jdbcType=VARCHAR},
@@ -125,9 +121,11 @@
       #{isActive, mode=IN, jdbcType=CHAR},
       #{hireDate, mode=IN, jdbcType=DATE},
       #{resignDate, mode=IN, jdbcType=DATE},
-      #{tempPassword, mode=IN, jdbcType=VARCHAR}
+      #{tempPassword, mode=IN, jdbcType=VARCHAR},
+      #{rowCount, mode=OUT, jdbcType=NUMERIC, javaType=java.lang.Integer}
     ) }
   </insert>
+
 
   <!-- 사원 수정 -->
   <update id="updateEmployeeById" statementType="CALLABLE">

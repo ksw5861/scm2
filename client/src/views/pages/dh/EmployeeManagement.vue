@@ -903,6 +903,7 @@ onMounted(fetchEmployeeList);
                       v-model="editForm.email"
                       placeholder="이메일 주소"
                       @blur="validateEmail(editForm.email)"
+                      :class="{ 'p-invalid': emailError }"
                     />
                     <label>이메일</label>
                   </IftaLabel>

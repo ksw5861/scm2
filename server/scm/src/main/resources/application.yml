@@ -18,7 +18,6 @@ spring:
           auth: true
           starttls:
             enable: true
-
   jpa:
     properties:
       hibernate:
@@ -62,3 +61,6 @@ iamport:
 recaptcha:
   secret: ENC(zLwiX/LhEU83nbjggue9DwY5fObo+LNsjThVngMWZTa/TAGBTqXx0itpNH4Y10HplpqrHVppJXA=)
 
+kakao:
+  client:
+    key: ENC(N3XaOG+/y9q1lWNAhCQEw3jUZulEkGqDEHkAVX6ROKJImTLdXCo9nkWh0wxItLFy)

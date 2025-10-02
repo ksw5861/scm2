@@ -222,7 +222,7 @@ const deleteMaterial = async () => {
   } catch (e) {
     console.error('deleteMaterial error', e);
 
-    // ✅ 409 Conflict 응답 처리
+    // 409 Conflict 응답 처리
     if (e.response?.status === 409) {
       toast('warn', '삭제 불가', e.response.data?.message || '다른 테이블에서 사용 중인 자재입니다.');
     } else {

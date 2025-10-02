@@ -436,7 +436,7 @@ onMounted(() => fetchProdList());
 
                         <div>
                           <label class="block text-sm mb-1">규격</label>
-                          <InputText v-model="currentBom.material.spec" class="w-full h-10" readonly />
+                          <InputText v-model="currentBom.material.spec" class="w-full h-10" />
                         </div>
 
                         <div>
@@ -447,7 +447,7 @@ onMounted(() => fetchProdList());
                         </div>
 
                         <div>
-                          <label class="block text-sm mb-1">수량</label>
+                          <label class="block text-sm mb-1">비율(%)</label>
                           <InputNumber v-model="currentBom.qty" class="w-full" mode="decimal" />
                         </div>
 
