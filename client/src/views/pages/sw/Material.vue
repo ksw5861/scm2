@@ -40,7 +40,7 @@ const vendorForm = reactive({
   vendorId: '',
   createdBy: '',
   createdAt: '',
-  status: '사용'
+  status: 'Y'
 });
 
 // 거래처 폼 모드: 'create' | 'edit'
@@ -211,14 +211,23 @@ const deleteMaterial = async () => {
   try {
     await axios.delete(`/api/material/${detail.matId}`);
     toast('success', '삭제 성공', '자재가 삭제되었습니다.');
+
+    // 폼 초기화
     Object.keys(detail).forEach((k) => (detail[k] = ''));
     Object.keys(form).forEach((k) => (form[k] = ''));
     selectedMaterial.value = null;
     mode.value = 'create';
+
     await fetchList();
   } catch (e) {
     console.error('deleteMaterial error', e);
-    toast('error', '삭제 실패', '자재 삭제 중 오류가 발생했습니다.');
+
+    // ✅ 409 Conflict 응답 처리
+    if (e.response?.status === 409) {
+      toast('warn', '삭제 불가', e.response.data?.message || '다른 테이블에서 사용 중인 자재입니다.');
+    } else {
+      toast('error', '삭제 실패', '자재 삭제 중 오류가 발생했습니다.');
+    }
   }
 };
 
@@ -283,7 +292,7 @@ function openVendorFormForCreate() {
   vendorForm.contractPrice = '';
   vendorForm.createdBy = '';
   vendorForm.createdAt = '';
-  vendorForm.status = '사용';
+  vendorForm.status = 'Y';
 }
 
 // 거래처 폼에 선택된 거래처 데이터 복사 (수정)
@@ -403,6 +412,18 @@ const selectVendorFromModal = (vendor) => {
   showVendorSelectModal.value = false;
 };
 
+// 숫자포맷팅
+const displayPrice = computed({
+  get: () => {
+    if (!form.matUnitPrice) return '';
+    return form.matUnitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  },
+  set: (val) => {
+    // 콤마 제거 후 숫자만 form에 저장
+    form.matUnitPrice = val.replace(/,/g, '');
+  }
+});
+
 onMounted(() => fetchList());
 </script>
 
@@ -435,8 +456,8 @@ onMounted(() => fetchList());
           <label class="block mb-1 text-sm">상태</label>
           <div class="flex gap-2 items-center">
             <label><input type="radio" value="" v-model="searchParams.status" /> 전체</label>
-            <label><input type="radio" value="사용" v-model="searchParams.status" /> 사용</label>
-            <label><input type="radio" value="미사용" v-model="searchParams.status" /> 미사용</label>
+            <label><input type="radio" value="Y" v-model="searchParams.status" /> 사용</label>
+            <label><input type="radio" value="N" v-model="searchParams.status" /> 미사용</label>
           </div>
         </div>
       </div>
@@ -502,35 +523,31 @@ onMounted(() => fetchList());
                   <InputText v-model="form.matStoreCond" class="w-full h-10" />
                 </div>
                 <div>
-                  <label class="text-sm block mb-1">단위</label>
-                  <InputText v-model="form.unit" class="w-full h-10" />
-                </div>
-                <div>
-                  <label class="text-sm block mb-1">규격</label>
-                  <InputText v-model="form.spec" class="w-full h-10" />
-                </div>
-                <div>
-                  <label class="text-sm block mb-1">상태</label>
-                  <div class="flex gap-2 items-center">
-                    <label><input type="radio" value="사용" v-model="form.status" /> 사용</label>
-                    <label><input type="radio" value="미사용" v-model="form.status" /> 미사용</label>
-                  </div>
-                </div>
-                <div>
                   <label class="text-sm block mb-1">단위환산</label>
                   <InputText v-model="form.matUnitConv" class="w-full h-10" @keypress="(e) => /[0-9.]/.test(e.key) || e.preventDefault()" />
                 </div>
                 <div>
-                  <label class="text-sm block mb-1">리드타임</label>
-                  <InputText v-model="form.leadTime" class="w-full h-10" @keypress="(e) => /[0-9.]/.test(e.key) || e.preventDefault()" />
+                  <label class="text-sm block mb-1">단위</label>
+                  <InputText v-model="form.unit" class="w-full h-10" />
                 </div>
                 <div>
-                  <label class="text-sm block mb-1">안전재고</label>
+                  <label class="text-sm block mb-1">안전재고(EA)</label>
                   <InputText v-model="form.safeStock" class="w-full h-10" @keypress="(e) => /[0-9.]/.test(e.key) || e.preventDefault()" />
                 </div>
                 <div>
-                  <label class="text-sm block mb-1">단가</label>
-                  <InputText v-model="form.matUnitPrice" class="w-full h-10" @keypress="(e) => /[0-9.]/.test(e.key) || e.preventDefault()" />
+                  <label class="text-sm block mb-1">리드타임(일)</label>
+                  <InputText v-model="form.leadTime" class="w-full h-10" @keypress="(e) => /[0-9.]/.test(e.key) || e.preventDefault()" />
+                </div>
+                <div>
+                  <label class="text-sm block mb-1">단가(원)</label>
+                  <InputText v-model="displayPrice" class="w-full h-10" />
+                </div>
+                <div>
+                  <label class="text-sm block mb-1">상태</label>
+                  <div class="flex gap-2 items-center">
+                    <label><input type="radio" value="Y" v-model="form.status" /> 사용</label>
+                    <label><input type="radio" value="N" v-model="form.status" /> 미사용</label>
+                  </div>
                 </div>
               </div>
             </TabPanel>
@@ -590,8 +607,8 @@ onMounted(() => fetchList());
                       <div>
                         <label class="text-sm block mb-1">상태</label>
                         <div class="flex gap-2 items-center">
-                          <label><input type="radio" value="사용" v-model="vendorForm.status" /> 사용</label>
-                          <label><input type="radio" value="미사용" v-model="vendorForm.status" /> 미사용</label>
+                          <label><input type="radio" value="Y" v-model="vendorForm.status" /> 사용</label>
+                          <label><input type="radio" value="N" v-model="vendorForm.status" /> 미사용</label>
                         </div>
                       </div>
 

@@ -22,6 +22,7 @@ public interface ProductMapper {
 
   // 제품정보삭제
   int deleteProduct(String prodId);
+  int countReferences(String prodId);
 
   // 제품정보등록
   int insertProduct(ProductVO productVO);

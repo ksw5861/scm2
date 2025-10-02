@@ -189,7 +189,13 @@ const deleteProduct = async () => {
     await fetchProductList();
   } catch (e) {
     console.error('deleteProduct error', e);
-    toast('error', '삭제 실패', '제품 삭제 중 오류가 발생했습니다.');
+
+    // 409 Conflict 응답 처리
+    if (e.response?.status === 409) {
+      toast('warn', '삭제 불가', e.response.data?.message || '다른 테이블에서 사용 중인 제품입니다.');
+    } else {
+      toast('error', '삭제 실패', '자재 삭제 중 오류가 발생했습니다.');
+    }
   }
 };
 
@@ -269,8 +275,8 @@ onMounted(() => fetchProductList());
           <label class="block mb-1 text-sm">상태</label>
           <div class="flex gap-2 items-center">
             <label><input type="radio" value="" v-model="searchParams.status" /> 전체</label>
-            <label><input type="radio" value="사용" v-model="searchParams.status" /> 사용</label>
-            <label><input type="radio" value="미사용" v-model="searchParams.status" /> 미사용</label>
+            <label><input type="radio" value="Y" v-model="searchParams.status" /> 사용</label>
+            <label><input type="radio" value="N" v-model="searchParams.status" /> 미사용</label>
           </div>
         </div>
       </div>
@@ -347,8 +353,8 @@ onMounted(() => fetchProductList());
             <div>
               <label class="text-sm block mb-1">상태</label>
               <div class="flex gap-2 items-center">
-                <label><input type="radio" value="사용" v-model="productForm.status" /> 사용</label>
-                <label><input type="radio" value="미사용" v-model="productForm.status" /> 미사용</label>
+                <label><input type="radio" value="Y" v-model="productForm.status" /> 사용</label>
+                <label><input type="radio" value="N" v-model="productForm.status" /> 미사용</label>
               </div>
             </div>
 

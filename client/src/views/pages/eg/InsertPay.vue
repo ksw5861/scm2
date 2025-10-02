@@ -11,7 +11,6 @@
 
     <!-- ===== 상단 카드 4개 ===== -->
     <section class="summary-cards-formula">
-      <!-- 총 미결제 금액 -->
       <div class="card red">
         <p class="label">총 미결제 금액</p>
         <p class="amount">₩{{ formatCurrency(summaryComputed.totalUnpaid) }}</p>
@@ -19,7 +18,6 @@
 
       <div class="formula-icon">➖</div>
 
-      <!-- 승인된 반품 총액 -->
       <div class="card green">
         <p class="label">승인된 반품 총액</p>
         <p class="amount">₩{{ formatCurrency(summaryComputed.thisMonthReturnAmount) }}</p>
@@ -27,13 +25,11 @@
 
       <div class="formula-icon">=</div>
 
-      <!-- 이번 납부 예정 금액 -->
       <div class="card blue">
         <p class="label">이번 납부 예정 금액</p>
         <p class="amount">₩{{ formatCurrency(summaryComputed.currentPayable) }}</p>
       </div>
 
-      <!-- 다음 납부 예정 금액 -->
       <div class="card orange">
         <p class="label">다음 납부 예정 금액</p>
         <p class="amount">₩{{ formatCurrency(summaryComputed.upcomingAmount) }}</p>
@@ -96,21 +92,18 @@
         <Column field="orderId" header="주문번호" style="width:140px;" />
         <Column field="prodName" header="제품명" style="width:240px;" />
 
-        <!-- 총 주문 금액 -->
         <Column field="totalPrice" header="총 주문금액" style="width:150px; text-align:right;">
           <template #body="{ data }">
             ₩{{ formatCurrency(data.totalPrice) }}
           </template>
         </Column>
 
-        <!-- 반품 금액 -->
         <Column field="returnPrice" header="반품금액" style="width:150px; text-align:right;">
           <template #body="{ data }">
             ₩{{ formatCurrency(data.returnPrice) }}
           </template>
         </Column>
 
-        <!-- 실결제 금액 -->
         <Column field="finalAmount" header="실결제금액" style="width:150px; text-align:right;">
           <template #body="{ data }">
             ₩{{ formatCurrency(data.finalAmount) }}
@@ -134,7 +127,6 @@
 
     <!-- ===== [탭] 납부 처리 ===== -->
     <div v-else-if="activeTab === 'pay'" class="tab-content pay-section">
-      <!-- 좌측 납부 요약 -->
       <div class="pay-summary">
         <h3 class="section-title"><i class="pi pi-check-circle"></i> 납부 요약</h3>
         <div class="summary-list">
@@ -151,7 +143,6 @@
         </div>
       </div>
 
-      <!-- 우측 카카오페이 결제 버튼 -->
       <div class="pay-form">
         <h3 class="section-title"><i class="pi pi-wallet"></i> 카카오페이 결제</h3>
         <Button
@@ -179,56 +170,53 @@ import { useToast } from 'primevue/usetoast'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
-const vendorId = ref(null)
 const toast = useToast()
+
+// -----------------------------
+// 상태 관리
+// -----------------------------
+const vendorId = ref(null)
 const today = new Date().toLocaleDateString('ko-KR')
-
-// ===== 탭 상태 =====
 const activeTab = ref('pending')
-
-// ===== 미결제 내역 =====
 const orders = ref([])
 const selectedOrders = ref([])
 const searchQuery = ref('')
 
-// 미결제 데이터 가져오기
-const fetchOrders = async () => {
-  try {
-    const res = await axios.get('/api/pendingorders')
-    orders.value = res.data || []
-  } catch (error) {
-    console.error('미결제 목록 불러오기 실패:', error)
-  }
-}
-
-// 검색 필터
+// -----------------------------
+// 계산 속성
+// -----------------------------
 const filteredOrders = computed(() => {
   if (!searchQuery.value) return orders.value
-  return orders.value.filter(order =>
-    order.orderId.includes(searchQuery.value) ||
-    order.prodName.includes(searchQuery.value)
+  return orders.value.filter(
+    (order) =>
+      order.orderId.includes(searchQuery.value) ||
+      order.prodName.includes(searchQuery.value)
   )
 })
 
-// 선택한 항목 합계
-const selectedTotal = computed(() => 
-  selectedOrders.value.reduce((sum, order) => sum + (order.finalAmount || 0), 0)
+const selectedTotal = computed(() =>
+  selectedOrders.value.reduce(
+    (sum, order) => sum + (order.finalAmount || 0),
+    0
+  )
 )
 
-// ===== 상단 카드 계산 =====
 const summaryComputed = computed(() => {
-  const totalUnpaid = orders.value.reduce((sum, order) => sum + (order.totalPrice || 0), 0)
-  const thisMonthReturnAmount = orders.value.reduce((sum, order) => sum + (order.returnPrice || 0), 0)
-
-  // 이번 납부 예정 금액
+  const totalUnpaid = orders.value.reduce(
+    (sum, order) => sum + (order.totalPrice || 0),
+    0
+  )
+  const thisMonthReturnAmount = orders.value.reduce(
+    (sum, order) => sum + (order.returnPrice || 0),
+    0
+  )
   const currentPayable = totalUnpaid - thisMonthReturnAmount
 
-  // 다음 납부 예정 금액 (예: 이번 달 이후 출고 건)
   const upcomingAmount = orders.value
-    .filter(order => {
+    .filter((order) => {
       const sendDate = new Date(order.sendDate)
-      const today = new Date()
-      return sendDate.getMonth() > today.getMonth() // 다음 달 이후 출고
+      const now = new Date()
+      return sendDate.getMonth() > now.getMonth()
     })
     .reduce((sum, order) => sum + (order.finalAmount || 0), 0)
 
@@ -240,20 +228,33 @@ const summaryComputed = computed(() => {
   }
 })
 
-// ===== 카카오페이 결제 요청 =====
-onMounted(() => {
-  const IMP = window.IMP
-  IMP.init('imp62556076') // 아임포트 발급 가맹점 코드
-})
+// -----------------------------
+// API 핸들링
+// -----------------------------
+const fetchOrders = async () => {
+  try {
+    const res = await axios.get('/api/pendingorders')
+    orders.value = res.data || []
+  } catch (error) {
+    console.error('미결제 목록 불러오기 실패:', error)
+  }
+}
 
+// -----------------------------
+// 결제 요청
+// -----------------------------
 const requestPay = () => {
   if (selectedOrders.value.length === 0) {
-    toast.add({ severity: 'warn', summary: '알림', detail: '납부할 주문을 선택하세요.', life: 3000 })
+    toast.add({
+      severity: 'warn',
+      summary: '알림',
+      detail: '납부할 주문을 선택하세요.',
+      life: 3000
+    })
     return
   }
 
   const IMP = window.IMP
-
   IMP.request_pay(
     {
       pg: 'kakaopay.TC0ONETIME',
@@ -276,7 +277,7 @@ const requestPay = () => {
             payAmount: selectedTotal.value,
             vendorId: vendorId.value,
             payType: '카카오페이',
-            paymentDetails: selectedOrders.value.map(order => ({
+            paymentDetails: selectedOrders.value.map((order) => ({
               orderId: order.orderId,
               totalPrice: order.totalPrice,
               returnPrice: order.returnPrice,
@@ -293,7 +294,6 @@ const requestPay = () => {
             life: 3000
           })
 
-          // 화면 초기화
           fetchOrders()
           selectedOrders.value = []
         } catch (err) {
@@ -316,23 +316,31 @@ const requestPay = () => {
   )
 }
 
-// ===== 날짜 & 금액 포맷 =====
+// -----------------------------
+// 유틸 함수
+// -----------------------------
 const formatDate = (date) => {
   if (!date) return ''
   const d = new Date(date)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(
+    d.getDate()
+  ).padStart(2, '0')}`
 }
 
-const formatCurrency = (value) => {
-  return value ? value.toLocaleString('ko-KR') : '0'
-}
+const formatCurrency = (value) =>
+  value ? value.toLocaleString('ko-KR') : '0'
 
-// ===== 초기 로드 =====
+// -----------------------------
+// 라이프사이클
+// -----------------------------
 onMounted(() => {
+  const IMP = window.IMP
+  IMP.init('imp62556076')
   fetchOrders()
   vendorId.value = userStore.code
 })
 </script>
+
 
 <style scoped>
 /* ===== 공통 스타일 ===== */

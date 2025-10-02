@@ -1,5 +1,6 @@
 package com.yedam.scm.master.service.impl;
 
+import java.sql.Date;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,7 @@ public class ProductServiceImpl implements ProductService {
   ProductMapper mapper;
 
   @Override
-  public List<ProductVO> getProductList(String prodId, String prodName, String status, String unit) {
+  public List<ProductVO> getProductList(String prodId, String prodName, String status, String unit, Date createdAt) {
     return mapper.getProductList(prodId, prodName, status, unit);
   }
 
@@ -29,6 +30,11 @@ public class ProductServiceImpl implements ProductService {
   //TODO 사용중인 제품인지 확인 후에 삭제또는 삭제불가.
   @Override
   public int deleteProduct(String prodId) {
+
+    int refCount = mapper.countReferences(prodId);
+    if(refCount > 0){
+      throw new IllegalStateException("해당 제품은 다른 테이블에서 참조 중이라 삭제할 수 없습니다.");
+    }
     return mapper.deleteProduct(prodId);
   }
 

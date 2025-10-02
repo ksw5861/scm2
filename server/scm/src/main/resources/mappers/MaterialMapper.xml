@@ -7,10 +7,7 @@
   <!-- 1. 자재 목록 조회 (materialList) -->
   <!-- ==================================== -->
   <select id="getMaterialList" parameterType="map" resultType="MaterialVO">
-  SELECT 
-      MAT_ID,
-      MAT_NAME,
-      STATUS
+  SELECT *
   FROM MATERIAL
   <where>
     <if test="matId != null and matId != ''">
@@ -34,6 +31,21 @@
     FROM MATERIAL
     WHERE MAT_ID = #{matId}
   </select>
+
+  <!-- 참조 여부 먼저 확인-->
+  <select id="countReferences" parameterType="string" resultType="int">
+    SELECT (
+      (SELECT COUNT(*) FROM MATERIAL_VENDOR WHERE MAT_ID = #{matId})
+    + (SELECT COUNT(*) FROM BOM WHERE MAT_ID = #{matId})
+    + (SELECT COUNT(*) FROM INBOUND_DETAIL WHERE MAT_ID = #{matId})
+    + (SELECT COUNT(*) FROM MAT_LOT WHERE MAT_ID = #{matId})
+    + (SELECT COUNT(*) FROM MAT_OUT_DETAIL WHERE MAT_ID = #{matId})
+    + (SELECT COUNT(*) FROM MRP_DETAIL WHERE MAT_ID = #{matId})
+    + (SELECT COUNT(*) FROM PURCHASE_MAT WHERE MAT_ID = #{matId})
+    ) AS totalCount
+    FROM dual
+</select>
+
 
   <!-- ==================================== -->
   <!-- 3. 선택된 자재 삭제 -->

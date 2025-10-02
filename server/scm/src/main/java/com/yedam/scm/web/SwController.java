@@ -1,17 +1,23 @@
 package com.yedam.scm.web;
 
+import java.sql.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yedam.scm.master.service.MaterialService;
 import com.yedam.scm.master.service.ProductService;
 import com.yedam.scm.master.service.WareHouseService1;
+import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.dto.VendorSearchDTO;
 import com.yedam.scm.master.service.BomService;
 import com.yedam.scm.master.service.UnitService;
+import com.yedam.scm.master.service.VendorService;
 import com.yedam.scm.vo.MaterialVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.UnitVO;
@@ -20,6 +26,7 @@ import com.yedam.scm.vo.BomVO;
 
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -73,9 +80,21 @@ public class SwController {
 
     // 자재 정보 삭제
     @DeleteMapping("/material/{matId}")
-    public int deleteMaterial(@PathVariable String matId) {
-        return materialSvc.deleteMaterial(matId);
+    public ResponseEntity<?> deleteMaterial(@PathVariable String matId) {
+    try {
+        materialSvc.deleteMaterial(matId); // 참조 있으면 IllegalStateException 발생
+        return ResponseEntity.ok(Map.of("status", "success"));
+    } catch (IllegalStateException e) {
+        // 자재가 참조 중일 때 → 409 Conflict
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("status", "error", "message", e.getMessage()));
+    } catch (Exception e) {
+        // 그 외 DB 오류 등 → 500 Internal Server Error
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
     }
+
     // 정보 등록
     @PostMapping("/material")
     public Map<String, Object> insertMaterial(@RequestBody MaterialVO materialVO) {    
@@ -112,8 +131,9 @@ public class SwController {
             @RequestParam(required = false) String prodId,
             @RequestParam(required = false) String prodName,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String unit) {
-        return productSvc.getProductList(prodId, prodName, status, unit);
+            @RequestParam(required = false) String unit,
+            @RequestParam(required = false) Date createdAt) {
+        return productSvc.getProductList(prodId, prodName, status, unit, createdAt);
     }
 
     @GetMapping("/product/{prodId}")
@@ -122,8 +142,19 @@ public class SwController {
     }
 
     @DeleteMapping("/product/{prodId}")
-    public int deleteProduct(@PathVariable String prodId) {
-        return productSvc.deleteProduct(prodId);
+    public ResponseEntity<?> deleteProduct(@PathVariable String prodId) {
+        try{
+            productSvc.deleteProduct(prodId); // 참조있으면 IllegalStateException 발생
+            return ResponseEntity.ok(Map.of("status", "success"));
+        } catch(IllegalStateException e){
+            // 자재가 참조 중일 때 -> 409 conflict
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("status", "error", "message", e.getMessage()));
+        } catch (Exception e){
+            // 그 외 DB오류 등 -> 500 Internal Server Error
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "error", "message", "서버 오류가 발생했습니다."));
+        }
     }
 
     @PostMapping("/product")
@@ -213,19 +244,15 @@ public class SwController {
     // ================ Vendor API ============================
     // =========================================================
     @Autowired
-    com.yedam.scm.master.service.VendorService vendorSvc;
+    VendorService vendorSvc;
 
     @GetMapping("/vendor")
-    public List<com.yedam.scm.vo.VendorVO> getVendorList(
-            @RequestParam(required = false) String vendorId,
-            @RequestParam(required = false) String companyName,
-            @RequestParam(required = false) String isActive,
-            @RequestParam(required = false) String type,
-            @RequestParam(required = false) String ceoName,
-            @RequestParam(required = false) String phoneNumber
+    public Map<String, Object> getVendorList(
+        @ModelAttribute VendorSearchDTO condition,
+        @ModelAttribute PageDTO paging
     ) {
-        return vendorSvc.getVendorList(vendorId, companyName, isActive);
-        // 필요시 type, ceoName, phoneNumber 등 파라미터 추가하여 서비스/매퍼에 반영
+
+        return vendorSvc.getVendorList(condition, paging);
     }
 
     @GetMapping("/vendor/{vendorId}")

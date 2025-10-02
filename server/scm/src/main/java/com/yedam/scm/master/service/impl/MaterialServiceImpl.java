@@ -29,6 +29,11 @@ public class MaterialServiceImpl implements MaterialService {
     // 자재사용여부 확인
     // 자재거래업체삭제후
     // 자재삭제
+    
+    int refCount = mapper.countReferences(matId);
+    if (refCount > 0) {
+        throw new IllegalStateException("해당 자재는 다른 테이블에서 참조 중이라 삭제할 수 없습니다.");
+    }
     return mapper.deleteMaterial(matId);
   }
 

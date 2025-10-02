@@ -18,6 +18,10 @@ public class ProductVO {
     private String status;            // 제품 상태 (활성/비활성 등)
     private String spec;              // 규격
     private String unit;              // 단위
+    private Date createdAt;           // 등록날짜
+    private Date bomLastUpdate;       // 마지막수정날짜
+
+    
 
     // ✅ PROD_UNIT_PRICE 컬럼 사용
     // null 값 허용을 위해 BigDecimal 사용

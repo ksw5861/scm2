@@ -2,31 +2,6 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.yedam.scm.purchaseMat.mapper.PurchaseMatMapper">
 <!--중첩VO 정의-->
-<!--제품 resultMap-->
-<resultMap id="ProductMap" type="ProductVO">
-  <id property="prodId" column="prod_id"/>
-  <result property="prodName" column="prod_name"/>
-  <result property="prodExpireDate" column="exp"/>
-  <result property="safeStock" column="safe_stock"/>
-  <result property="spec" column="spec"/>
-  <result property="prodUnitPrice" column="prod_unit_price"/>
-  <result property="unit" column="unit"/>
-  <result property="status" column="status"/>
-</resultMap>
-<!--공급처 resultMap -->
-<resultMap id="VendorMap" type="VendorVO">
-    <result property="vendorId" column="VENDOR_ID"/>
-    <result property="businessRegistration" column="BUSINESS_REGISTRATION"/>
-    <result property="companyName" column="COMPANY_NAME"/>
-    <result property="ceoName" column="CEO_NAME"/>
-    <result property="phoneNumber" column="PHONE_NUMBER"/>
-    <result property="address" column="ADDRESS"/>
-    <result property="isActive" column="IS_ACTIVE"/>
-    <result property="createdAt" column="CREATED_AT"/>
-    <result property="updatedAt" column="UPDATED_AT"/>
-</resultMap>
-
-
 <!--생산계획상세 + 제품마스터테이블-->
 <resultMap id="PrdPlanDetailMap" type="PrdPlanDetailVO">
   <id property="plDetId" column="pl_det_id"/>
@@ -38,7 +13,7 @@
   <result property="prodNo" column="prod_no"/>
   <result property="mprStatus" column="mpr_status"/>
 
-  <association property="productVO" resultMap="ProductMap"/>
+  <association property="productVO" resultMap="com.yedam.scm.common.CommonMapper.ProductMap"/>
 </resultMap>
 
 <!--mrp상세-->
@@ -63,9 +38,29 @@
     <result property="status" column="STATUS"/>
 
     <association property="materialVO" resultMap="com.yedam.scm.common.CommonMapper.MaterialMap"/>
-    <association property="vendorVO" resultMap="VendorMap"/>
+    <association property="vendorVO" resultMap="com.yedam.scm.common.CommonMapper.VendorMap"/>
 </resultMap>
 
+<!--자재주문-->
+<resultMap id="PurchaseMatMap" type="PurchaseMatVO">
+    <id property="purId" column="PUR_ID"/>
+    <result property="matId" column="MAT_ID"/>
+    <result property="reqQty" column="REQ_QTY"/>
+    <result property="outTotalQty" column="OUT_TOTAL_QTY"/>
+    <result property="purMatStatus" column="PUR_MAT_STATUS"/>
+    <result property="resonComm" column="RESON_COMM"/>
+    <result property="mrpDetId" column="MRP_DET_ID"/>
+    <result property="vendorId" column="VENDOR_ID"/>
+    <result property="empName" column="EMP_NAME"/>
+    <result property="regDate" column="REG_DATE"/>
+    <result property="purNo" column="PUR_NO"/>
+    <result property="total" column="TOTAL"/>
+    <result property="dueDate" column="DUE_DATE"/>
+
+    <association property="materialVO" resultMap="com.yedam.scm.common.CommonMapper.MaterialMap"/>
+    <association property="purStatusLogVO" resultMap="com.yedam.scm.common.CommonMapper.PurStatusLogMap"/>
+    <association property="vendorVO" resultMap="com.yedam.scm.common.CommonMapper.VendorMap"/>
+</resultMap>
 
     <!-- ##생산계획 등록 -->
     <!-- 1. 생산계획 마스터 등록 -->
@@ -169,7 +164,7 @@
     Where mv.mat_id = #{matId}
     </select>
 
-    <!--자재요청프로시저-->
+    <!--자재주문프로시저-->
        <select id="callReqestMatProc" parameterType="PurchaseMatVO" statementType="CALLABLE">
         { call PROC_REQ_MATERIAL(
             #{matId,    mode=IN, jdbcType=VARCHAR},  
@@ -182,6 +177,32 @@
         )}
     </select>
 
+    <!--자재주문목록-->
+    <select id = "getPurchaseList" resultMap="PurchaseMatMap">
+    SELECT pm.pur_id,
+           pm.reg_date,
+           pm.pur_no,
+           pm.req_qty,
+           m.mat_name,
+           v.company_name,
+           pm.pur_mat_status,
+           pm.emp_name
+    FROM purchase_mat pm
+    JOIN material m
+    ON pm.mat_id = m.mat_id
+    JOIN vendor v
+    ON pm.vendor_id = v.vendor_id
+    </select>
+    <!--자재주문상세이력-->
+    <select id ="getPurchaseStatus" parameterType="long" resultType = "PurStatusLogVO">
+    SELECT psl.re_date,
+           psl.name,
+           psl.pur_mat_status,
+           NVL(psl.sup_out_qty,0) as sup_out_qty
+    FROM purchase_status_log psl
+    WHERE pur_id = #{purId}
+    ORDER BY re_date DESC
+    </select>
 <!--드롭다운/모달용===============================================================================-->
 <!--제품목록-->
 <select id="getProductList" resultType="ProductVO">

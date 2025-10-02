@@ -7,6 +7,7 @@ import com.yedam.scm.dto.InboundListRes;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.WarehouseListRes;
 import com.yedam.scm.vo.ItemInboundVO;
+import com.yedam.scm.vo.ReturnDetailVO;
 import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
@@ -48,4 +49,14 @@ int rejectDetails(List<String> odetailIds);
     //  반품 목록 조회
     List<ReturnVO> getReturnList();
 
-}
+
+    //상세쪽 바인딩 및 승인,반려
+       // 반품 상세 조회
+      List<ReturnDetailVO> getReturnDetails(String returnId);
+
+    // 승인 처리
+    int approveReturnDetails(List<String> ids);
+
+    // 반려 처리
+    int rejectReturnDetails(List<String> ids, String reason);
+    }

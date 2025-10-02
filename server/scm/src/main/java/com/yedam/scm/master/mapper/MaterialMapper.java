@@ -21,6 +21,7 @@ public interface MaterialMapper {
 
   // 자재정보삭제
   int deleteMaterial(String matId);
+  int countReferences(String matId);
 
   // 자재정보등록
   int insertMaterial(MaterialVO materialVO);

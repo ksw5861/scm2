@@ -113,43 +113,41 @@ import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
 import Dialog from 'primevue/dialog'
 import { useAppToast } from '@/composables/useAppToast'
-import { useUserStore } from '@/stores/user';
+import { useUserStore } from '@/stores/user'
 
-const userStore = useUserStore();
+const userStore = useUserStore()
 const { toast } = useAppToast()
 
-// 모달 표시 여부
-const isShowModal = ref(false)
+// -----------------------------
+// 상태 관리
+// -----------------------------
+const isShowModal = ref(false)          // 모달 표시 여부
+const productList = ref([])             // 제품 목록
+const selectedProduct = ref(null)       // 선택된 제품
+const orderDetailList = ref([])         // 주문 상세 목록
+const deliveryDate = ref('2025-10-01')  // 납기일자
+const returnPrice = ref(1)              // 반품 관련 가격
+const returnStatus = ref('대기')        // 반품 상태
 
-// 제품 목록 및 선택된 제품
-const productList = ref([])
-const selectedProduct = ref(null)
-
-// 주문 상세 목록
-const orderDetailList = ref([])
-
-// 납기일자
-const deliveryDate = ref('2025-11-15')
-
-// 총 주문합계
+// -----------------------------
+// 계산 & 유틸
+// -----------------------------
 const totalAmount = computed(() =>
   orderDetailList.value.reduce((sum, item) => sum + (item.total || 0), 0)
 )
 
-// 금액 포맷
 const formatCurrency = (value) =>
   (value || 0).toLocaleString('ko-KR') + ' 원'
 
-// 행별 합계 계산
 const calculateRowTotal = (row) => {
-  row.total = (Number(row.orderQty) || 0) * (Number(row.prodUnitPrice) || 0)
+  row.total =
+    (Number(row.orderQty) || 0) * (Number(row.prodUnitPrice) || 0)
   console.log('합계 계산:', row.total)
 }
 
-// 주문 저장 관련 기본값
-const returnPrice = ref(1)
-const returnStatus = ref('대기')
-
+// -----------------------------
+// API & 데이터 핸들링
+// -----------------------------
 // 제품 목록 조회
 const fetchProducts = async () => {
   try {
@@ -157,7 +155,6 @@ const fetchProducts = async () => {
       params: { page: 1, pageSize: 50 }
     })
     console.log('제품 목록 API 응답:', data)
-
     productList.value = data.items || []
   } catch (err) {
     console.error('제품 목록 조회 오류:', err)
@@ -167,19 +164,20 @@ const fetchProducts = async () => {
 
 // 제품 선택 시 주문 상세 목록에 추가
 const handleSelect = () => {
-  if (!selectedProduct.value) return;
+  if (!selectedProduct.value) return
 
-  const product = selectedProduct.value;
+  const product = selectedProduct.value
 
-  // ✅ 중복 체크
-  const isDuplicate = orderDetailList.value.some(item => item.prodId === product.prodId);
-
+  // 중복 체크
+  const isDuplicate = orderDetailList.value.some(
+    (item) => item.prodId === product.prodId
+  )
   if (isDuplicate) {
-    toast('warn', '중복 제품', '이미 추가된 제품입니다.');
-    return;
+    toast('warn', '중복 제품', '이미 추가된 제품입니다.')
+    return
   }
 
-  // ✅ 초기 행 데이터 추가
+  // 초기 행 데이터 추가
   orderDetailList.value.push({
     odetailId: null,
     prodId: product.prodId,
@@ -190,11 +188,11 @@ const handleSelect = () => {
     orderQty: 1,
     prodStatus: '대기',
     total: product.prodUnitPrice || 0
-  });
+  })
 
-  selectedProduct.value = null;
-  isShowModal.value = false;
-};
+  selectedProduct.value = null
+  isShowModal.value = false
+}
 
 // 주문 저장
 const saveOrder = async () => {
@@ -204,8 +202,8 @@ const saveOrder = async () => {
     orderDate: new Date().toISOString().slice(0, 10),
     deliveryDate: deliveryDate.value,
     totalPrice: totalAmount.value,
-    status: '대기',          // 트리거가 있으면 사실 필요 X
-    payStatus: '대기',       // 트리거가 있으면 사실 필요 X
+    status: '대기',      // 서버에서 기본값 처리 가능
+    payStatus: '대기',   // 서버에서 기본값 처리 가능
     vendorId: userStore.code,
     returnPrice: returnPrice.value || 1,
     returnStatus: returnStatus.value || '대기',
@@ -219,10 +217,18 @@ const saveOrder = async () => {
     console.log('📥 응답 데이터:', data)
 
     if (data.status === 'success') {
-      toast('success', '주문 등록', data.message || '주문이 성공적으로 등록되었습니다.')
+      toast(
+        'success',
+        '주문 등록',
+        data.message || '주문이 성공적으로 등록되었습니다.'
+      )
       orderDetailList.value = []
     } else {
-      toast('warn', '등록 실패', data.message || '주문 등록에 실패했습니다.')
+      toast(
+        'warn',
+        '등록 실패',
+        data.message || '주문 등록에 실패했습니다.'
+      )
     }
   } catch (err) {
     console.error('❌ API 오류:', err)
@@ -230,21 +236,21 @@ const saveOrder = async () => {
   }
 }
 
-
+// -----------------------------
+// 라이프사이클 & watch
+// -----------------------------
 onMounted(fetchProducts)
 
-// -----------------------------
-// 🟢 watch 추가 부분
-// 주문수량이 변경될 때마다 자동으로 합계 계산
-// -----------------------------
+// 주문수량 변경 → 자동 합계 계산
 watch(
-  () => orderDetailList.value, // orderDetailList를 감시
+  () => orderDetailList.value,
   (newVal) => {
-    newVal.forEach(row => calculateRowTotal(row))
+    newVal.forEach((row) => calculateRowTotal(row))
   },
-  { deep: true } // 객체 내부 속성까지 감시
+  { deep: true }
 )
 </script>
+
 
 <style scoped>
 .order-register {

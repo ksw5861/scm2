@@ -103,9 +103,12 @@ const shipment = async () => {
 
   try {
     const res = await axios.post('/api/supplier/shipMaterial', payload);
+    toast('info', '등록 성공', '출고등록  성공:', '3000');
+    selectedRows = [];
     pageLoad();
+
   } catch (error) {
-    toast('error', '출고등록 실패', '출고등록  실패:', '3000');
+    toast('error', '등록 실패', '출고등록  실패:', '3000');
   }
 };
 </script>

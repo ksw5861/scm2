@@ -13,6 +13,7 @@ import com.yedam.scm.product.mapper.InboundMapper;
 import com.yedam.scm.product.service.InboundService;
 import com.yedam.scm.vo.ItemInboundVO;
 import com.yedam.scm.vo.ProductVO;
+import com.yedam.scm.vo.ReturnDetailVO;
 import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
@@ -135,6 +136,30 @@ public class InboundServiceImpl implements InboundService {
     public List<ReturnVO> getReturnList() {
         return inboundMapper.selectReturnList();
     }
+    /////////
+    
+            //반품 승인 상세로 바인딩 및 승인,반려
+            @Override
+        public List<ReturnDetailVO> getReturnDetails(String returnId) {
+            return inboundMapper.selectReturnDetails(returnId);
+        }
+
+        @Override
+        @Transactional
+        public int approveReturnDetails(List<String> ids) {
+            if (ids == null || ids.isEmpty()) return 0;
+            // 상세 라인 상태 변경 → 트리거가 return 테이블 상태 자동 업데이트
+            return inboundMapper.approveReturnDetails(ids);
+        }
+
+        @Override
+        @Transactional
+        public int rejectReturnDetails(List<String> ids, String reason) {
+            if (ids == null || ids.isEmpty()) return 0;
+            return inboundMapper.rejectReturnDetails(ids, reason);
+        }
+
+
 
 
 } // end
