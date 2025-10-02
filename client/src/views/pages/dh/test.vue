@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue';
 import Modal from '@/components/common/Modal.vue';
+import AddressModal from '@/components/common/AddressModal.vue';
 import axios from 'axios';
 
 // 모달 visible 상태
@@ -73,6 +74,16 @@ const handleEmployeeSelect = (item) => {
   selectedEmployeeItem.value = item;
   isEmployeeModalVisible.value = false;
 };
+
+// 주소 선택 상태 (문자열)
+const showAddressDialog = ref(false);
+const selectedAddress = ref(''); // 문자열로 초기화
+
+// 주소 선택 핸들러 (주소 + 상세주소 문자열 받음)
+const selectAddress = (fullAddress) => {
+  selectedAddress.value = fullAddress;
+  showAddressDialog.value = false; // 선택 후 다이얼로그 닫기
+};
 </script>
 
 <template>
@@ -89,25 +100,49 @@ const handleEmployeeSelect = (item) => {
   </Fluid>
 
   <pre class="mt-4">
-        선택된 창고: {{ selectedWarehouseItem }}
-    </pre
-  >
+    선택된 창고: {{ selectedWarehouseItem }}
+  </pre>
 
   <pre class="mt-4">
-        선택된 사원: {{ selectedEmployeeItem }}
-    </pre
-  >
+    선택된 사원: {{ selectedEmployeeItem }}
+  </pre>
 
   <!-- 창고 모달 (프론트엔드 페이징) -->
-  <Modal :visible="isWarehouseModalVisible"
-  title="창고 검색"
-  :columns="warehouseColumns"
-   dataKey="whId" :fetchData="fetchWarehouseList" :pageSize="5" :frontPagination="true"
-    @select="handleWarehouseSelect" @close="isWarehouseModalVisible = false" />
+  <Modal
+    :visible="isWarehouseModalVisible"
+    title="창고 검색"
+    :columns="warehouseColumns"
+    dataKey="whId"
+    :fetchData="fetchWarehouseList"
+    :pageSize="5"
+    :frontPagination="true"
+    @select="handleWarehouseSelect"
+    @close="isWarehouseModalVisible = false"
+  />
 
   <!-- 사원 모달 (백엔드 페이징) -->
-  <Modal :visible="isEmployeeModalVisible" title="사원 검색" :columns="employeeColumns"
-   dataKey="employeeId" :fetchData="fetchEmployeeList" :pageSize="3" :frontPagination="false"
-  @select="handleEmployeeSelect"
-  @close="isEmployeeModalVisible = false" />
+  <Modal
+    :visible="isEmployeeModalVisible"
+    title="사원 검색"
+    :columns="employeeColumns"
+    dataKey="employeeId"
+    :fetchData="fetchEmployeeList"
+    :pageSize="3"
+    :frontPagination="false"
+    @select="handleEmployeeSelect"
+    @close="isEmployeeModalVisible = false"
+  />
+
+  <div>
+    <Button label="주소 검색" icon="pi pi-search" @click="showAddressDialog = true" />
+
+    <!-- 문자열로 받은 주소 출력 -->
+    <p v-if="selectedAddress">선택된 주소: {{ selectedAddress }}</p>
+
+    <AddressModal
+      :visible="showAddressDialog"
+      @close="showAddressDialog = false"
+      @select="selectAddress"
+    />
+  </div>
 </template>
