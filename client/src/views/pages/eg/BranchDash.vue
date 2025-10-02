@@ -54,7 +54,7 @@
       <Card class="kpi"><template #title>다음 결제기한 금액</template><template #content><div class="kpi-value">{{ asKRW(kpi.nextDueAmount) }}</div><div class="kpi-sub"><i class="pi pi-clock"></i> 기준일: {{ formatDate(kpi.nextDueDate) }}</div></template></Card>
     </div>
 
-   <!-- 매출 차트 -->
+    <!-- 매출 차트 -->
     <Card class="chart-card">
       <template #title>
         매출 추이
@@ -66,7 +66,7 @@
       </template>
     </Card>
 
-    <!-- 미결제 주문/반품 요약 (카멜케이스) -->
+    <!-- 미결제 주문/반품 요약 -->
     <Card class="table-card">
       <template #title>미결제 주문/반품 요약</template>
       <template #content>
@@ -84,7 +84,7 @@
       </template>
     </Card>
 
-    <!-- 재고 / 공지 2열 -->
+    <!-- 재고 / 공지 -->
     <div class="two-col">
       <Card class="table-card">
         <template #title>재고 현황 <span class="muted">(안전재고 대비)</span></template>
@@ -126,21 +126,31 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'
 
+import {
+  Chart as ChartJS,
+  Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale
+} from 'chart.js'
+
+import 'chartjs-adapter-date-fns';
+
+ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale)
+
 // Pinia Store
 const userStore = useUserStore();
-const vendorId = userStore.code; // 로그인한 가맹점 코드
+const vendorId = userStore.code;
 
-// 날짜 포맷 함수
+// 날짜 포맷
 const formatDate = (dateStr) => {
-  if (!dateStr) return '' // 값이 없으면 빈 문자열
+  if (!dateStr) return ''
   const date = new Date(dateStr)
-  if (isNaN(date.getTime())) return dateStr // 날짜가 유효하지 않으면 원본 반환
-  return date.toLocaleDateString('ko-KR') // YYYY.MM.DD 형식
+  if (isNaN(date.getTime())) return dateStr
+  return date.toLocaleDateString('ko-KR')
 }
 const today = new Date().toISOString().substring(0, 10)
 
@@ -150,25 +160,17 @@ const asKRW = (value) => {
   return value.toLocaleString('ko-KR') + '원'
 }
 
-
-// 주문 상태에 따른 색상 매핑
+// 주문 상태 색상
 const statusColor = (status) => {
   switch (status) {
-    case '대기':
-      return 'warning' // 노란색
-    case '완료':
-      return 'success' // 초록색
-    case '취소':
-      return 'danger'  // 빨간색
-    case '배송중':
-      return 'info'    // 파란색
-    case '배송완료':
-      return 'success' // 초록색
-    default:
-      return 'secondary' // 회색
+    case '대기': return 'warning'
+    case '완료': return 'success'
+    case '취소': return 'danger'
+    case '배송중': return 'info'
+    case '배송완료': return 'success'
+    default: return 'secondary'
   }
 }
-
 
 // KPI
 const kpi = ref({ todaySales: 0, monthSales: 0, unshipped: 0, nextDueAmount: 0, nextDueDate: '' });
@@ -181,7 +183,7 @@ const fetchKpi = async () => {
   }
 };
 
-// 미결제 주문
+// 주문
 const orders = ref([]);
 const orderQuery = ref('');
 const fetchOrders = async () => {
@@ -223,9 +225,7 @@ const fetchNotices = async () => {
   }
 };
 
-
-
-// 단위 선택
+// ========= 매출 차트 =========
 const selectedRange = ref('daily'); 
 const rangeOptions = [
   { label: '일별', value: 'daily' },
@@ -234,9 +234,7 @@ const rangeOptions = [
   { label: '연별', value: 'yearly' }
 ];
 
-// 매출 추이
-const chartData = ref({ labels: [], datasets: [] });
-
+const chartData = ref({ datasets: [] });
 
 const fetchSalesTrend = async () => {
   try {
@@ -244,21 +242,21 @@ const fetchSalesTrend = async () => {
       params: { vendorId, range: selectedRange.value }
     });
 
-    console.log('매출 추이 응답:', data); // ✅ 구조 확인
-
-
     chartData.value = {
-      labels: data.map(d => d.label || d.LABEL), // API에서 라벨(날짜/주차/월/연) 제공
       datasets: [{
         label: '매출',
-        data: data.map(d => d.amount || d.AMOUNT),
+        data: data.map(d => ({
+          x: d.LABEL,  // API에서 YYYY-MM-DD 내려줌
+          y: d.AMOUNT
+        })),
         borderColor: '#4F46E5',
         backgroundColor: 'rgba(79,70,229,0.08)',
         fill: true,
         tension: 0.35,
-        pointRadius: 0
+        pointRadius: 2
       }]
     };
+
   } catch (err) {
     console.error('매출 추이 조회 오류:', err);
   }
@@ -268,18 +266,20 @@ const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
   scales: {
+    x: {
+      type: 'time',
+      time: { unit: 'day' },
+      min: new Date(new Date().setMonth(new Date().getMonth() - 1)), // 1개월 전
+      max: new Date() // 오늘까지
+    },
     y: {
       beginAtZero: true,
       ticks: {
-        callback: function (value) {
-          return (value / 10000).toLocaleString() + '만 원';
-        }
+        callback: (value) => (value / 10000).toLocaleString() + '만 원'
       }
     }
   }
-};
-
-
+}
 
 onMounted(() => {
   fetchKpi();
@@ -289,6 +289,10 @@ onMounted(() => {
   fetchSalesTrend();
 });
 </script>
+
+
+
+
 
 <style scoped>
 .main { min-height: 100vh; background:#f7f8fa; padding:20px 24px; }

@@ -1,515 +1,1016 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import { computed, ref, reactive, onMounted, watch } from 'vue';
 import axios from 'axios';
-import InputText from 'primevue/inputtext';
 import { useIcon } from '@/composables/useIcon';
 import { useAppToast } from '@/composables/useAppToast';
-
-/* Hook & Composable ==================================== */
 
 const route = useRoute();
 const { toast } = useAppToast();
 
-/* ========================================== */
-/* ========================================== */
-/* ========================================== */
+// ===== 아이콘 =====
+const icons = {
+    info: useIcon('info'),
+    add: useIcon('add'),
+    edit: useIcon('edit'),
+    list: useIcon('list'),
+    employee: useIcon('employee'),
+    phone: useIcon('phone'),
+    email: useIcon('email'),
+    calendar: useIcon('calendar'),
+    id: useIcon('id'),
+    home: useIcon('home'),
+    cancel: useIcon('cancel'),
+    delete: useIcon('delete'),
+    refresh: useIcon('refresh'),
+    save: useIcon('save'),
+    register: useIcon('register'),
+    address: useIcon('address'),
+    vendor: useIcon('vendor')
+};
 
+// ===== BreadCrumb =====
+const breadcrumbHome = { icon: icons.home, to: '/' };
 
-
-
-
-/* 아이콘 ==================================== */
-
-const iconList = useIcon('list');
-const iconAdd = useIcon('add');
-const iconEdit = useIcon('edit');
-const iconInfo = useIcon('info');
-const iconSearch = useIcon('search');
-
-/* ========================================== */
-/* ========================================== */
-/* ========================================== */
-
-
-
-
-
-/* 탐색 경로 ==================================== */
-
-const breadcrumbHome = { icon: useIcon('home'), to: '/' };
 const breadcrumbItems = computed(() => {
-  const matched = route.matched.filter((r) => r.meta);
-  if (!matched.length) return [];
-  const current = matched[matched.length - 1];
-  const parentLabel = current.meta?.breadcrumb?.parent || '기준 정보';
-  const currentLabel = current.name || '';
-  return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
+    const matched = route.matched.filter(r => r.meta);
+    if (!matched.length) return [];
+    const current = matched[matched.length - 1];
+    return [
+        { label: current.meta.breadcrumb?.parent || '' },
+        { label: current.name || '', to: route.fullPath }
+    ];
 });
 
-/* ========================================== */
-/* ========================================== */
-/* ========================================== */
-
-
-
-
-
-/* 검색 조건 ==================================== */
-
-const searchParams = reactive({
-
- /* 거래처 유형   */ type: [],        // 0: 공급처 / 1: 판매처
- /* 사용 여부     */ isActive: '',    // 사용여부: 'Y' / 'N'
- /* 업체명       */ companyName: '', // 업체명
- /* 이름         */ name: '',        // 대표자 / 담당자명
- /* 연락처       */ phoneNumber: '', // 업체 연락처 / 담당자 연락처
- /* 사업자등록번호 */ businessRegistration: '' // 사업자등록번호
-});
-
-/* ========================================== */
-/* ========================================== */
-/* ========================================== */
-
-
-
-
-
-/* 초기화 ==================================== */
-
-// 거래처 목록
-const vendorList = ref([]);
-
-// 선택된 거래처
-const selectedVendor = ref(null);
-
-// 거래처 상세
-const vendorDetail = reactive({
-  vendorId: '',
-  businessRegistration: '',
-  type: '',
-  companyName: '',
-  ceoName: '',
-  phoneNumber: '',
-  address: '',
-  isActive: '',
-  ownerName: '',
-  ownerEmail: '',
-  ownerPhone: ''
-});
-
-// 거래처 입력폼
-const vendorForm = reactive({ ...vendorDetail });
-
-// 모드 기본값 == 등록(create)
-const mode = ref('create'); // create | view | edit
-
-// 로딩중
-const loading = ref(false);
-
-// 페이지네이션
-const page = ref({ page: 1, size: 10, totalElements: 0 });
-
-// 거래처 목록 (표시할 컬럼 정보)
-const columns = [
-  { label: '거래처 유형', field: 'type' },
-  { label: '업체명', field: 'companyName' },
-  { label: '사업자 등록 번호', field: 'businessRegistration' },
-  { label: '거래처 번호', field: 'vendorId' }
+// ===== Options =====
+const STATUS_OPTIONS = [
+    { label: '판매처', value: 0 },
+    { label: '공급처', value: 1 },
+    { label: '공급 및 판매처', value: 2 }
 ];
 
-/* ========================================== */
-/* ========================================== */
-/* ========================================== */
+const ACTIVE_OPTIONS = [
+    { label: '사용', value: 'Y' },
+    { label: '미사용', value: 'N' }
+];
 
-
-
-
-
-/* API 호출 ==================================== */
-
-// 목록 조회
-const fetchVendorList = async () => {
-  loading.value = true;
-  try {
-    const params = {
-      vendorId: searchParams.businessRegistration || undefined,
-      companyName: searchParams.companyName || undefined,
-      isActive: searchParams.isActive || undefined,
-      type: searchParams.type && searchParams.type.length ? searchParams.type.join(',') : undefined,
-      ceoName: searchParams.ceoName || undefined,
-      phoneNumber: searchParams.phoneNumber || undefined,
-      page: page.value.page,
-      size: page.value.size
-    };
-    const res = await axios.get('/api/vendor', { params });
-    const payload = res;
-    vendorList.value = payload;
-    page.value.totalElements = res.data?.page?.totalElements ?? payload.length ?? 0;
-
-    // if a partner was selected but is no longer in list, unselect
-    if (selectedVendor.value) {
-      const key = selectedVendor.value.vendorId ?? selectedVendor.value.businessRegistration;
-      const found = vendorList.value.find((p) => (p.vendorId ?? p.businessRegistration) === key);
-      if (!found) handleUnselect();
+const getDisplayTypes = (typeValue) => {
+    let types = [];
+    if (Array.isArray(typeValue)) {
+        types = typeValue.map(Number);
+    } else if (typeof typeValue === 'number' || typeof typeValue === 'string') {
+        types = String(typeValue).split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
     }
-  } catch (e) {
-    console.error('fetchVendorList error', e);
-    toast('error', '조회 실패', '거래처 목록 조회 중 오류가 발생했습니다.');
-  } finally {
-    loading.value = false;
-  }
+
+    const finalDisplayTypes = new Set();
+
+    types.forEach(type => {
+        if (type === 2) {
+            finalDisplayTypes.add(0);
+            finalDisplayTypes.add(1);
+        } else {
+            finalDisplayTypes.add(type);
+        }
+    });
+
+    return Array.from(finalDisplayTypes);
 };
 
-// 선택건 단건 조회
-const fetchVendorDetail = async (id) => {
-  if (!id) return;
-  try {
-    const res = await axios.get(`/api/vendor/${encodeURIComponent(id)}`);
-    const data = Array.isArray(res.data) ? res.data[0] : res.data;
-    if (data) {
-      Object.assign(vendorDetail, {
-        vendorId: data.vendorId ?? data.VENDOR_ID ?? data.businessRegistration ?? '',
-        businessRegistration: data.businessRegistration ?? data.BUSINESS_REGISTRATION ?? data.vendorId ?? '',
-        type: data.type ?? data.TYPE ?? '',
-        companyName: data.companyName ?? data.COMPANY_NAME ?? '',
-        ceoName: data.ceoName ?? data.CEO_NAME ?? '',
-        phoneNumber: data.phoneNumber ?? data.PHONE_NUMBER ?? '',
-        address: data.address ?? data.ADDRESS ?? '',
-        isActive: (data.isActive ?? data.IS_ACTIVE ?? '') === true ? 'Y' : (data.isActive ?? data.IS_ACTIVE ?? '') || '',
-        ownerName: data.ownerName ?? data.OWNER_NAME ?? '',
-        ownerEmail: data.ownerEmail ?? data.OWNER_EMAIL ?? '',
-        ownerPhone: data.ownerPhone ?? data.OWNER_PHONE ?? data.ownerTel ?? ''
-      });
-      Object.assign(vendorForm, vendorDetail);
-      selectedVendor.value = data;
-      mode.value = 'view';
-    } else {
-      // clear
-      Object.keys(vendorDetail).forEach((k) => (vendorDetail[k] = ''));
-      Object.keys(vendorForm).forEach((k) => (vendorForm[k] = ''));
-      selectedVendor.value = null;
-      mode.value = 'create';
+const getStatusLabel = (value) =>
+    STATUS_OPTIONS.find(opt => opt.value === Number(value))?.label || '';
+
+const getStatusLabels = (typeArray) => {
+    if (!typeArray || (Array.isArray(typeArray) && typeArray.length === 0)) return '없음';
+
+    const types = Array.isArray(typeArray)
+        ? typeArray
+        : String(typeArray).split(',').map(v => v.trim()).filter(v => v !== '').map(Number);
+
+    return types.map(type => getStatusLabel(type)).filter(label => label).join(', ');
+};
+
+const getIsActiveLabel = (value) =>
+    ACTIVE_OPTIONS.find(opt => opt.value === value)?.label || '';
+
+const formatBusinessRegistration = (value) => {
+    if (!value) return '';
+    let numbers = value.toString().replace(/\D/g, '');
+
+    if (numbers.length > 10) {
+        numbers = numbers.slice(0, 10);
     }
-  } catch (e) {
-    console.error('fetchVendorDetail error', e);
-    toast('error', '조회 실패', '거래처 상세 조회 중 오류가 발생했습니다.');
-  }
+
+    if (numbers.length < 4) return numbers;
+    if (numbers.length < 6) return numbers.replace(/(\d{3})(\d+)/, '$1-$2');
+    return numbers.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3');
 };
 
-// 거래처 등록
-const addPartner = async () => {
-  if (!vendorForm.companyName) return toast('warn', '등록 실패', '업체명을 입력하세요.');
-  try {
-    const payload = {
-      vendorId: vendorForm.vendorId || vendorForm.businessRegistration || undefined,
-      businessRegistration: vendorForm.businessRegistration,
-      companyName: vendorForm.companyName,
-      ceoName: vendorForm.ceoName,
-      phoneNumber: vendorForm.phoneNumber,
-      address: vendorForm.address,
-      isActive: vendorForm.isActive,
-      type: vendorForm.type,
-      ownerName: vendorForm.ownerName,
-      ownerEmail: vendorForm.ownerEmail,
-      ownerPhone: vendorForm.ownerPhone
-    };
-    const res = await axios.post('/api/vendor', payload);
-    toast('success', '등록 성공', '거래처가 등록되었습니다.');
-    await fetchVendorList();
-    // try to open newly added detail (API may return id)
-    const newId = res.data?.vendorId ?? res.data?.businessRegistration ?? payload.vendorId;
-    if (newId) await fetchVendorDetail(newId);
-    else {
-      Object.keys(vendorForm).forEach((k) => (vendorForm[k] = ''));
-      mode.value = 'create';
+const formatPhone = (value) => {
+    if (!value) return '';
+    let numbers = value.toString().replace(/\D/g, '');
+
+    if (numbers.length > 11) {
+        numbers = numbers.slice(0, 11);
     }
-  } catch (e) {
-    console.error('addPartner error', e);
-    toast('error', '등록 실패', '거래처 등록 중 오류가 발생했습니다.');
-  }
+
+    if (numbers.length < 4) return numbers;
+
+    if (numbers.length === 11) {
+        return numbers.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
+    }
+
+    if (numbers.length === 10) {
+        if (numbers.startsWith('02')) {
+            return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
+        }
+        return numbers.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+    }
+    if (numbers.length > 7) {
+        return numbers.replace(/(\d{2,3})(\d{3,4})(\d{4})/, '$1-$2-$3');
+    }
+    return numbers.replace(/(\d{3})(\d+)/, '$1-$2');
 };
 
-// 거래처 수정
-const modifyPartner = async () => {
-  if (!vendorDetail.vendorId && !vendorDetail.businessRegistration) return toast('warn', '수정 실패', '수정할 거래처를 선택하세요.');
-  try {
-    const id = vendorDetail.vendorId || vendorDetail.businessRegistration;
-    const payload = {
-      vendorId: vendorForm.vendorId || id,
-      businessRegistration: vendorForm.businessRegistration,
-      companyName: vendorForm.companyName,
-      ceoName: vendorForm.ceoName,
-      phoneNumber: vendorForm.phoneNumber,
-      address: vendorForm.address,
-      isActive: vendorForm.isActive,
-      type: vendorForm.type,
-      ownerName: vendorForm.ownerName,
-      ownerEmail: vendorForm.ownerEmail,
-      ownerPhone: vendorForm.ownerPhone
-    };
-    await axios.put(`/api/vendor/${encodeURIComponent(id)}`, payload);
-    toast('success', '수정 성공', '거래처 정보가 수정되었습니다.');
-    await fetchVendorList();
-    await fetchVendorDetail(id);
-  } catch (e) {
-    console.error('modifyPartner error', e);
-    toast('error', '수정 실패', '거래처 수정 중 오류가 발생했습니다.');
-  }
+const emailError = ref('');
+const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    emailError.value = email && !emailRegex.test(email) ? '유효한 이메일 주소를 입력하세요.' : '';
 };
 
-// 거래처 삭제
-const deletePartner = async () => {
-  const id = vendorDetail.vendorId || vendorForm.businessRegistration || vendorForm.vendorId;
-  if (!id) return toast('warn', '삭제 실패', '삭제할 거래처를 선택하세요.');
-  if (!confirm(`거래처 [${vendorDetail.companyName || vendorForm.companyName}] 삭제하시겠습니까?`)) return;
-  try {
-    await axios.delete(`/api/vendor/${encodeURIComponent(id)}`);
-    toast('success', '삭제 성공', '거래처가 삭제되었습니다.');
-    handleUnselect();
-    await fetchVendorList();
-  } catch (e) {
-    console.error('deletePartner error', e);
-    toast('error', '삭제 실패', '거래처 삭제 중 오류가 발생했습니다.');
-  }
+const getVendorTypePayload = (typeArray) => {
+    if (!Array.isArray(typeArray) || typeArray.length === 0) {
+        return '';
+    }
+
+    const types = new Set(typeArray.map(Number));
+
+    if (types.has(0) && types.has(1)) {
+        return '2';
+    }
+
+    return Array.from(types).join(',');
 };
 
-/* ========================================== */
-/* ========================================== */
-/* ========================================== */
 
-
-
-
-
-/* 이벤트 핸들러 ==================================== */
-
-// 목록 거래처 행 선택
-const handleRowSelect = async (row) => {
-  const id = row.vendorId ?? row.businessRegistration;
-  await fetchVendorDetail(id);
+const validateVendorForm = () => {
+    if (!editForm.businessRegistration) return '사업자 등록 번호를 입력해주세요.';
+    if (!editForm.companyName) return '거래처명을 입력해주세요.';
+    if (!editForm.ceoName) return '대표자명을 입력해주세요.';
+    if (editForm.type.length === 0) return '거래처 유형을 하나 이상 선택해주세요.';
+    if (editForm.ownerEmail) validateEmail(editForm.ownerEmail);
+    if (emailError.value) return emailError.value;
+    return null;
 };
 
-// 목록 거래처 행 선택 해제
-const handleUnselect = () => {
-  Object.keys(vendorDetail).forEach((k) => (vendorDetail[k] = ''));
-  Object.keys(vendorForm).forEach((k) => (vendorForm[k] = ''));
-  selectedVendor.value = null;
-  mode.value = 'create';
-};
+// ===== Table Columns =====
+const vendorColumns = [
+    { label: '거래처 유형', field: 'type', format: (data) => getStatusLabels(data.type) },
+    { label: '거래처명', field: 'companyName'},
+    { label: '사업자 등록 번호', field: 'businessRegistration'}
+];
 
-// 수정 버튼 (수정 모드로 변경)
-const handleEdit = () => {
-  mode.value = 'edit';
-};
+// ===== State =====
+const vendors = ref([]);
+const selectedVendor = ref(null);
+const prevSelectedVendor = ref(null);
+const vendorDetail = ref(null);
 
-// 폼 초기화 버튼 (입력값 초기화)
-const handleResetForm = () => {
-  if (mode.value === 'view' && (vendorDetail.vendorId || vendorDetail.businessRegistration)) {
-    Object.assign(vendorForm, vendorDetail);
-  } else {
-    Object.keys(vendorForm).forEach((k) => (vendorForm[k] = ''));
-  }
-};
+const loading = ref(false);
+const detailLoading = ref(false);
+const cardMode = ref('create'); // create, view, edit
 
-// 검색 버튼
-const handleSearch = () => {
-  page.value.page = 1;
-  handleUnselect();
-  fetchVendorList();
-};
+const page = ref({
+    page: 1,
+    size: 8,
+    totalElements: 0
+});
 
-// 검색 조건 초기화 (초기화된 검색조건으로 목록 다시 불러옴)
-const handleReset = () => {
-  Object.assign(searchParams, {
-    type: [],
-    isActive: '',
+const searchParams = reactive({
+    type: [], // 체크박스 바인딩을 위해 배열
+    isActive: ['Y'],
     companyName: '',
     ceoName: '',
     phoneNumber: '',
-    businessRegistration: ''
-  });
-  handleSearch();
+    businessRegistration: '',
+    sortField: null,
+    sortOrder: null
+});
+
+const editForm = reactive({
+    businessRegistration: '',
+    companyName: '',
+    ceoName: '',
+    phoneNumber: '',
+    address: '',
+    type: [],
+    isActive: 'N',
+    ownerName: '',
+    ownerEmail: '',
+    ownerPhone: ''
+});
+
+// ===== State Reset Functions =====
+const resetSearchParams = () => {
+    Object.assign(searchParams, {
+        type: [],
+        isActive: ['Y'],
+        companyName: '',
+        ceoName: '',
+        phoneNumber: '',
+        businessRegistration: '',
+        sortField: null,
+        sortOrder: null
+    });
 };
 
-/* ========================================== */
-/* ========================================== */
-/* ========================================== */
+const resetEditForm = () => {
+    Object.assign(editForm, {
+        businessRegistration: '',
+        companyName: '',
+        ceoName: '',
+        phoneNumber: '',
+        address: '',
+        type: [],
+        isActive: 'N',
+        ownerName: '',
+        ownerEmail: '',
+        ownerPhone: ''
+    });
+    emailError.value = '';
+};
+
+const confirmEditLoss = (message) => {
+    if (cardMode.value !== 'edit') return true;
+    return confirm(message || '현재 수정 중인 내용이 저장되지 않습니다. 계속 진행하시겠습니까?');
+};
 
 
+// ===== API Calls =====
+const fetchVendorList = async () => {
+    loading.value = true;
+    try {
+        let finalType = [...searchParams.type].map(Number);
 
+        const hasVendor = finalType.includes(0);
+        const hasSupplier = finalType.includes(1);
 
+        if (hasVendor && hasSupplier) {
+            if (!finalType.includes(2)) {
+                finalType.push(2);
+            }
+        }
 
-// 초기 init (훅)
+        finalType = [...new Set(finalType)];
+
+        const cleanSearchParams = Object.fromEntries(
+            Object.entries(searchParams).filter(([key, value]) => {
+                if (key === 'type') return false; // type은 수동으로 처리
+                if (Array.isArray(value) && value.length === 0) return false;
+                return true;
+            })
+        );
+
+        const { data } = await axios.get('/api/vendor', {
+            params: {
+                page: page.value.page,
+                size: page.value.size,
+                ...cleanSearchParams,
+                ...(finalType.length > 0 && { type: finalType.join(',') })
+            }
+        });
+
+        vendors.value = data.data ?? data.items;
+
+        Object.assign(page.value, data.page || {
+             page: page.value.page,
+             size: page.value.size,
+             totalElements: 0
+        });
+
+        console.log(data)
+
+    } catch (e) {
+        console.error(e);
+        toast('error', '조회 실패', '거래처 목록 조회 중 오류가 발생했습니다.');
+    } finally {
+        loading.value = false;
+    }
+};
+
+const fetchVendorDetail = async (vendorId) => {
+    if (!vendorId) return;
+    detailLoading.value = true;
+    try {
+        const { data } = await axios.get(`/api/vendor/${vendorId}`);
+        let vendorData = data.data ?? data;
+
+        if (typeof vendorData.type === 'string') {
+            vendorData.type = vendorData.type.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
+        } else if (typeof vendorData.type === 'number') {
+            vendorData.type = [vendorData.type];
+        } else if (!Array.isArray(vendorData.type)) {
+            vendorData.type = [];
+        } else {
+             vendorData.type = vendorData.type.map(v => parseInt(v));
+        }
+
+        vendorDetail.value = vendorData;
+    } catch (e) {
+        console.error(e);
+        toast('error', '조회 실패', '거래처 상세 정보 조회 중 오류가 발생했습니다.');
+    } finally {
+        detailLoading.value = false;
+    }
+};
+
+const addVendor = async () => {
+    const error = validateVendorForm();
+    if (error) {
+        toast('warn', '등록 실패', error);
+        return;
+    }
+    if (!confirm("등록하시겠습니까?")) return;
+
+    try {
+        const payload = {
+             ...editForm,
+             type: getVendorTypePayload(editForm.type)
+        };
+
+        const response = await axios.post('/api/vendor', payload);
+        const responseData = response.data.data ?? response.data;
+
+        if (response.status === 200 || response.status === 201) {
+            toast('success', '등록 성공', '새로운 거래처가 성공적으로 등록되었습니다.');
+            await fetchVendorList();
+
+            const newVendorId = responseData.vendorId;
+
+            selectedVendor.value = vendors.value.find(v => v.vendorId === newVendorId);
+            cardMode.value = 'view';
+            await fetchVendorDetail(newVendorId);
+
+            resetEditForm();
+        } else {
+            toast('error', '등록 실패', `거래처 등록 중 오류가 발생했습니다. (상태 코드: ${response.status})`);
+            console.error("API call failed with status code:", response.status, response.data);
+        }
+    } catch (e) {
+        console.error(e);
+        toast('error', '등록 실패', '거래처 등록 중 오류가 발생했습니다.');
+    }
+};
+
+const modifyVendor = async () => {
+    const error = validateVendorForm();
+    if (error) {
+        toast('warn', '저장 실패', error);
+        return;
+    }
+    if (!confirm("수정 내용을 저장하시겠습니까?")) return;
+    if (!vendorDetail.value?.vendorId) {
+        toast('error', '저장 실패', '수정할 거래처 ID를 찾을 수 없습니다.');
+        return;
+    }
+
+    try {
+        const payload = {
+             ...editForm,
+             type: getVendorTypePayload(editForm.type)
+        };
+
+        const response = await axios.put(`/api/vendor/${vendorDetail.value.vendorId}`, payload);
+        if (response.status === 200) {
+            toast('success', '저장 성공', '거래처 정보가 성공적으로 수정되었습니다.');
+            await fetchVendorList();
+            cardMode.value = 'view';
+            await fetchVendorDetail(vendorDetail.value.vendorId);
+        } else {
+            toast('error', '저장 실패', `거래처 정보 수정 중 오류가 발생했습니다. (상태 코드: ${response.status})`);
+            console.error("API call failed with status code:", response.status, response.data);
+        }
+    } catch (e) {
+        console.error(e);
+        toast('error', '저장 실패', '거래처 정보 수정 중 오류가 발생했습니다.');
+    }
+};
+
+const removeVendor = async () => {
+    if (!vendorDetail.value || !confirm("정말로 이 거래처 정보를 삭제하시겠습니까?")) return;
+
+    try {
+        const response = await axios.delete(`/api/vendor/${vendorDetail.value.vendorId}`);
+        if (response.status === 200) {
+            toast('success', '삭제 성공', '거래처 정보가 성공적으로 삭제되었습니다.');
+            await fetchVendorList();
+            cardMode.value = 'create';
+            selectedVendor.value = null;
+            vendorDetail.value = null;
+            resetEditForm();
+        } else {
+            toast('error', '삭제 실패', `거래처 정보 삭제 중 오류가 발생했습니다. (상태 코드: ${response.status})`);
+            console.error("API call failed with status code:", response.status, response.data);
+        }
+    } catch (e) {
+        console.error(e);
+        toast('error', '삭제 실패', '거래처 정보 삭제 중 오류가 발생했습니다.');
+    }
+};
+
+// ===== Event Handlers =====
+const handleSearch = () => {
+    if (!confirmEditLoss('조회 시 수정 중인 내용이 사라집니다. 계속하시겠습니까?')) return;
+    page.value.page = 1;
+    selectedVendor.value = null;
+    vendorDetail.value = null;
+    cardMode.value = 'create';
+    fetchVendorList();
+};
+
+const handlePageChange = ({ page: newPage, size }) => {
+    page.value.page = newPage;
+    page.value.size = size;
+    fetchVendorList();
+};
+
+const handleSortChange = ({ sortField, sortOrder }) => {
+    searchParams.sortField = sortField;
+    searchParams.sortOrder = sortOrder;
+    page.value.page = 1;
+    fetchVendorList();
+};
+
+const handleRowSelect = (vendor) => {
+    if (!confirmEditLoss('선택 시 수정 중인 내용이 사라집니다. 계속하시겠습니까?')) return;
+    prevSelectedVendor.value = vendor;
+    selectedVendor.value = vendor;
+    cardMode.value = 'view';
+    fetchVendorDetail(vendor.vendorId);
+};
+
+const handleRowUnSelect = () => {
+    if (!confirmEditLoss('선택 해제 시 수정 중인 내용이 사라집니다. 계속하시겠습니까?')) return;
+    prevSelectedVendor.value = null;
+    selectedVendor.value = null;
+    cardMode.value = 'create';
+    vendorDetail.value = null;
+    resetEditForm();
+};
+
+const handleReset = () => {
+    if (!confirmEditLoss('검색 조건 초기화 시 수정 중인 내용이 사라집니다. 계속하시겠습니까?')) return;
+    resetSearchParams();
+    page.value.page = 1;
+    selectedVendor.value = null;
+    vendorDetail.value = null;
+    cardMode.value = 'create';
+    fetchVendorList();
+};
+
+const handleResetForm = () => {
+    const isFormDirty =
+        editForm.businessRegistration ||
+        editForm.companyName ||
+        editForm.ceoName ||
+        editForm.phoneNumber ||
+        editForm.address ||
+        editForm.ownerName ||
+        editForm.ownerEmail ||
+        editForm.ownerPhone ||
+        editForm.type.length > 0 ||
+        editForm.isActive !== 'N';
+
+    if (isFormDirty) {
+        if (confirm('현재 입력 중인 내용이 저장되지 않습니다. 계속 진행하시겠습니까?')) {
+            resetEditForm();
+        }
+    } else {
+        resetEditForm();
+    }
+};
+
+const handleEdit = () => {
+    if (!vendorDetail.value) return;
+
+    Object.assign(editForm, {
+         ...vendorDetail.value,
+         type: Array.isArray(vendorDetail.value.type) ? vendorDetail.value.type : (vendorDetail.value.type ? [vendorDetail.value.type] : []),
+         isActive: vendorDetail.value.isActive || 'N'
+    });
+
+    cardMode.value = 'edit';
+};
+
+const handleCancelEdit = () => {
+    if (!vendorDetail.value) return;
+    if (!confirm('수정한 내용이 저장되지 않습니다. 취소하시겠습니까?')) return;
+
+    resetEditForm();
+    cardMode.value = 'view';
+};
+
+// ===== Watchers & Mounted =====
+watch(cardMode, (newMode) => {
+    if (newMode === 'create') {
+        resetEditForm();
+    }
+});
+
+watch(() => editForm.ownerEmail, (newVal) => {
+      validateEmail(newVal);
+});
+
+// Mounted
 onMounted(fetchVendorList);
-
-
 </script>
 
 <template>
-  <Fluid>
-    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <Fluid>
+        <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
 
-    <!-- 검색 -->
-    <SearchCard title="거래처 검색" @search="handleSearch" @reset="handleReset">
-      <div class="flex flex-wrap w-full">
-        <div class="p-2 w-full md:w-1/4">
-          <label class="block text-sm mb-1">거래처 유형</label>
-          <div class="flex gap-2">
-            <label><input type="checkbox" value="0" v-model="searchParams.type" /> 공급처</label>
-            <label><input type="checkbox" value="1" v-model="searchParams.type" /> 판매처</label>
-          </div>
+        <SearchCard title="거래처 검색" @search="handleSearch" @reset="handleReset">
+            <div class="flex flex-wrap w-full">
+                <div class="flex flex-wrap p-2 gap-4 xl:gap-0 w-full xl:w-full">
+                    <div class="flex flex-col gap-2 w-full xl:w-1/4 lg:w-1/2">
+                        <label class="font-semibold mb-1">거래처 유형</label>
+                        <div class="flex flex-wrap gap-4">
+                            <div
+                                v-for="opt in STATUS_OPTIONS.filter(o => o.value !== 2)"
+                                :key="opt.value"
+                                class="flex items-center gap-2"
+                            >
+                                <Checkbox
+                                    v-model="searchParams.type"
+                                    :inputId="'searchType-' + opt.value"
+                                    :value="opt.value"
+                                />
+                                <label
+                                    :for="'searchType-' + opt.value"
+                                    class="select-none cursor-pointer"
+                                >
+                                    {{ opt.label }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-2 w-full xl:w-1/4 lg:w-1/2">
+                        <label class="font-semibold mb-1">사용 여부</label>
+                        <div class="flex flex-wrap gap-4">
+                            <div
+                                v-for="opt in ACTIVE_OPTIONS"
+                                :key="opt.value"
+                                class="flex items-center gap-2"
+                            >
+                                <Checkbox
+                                    v-model="searchParams.isActive"
+                                    :inputId="'isActive-' + opt.value"
+                                    :value="opt.value"
+                                />
+                                <label
+                                    :for="'isActive-' + opt.value"
+                                    class="select-none cursor-pointer"
+                                >
+                                    {{ opt.label }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hidden xl:block w-full xl:w-1/2"></div>
+                </div>
+
+                <div class="flex flex-col gap-2 p-2 w-full xl:w-1/4 lg:w-1/2">
+                    <InputGroup>
+                        <InputGroupAddon><i :class="icons.vendor" /></InputGroupAddon>
+                        <IftaLabel>
+                            <InputText v-model="searchParams.companyName" inputId="searchCompanyName" />
+                            <label for="searchCompanyName">거래처명</label>
+                        </IftaLabel>
+                    </InputGroup>
+                </div>
+
+                <div class="flex flex-col gap-2 p-2 w-full xl:w-1/4 lg:w-1/2">
+                    <InputGroup>
+                        <InputGroupAddon><i :class="icons.id" /></InputGroupAddon>
+                        <IftaLabel>
+                            <InputText
+                                v-model="searchParams.businessRegistration"
+                                inputId="searchBusinessRegistration"
+                                @input="searchParams.businessRegistration = formatBusinessRegistration(searchParams.businessRegistration)"
+                                maxlength="12" />
+                            <label for="searchBusinessRegistration">사업자 등록 번호</label>
+                        </IftaLabel>
+                    </InputGroup>
+                </div>
+
+                <div class="flex flex-col gap-2 p-2 w-full xl:w-1/4 lg:w-1/2">
+                    <InputGroup>
+                        <InputGroupAddon><i :class="icons.employee" /></InputGroupAddon>
+                        <IftaLabel>
+                            <InputText v-model="searchParams.ceoName" inputId="searchCeoName" />
+                            <label for="searchCeoName">대표자/담당자</label>
+                        </IftaLabel>
+                    </InputGroup>
+                </div>
+
+                <div class="flex flex-col gap-2 p-2 w-full xl:w-1/4 lg:w-1/2">
+                    <InputGroup>
+                        <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
+                        <IftaLabel>
+                            <InputText
+                                v-model="searchParams.phoneNumber"
+                                inputId="searchPhoneNumber"
+                                @input="searchParams.phoneNumber = formatPhone(searchParams.phoneNumber)"
+                                maxlength="13" />
+                            <label for="searchPhoneNumber">전화번호</label>
+                        </IftaLabel>
+                    </InputGroup>
+                </div>
+            </div>
+        </SearchCard>
+
+        <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
+            <div class="w-full xl:w-5/12 lg:w-1/2">
+                <div class="card flex flex-col">
+                    <div class="font-semibold text-lg sm:text-xl flex items-center justify-between gap-4 h-10">
+                        <div class="flex items-center gap-4">
+                            <span :class="icons.list"></span>
+                            거래처 목록
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            총 <span class="font-semibold text-sm text-gray-700">
+                                <span v-if="page.totalElements > 0">
+                                    <CountUp :end-val="page.totalElements" />
+                                </span>
+                                <span v-else>0</span>
+                            </span>건
+                        </div>
+                    </div>
+                    <Divider />
+                    <DTable
+                        :columns="vendorColumns"
+                        :data="vendors"
+                        :page="page"
+                        :loading="loading"
+                        dataKey="vendorId"
+                        v-model:selected="selectedVendor"
+                        @page-change="handlePageChange"
+                        @sort-change="handleSortChange"
+                        @row-select="handleRowSelect"
+                        @row-unselect="handleRowUnSelect"
+                    />
+                </div>
+            </div>
+
+            <div class="w-full xl:w-7/12 lg:w-1/2">
+                <div class="card flex flex-col">
+                    <div class="flex items-center justify-between h-10">
+                        <div class="font-semibold text-lg sm:text-xl flex items-center gap-4 whitespace-nowrap">
+                            <span :class="[
+                                cardMode === 'create' ? icons.add :
+                                cardMode === 'edit' ? icons.edit : icons.info,
+                            ]"></span>
+                            {{
+                                cardMode === 'create'
+                                    ? '신규 거래처 등록'
+                                    : cardMode === 'edit'
+                                    ? '거래처 정보 수정'
+                                    : '거래처 상세 정보'
+                            }}
+                        </div>
+
+                        <div class="flex gap-2">
+                            <Btn
+                                v-if="cardMode === 'view'"
+                                icon="cancel"
+                                color="secondary"
+                                label="선택 해제"
+                                class="whitespace-nowrap"
+                                @click="handleRowUnSelect"
+                                outlined
+                            />
+                            <Btn
+                                v-if="cardMode === 'view'"
+                                icon="delete"
+                                color="danger"
+                                label="삭제"
+                                @click="removeVendor"
+                                outlined
+                            />
+                            <Btn
+                                v-if="cardMode === 'view'"
+                                icon="edit"
+                                color="warn"
+                                label="수정"
+                                class="whitespace-nowrap"
+                                @click="handleEdit"
+                                outlined
+                            />
+                            <Btn
+                                v-if="cardMode === 'create'"
+                                icon="refresh"
+                                color="secondary"
+                                label="초기화"
+                                class="whitespace-nowrap"
+                                @click="handleResetForm"
+                                outlined
+                            />
+                            <Btn
+                                v-if="cardMode === 'create'"
+                                icon="add"
+                                label="등록"
+                                @click="addVendor"
+                                class="whitespace-nowrap"
+                                outlined
+                            />
+                            <Btn
+                                v-if="cardMode === 'edit'"
+                                icon="cancel"
+                                color="secondary"
+                                label="취소"
+                                @click="handleCancelEdit"
+                                class="whitespace-nowrap"
+                                outlined
+                            />
+                            <Btn
+                                v-if="cardMode === 'edit'"
+                                icon="save"
+                                label="저장"
+                                @click="modifyVendor"
+                                class="whitespace-nowrap"
+                                outlined
+                            />
+                        </div>
+                    </div>
+
+                    <Divider />
+
+                    <div v-if="detailLoading" class="animate-pulse">
+                        <div class="skeleton w-full h-8 mb-4"></div>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="skeleton w-full h-10"></div>
+                            <div class="skeleton w-full h-10"></div>
+                            <div class="skeleton w-full h-10"></div>
+                            <div class="skeleton w-full h-10"></div>
+                            <div class="col-span-2 skeleton w-full h-10"></div>
+                            <div class="skeleton w-full h-10"></div>
+                            <div class="skeleton w-full h-10"></div>
+                        </div>
+                        <Divider />
+                        <div class="skeleton w-1/3 h-6 mb-2"></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="skeleton w-full h-10"></div>
+                            <div class="skeleton w-full h-10"></div>
+                            <div class="col-span-2 skeleton w-full h-10"></div>
+                        </div>
+                    </div>
+
+                    <div v-else-if="cardMode === 'view' && vendorDetail">
+                        <div class="font-semibold text-lg mb-4">{{ vendorDetail.companyName }} ({{ vendorDetail.businessRegistration }})</div>
+
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <InputGroup>
+                                <InputGroupAddon><i :class="icons.employee" /></InputGroupAddon>
+                                <IftaLabel>
+                                    <InputText :model-value="vendorDetail.ceoName" disabled />
+                                    <label>대표자명</label>
+                                </IftaLabel>
+                            </InputGroup>
+
+                            <InputGroup>
+                                <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
+                                <IftaLabel>
+                                    <InputText :model-value="formatPhone(vendorDetail.phoneNumber)" disabled />
+                                    <label>전화번호</label>
+                                </IftaLabel>
+                            </InputGroup>
+
+                            <div class="col-span-2">
+                                <InputGroup>
+                                    <InputGroupAddon><i :class="icons.address" /></InputGroupAddon>
+                                    <IftaLabel>
+                                        <InputText :model-value="vendorDetail.address" disabled />
+                                        <label>소재지</label>
+                                    </IftaLabel>
+                                </InputGroup>
+                            </div>
+
+                            <div class="flex flex-col gap-2">
+                                <div class="font-semibold text-sm">거래처 유형</div>
+                                <div class="flex gap-2">
+                                    <span v-for="type in getDisplayTypes(vendorDetail.type)"
+                                        :key="type"
+                                        class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white"
+                                        :class="{
+                                            'bg-blue-500': type == 0, // 판매처 (원래 0)
+                                            'bg-pink-500': type == 1, // 공급처 (원래 1)
+                                        }"
+                                    >
+                                        {{ getStatusLabel(type) }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-2">
+                                <div class="font-semibold text-sm">사용 여부</div>
+                                <span
+                                    class="inline-block px-3 py-1 rounded-full text-xs font-medium text-white self-start"
+                                    :class="{
+                                        'bg-green-500': vendorDetail.isActive === 'Y',
+                                        'bg-gray-400': vendorDetail.isActive === 'N'
+                                    }"
+                                >
+                                    {{ getIsActiveLabel(vendorDetail.isActive) }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <Divider />
+
+                        <div class="font-semibold text-base mb-2">담당자 정보</div>
+                        <div class="grid grid-cols-2 gap-4">
+
+                            <InputGroup>
+                                <InputGroupAddon><i :class="icons.employee" /></InputGroupAddon>
+                                <IftaLabel>
+                                    <InputText :model-value="vendorDetail.ownerName" disabled />
+                                    <label>담당자 이름</label>
+                                </IftaLabel>
+                            </InputGroup>
+
+                            <InputGroup>
+                                <InputGroupAddon><i :class="icons.email" /></InputGroupAddon>
+                                <IftaLabel>
+                                    <InputText :model-value="vendorDetail.ownerEmail" disabled />
+                                    <label>담당자 이메일</label>
+                                </IftaLabel>
+                            </InputGroup>
+
+                            <div class="col-span-2">
+                                <InputGroup>
+                                    <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
+                                    <IftaLabel>
+                                        <InputText :model-value="formatPhone(vendorDetail.ownerPhone)" disabled />
+                                        <label>담당자 연락처</label>
+                                    </IftaLabel>
+                                </InputGroup>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else-if="cardMode === 'edit' || cardMode === 'create'">
+                        <div class="font-semibold text-base mb-2">기본 정보</div>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <InputGroup>
+                                <InputGroupAddon><i :class="icons.id" /></InputGroupAddon>
+                                <IftaLabel>
+                                    <InputText
+                                        v-model="editForm.businessRegistration"
+                                        :disabled="cardMode === 'edit'"
+                                        inputId="editBusinessRegistration"
+                                        @input="editForm.businessRegistration = formatBusinessRegistration(editForm.businessRegistration)"
+                                        maxlength="12" />
+                                    <label for="editBusinessRegistration">사업자 등록번호</label>
+                                </IftaLabel>
+                            </InputGroup>
+
+                            <InputGroup>
+                                <InputGroupAddon><i :class="icons.list" /></InputGroupAddon>
+                                <IftaLabel>
+                                    <InputText v-model="editForm.companyName" inputId="editCompanyName" />
+                                    <label for="editCompanyName">거래처명</label>
+                                </IftaLabel>
+                            </InputGroup>
+
+                            <InputGroup>
+                                <InputGroupAddon><i :class="icons.employee" /></InputGroupAddon>
+                                <IftaLabel>
+                                    <InputText v-model="editForm.ceoName" inputId="editCeoName" />
+                                    <label for="editCeoName">대표자명</label>
+                                </IftaLabel>
+                            </InputGroup>
+
+                            <InputGroup>
+                                <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
+                                <IftaLabel>
+                                    <InputText
+                                        v-model="editForm.phoneNumber"
+                                        @input="editForm.phoneNumber = formatPhone(editForm.phoneNumber)"
+                                        inputId="editPhoneNumber"
+                                        maxlength="13" />
+                                    <label for="editPhoneNumber">전화번호</label>
+                                </IftaLabel>
+                            </InputGroup>
+
+                            <div class="col-span-2">
+                                <InputGroup>
+                                    <InputGroupAddon><i :class="icons.address" /></InputGroupAddon>
+                                    <IftaLabel>
+                                        <InputText v-model="editForm.address" inputId="editAddress" />
+                                        <label for="editAddress">소재지</label>
+                                    </IftaLabel>
+                                </InputGroup>
+                            </div>
+
+                            <div class="flex flex-col gap-2">
+                                <div class="font-semibold text-sm mb-1">거래처 유형</div>
+                                <div class="flex gap-4 items-center">
+                                    <div v-for="opt in STATUS_OPTIONS.filter(o => o.value !== 2)" :key="opt.value" class="flex items-center gap-2">
+                                        <Checkbox
+                                            v-model="editForm.type"
+                                            :inputId="'editType-' + opt.value"
+                                            :value="opt.value"
+                                        />
+                                        <label :for="'editType-' + opt.value">{{ opt.label }}</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-2">
+                                <div class="font-semibold text-sm mb-1">사용 여부</div>
+                                <div class="flex items-center gap-2">
+                                    <Checkbox
+                                        :binary="true"
+                                        v-model="editForm.isActive"
+                                        :true-value="'Y'"
+                                        :false-value="'N'"
+                                        inputId="editIsActiveCheckbox"
+                                    />
+                                    <label for="editIsActiveCheckbox" class="select-none cursor-pointer">
+                                        {{ getIsActiveLabel(editForm.isActive) }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Divider />
+
+                        <div class="font-semibold text-base mb-2">담당자 정보</div>
+                        <div class="grid grid-cols-2 gap-4">
+
+                            <InputGroup>
+                                <InputGroupAddon><i :class="icons.employee" /></InputGroupAddon>
+                                <IftaLabel>
+                                    <InputText v-model="editForm.ownerName" inputId="editOwnerName" />
+                                    <label for="editOwnerName">담당자 이름</label>
+                                </IftaLabel>
+                            </InputGroup>
+
+                            <InputGroup>
+                                <InputGroupAddon><i :class="icons.email" /></InputGroupAddon>
+                                <IftaLabel>
+                                    <InputText
+                                        v-model="editForm.ownerEmail"
+                                        @blur="validateEmail(editForm.ownerEmail)"
+                                        inputId="editOwnerEmail"
+                                        :class="{ 'p-invalid': emailError }"
+                                    />
+                                    <label for="editOwnerEmail">담당자 이메일</label>
+                                </IftaLabel>
+                            </InputGroup>
+                            <span v-if="emailError" class="col-span-2 text-red-500 text-xs mt-[-10px]">{{ emailError }}</span>
+
+                            <div class="col-span-2">
+                                <InputGroup>
+                                    <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
+                                    <IftaLabel>
+                                        <InputText
+                                            v-model="editForm.ownerPhone"
+                                            @input="editForm.ownerPhone = formatPhone(editForm.ownerPhone)"
+                                            inputId="editOwnerPhone"
+                                            maxlength="13" />
+                                        <label for="editOwnerPhone">담당자 연락처</label>
+                                    </IftaLabel>
+                                </InputGroup>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else class="text-center text-gray-500 p-8">
+                        왼쪽 목록에서 거래처를 선택하거나, 새로운 거래처를 등록하세요.
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div class="p-2 w-full md:w-1/4">
-          <label class="block text-sm mb-1">사용여부</label>
-          <div class="flex gap-2">
-            <label><input type="radio" value="" v-model="searchParams.isActive" /> 전체</label>
-            <label><input type="radio" value="Y" v-model="searchParams.isActive" /> 사용</label>
-            <label><input type="radio" value="N" v-model="searchParams.isActive" /> 미사용</label>
-          </div>
-        </div>
-
-        <div class="p-2 w-full md:w-1/4">
-          <IftaLabel>
-            <InputText v-model="searchParams.companyName" />
-            <label>거래처명</label>
-          </IftaLabel>
-        </div>
-
-        <div class="p-2 w-full md:w-1/4">
-          <IftaLabel>
-            <InputText v-model="searchParams.ceoName" />
-            <label>대표자/담당자</label>
-          </IftaLabel>
-        </div>
-
-        <div class="p-2 w-full md:w-1/4">
-          <IftaLabel>
-            <InputText v-model="searchParams.phoneNumber" />
-            <label>전화번호</label>
-          </IftaLabel>
-        </div>
-
-        <div class="p-2 w-full md:w-1/4">
-          <IftaLabel>
-            <InputText v-model="searchParams.businessRegistration" />
-            <label>사업자 등록번호</label>
-          </IftaLabel>
-        </div>
-      </div>
-    </SearchCard>
-
-    <!-- 목록 + 상세 (제품관리와 동일한 레이아웃) -->
-    <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
-        <!-- 목록 -->
-        <div class="w-full xl:w-5/12 lg:w-1/2">
-        <div class="card flex flex-col">
-
-          <div class="font-semibold text-lg sm:text-xl flex items-center justify-between gap-4 h-10">
-            <div class="flex items-center gap-4">
-              <span :class="iconList"></span>
-              거래처 목록
-            </div>
-            <div class="text-sm text-gray-400">총 {{ page.totalElements || vendorList.length }} 건</div>
-          </div>
-
-          <Divider />
-          <DTable
-            :columns="columns"
-            :data="vendorList"
-            :page="page"
-            :loading="loading"
-            dataKey="businessRegistration"
-            v-model:selected="selectedVendor"
-            @page-change="handlePageChange"
-            @row-select="handleRowSelect"
-            @row-unselect="handleUnselect"
-          />
-
-        </div>
-      </div>
-
-      <!-- 상세 / 폼 -->
-      <div class="w-full xl:w-7/12">
-        <div class="card">
-          <div class="flex justify-between items-center">
-            <div class="font-semibold text-xl flex items-center gap-2">
-              <span :class="[mode === 'create' ? iconAdd : mode === 'edit' ? iconEdit : iconInfo, 'text-xl']"></span>
-              {{ mode === 'create' ? '신규 거래처 등록' : mode === 'edit' ? '거래처 정보 수정' : '거래처 상세 정보' }}
-            </div>
-
-            <div class="flex gap-2">
-              <Btn v-if="mode === 'create'" icon="add" @click="addPartner" outlined>등록</Btn>
-              <Btn v-if="mode === 'edit'" icon="save" @click="modifyPartner" outlined>저장</Btn>
-              <Btn v-if="mode === 'view'" icon="edit" color="warn" @click="handleEdit" outlined>수정</Btn>
-              <Btn v-if="mode !== 'create'" icon="delete" color="danger" @click="deletePartner" outlined>삭제</Btn>
-              <Btn icon="refresh" color="secondary" @click="handleResetForm" outlined>초기화</Btn>
-            </div>
-          </div>
-
-          <Divider />
-
-          <div class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label class="block text-sm">사업자 등록번호</label>
-              <InputText v-model="vendorForm.businessRegistration" class="w-full h-10" />
-            </div>
-
-            <div>
-              <label class="block text-sm">업체명</label>
-              <InputText v-model="vendorForm.companyName" class="w-full h-10" />
-            </div>
-
-            <div>
-              <label class="block text-sm">대표자명</label>
-              <InputText v-model="vendorForm.ceoName" class="w-full h-10" />
-            </div>
-
-            <div>
-              <label class="block text-sm">전화번호</label>
-              <InputText v-model="vendorForm.phoneNumber" class="w-full h-10" />
-            </div>
-
-            <div class="col-span-2">
-              <label class="block text-sm">소재지</label>
-              <InputText v-model="vendorForm.address" class="w-full h-10" />
-            </div>
-
-            <div>
-              <label class="block text-sm">거래처 유형</label>
-              <InputText v-model="vendorForm.type" class="w-full h-10" placeholder="공급처/판매처" />
-            </div>
-
-            <div>
-              <label class="block text-sm">사용여부</label>
-              <div class="flex gap-2 items-center">
-                <label><input type="radio" value="Y" v-model="vendorForm.isActive" /> 사용</label>
-                <label><input type="radio" value="N" v-model="vendorForm.isActive" /> 미사용</label>
-              </div>
-            </div>
-          </div>
-
-          <Divider />
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm">담당자 이름</label>
-              <InputText v-model="vendorForm.ownerName" class="w-full h-10" />
-            </div>
-
-            <div>
-              <label class="block text-sm">담당자 이메일</label>
-              <InputText v-model="vendorForm.ownerEmail" class="w-full h-10" />
-            </div>
-
-            <div class="col-span-2">
-              <label class="block text-sm">담당자 연락처</label>
-              <InputText v-model="vendorForm.ownerPhone" class="w-full h-10" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </Fluid>
+    </Fluid>
 </template>
+
+<style scoped>
+/* skeleton.css (기존 유지) */
+.skeleton {
+    @apply bg-gray-200 rounded-md relative overflow-hidden;
+}
+
+.skeleton::after {
+    content: "";
+    @apply absolute top-0 left-[-150%] w-[150%] h-full;
+    background: linear-gradient(to right, transparent 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    100% {
+        left: 100%;
+    }
+}
+</style>

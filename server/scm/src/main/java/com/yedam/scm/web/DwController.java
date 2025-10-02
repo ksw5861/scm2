@@ -19,6 +19,7 @@ import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.WarehouseListRes;
 import com.yedam.scm.product.service.InboundService;
 import com.yedam.scm.vo.ItemInboundVO;
+import com.yedam.scm.vo.ReturnDetailVO;
 import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
@@ -137,6 +138,42 @@ public class DwController {
         return service.getReturnList();
     }
     
+
+
+
+
+        
+        // 반품 상세 + 승인/반려 처리 컨트롤러
+        // ==============================
+        @GetMapping("/return-details")
+        public Map<String, Object> getReturnDetails(@RequestParam String returnId) {
+            // 상세 목록 (좌측 ReturnVO와 매핑)
+            List<ReturnDetailVO> details = service.getReturnDetails(returnId);
+            return Map.of("data", details);
+        }
+
+        // 승인 처리
+        @PostMapping("/return/approve")
+        public Map<String, Object> approveReturn(@RequestBody Map<String, Object> payload) {
+            @SuppressWarnings("unchecked")
+            List<String> ids = (List<String>) payload.get("ids");
+            int cnt = service.approveReturnDetails(ids);
+            return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
+        }
+
+        // 반려 처리
+        @PostMapping("/return/reject")
+        public Map<String, Object> rejectReturn(@RequestBody Map<String, Object> payload) {
+            @SuppressWarnings("unchecked")
+            List<String> ids = (List<String>) payload.get("ids");
+            String reason = (String) payload.get("reason");
+            int cnt = service.rejectReturnDetails(ids, reason);
+            return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
+        }
+
+
+
+
 
 
     /////wewewewe

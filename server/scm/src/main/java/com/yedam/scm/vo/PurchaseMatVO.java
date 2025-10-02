@@ -22,6 +22,8 @@ public class PurchaseMatVO {
     private Date dueDate;
 
     MaterialVO materialVO;
+    VendorVO vendorVO;
+
     PurStatusLogVO purStatusLogVO;
 }
 

@@ -14,7 +14,9 @@ const ms = {
     },
     {
       path: '/purchase',
-      name: '구매등록',
+
+      name: '주문 등록',
+
       component: () => import('@/views/pages/ms/Purchase.vue'),
       meta: {
         requiresAuth: true,
@@ -22,9 +24,27 @@ const ms = {
       }
     },
     {
-      path: '/matOutboundRegistration',
-      name: '자재 출고 등록',
-      component: () => import('@/views/pages/ms/matOutboundRegistration.vue'),
+      path: '/purchaseList',
+      name: '주문 목록',
+      component: () => import('@/views/pages/ms/PurchaseList.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    },
+    {
+      path: '/MaterialReceip',
+      name: '입고 등록',
+      component: () => import('@/views/pages/ms/MaterialReceip.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    },
+    {
+      path: '/MatUnload',
+      name: '하차 등록',
+      component: () => import('@/views/pages/ms/MatUnload.vue'),
       meta: {
         requiresAuth: true,
         roles: ['admin', 'employee']
