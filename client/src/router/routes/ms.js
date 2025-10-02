@@ -1,28 +1,36 @@
-import AppLayout from "@/layout/AppLayout.vue";
+import AppLayout from '@/layout/AppLayout.vue';
 
 const ms = {
-     component: AppLayout,
-     children: [
-        {
-            path: '/productionplan',
-            name: '생산계획 등록',
-            component: () => import('@/views/pages/ms/ProductionPlan.vue'),
-            meta: {
-                requiresAuth: true,
-                roles: ['admin', 'employee']
-            }
-        },
-        {
-            path: '/purchase',
-            name: '구매등록',
-            component: () => import('@/views/pages/ms/Purchase.vue'),
-            meta: {
-                requiresAuth: true,
-                roles: ['admin', 'employee']
-            }
-        },
-
-     ]
+  component: AppLayout,
+  children: [
+    {
+      path: '/productionplan',
+      name: '생산계획 등록',
+      component: () => import('@/views/pages/ms/ProductionPlan.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    },
+    {
+      path: '/purchase',
+      name: '구매등록',
+      component: () => import('@/views/pages/ms/Purchase.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    },
+    {
+      path: '/matOutboundRegistration',
+      name: '자재 출고 등록',
+      component: () => import('@/views/pages/ms/matOutboundRegistration.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    }
+  ]
 };
 
 export default ms;

@@ -17,6 +17,7 @@ const iconInfo = useIcon('info');
 const iconBox = useIcon('box');
 const iconId = useIcon('id');
 
+// 네비게이션
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
 const breadcrumbItems = computed(() => {
   const matched = route.matched.filter((r) => r.meta);

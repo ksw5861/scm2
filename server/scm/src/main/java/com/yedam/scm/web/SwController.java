@@ -26,6 +26,14 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+/*
+ * 개발자:김상우
+ * 자재, 제품, 창고, bom정보, 단위정보 관리
+ * 
+ *  *  수정일     수정자            수정내용
+ *  ----------   -------    ---------------------------
+ *  2025.09.28   김상우            최초 생성
+ */
 @RestController
 public class SwController {
 
@@ -47,6 +55,8 @@ public class SwController {
     // =========================================================
     // ================ Material API ==========================
     // =========================================================
+
+    // 자재 목록 조회
     @GetMapping("/material")
     public List<MaterialVO> getMaterialList(
             @RequestParam(required = false) String matId,
@@ -55,16 +65,18 @@ public class SwController {
         return materialSvc.getMaterialList(matId, matName, status);
     }
 
+    // 자재 상세조회 
     @GetMapping("/material/{matId}")
     public List<MaterialVO> getMaterialDetail(@PathVariable String matId) {
         return materialSvc.getMaterialDetail(matId);
     }
 
+    // 자재 정보 삭제
     @DeleteMapping("/material/{matId}")
     public int deleteMaterial(@PathVariable String matId) {
         return materialSvc.deleteMaterial(matId);
     }
-
+    // 정보 등록
     @PostMapping("/material")
     public Map<String, Object> insertMaterial(@RequestBody MaterialVO materialVO) {    
         
@@ -92,6 +104,9 @@ public class SwController {
     // =========================================================
     // ================ Product API ===========================
     // =========================================================
+    
+
+
     @GetMapping("/product")
     public List<ProductVO> getProductList(
             @RequestParam(required = false) String prodId,
@@ -157,6 +172,7 @@ public class SwController {
     // =========================================================
     // ================ BOM API ===============================
     // =========================================================
+    // BOM 버전관리 버전변경유무 또는 정보UPDATE시 버전변경
     @GetMapping("/bom/{prodId}")
     public List<BomVO> getBomDetail(@PathVariable String prodId) {
         return bomSvc.getBomDetailByProdId(prodId);
