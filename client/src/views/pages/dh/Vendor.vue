@@ -4,6 +4,7 @@ import { computed, ref, reactive, onMounted, watch } from 'vue';
 import axios from 'axios';
 import { useIcon } from '@/composables/useIcon';
 import { useAppToast } from '@/composables/useAppToast';
+import { usePhoneFormat, useBusinessRegistrationFormat } from '@/composables/useFormat';
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -93,42 +94,15 @@ const getIsActiveLabel = (value) =>
     ACTIVE_OPTIONS.find(opt => opt.value === value)?.label || '';
 
 const formatBusinessRegistration = (value) => {
-    if (!value) return '';
-    let numbers = value.toString().replace(/\D/g, '');
+    const formattedComputed = useBusinessRegistrationFormat(value);
 
-    if (numbers.length > 10) {
-        numbers = numbers.slice(0, 10);
-    }
-
-    if (numbers.length < 4) return numbers;
-    if (numbers.length < 6) return numbers.replace(/(\d{3})(\d+)/, '$1-$2');
-    return numbers.replace(/(\d{3})(\d{2})(\d{5})/, '$1-$2-$3');
+    return formattedComputed.value;
 };
 
 const formatPhone = (value) => {
-    if (!value) return '';
-    let numbers = value.toString().replace(/\D/g, '');
+    const formattedComputed = usePhoneFormat(value);
 
-    if (numbers.length > 11) {
-        numbers = numbers.slice(0, 11);
-    }
-
-    if (numbers.length < 4) return numbers;
-
-    if (numbers.length === 11) {
-        return numbers.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3');
-    }
-
-    if (numbers.length === 10) {
-        if (numbers.startsWith('02')) {
-            return numbers.replace(/(\d{2})(\d{4})(\d{4})/, '$1-$2-$3');
-        }
-        return numbers.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-    }
-    if (numbers.length > 7) {
-        return numbers.replace(/(\d{2,3})(\d{3,4})(\d{4})/, '$1-$2-$3');
-    }
-    return numbers.replace(/(\d{3})(\d+)/, '$1-$2');
+    return formattedComputed.value;
 };
 
 const emailError = ref('');
