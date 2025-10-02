@@ -16,8 +16,9 @@ const vendorId = ref('VEN005');
 const dateRange = ref({ start: null, end: null }); // 초기값을 객체로
 const materialName = ref();
 const statusList = ref();
-const matOutData = ref();
+const approveShipData = ref();
 const selectedRows = ref();
+const warehoustListOpt = ref([]); //창고드롭다운용
 
 // breadcrumb
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
@@ -30,97 +31,85 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const matOutColumns = [
-  { label: '납기요청일', field: 'dueDate' },
-  { label: '주문번호', field: 'purNo' },
+const approveShipColumns = [
+  { label: '출고예정일', field: 'expectDate' },
+  { label: '출고지시번호', field: 'shipOrderNo' },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
   { label: '구매처 담당자', field: 'buyerName' },
-  { label: '주문수량', field: 'orderQty' },
-  { label: '단위', field: 'unit' },
-  { label: '잔여수량', field: 'restQty' },
-  { label: '출고수량', field: 'outQty', inputText: true },
-  { label: '출고예정일', field: 'expectDate', datePicker: true },
-  { label: '누적출고수량', field: 'outTotalQty' },
-  { label: '상태', field: 'releaseStatus' },
-  { label: '출고승인일', field: 'approveDate' }
+  { label: '출고수량', field: 'ortQty' },
+  { label: '단위', field: 'unit' }
+  // { label: '배송지', field: 'toShip', select: true, option: warehoustListOpt },
+  // { label: '차량번호', field: 'vehicleNo', inputText: true },
+  // { label: '운송번호', field: 'trackingNo', inputText: true }
 ];
 
 const pageLoad = async () => {
   try {
-    const list = await axios.get(`/api/supplier/releaseList/${vendorId.value}`);
+    const list = await axios.get(`/api/supplier/ApprovedList/${vendorId.value}`);
     console.log(list);
 
-    matOutData.value = list.data.map((item) => ({
-      id: item.purId,
-      dueDate: useDateFormat(item.dueDate).value,
-      purNo: item.purNo,
+    approveShipData.value = list.data.map((item) => ({
+      id: item.purStatusId,
+      expectDate: useDateFormat(item.expectDate).value, // Date → 문자열 변환
+      shipOrderNo: item.logShipOrderNo, //출고지시번호
       matId: item.matId,
-      matName: item.materialVO.matName,
+      matName: item.matName,
       buyerName: item.empName,
-      orderQty: item.reqQty,
-      unit: item.materialVO.unit,
-      outQty: '',
-      expectDate: '',
-      outTotalQty: item.outTotalQty,
-      restQty: item.reqQty - item.outTotalQty,
-      releaseStatus: item.purMatStatus,
-      approveDate: useDateFormat(item.purStatusLogVO.reDate).value
+      ortQty: item.outQty, // 출고수량
+      unit: item.unit, // VO에서 unit
+      vendorId: item.vendorId, // 거래처코드
+      purId: item.purId // 주문테이블아이디
     }));
   } catch (error) {
     toast('error', '리스트 로드 실패', '리스트 불러오기 실패:', '3000');
   }
 };
-//vp
-onMounted(() => {
-  pageLoad();
-});
 
-const approvedShip = async () => {
-  //선택행 없으면 출고처리 선택 안내
-  if (!selectedRows.value) {
-    toast('info', '유효성 검사', '출고 지시 제품을 선택해 주세요.', '3000');
-    return;
-  }
-  // //출고수량 null
-  // if (!matOutData.value.orderQty || matOutData.value.orderQty == 0) {
-  // toast('info', '유효성 검사', '출고 수량을 입력해 주세요.', '3000');
-  // return;
-  // }
-
-  // if (!matOutData.value.expectDate) {
-  // toast('info', '유효성 검사', '출고 예정일을 입력해 주세요.', '3000');
-  // return;
-  // }
-
-  // //잔여수량대비 유효성검사
-  // if (matOutData.value.outQty > matOutData.value.orderQty) {
-  // toast('info', '유효성 검사', '주문수량 대비 출고수량이 많습니다.', '3000');
-  // return;
-  // }
-
+const shipment = async () => {
   const list = JSON.parse(JSON.stringify(selectedRows.value));
+  console.log(list);
+  // const list = JSON.parse(JSON.stringify(selectedRows.value));
 
-  const payload = list.map((row) => ({
-    purId: row.id,
-    matId: row.matId,
-    purNo: row.purNo,
-    purStatusLogVO: { logSupOutQty: row.outQty }, //이걸 백 로그VO에 넣기위해!
-    expectDate: row.expectDate,
-    vendorId: vendorId.value //이렇게 넣으면 행 마다 다 들어감.
-  }));
+  // const payload = list.map((row) => ({
+  //   purId: row.id,
+  //   matId: row.matId,
+  //   purNo: row.purNo,
+  //   expectDate: row.expectDate,
+  //   purStatusLogVO: { logSupOutQty: row.outQty }, //이걸 백 로그VO에 넣기위해!
+  //   vendorId: vendorId.value //이렇게 넣으면 행 마다 다 들어감.
+  // }));
 
-  console.log(payload);
+  // console.log(payload);
 
+  // try {
+  //   await axios.post('/api/supplier/shipMaterial', payload);
+  //   toast('info', '등록 성공', '출고등록  성공:', '3000');
+  //   selectedRows.value = [];
+  //   await pageLoad();
+  // } catch (error) {
+  //   toast('error', '등록 실패', '출고등록  실패:', '3000');
+  // }
+};
+
+//창고리스트: 드롭다운용
+const warehouseList = async () => {
   try {
-    const res = await axios.post('/api/supplier/shipMaterial', payload);
-    toast('info', '등록 성공', '출고등록  성공:', '3000');
-    selectedRows.value = [];
-    await pageLoad();
+    const res = await axios.get('/api/mat/warehouseList');
+    warehoustListOpt.value = res.data.map((item) => ({
+      label: item.whName,
+      value: item.whId
+    }));
+    console.log(warehoustListOpt.value);
   } catch (error) {
-    toast('error', '등록 실패', '출고등록  실패:', '3000');
+    toast('error', '리스트 로드 실패', '창고 리스트 불러오기 실패:', '3000');
   }
 };
+
+onMounted(() => {
+  pageLoad();
+  warehouseList();
+});
 </script>
 
 <template>
@@ -129,7 +118,7 @@ const approvedShip = async () => {
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
     <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">출고 지시</div>
+      <div class="font-semibold text-xl">출고 등록</div>
       <Divider />
 
       <!--search BOX 영역-->
@@ -159,10 +148,10 @@ const approvedShip = async () => {
     <!--테이블영역--><!--테이블영역-->
     <div class="card flex flex-col gap-4">
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="info" icon="pi pi-file-pdf" @click="approvedShip" label="승인" />
+        <btn color="info" icon="pi pi-file-pdf" @click="shipment" label="배송등록" />
       </div>
       <div class="font-semibold text-xl mb-5">출고대기 목록</div>
-      <selectTable v-model:selection="selectedRows" :columns="matOutColumns" :data="matOutData" :paginator="true" :rows="15" />
+      <selectTable v-model:selection="selectedRows" :columns="approveShipColumns" :data="approveShipData" :paginator="true" :rows="15" />
     </div>
   </div>
 </template>

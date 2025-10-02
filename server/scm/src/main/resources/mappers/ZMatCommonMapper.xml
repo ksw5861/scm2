@@ -20,10 +20,14 @@
 <resultMap id="PurStatusLogMap" type="PurStatusLogVO">
     <id     property="purStatusId"   column="PUR_STATUS_ID"/>
     <result property="reDate"        column="RE_DATE"/>
-    <result property="name"          column="NAME"/>
-    <result property="purMatStatus"  column="PUR_MAT_STATUS"/>
-    <result property="purId"         column="PUR_ID"/>
-    <result property="supOutQty"     column="SUP_OUT_QTY"/>
+    <result property="logName"          column="LOG_NAME"/>
+    <result property="logPurMatStatus"  column="LOG_PUR_MAT_STATUS"/>
+    <result property="logPurId"         column="LOG_PUR_ID"/>
+    <result property="logSupOutQty"         column="LOG_SUP_OUT_QTY"/>
+    <result property="logVendorId"     column="LOG_VENDOR_ID"/>
+    <result property="logExpectDate"     column="LOG_EXPECT_DATE"/>
+    <result property="logShipOrderNo"     column="LOG_SHIP_ORDER_NO"/>
+    <result property="finalShipCon"     column="FINAL_SHIP_CON"/>
 </resultMap>
 
 <!--거래처 resultMap -->

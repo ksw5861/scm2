@@ -18,6 +18,8 @@ public class InboundVO {
     private String rejMemo;       //REJ_MEMO (거부사유)
 
     InboundDetailVO inboundDetailVO;
+
+    ShipmentInfoVO shipmentInfoVO; //배송정보
 }
 
 

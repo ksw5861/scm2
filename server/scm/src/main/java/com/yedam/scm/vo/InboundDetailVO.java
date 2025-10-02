@@ -20,7 +20,8 @@ public class InboundDetailVO {
     private String empName;      // EMP_NAME (입고담당자)
     private String vendorId;     // VENDOR_ID (공급처코드)
     private Long outQty;         // OUT_QTY (공급처출고수량)
-    
+    private Long purStatusId;    //출고지시번호 최종출고 상태변경(분할출고로 인해 필요) => 출고완료시 'Y' 해당 아이디 찾기용
+
     InboundLogVO inboundLogVO;
 }
 

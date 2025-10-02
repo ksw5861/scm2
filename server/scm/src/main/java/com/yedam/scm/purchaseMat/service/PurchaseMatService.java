@@ -12,6 +12,7 @@ import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ProductionPlanVO;
 import com.yedam.scm.vo.PurStatusLogVO;
 import com.yedam.scm.vo.PurchaseMatVO;
+import com.yedam.scm.vo.WareHouseVO;
 
 public interface PurchaseMatService {
     //생산계획등록 [마스터 + 디테일 한번에]
@@ -21,8 +22,6 @@ public interface PurchaseMatService {
     List<PrdPlanDetailVO> getPlanList();
     //mrp산출목록
     List<MrpDetailVO> getMrpDetailList();
-    //자재별공급처
-    List<MatVendorVO>getMatVendorList(String matId);
     //자재주문등록
     boolean callReqestMatProc(List<PurchaseMatVO> requestList);
     //자재주문목록
@@ -32,6 +31,10 @@ public interface PurchaseMatService {
      /*=========================
       드롭다운/모달용
      =========================*/
-     //제품리스트
+    //제품리스트
     List<ProductVO> getProductList();
+    //자재별공급처리스트
+    List<MatVendorVO>getMatVendorList(String matId);
+    //창고리스트
+    List<WareHouseVO> getWarehouseList();
 }

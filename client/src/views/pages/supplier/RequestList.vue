@@ -94,7 +94,7 @@ const approve = async () => {
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
     <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">자재요청 조회</div>
+      <div class="font-semibold text-xl">주문 조회</div>
       <Divider />
       <!--search BOX 영역-->
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
