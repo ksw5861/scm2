@@ -1,10 +1,12 @@
 package com.yedam.scm;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
@@ -17,5 +19,10 @@ public class WebConfig implements WebMvcConfigurer {
         // URL 예시: http://localhost:8080/uploads/employee/EMP001.jpg
         registry.addResourceHandler("/uploads/employee/**")
                 .addResourceLocations("file:///" + employeeUploadDir + "/");
+    }
+
+    @Bean
+    public WebClient.Builder webClientBuilder() {
+        return WebClient.builder();
     }
 }

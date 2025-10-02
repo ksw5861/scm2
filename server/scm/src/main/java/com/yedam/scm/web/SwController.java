@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yedam.scm.master.service.MaterialService;
@@ -18,6 +20,7 @@ import com.yedam.scm.master.service.VendorService;
 import com.yedam.scm.vo.MaterialVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.UnitVO;
+import com.yedam.scm.vo.VendorVO;
 import com.yedam.scm.vo.WareHouseVO;
 import com.yedam.scm.vo.BomVO;
 
@@ -229,24 +232,68 @@ public class SwController {
     }
 
     @GetMapping("/vendor/{vendorId}")
-    public com.yedam.scm.vo.VendorVO getVendorDetail(@PathVariable String vendorId) {
+    public VendorVO getVendorDetail(@PathVariable String vendorId) {
         return vendorSvc.getVendorDetail(vendorId);
     }
 
     @PostMapping("/vendor")
-    public int insertVendor(@RequestBody com.yedam.scm.vo.VendorVO vendorVO) {
-        return vendorSvc.insertVendor(vendorVO);
+    public ResponseEntity<Map<String, Object>> insertVendor(@RequestBody VendorVO vendor) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            boolean isInserted = vendorSvc.insertVendor(vendor);
+
+            if (isInserted) {
+                response.put("vendorId", vendor.getVendorId());
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+        } catch (Exception e) {
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+
     }
 
-    @PutMapping("/vendor/{vendorId}")
-    public int updateVendor(@PathVariable String vendorId, @RequestBody com.yedam.scm.vo.VendorVO vendorVO) {
-        vendorVO.setVendorId(vendorId);
-        return vendorSvc.updateVendor(vendorVO);
+    @PutMapping("/vendor")
+    public ResponseEntity<Map<String, Object>> updateVendor(@RequestBody VendorVO vendor) {
+        
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            boolean isUpdated = vendorSvc.updateVendor(vendor);
+
+            if (isUpdated) {
+                response.put("vendorId", vendor.getVendorId());
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     @DeleteMapping("/vendor/{vendorId}")
-    public int deleteVendor(@PathVariable String vendorId) {
-        return vendorSvc.deleteVendor(vendorId);
+    public ResponseEntity<Map<String, Object>> deleteVendor(@PathVariable String vendorId) {
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            boolean isDeleted = vendorSvc.deleteVendor(vendorId);
+
+            if (isDeleted) {
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+            }
+        } catch (Exception e) {
+            response.put("message", "서버 오류가 발생했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 
     // =========================================================

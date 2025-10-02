@@ -128,10 +128,18 @@ const getVendorTypePayload = (typeArray) => {
 
 const validateVendorForm = () => {
     if (!editForm.businessRegistration) return '사업자 등록 번호를 입력해주세요.';
+    if (editForm.businessRegistration.length < 12) return '사업자 등록 번호를 모두 입력해주세요.';
     if (!editForm.companyName) return '거래처명을 입력해주세요.';
     if (!editForm.ceoName) return '대표자명을 입력해주세요.';
+    if (!editForm.phoneNumber) return '거래처 전화번호를 입력해주세요.';
+    if (editForm.phoneNumber.length < 13) return '거래처 전화번호를 모두 입력해주세요.';
+    if (!editForm.address) return '소재지를 입력해주세요.';
     if (editForm.type.length === 0) return '거래처 유형을 하나 이상 선택해주세요.';
+    if (!editForm.ownerName) return '거래처 담당자의 이름을 입력해주세요.';
+    if (!editForm.ownerEmail) return '거래처 담당자의 이메일을 입력해주세요.';;
     if (editForm.ownerEmail) validateEmail(editForm.ownerEmail);
+    if (!editForm.ownerTel) return '거래처 담당자의 전화번호를 입력해주세요.';
+    if (editForm.ownerTel.length < 13) return '거래처 담당자의 전화번호를 모두 입력해주세요.';
     if (emailError.value) return emailError.value;
     return null;
 };
@@ -144,6 +152,7 @@ const vendorColumns = [
 ];
 
 // ===== State =====
+const isAddressModalVisible = ref(false);
 const vendors = ref([]);
 const selectedVendor = ref(null);
 const prevSelectedVendor = ref(null);
@@ -176,11 +185,11 @@ const editForm = reactive({
     ceoName: '',
     phoneNumber: '',
     address: '',
-    type: [],
+    type: [], // 체크박스 바인딩을 위해 배열
     isActive: 'N',
     ownerName: '',
     ownerEmail: '',
-    ownerPhone: ''
+    ownerTel: ''
 });
 
 // ===== State Reset Functions =====
@@ -208,7 +217,7 @@ const resetEditForm = () => {
         isActive: 'N',
         ownerName: '',
         ownerEmail: '',
-        ownerPhone: ''
+        ownerTel: ''
     });
     emailError.value = '';
 };
@@ -278,6 +287,7 @@ const fetchVendorDetail = async (vendorId) => {
         const { data } = await axios.get(`/api/vendor/${vendorId}`);
         let vendorData = data.data ?? data;
 
+        // 1. 타입을 숫자 배열로 변환하는 기존 로직
         if (typeof vendorData.type === 'string') {
             vendorData.type = vendorData.type.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
         } else if (typeof vendorData.type === 'number') {
@@ -287,6 +297,22 @@ const fetchVendorDetail = async (vendorId) => {
         } else {
              vendorData.type = vendorData.type.map(v => parseInt(v));
         }
+
+        // 2. [수정]: 거래처 유형 체크박스(0, 1)와 맞추기 위해 2를 0과 1로 분리하는 로직 추가
+        if (Array.isArray(vendorData.type)) {
+            let finalTypes = [];
+            vendorData.type.forEach(type => {
+                if (type === 2) {
+                    finalTypes.push(0);
+                    finalTypes.push(1);
+                } else if (type === 0 || type === 1) {
+                    finalTypes.push(type);
+                }
+            });
+            // 중복 제거 및 최종 할당 (예: [2] -> [0, 1])
+            vendorData.type = [...new Set(finalTypes)];
+        }
+
 
         vendorDetail.value = vendorData;
     } catch (e) {
@@ -353,7 +379,7 @@ const modifyVendor = async () => {
              type: getVendorTypePayload(editForm.type)
         };
 
-        const response = await axios.put(`/api/vendor/${vendorDetail.value.vendorId}`, payload);
+        const response = await axios.put(`/api/vendor`, payload);
         if (response.status === 200) {
             toast('success', '저장 성공', '거래처 정보가 성공적으로 수정되었습니다.');
             await fetchVendorList();
@@ -450,7 +476,7 @@ const handleResetForm = () => {
         editForm.address ||
         editForm.ownerName ||
         editForm.ownerEmail ||
-        editForm.ownerPhone ||
+        editForm.ownerTel ||
         editForm.type.length > 0 ||
         editForm.isActive !== 'N';
 
@@ -466,9 +492,14 @@ const handleResetForm = () => {
 const handleEdit = () => {
     if (!vendorDetail.value) return;
 
+    // [수정]: vendorDetail.value.type을 안전하게 숫자 배열로 변환하여 할당
+    const rawType = vendorDetail.value.type;
+    let typeArray = Array.isArray(rawType) ? rawType : [];
+
     Object.assign(editForm, {
          ...vendorDetail.value,
-         type: Array.isArray(vendorDetail.value.type) ? vendorDetail.value.type : (vendorDetail.value.type ? [vendorDetail.value.type] : []),
+         // 배열 요소들을 숫자로 변환하여 체크박스 바인딩의 타입 일치를 보장
+         type: typeArray.map(v => Number(v)).filter(v => !isNaN(v)), 
          isActive: vendorDetail.value.isActive || 'N'
     });
 
@@ -481,6 +512,15 @@ const handleCancelEdit = () => {
 
     resetEditForm();
     cardMode.value = 'view';
+};
+
+const openAddressModal = () => {
+    isAddressModalVisible.value = true;
+};
+
+const selectAddress = (address) => {
+    editForm.address = address;
+    isAddressModalVisible.value = false;
 };
 
 // ===== Watchers & Mounted =====
@@ -824,7 +864,7 @@ onMounted(fetchVendorList);
                                 <InputGroup>
                                     <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
                                     <IftaLabel>
-                                        <InputText :model-value="formatPhone(vendorDetail.ownerPhone)" disabled />
+                                        <InputText :model-value="formatPhone(vendorDetail.ownerTel)" disabled />
                                         <label>담당자 연락처</label>
                                     </IftaLabel>
                                 </InputGroup>
@@ -840,7 +880,6 @@ onMounted(fetchVendorList);
                                 <IftaLabel>
                                     <InputText
                                         v-model="editForm.businessRegistration"
-                                        :disabled="cardMode === 'edit'"
                                         inputId="editBusinessRegistration"
                                         @input="editForm.businessRegistration = formatBusinessRegistration(editForm.businessRegistration)"
                                         maxlength="12" />
@@ -880,7 +919,14 @@ onMounted(fetchVendorList);
                                 <InputGroup>
                                     <InputGroupAddon><i :class="icons.address" /></InputGroupAddon>
                                     <IftaLabel>
-                                        <InputText v-model="editForm.address" inputId="editAddress" />
+                                        <InputText 
+                                        v-model="editForm.address" 
+                                        inputId="editAddress" 
+                                        placeholder="주소 선택" 
+                                        readonly 
+                                        @click="openAddressModal"
+                                        style="cursor: pointer;"
+                                        />
                                         <label for="editAddress">소재지</label>
                                     </IftaLabel>
                                 </InputGroup>
@@ -942,31 +988,32 @@ onMounted(fetchVendorList);
                                     <label for="editOwnerEmail">담당자 이메일</label>
                                 </IftaLabel>
                             </InputGroup>
-                            <span v-if="emailError" class="col-span-2 text-red-500 text-xs mt-[-10px]">{{ emailError }}</span>
 
                             <div class="col-span-2">
                                 <InputGroup>
                                     <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
                                     <IftaLabel>
                                         <InputText
-                                            v-model="editForm.ownerPhone"
-                                            @input="editForm.ownerPhone = formatPhone(editForm.ownerPhone)"
-                                            inputId="editOwnerPhone"
+                                            v-model="editForm.ownerTel"
+                                            @input="editForm.ownerTel = formatPhone(editForm.ownerTel)"
+                                            inputId="editownerTel"
                                             maxlength="13" />
-                                        <label for="editOwnerPhone">담당자 연락처</label>
+                                        <label for="editownerTel">담당자 연락처</label>
                                     </IftaLabel>
                                 </InputGroup>
                             </div>
                         </div>
                     </div>
-
-                    <div v-else class="text-center text-gray-500 p-8">
-                        왼쪽 목록에서 거래처를 선택하거나, 새로운 거래처를 등록하세요.
-                    </div>
                 </div>
             </div>
         </div>
     </Fluid>
+
+    <AddressModal
+      :visible="isAddressModalVisible"
+      @close="isAddressModalVisible = false"
+      @select="selectAddress"
+    />
 </template>
 
 <style scoped>

@@ -3,6 +3,7 @@ package com.yedam.scm.vo;
 import java.util.Date;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.yedam.scm.dto.PageDTO;
 
@@ -52,4 +53,10 @@ public class VendorVO {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<PageDTO> paging;           // 페이지네이션
+
+    @JsonIgnore
+    private String tempPassword;            // 임시 비밀번호
+
+    @JsonIgnore
+    private int rowCount;                   // 결과값 반환
 }

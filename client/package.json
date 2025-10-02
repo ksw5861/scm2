@@ -13,6 +13,7 @@
         "chart.js": "3.3.2",
         "chartjs-adapter-date-fns": "^3.0.0",
         "file-saver": "^2.0.2",
+        "lodash-es": "^4.17.21",
         "pinia": "^3.0.3",
         "pinia-plugin-persistedstate": "^4.5.0",
         "primeicons": "^7.0.0",

@@ -75,8 +75,8 @@ public class EmployeeServiceImpl implements EmployeeService {
     emp.setTempPassword(passwordEncoder.encode(tempPassword));
     MultipartFile photo = emp.getPhoto();
 
-    int inserted = mapper.insertEmployee(emp);
-    if (inserted == 0 || emp.getEmployeeId() == null || emp.getEmployeeId().isEmpty()) {
+    mapper.insertEmployee(emp);
+    if (emp.getRowCount() < 2 || emp.getEmployeeId() == null || emp.getEmployeeId().isEmpty()) {
         return false;
     }
 
@@ -131,7 +131,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     int rowCount = (Integer) param.get("rowCount");
 
-    if (rowCount == 0) {
+    if (rowCount < 2) {
       return false;
     }
 

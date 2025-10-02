@@ -71,68 +71,56 @@
   </select>
 
   <!-- 거래처 상세 조회 -->
-  <select id="getVendorDetail" parameterType="string" resultType="com.yedam.scm.vo.VendorVO">
+  <select id="getVendorDetail" parameterType="string" resultType="VendorVO">
     SELECT *
     FROM vendor
     WHERE vendor_id = #{vendorId}
   </select>
 
   <!-- 거래처 등록 -->
-  <insert id="insertVendor" parameterType="com.yedam.scm.vo.VendorVO">
-    INSERT INTO vendor (
-      vendor_id,
-      business_registration,
-      company_name,
-      ceo_name,
-      phone_number,
-      address,
-      is_active,
-      created_at,
-      updated_at,
-      type,
-      owner_name,
-      owner_email,
-      owner_tel
-    ) VALUES (
-      next_code('VEN'),
-      #{businessRegistration},
-      #{companyName},
-      #{ceoName},
-      #{phoneNumber},
-      #{address},
-      #{isActive},
-      sysdate,
-      sysdate,
-      #{type},
-      #{ownerName},
-      #{ownerEmail},
-      #{ownerTel}
-    )
+  <insert id="insertVendor" parameterType="VendorVO" statementType="CALLABLE">
+    { CALL insert_vendor_with_account(
+      #{vendorId, mode=OUT, jdbcType=VARCHAR},
+      #{businessRegistration, mode=IN, jdbcType=VARCHAR},
+      #{companyName, mode=IN, jdbcType=VARCHAR},
+      #{ceoName, mode=IN, jdbcType=VARCHAR},
+      #{phoneNumber, mode=IN, jdbcType=VARCHAR},
+      #{address, mode=IN, jdbcType=VARCHAR},
+      #{isActive, mode=IN, jdbcType=CHAR},
+      #{type, mode=IN, jdbcType=VARCHAR},
+      #{ownerName, mode=IN, jdbcType=VARCHAR},
+      #{ownerEmail, mode=IN, jdbcType=VARCHAR},
+      #{ownerTel, mode=IN, jdbcType=VARCHAR},
+      #{tempPassword, mode=IN, jdbcType=VARCHAR},
+      #{rowCount, mode=OUT, jdbcType=NUMERIC, javaType=java.lang.Integer}
+    ) }
   </insert>
 
+
   <!-- 거래처 수정 -->
-  <update id="updateVendor" parameterType="com.yedam.scm.vo.VendorVO">
-    UPDATE vendor
-    <set>
-      <if test="businessRegistration != null">business_registration = #{businessRegistration},</if>
-      <if test="companyName != null">company_name = #{companyName},</if>
-      <if test="ceoName != null">ceo_name = #{ceoName},</if>
-      <if test="phoneNumber != null">phone_number = #{phoneNumber},</if>
-      <if test="address != null">address = #{address},</if>
-      <if test="isActive != null">is_active = #{isActive},</if>
-      <if test="type != null">type = #{type},</if>
-      <if test="ownerName != null">owner_name = #{ownerName},</if>
-      <if test="ownerEmail != null">owner_email = #{ownerEmail},</if>
-      <if test="ownerTel != null">owner_tel = #{ownerTel},</if>
-      updated_at = sysdate
-    </set>
-    WHERE vendor_id = #{vendorId}
+  <update id="updateVendor" parameterType="VendorVO" statementType="CALLABLE">
+    { CALL update_vendor_with_account(
+      #{vendorId, mode=IN, jdbcType=VARCHAR},
+      #{businessRegistration, mode=IN, jdbcType=VARCHAR},
+      #{companyName, mode=IN, jdbcType=VARCHAR},
+      #{ceoName, mode=IN, jdbcType=VARCHAR},
+      #{phoneNumber, mode=IN, jdbcType=VARCHAR},
+      #{address, mode=IN, jdbcType=VARCHAR},
+      #{isActive, mode=IN, jdbcType=CHAR},
+      #{type, mode=IN, jdbcType=VARCHAR},
+      #{ownerName, mode=IN, jdbcType=VARCHAR},
+      #{ownerEmail, mode=IN, jdbcType=VARCHAR},
+      #{ownerTel, mode=IN, jdbcType=VARCHAR},
+      #{rowCount, mode=OUT, jdbcType=NUMERIC, javaType=java.lang.Integer}
+    ) }
   </update>
 
   <!-- 거래처 삭제 -->
-  <delete id="deleteVendor" parameterType="string">
-    DELETE FROM vendor
-    WHERE vendor_id = #{vendorId}
+  <delete id="deleteVendor" statementType="CALLABLE">
+    { CALL delete_vendor_with_account(
+      #{param.vendorId, mode=IN, jdbcType=VARCHAR},
+      #{param.rowCount, mode=OUT, jdbcType=NUMERIC, javaType=java.lang.Integer}
+    ) }
   </delete>
 
 </mapper>

@@ -1,6 +1,8 @@
 package com.yedam.scm.master.mapper;
 
 import java.util.List;
+import java.util.Map;
+
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -23,11 +25,11 @@ public interface VendorMapper {
     VendorVO getVendorDetail(@Param("vendorId") String vendorId);
 
     // 거래처 등록
-    int insertVendor(VendorVO vendorVO);
+    void insertVendor(VendorVO vendorVO);
 
     // 거래처 수정
-    int updateVendor(VendorVO vendorVO);
+    void updateVendor(VendorVO vendorVO);
 
     // 거래처 삭제
-    int deleteVendor(@Param("vendorId") String vendorId);
+    void deleteVendor(@Param("param") Map<String, Object> param);
 }
