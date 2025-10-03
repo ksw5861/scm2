@@ -10,8 +10,10 @@ import com.yedam.scm.dto.EmployeeSearchDTO;
 import com.yedam.scm.dto.LoginDTO;
 import com.yedam.scm.dto.LoginRes;
 import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.login.service.AppLoginService;
 import com.yedam.scm.login.service.LoginService;
 import com.yedam.scm.master.service.EmployeeService;
+import com.yedam.scm.order.service.OrderService;
 import com.yedam.scm.security.JwtUtil;
 import com.yedam.scm.vo.EmployeeVO;
 
@@ -36,6 +38,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 /**
@@ -51,8 +55,10 @@ public class DhController {
 
   private final EmployeeService employeeSvc;
   private final LoginService loginSvc;
+  private final AppLoginService appLoginSvc;
   private final JwtUtil jwtUtil;
   private final MailService mailSvc;
+  private final OrderService orderSvc;
 
   /**
    * 확장자 없이 요청 시 자동으로 탐색하여 이미지 반환
@@ -234,6 +240,18 @@ public class DhController {
       }
   }
 
+    @PostMapping("/app/login")
+    public ResponseEntity<?> appLogin(@RequestBody LoginDTO login) {
+        LoginRes res = appLoginSvc.loginForApp(login);
+        if (res == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                 .body(Map.of("message", "이메일 또는 비밀번호가 올바르지 않습니다."));
+        }
+        return ResponseEntity.ok(Map.of(
+            "accessToken", res.getAccessToken()
+        ));
+    }
+
   @PostMapping("/auth/login")
   public ResponseEntity<?> completeLogin(
       @CookieValue(value = "tempToken", required = false) String tempToken,
@@ -395,6 +413,18 @@ public class DhController {
       cookie.setMaxAge(0);
       response.addCookie(cookie);
       return ResponseEntity.ok().body(Map.of("message", "로그아웃 되었습니다."));
+  }
+
+  @GetMapping("/app/orderlist")
+  public ResponseEntity<?> getOrderListStatusShipment() {
+      return ResponseEntity.ok().build();
+  }
+  
+  @PutMapping("/app/order/completed/{orderId}")
+  public ResponseEntity<?> getOrderListStatusSuccess(
+    @PathVariable String orderId
+  ) {
+      return ResponseEntity.ok().build();
   }
 
 }
