@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yedam.scm.order.mapper.GoDelMapper">
+
+    <!-- ====================================================== -->
+    <!-- 1. 출하지시 등록 (주문 상태: 처리완료 → 배송준비중) -->
+    <!-- ====================================================== -->
+
+    <update id="createDeliveryInstruction" parameterType="SalesOrderVO">
+        <selectKey keyProperty="shipId" resultType="string" order="BEFORE">
+            SELECT next_date_code('SD') FROM dual
+        </selectKey>
+
+        UPDATE SALES_ORDER
+        SET ship_id = #{shipId},
+            status  = '배송준비중'
+        WHERE order_id = #{orderId}
+    </update>
+
+
+    <!-- ====================================================== -->
+    <!-- 2. 출하 등록 (주문 상태: 배송준비중 → 출고완료) -->
+    <!-- ====================================================== -->
+    <update id="registerShipment" parameterType="string">
+        UPDATE SALES_ORDER
+        SET status = '출고완료'
+        WHERE order_id = #{orderId};
+    </update>
+
+    <!-- ====================================================== -->
+    <!-- 3. 출하지시 대기 목록 (처리완료 상태) -->
+    <!-- ====================================================== -->
+    <resultMap id="SalesOrderMap" type="SalesOrderVO">
+    <result property="orderDate" column="ORDERDATE" jdbcType="DATE"/>
+</resultMap>
+    <select id="selectPendingDeliveryOrders" resultType="SalesOrderVO">
+        SELECT
+            so.order_id     AS orderId,
+            so.order_date  AS orderDate,
+            so.vendor_id    AS vendorId,
+            so.delivery_date AS deliveryDate,
+            so.paydue_date  AS paydueDate,
+            so.total_price  AS totalPrice,
+            so.status       AS status
+        FROM SALES_ORDER so
+        WHERE so.status = '처리완료'
+        ORDER BY so.order_id DESC
+    </select>
+
+    <!-- ====================================================== -->
+    <!-- 4. 출하지시 진행 목록 (배송준비중 상태) -->
+    <!-- ====================================================== -->
+    <select id="getDeliveryInProgressOrders" resultType="com.yedam.scm.vo.SalesOrderVO">
+        SELECT
+            so.order_id     AS orderId,
+            TO_CHAR(so.order_date, 'YYYY-MM-DD') AS orderDate,
+            so.vendor_id    AS vendorId,
+            so.delivery_date AS deliveryDate,
+            so.paydue_date  AS paydueDate,
+            so.total_price  AS totalPrice,
+            so.status       AS status
+        FROM SALES_ORDER so
+        WHERE so.status = '배송준비중'
+        ORDER BY so.order_id DESC
+    </select>
+
+    <!-- ====================================================== -->
+    <!-- 5. 주문 상세 조회 (조회 전용) -->
+    <!-- ====================================================== -->
+    <select id="selectDeliveryDetailList" parameterType="string" resultType="com.yedam.scm.vo.SalesOrderDetailVO">
+        SELECT
+            sod.odetail_id      AS odetailId,
+            sod.order_id        AS orderId,
+            sod.prod_id         AS prodId,
+            p.prod_name         AS prodName,
+            p.spec              AS spec,
+            p.unit              AS unit,
+            sod.order_qty       AS orderQty,
+            sod.prod_unit_price AS prodUnitPrice,
+            (sod.order_qty * sod.prod_unit_price) AS totalUnitPrice,
+            sod.prod_status          AS prodStatus
+        FROM SALES_ORDER_DETAIL sod
+        JOIN PRODUCT p
+          ON sod.prod_id = p.prod_id
+        WHERE sod.order_id = #{orderId}
+        ORDER BY sod.odetail_id
+    </select>
+
+    <!-- ====================================================== -->
+    <!-- 6. 출하지시 진행 주문 조회 (상태: 배송준비중) - 바코드찍을것들 -->
+    <!-- ====================================================== -->
+    <select id="selectReadyToDeliverSimple" resultType="map" >
+        SELECT
+            so.order_id AS orderId,
+            so.status   AS status
+        FROM SALES_ORDER so
+        WHERE so.status = '배송준비중'
+        ORDER BY so.order_id DESC
+
+    </select>
+
+
+
+</mapper>
