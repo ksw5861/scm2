@@ -61,15 +61,13 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
     //자재주문등록
     @Override
     @Transactional
-    public boolean callReqestMatProc(List<PurchaseMatVO> requestList) {
+    public void callReqestMatProc(List<PurchaseMatVO> requestList) {
         try {
             for (PurchaseMatVO list : requestList) { // mpper.xml에서 (<select>로 procedure call)
                 mapper.callReqestMatProc(list);
             }
-            return true;
         } catch(Exception e) {
             e.printStackTrace();
-            return false;
         }
     }
 

@@ -23,7 +23,7 @@ public interface PurchaseMatService {
     //mrp산출목록
     List<MrpDetailVO> getMrpDetailList();
     //자재주문등록
-    boolean callReqestMatProc(List<PurchaseMatVO> requestList);
+    void callReqestMatProc(List<PurchaseMatVO> requestList);
     //자재주문목록
     List<PurchaseMatVO> getPurchaseList();
     //자재주문상태

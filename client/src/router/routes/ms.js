@@ -47,6 +47,15 @@ const ms = {
         requiresAuth: true,
         roles: ['admin', 'employee']
       }
+    },
+    {
+      path: '/matOutboundRegistration',
+      name: '자재 출고',
+      component: () => import('@/views/pages/ms/matOutboundRegistration.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
     }
   ]
 };

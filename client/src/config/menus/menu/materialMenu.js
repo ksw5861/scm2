@@ -7,7 +7,7 @@ import MatUnload from './ms/MatUnload';
 
 const materialMenu = {
   label: '자재',
-  items: [purchase, purchaseList, MatUnload, MaterialReceip, productionPlan]
+  items: [purchase, purchaseList, MatUnload, MaterialReceip, productionPlan, matOutboundRegistration]
 };
 
 export default materialMenu;
