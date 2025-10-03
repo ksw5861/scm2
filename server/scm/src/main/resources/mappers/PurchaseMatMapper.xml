@@ -188,7 +188,8 @@
     SELECT psl.re_date,
            psl.log_name,
            psl.log_pur_mat_status,
-           NVL(psl.log_sup_out_qty,0) as sup_out_qty
+           NVL(psl.log_sup_out_qty,0) as log_sup_out_qty,
+           psl.log_expect_date
     FROM purchase_status_log psl
     WHERE log_pur_id = #{purId}
     ORDER BY re_date DESC

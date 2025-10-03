@@ -26,7 +26,7 @@ const breadcrumbItems = computed(() => {
 });
 
 //공급처코드
-const vendorId = ref('VEN005');
+const vendorId = ref('VEN001');
 const dateRange = ref({ start: null, end: null });
 const materialName = ref();
 const statusList = ref([]);
@@ -78,8 +78,8 @@ const approve = async () => {
   const idList = list.map((row) => row.id);
 
   try {
-    const res = await axios.post('/api/supplier/approve', { purId: idList, name: vendorId.value });
-    toast('info', '승인 성공', res.value + '주문 승인 성공:', '3000');
+    await axios.post('/api/supplier/approve', { purId: idList, name: vendorId.value });
+     toast('info', '승인 성공', '주문 승인 성공:', '3000');
 
     pageLoad();
   } catch (error) {

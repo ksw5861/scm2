@@ -55,8 +55,8 @@ public class MsController {
 
     //자재주문등록
     @PostMapping("/reqMaterial")
-    public boolean callReqestMaterial(@RequestBody List<PurchaseMatVO> requestList) {      
-        return purchaseMatService.callReqestMatProc(requestList);
+    public void callReqestMaterial(@RequestBody List<PurchaseMatVO> requestList) {      
+        purchaseMatService.callReqestMatProc(requestList);
     }
     
     //주문목록
