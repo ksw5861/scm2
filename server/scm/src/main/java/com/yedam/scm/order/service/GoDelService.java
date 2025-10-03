@@ -20,7 +20,11 @@ public interface GoDelService {
      * @param orderIds 출하 등록할 주문 ID 리스트
      * @return 성공 여부
      */
-    boolean registerShipment(List<String> orderIds);
+    boolean registerShipment(String shipId); // 배송준비중 → 출고완료
+
+    List<SalesOrderVO> selectShippedOrders();        // 출고완료 목록
+
+    boolean completeDelivery(String shipId); // 출고완료 → 배송완료
 
     /**
      * 출하지시 대기 중인 주문 조회 (상태: 처리완료)

@@ -34,17 +34,14 @@ public class GoDelServiceImpl implements GoDelService {
     }
 
     @Override
-    public boolean registerShipment(List<String> orderIds) {
-        try {
-            for (String orderId : orderIds) {
-                goDelMapper.updateOrderStatus(orderId, "출고완료");
-                goDelMapper.updateSendDate(orderId);
-            }
+    public boolean registerShipment(String shipId) {
+
+        if(goDelMapper.updateOrderStatus(shipId, "출고완료") > 0) {
             return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
         }
+
+        return false;
+
     }
 
     @Override
@@ -65,6 +62,21 @@ public class GoDelServiceImpl implements GoDelService {
     @Override
     public List<Map<String, Object>> selectReadyToDeliverSimple() {
         return goDelMapper.selectReadyToDeliverSimple(); 
+    }
+
+    @Override
+    public List<SalesOrderVO> selectShippedOrders() {
+        return goDelMapper.selectShippedOrders();
+    }
+
+    @Override
+    public boolean completeDelivery(String shipId) {
+
+            if(goDelMapper.updateOrderStatus(shipId, "배송완료") > 0) {
+            return true;
+        }
+        
+        return false;
     }
 
 }

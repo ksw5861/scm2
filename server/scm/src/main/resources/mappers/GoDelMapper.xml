@@ -93,7 +93,7 @@
     <!-- ====================================================== -->
     <select id="selectReadyToDeliverSimple" resultType="map" >
         SELECT
-            so.order_id AS orderId,
+            so.ship_id AS shipId,
             so.status   AS status
         FROM SALES_ORDER so
         WHERE so.status = '배송준비중'
@@ -101,6 +101,19 @@
 
     </select>
 
+    <select id="selectShippedOrders" resultType="SalesOrderVO">
+        SELECT ship_id,
+               status
+        FROM sales_order
+        WHERE status = '출고완료'
+        ORDER BY ship_id DESC
+    </select>
+
+    <update id="updateOrderStatus">
+        UPDATE sales_order
+        SET status = #{status}
+        WHERE ship_id = #{shipId}
+    </update>
 
 
 </mapper>

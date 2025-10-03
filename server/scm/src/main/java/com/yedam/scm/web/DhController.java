@@ -13,7 +13,7 @@ import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.login.service.AppLoginService;
 import com.yedam.scm.login.service.LoginService;
 import com.yedam.scm.master.service.EmployeeService;
-import com.yedam.scm.order.service.OrderService;
+import com.yedam.scm.order.service.GoDelService;
 import com.yedam.scm.security.JwtUtil;
 import com.yedam.scm.vo.EmployeeVO;
 
@@ -58,7 +58,7 @@ public class DhController {
   private final AppLoginService appLoginSvc;
   private final JwtUtil jwtUtil;
   private final MailService mailSvc;
-  private final OrderService orderSvc;
+  private final GoDelService godelSvc;
 
   /**
    * 확장자 없이 요청 시 자동으로 탐색하여 이미지 반환
@@ -415,16 +415,26 @@ public class DhController {
       return ResponseEntity.ok().body(Map.of("message", "로그아웃 되었습니다."));
   }
 
+  // 출고완료 목록
   @GetMapping("/app/orderlist")
   public ResponseEntity<?> getOrderListStatusShipment() {
-      return ResponseEntity.ok().build();
+      return ResponseEntity.ok(godelSvc.selectShippedOrders());
   }
-  
-  @PutMapping("/app/order/completed/{orderId}")
-  public ResponseEntity<?> getOrderListStatusSuccess(
-    @PathVariable String orderId
-  ) {
-      return ResponseEntity.ok().build();
+
+  // 바코드 스캔 → 출고완료
+  @PutMapping("/app/order/shipout/{shipId}")
+  public ResponseEntity<?> updateOrderToShipped(@PathVariable String shipId) {
+      boolean updated = godelSvc.registerShipment(shipId);
+      return updated ? ResponseEntity.ok("주문 " + shipId + " 출고완료 처리됨")
+                    : ResponseEntity.badRequest().body("처리 실패");
+  }
+
+  // 버튼 클릭 → 배송완료
+  @PutMapping("/app/order/completed/{shipId}")
+  public ResponseEntity<?> updateOrderToCompleted(@PathVariable String shipId) {
+      boolean updated = godelSvc.completeDelivery(shipId);
+      return updated ? ResponseEntity.ok("주문 " + shipId + " 배송완료 처리됨")
+                    : ResponseEntity.badRequest().body("처리 실패");
   }
 
 }

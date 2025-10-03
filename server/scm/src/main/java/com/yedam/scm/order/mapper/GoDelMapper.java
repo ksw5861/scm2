@@ -13,12 +13,12 @@ public interface GoDelMapper {
 
     // 출하지시 등록 (shipId는 XML에서 selectKey로 생성)
     int createDeliveryInstruction(SalesOrderVO order);
+    
+    // 출고완료 주문건
+    List<SalesOrderVO> selectShippedOrders();
 
     // 주문 상태 변경
-    int updateOrderStatus(@Param("orderId") String orderId, @Param("status") String status);
-
-    // 출하 등록 시 send_date 업데이트
-    int updateSendDate(String orderId);
+    int updateOrderStatus(@Param("shipId") String shipId, @Param("status") String status);
 
     // 출하지시 대기 주문 (처리완료)
     List<SalesOrderVO> selectPendingDeliveryOrders();
