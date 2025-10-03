@@ -12,13 +12,30 @@ import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 const route = useRoute();
 const { toast } = useAppToast();
 
+//등록일 날짜출력[페이지로드시 오늘날짜 자동셋팅]
+const getNowDate = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}/${month}/${day}`;
+};
+
 const vendorId = ref('VEN001');
+const vanEmpName = ref('홍길동')
 const dateRange = ref({ start: null, end: null }); // 초기값을 객체로
 const materialName = ref();
 const statusList = ref();
 const approveShipData = ref();
 const selectedRows = ref();
+const deliveryPlace = ref(''); //배송창고 바인딩용
 const warehoustListOpt = ref([]); //창고드롭다운용
+const shipDetailList = ref([
+  { matId: '', matName: '', ortQty: null, unit: ''},
+  { matId: '', matName: '', ortQty: null, unit: ''},
+  { matId: '', matName: '', ortQty: null, unit: ''}
+]);
+const shipmentDate = ref(getNowDate()); //출고일
 
 // breadcrumb
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
@@ -39,10 +56,15 @@ const approveShipColumns = [
   { label: '구매처 담당자', field: 'buyerName' },
   { label: '출고수량', field: 'ortQty' },
   { label: '단위', field: 'unit' }
-  // { label: '배송지', field: 'toShip', select: true, option: warehoustListOpt },
-  // { label: '차량번호', field: 'vehicleNo', inputText: true },
-  // { label: '운송번호', field: 'trackingNo', inputText: true }
 ];
+
+const addShipColumns = [
+  { label: '자재코드', field: 'matId' },
+  { label: '자재명', field: 'matName' },
+  { label: '출고수량', field: 'ortQty' },
+  { label: '단위', field: 'unit' }
+];
+
 
 const pageLoad = async () => {
   try {
@@ -66,10 +88,32 @@ const pageLoad = async () => {
   }
 };
 
-const shipment = async () => {
-  const list = JSON.parse(JSON.stringify(selectedRows.value));
-  console.log(list);
-  // const list = JSON.parse(JSON.stringify(selectedRows.value));
+//(좌측)제품클릭시 우측테이블 행 push
+const addTOshipmentList = (row) => {
+console.log(row.id)
+  const emptyRowIndex = shipDetailList.value.findIndex((r) => !r.matId);
+  const newRow = {
+     //테이블 출력데이터
+      purStatusId: row.id, //주문로그T아이디: 출고상태값 제어필수
+      matId: row.matId,
+      matName:row.matName,
+      ortQty:row.ortQty,
+      unit: row.unit,
+    //DB입력시 행별 필요데이터[]
+       shipOrderNo: row.logShipOrderNo, //출고지시번호
+       purId: row.purId,  //주문테이블 아이디
+       buyerName: row.empName,
+  };
+  if (emptyRowIndex !== -1) {
+   shipDetailList.value[emptyRowIndex] = newRow;     // 빈행 있으면 교체
+  } else {
+   shipDetailList.value.push(newRow);     // 빈행 없으면 push
+  }
+};
+
+const submit = async () => {
+//   const list = JSON.parse(JSON.stringify(shipDetailList.value));
+//   console.log(list);
 
   // const payload = list.map((row) => ({
   //   purId: row.id,
@@ -82,14 +126,14 @@ const shipment = async () => {
 
   // console.log(payload);
 
-  // try {
-  //   await axios.post('/api/supplier/shipMaterial', payload);
-  //   toast('info', '등록 성공', '출고등록  성공:', '3000');
-  //   selectedRows.value = [];
-  //   await pageLoad();
-  // } catch (error) {
-  //   toast('error', '등록 실패', '출고등록  실패:', '3000');
-  // }
+  try {
+    await axios.post('/api/supplier/shipment', payload);
+    toast('info', '등록 성공', '출고등록  성공:', '3000');
+    selectedRows.value = [];
+    await pageLoad();
+  } catch (error) {
+    toast('error', '등록 실패', '출고등록  실패:', '3000');
+  }
 };
 
 //창고리스트: 드롭다운용
@@ -97,7 +141,7 @@ const warehouseList = async () => {
   try {
     const res = await axios.get('/api/mat/warehouseList');
     warehoustListOpt.value = res.data.map((item) => ({
-      label: item.whName,
+      name: item.whName,
       value: item.whId
     }));
     console.log(warehoustListOpt.value);
@@ -105,6 +149,7 @@ const warehouseList = async () => {
     toast('error', '리스트 로드 실패', '창고 리스트 불러오기 실패:', '3000');
   }
 };
+
 
 onMounted(() => {
   pageLoad();
@@ -120,7 +165,6 @@ onMounted(() => {
     <div class="card flex flex-col gap-4">
       <div class="font-semibold text-xl">출고 등록</div>
       <Divider />
-
       <!--search BOX 영역-->
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
         <SearchField type="dateRange" label="구매요청일자" v-model="dateRange" />
@@ -137,7 +181,6 @@ onMounted(() => {
             { label: '취소', value: 'CANCEL' }
           ]"
         />
-
         <!-- 버튼 영역 -->
         <div class="flex flex-wrap items-center gap-2">
           <btn color="secondary" icon="pi pi-undo" label="초기화" />
@@ -145,13 +188,50 @@ onMounted(() => {
         </div>
       </div>
     </div>
-    <!--테이블영역--><!--테이블영역-->
-    <div class="card flex flex-col gap-4">
-      <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="info" icon="pi pi-file-pdf" @click="shipment" label="배송등록" />
+   <!--테이블영역--><!--테이블영역-->
+    <div class="flex flex-col md:flex-row gap-8">
+      <div class="md:w-1/2">
+        <div class="card flex flex-col gap-4 h-full">
+          <!-- h-full 고정 -->
+          <div class="card flex flex-col gap-4">
+            <div class="font-semibold text-m">출고대기 목록</div>
+            <Divider />
+            <selectTable v-model:selection="selectedRows" :columns="approveShipColumns" :data="approveShipData" :paginator="true" :rows="15" @row-select="addTOshipmentList" :showCheckbox="false"/>
+          </div>
+        </div>
       </div>
-      <div class="font-semibold text-xl mb-5">출고대기 목록</div>
-      <selectTable v-model:selection="selectedRows" :columns="approveShipColumns" :data="approveShipData" :paginator="true" :rows="15" />
+      <div class="md:w-1/2 h-full">
+        <div class="card flex flex-col gap-4 h-full">
+            <div class="flex items-center justify-between my-3">
+                <div class="font-semibold text-m">상세정보</div>
+                <div class="flex gap-2">
+                    <btn color="warn" icon="pi pi-file-excel" @click="submit" label="배송등록" />
+                </div>
+            </div>
+            <Divider />
+            <!-- 상/하단 영역을 flex로 나눔 -->
+            <div class="flex flex-col gap-4 h-[600px]"> <!-- 카드 전체 높이 지정 -->
+                <!-- 상단 입력폼 (4 비율) -->
+                <div class="flex-[4]">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
+                        <SearchField type="readOnly" label="출고일" v-model="shipmentDate" />
+                        <SearchField type="readOnly" label="담당자" v-model="vanEmpName" />
+                        <searchField type="dropDown" label="배송지" v-model="deliveryPlace" class="w-full" :options="warehoustListOpt" />
+                        <searchField type="dropDown" label="운송업체" v-model="carrier" class="w-full":options="[ { name: '대한물류', value: 'Log001' },
+                                                                                                                 { name: '경동운송', value: 'Log002' },
+                                                                                                                 { name: '신속배송', value: 'Log003' },
+                                                                                                                 { name: '정확물류', value: 'Log004' }]" />
+                        <SearchField type="text" label="운송번호" v-model="trackingNo" />
+                        <SearchField type="text" label="차량번호" v-model="carNo" visibility: hidden/>
+                    </div>
+                </div>
+                <!-- 하단 테이블 (6 비율) -->
+                <div class="flex-[6] overflow-auto">
+                    <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="addShipColumns" :data="shipDetailList" :paginator="false" :showCheckbox="false" class="h-full"/>
+                </div>
+            </div>
+        </div>
     </div>
-  </div>
+</div>
+</div>
 </template>

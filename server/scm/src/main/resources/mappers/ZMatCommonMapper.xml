@@ -55,4 +55,43 @@
   <result property="status" column="status"/>
 </resultMap>
 
+<!--입고로그 resultMap-->
+<resultMap id="InboundLogMap" type="InboundLogVO">
+    <id     property="inLogId"       column="IN_LOG_ID"/>
+    <result property="inboundDetId"  column="INBOUND_DET_ID"/>
+    <result property="logInQty"      column="LOG_IN_QTY"/>
+    <result property="logMatStatus"  column="LOG_MAT_STATUS"/>
+    <result property="reDate"        column="RE_DATE"/>
+    <result property="logName"       column="LOG_NAME"/>
+    <result property="logInspectDate" column="LOG_INSPECT_DATE"/>
+    <result property="logResult"     column="LOG_RESULT"/>
+    <result property="logImg"        column="LOG_IMG"/>
+</resultMap>
+
+<!--배송정보 resultMap-->
+<resultMap id="ShipmentInfoMap" type="ShipmentInfoVO">
+    <id     property="shipId"       column="SHIP_ID"/>
+    <result property="inboundId"    column="INBOUND_ID"/>
+    <result property="carrierName"  column="CARRIER_NAME"/>
+    <result property="driverName"   column="DRIVER_NAME"/>
+    <result property="driverPhone"  column="DRIVER_PHONE"/>
+    <result property="vehicleNo"    column="VEHICLE_NO"/>
+    <result property="shipFrom"     column="SHIP_FROM"/>
+    <result property="shipTo"       column="SHIP_TO"/>
+    <result property="trackingNo"   column="TRACKING_NO"/>
+</resultMap>
+
+<!--입고이력 resultMap-->
+<resultMap id="InboundLogResultMap" type="InboundLogVO">
+    <id property="inLogId" column="IN_LOG_ID" />
+    <result property="inboundDetId" column="INBOUND_DET_ID" />
+    <result property="logInQty" column="LOG_IN_QTY" />
+    <result property="logMatStatus" column="LOG_MAT_STATUS" />
+    <result property="reDate" column="RE_DATE" />
+    <result property="logName" column="LOG_NAME" />
+    <result property="logInspectDate" column="LOG_INSPECT_DATE" />
+    <result property="logResult" column="LOG_RESULT" />
+    <result property="logImg" column="LOG_IMG" />
+</resultMap>
+
 </mapper>

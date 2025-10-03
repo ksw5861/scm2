@@ -1,6 +1,7 @@
 package com.yedam.scm.vo;
 
 import java.util.Date;
+import java.util.List;
 
 import lombok.Data;
 
@@ -16,8 +17,9 @@ public class InboundVO {
     private String venOutNo;      // VAN_OUT_NO (출고번호)
     private Integer count;        // COUNT (품목수량)
     private String rejMemo;       //REJ_MEMO (거부사유)
+    private String purChargeName; //자재주문담당자
 
-    InboundDetailVO inboundDetailVO;
+    List<InboundDetailVO> details;     // 입고 상세들
 
     ShipmentInfoVO shipmentInfoVO; //배송정보
 }

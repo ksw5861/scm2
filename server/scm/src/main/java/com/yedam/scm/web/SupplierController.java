@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yedam.scm.supplier.service.SupplierService;
+import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
@@ -17,38 +18,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
-
-/*
- * 출고지시: 출고수량 - 출고예정일 insert//purchase_mat테이블 
-[부분출고/전량출고] 상태값 변경
-
-
-
-출고등록: 부분출고/전량출고에 대한 값만 받아옴. 
--> 입고테이블 데이터 insert
- 
-1) 입고마스터아이디 seq
-2) 출고번호 + 출고일 + 입고대기(상태값 m1) + 공급처코드
-3) 출고정보: 입고아이디 + 운송업체 + 운송번호 + 차량번호 + 도착지
-
-4) for문 돌면서 
-자재코드 + 출고수량 + 공급처코드 + 상태'입고대기 d1'
-
-
-5) purchase_status_log ==> 
-출고시 해당 출고상세아이디는 Y로 상태변경. 
-
-6) pur_id 의 상태값이 전량출고일때 ! purchase_mat=> 종결처리 
-전량출고는 종결로 update  해당 출고번호건 (출고번호 = 출고상세 아이디값 1:1로 매칭됨.)
-
-*/
-
-
-
-
-
-
 
 @RestController
 @RequestMapping("/supplier")
@@ -81,47 +50,54 @@ public class SupplierController {
          service.insertReleaseData(payload);
     }
     
+    //출고등록화면
     //1) 출고승인목록
     @GetMapping("/ApprovedList/{vendorId}")
     public List<PurchaseMatVO> getApprovedShipmentList (@PathVariable String vendorId) {
         return service.getApprovedShipmentList(vendorId);
     }
     
-    //출고등록  [1)출고승인목록 출력 2)입고마스터테이블 INSERT 3)입고마스터테이블데이터insert 3)입고상세테이블insert  4)배송정보테이블insert]
-
-
-
-
-
-    //출고등록 [ 2)입고마스터테이블 INSERT 3)입고마스터테이블데이터insert 3)입고상세테이블insert  4)배송정보테이블insert]
-    // @PostMapping("/shipment")
-    // public String postMethodName(@RequestBody String entity) {
-    //     //TODO: process POST request
-        
-    //     return entity;
-    // }
+    //2)출고등록
+    /*
+     1. 입고마스터테이블 seq -> 입고마스터 insert / 출고정보 insert 
+     2.  입고상세 seq -> 입고상세insert / 입고이력 insert / 기존발주테이블 요청수량 = 누적출고수량은 종결처리
+    */
+    @PostMapping("/shipment")
+    public void insertShipmentInfo(@RequestBody InboundVO MatShipInfo) {       
+        service.insertShipmentInfo(MatShipInfo);
+    }
     
 }
 
-
-
 /*
- * 
-출고등록: 부분출고/전량출고에 대한 값만 받아옴. 
--> 입고테이블 데이터 insert
- 
-1) 입고마스터아이디 seq
-2) 출고번호 + 출고일 + 입고대기(상태값 m1) + 공급처코드
-3) 출고정보: 입고아이디 + 운송업체 + 운송번호 + 차량번호 + 도착지
+======== 출고등록시
+입고M
+- 출고일 [sysdate]
+- 공급처 코드
+- 출고번호(생성)
+- 입고대기로 상태값
 
-4) for문 돌면서 
-자재코드 + 출고수량 + 공급처코드 + 상태'입고대기 d1'
+출고정보
+- 입고M아이디
+- 운송업체
+- 차량번호
+- 출발지?? 거래처에서 선택해서 주소들어가는걸로 
+- 하차지 (공장코드)
 
+입고상세
+- 입고M 아이디
+- 출고수량
+- 공급처코드
+- 자재코드
+- 상태(입고대기)
+- 발주테이블 아이디
 
-5) purchase_status_log ==> 
-출고시 해당 출고상세아이디는 Y로 상태변경. 
+입고이력관리
+- 입고상세아이디
+- 상태값(입고대기)
+- 상태변경일[sysdate]
 
-6) pur_id 의 상태값이 전량출고일때 ! purchase_mat=> 종결처리 
-전량출고는 종결로 update  해당 출고번호건 (출고번호 = 출고상세 아이디값 1:1로 매칭됨.) 
- * 
-*/
+===기존 발주테이블에
+상태값 종결처리
+
+ */

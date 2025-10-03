@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundVO;
-import com.yedam.scm.vo.PurchaseMatVO;
 import com.yedam.scm.vo.ShipmentInfoVO;
 
 import lombok.Data;

@@ -3,9 +3,7 @@ package com.yedam.scm.supplier.service;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-
+import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
 public interface SupplierService {
@@ -19,4 +17,6 @@ public interface SupplierService {
     void insertReleaseData(List<PurchaseMatVO> payload);
     //출고승인목록 출력
     List<PurchaseMatVO> getApprovedShipmentList (String vendorId);
+    //출고등록
+    void insertShipmentInfo(InboundVO MatShipInfo);
 }
