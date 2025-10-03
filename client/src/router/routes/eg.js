@@ -65,7 +65,26 @@ const eg = {
         requiresAuth: true,
         roles: ['admin', 'employee']
       }
+    },
+    {
+      path: '/godel',
+      name: '출하지시(은)',
+      component: () => import('@/views/pages/eg/GoDel.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    },
+    {
+      path: '/gonedel',
+      name: '출하등록(은)',
+      component: () => import('@/views/pages/eg/GoneDel.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
     }
+
   ]
 };
 

@@ -23,6 +23,8 @@ public class SalesOrderVO {
     BigDecimal finalAmount;
     // 추가된 대표 제품명 필드
     private String prodName;
+    private String shipId;
+    private List<SalesOrderDetailVO> details;
 
     // Getter / Setter
     public String getProdName() {
@@ -33,7 +35,7 @@ public class SalesOrderVO {
         this.prodName = prodName;
     }
 
-    private List<SalesOrderDetailVO> details;
+ 
 
     private String prodId;
 

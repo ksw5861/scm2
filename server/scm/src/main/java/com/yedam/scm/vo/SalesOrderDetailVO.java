@@ -20,7 +20,7 @@ public class SalesOrderDetailVO {
   private Long totalUnitPrice;    // 합계 (prodUnitPrice * orderQty)
   private String prodStatus;
 
-   private int shipQty;
-      private String shipId;   // 출하지시 헤더ID
+  private int shipQty;
+  private String shipId;   // 출하지시 헤더ID
 
 }

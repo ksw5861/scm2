@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.yedam.scm.order.service.BranchDashService;
+import com.yedam.scm.order.service.GoDelService;
 import com.yedam.scm.order.service.IamportService;
 import com.yedam.scm.order.service.OrderService;
 import com.yedam.scm.order.service.ReturnService;
@@ -30,7 +31,7 @@ import com.yedam.scm.vo.ReturnDetailVO;
  * ============================================================
  */
 @RestController
-@RequestMapping // TODO: prefix 지정 필요 (예: "/api")
+@RequestMapping 
 public class EgController {
 
     @Autowired
@@ -47,6 +48,9 @@ public class EgController {
 
     @Autowired
     private BranchDashService branchDashService;
+
+    @Autowired
+    private GoDelService goDelSvc;
 
     // =================================================================
     // 1. 제품 목록 조회 (모달용)
@@ -161,7 +165,7 @@ public class EgController {
     }
 
     // =================================================================
-    // 3-2. 주문 상태 변경 (예: 배송중 -> 배송완료)
+    // 3-2. 주문 상태 변경 (예: 출고완료 -> 배송완료)
     // =================================================================
     @PutMapping("/orders/{orderId}/status")
     public ResponseEntity<?> updateOrderStatus(
@@ -274,7 +278,7 @@ public class EgController {
     }
 
     // =================================================================
-    // 5-2. 반품 상태 변경 (대기 -> 배송중 -> 배송완료)
+    // 5-2. 반품 상태 변경 (대기 -> 출고완료 -> 배송완료)
     // =================================================================
     @PutMapping("/returns/{returnId}/status")
     public ResponseEntity<?> updateReturnStatus(
@@ -492,13 +496,126 @@ public class EgController {
         }
 
     // =================================================================
-    // 대시보드 - 매출 추이 그래프
+    // 14. 대시보드 - 매출 추이 그래프
     // =================================================================
     @GetMapping("/salestrend")
     public List<Map<String, Object>> getSalesTrend(
             @RequestParam String vendorId,
             @RequestParam String range) {
         return branchDashService.getSalesTrend(vendorId, range);
+    }
+
+  
+// ================================================================
+// 15. 출하지시 등록 (복수 주문 → 배송준비중)
+// ================================================================
+@PostMapping("/goDel/create")
+public ResponseEntity<Map<String, Object>> createDeliveryInstruction(
+    @RequestBody Map<String, List<String>> body) {
+    List<String> orderIds = body.get("orders");
+    System.out.println("Received order IDs for delivery instruction: " + orderIds);
+
+
+    Map<String, Object> response = new HashMap<>();
+    try {
+        boolean success = goDelSvc.createDeliveryInstruction(orderIds);
+        if (success) {
+            response.put("status", "success");
+            response.put("message", "출하지시 등록 완료 (배송준비중)");
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("status", "error");
+            response.put("message", "출하지시 등록 실패");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+        response.put("status", "error");
+        response.put("message", "서버 오류: 출하지시 등록 실패");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+}
+
+// ================================================================
+// 16. 출하 등록(출하시지등록아님!!헷갈림주의) (복수 주문 → 출고완료)
+// ================================================================
+@PostMapping("/orders/shipment")
+public ResponseEntity<Map<String, Object>> registerShipment(@RequestBody List<String> orderIds) {
+    Map<String, Object> response = new HashMap<>();
+    try {
+        boolean success = goDelSvc.registerShipment(orderIds);
+        if (success) {
+            response.put("status", "success");
+            response.put("message", "출하 등록 완료 (출고완료)");
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("status", "error");
+            response.put("message", "출하 등록 실패");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+        response.put("status", "error");
+        response.put("message", "서버 오류: 출하 등록 실패");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+}
+// ================================================================
+// 17. 출하지시 대기 주문 조회 (상태: 처리완료)
+// ================================================================
+@GetMapping("/orders/pending-delivery")
+public ResponseEntity<Map<String, Object>> getPendingDeliveryOrders() {
+    Map<String, Object> response = new HashMap<>();
+    try {
+        List<SalesOrderVO> orders = goDelSvc.selectPendingDeliveryOrders();
+        response.put("status", "success");
+        response.put("count", orders.size());
+        response.put("orders", orders);
+        return ResponseEntity.ok(response);
+    } catch (Exception e) {
+        e.printStackTrace();
+        response.put("status", "error");
+        response.put("message", "출하지시 대기 주문 조회 실패");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+}
+
+// ================================================================
+// 18. 출하지시가능 주문 상세 조회 (출하지시 화면 전용)
+// ================================================================
+@GetMapping("/goDel/orders/{orderId}/details")
+public ResponseEntity<?> getDeliveryDetailList(@PathVariable("orderId") String orderId) {
+    Map<String, Object> response = new HashMap<>();
+    try {
+        List<SalesOrderDetailVO> details = goDelSvc.getDeliveryDetailList(orderId);
+
+        if (details == null || details.isEmpty()) {
+            response.put("status", "fail");
+            response.put("message", "주문 상세 없음: " + orderId);
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+        }
+
+        response.put("status", "success");
+        response.put("count", details.size());
+        response.put("details", details);
+        return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        response.put("status", "error");
+        response.put("message", "출하 가능 주문 상세 조회 실패");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+}
+
+// ================================================================
+// 19. 출하지시 진행 주문 조회 (상태: 배송준비중) - 바코드찍을것들
+// ================================================================
+    @GetMapping("/goDel/pending")
+    public ResponseEntity<List<Map<String, Object>>> getReadyToDeliverOrders() {
+        // 리스트만 바로 내려보내면 프런트에서 data 그대로 orders로 세팅 가능
+        List<Map<String, Object>> list = goDelSvc.selectReadyToDeliverSimple(); 
+        return ResponseEntity.ok(list);
     }
 
 }

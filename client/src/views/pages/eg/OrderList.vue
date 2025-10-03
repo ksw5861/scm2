@@ -9,7 +9,7 @@
         <Button label="엑셀 다운로드" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel" />
         <Button label="PDF 출력" icon="pi pi-file-pdf" class="p-button-danger" @click="exportPDF" />
         <Button 
-          label="배송중 처리" 
+          label="출고완료 처리" 
           icon="pi pi-truck" 
           class="p-button-info" 
           :disabled="!selectedOrder || selectedOrder.status !== '처리완료'"
@@ -20,7 +20,7 @@
           label="배송완료 처리" 
           icon="pi pi-check" 
           class="p-button-success" 
-          :disabled="!selectedOrder || selectedOrder.status !== '배송중'"
+          :disabled="!selectedOrder || selectedOrder.status !== '출고완료'"
           @click="markAsDelivered"
         />
         <Button 
@@ -57,7 +57,8 @@
           <Button label="대기" :class="{ selected: filters.status === '대기' }" @click="selectStatus('대기')" />
           <Button label="처리중" :class="{ selected: filters.status === '처리중' }" @click="selectStatus('처리중')" />
           <Button label="처리완료" :class="{ selected: filters.status === '처리완료' }" @click="selectStatus('처리완료')" />
-          <Button label="배송중" :class="{ selected: filters.status === '배송중' }" @click="selectStatus('배송중')" />
+          <Button label="배송준비중" :class="{ selected: filters.status === '배송준비중' }" @click="selectStatus('배송준비중')" />
+          <Button label="출고완료" :class="{ selected: filters.status === '출고완료' }" @click="selectStatus('출고완료')" />
           <Button label="배송완료" :class="{ selected: filters.status === '배송완료' }" @click="selectStatus('배송완료')" />
         </div>
       </div>
@@ -257,8 +258,8 @@ const markAsDelivered = async () => {
     alert('먼저 주문을 선택하세요.')
     return
   }
-  if (selectedOrder.value.status !== '배송중') {
-    alert('배송중 상태만 완료 처리할 수 있습니다.')
+  if (selectedOrder.value.status !== '출고완료') {
+    alert('출고완료 상태만 완료 처리할 수 있습니다.')
     return
   }
   try {
@@ -279,7 +280,7 @@ const markAsDelivered = async () => {
 }
 
 // -----------------------------
-//  배송중으로 번경하는 버튼
+//  출고완료로 번경하는 버튼
 // -----------------------------
 
 const markAsShipping = async () => {
@@ -288,15 +289,15 @@ const markAsShipping = async () => {
     return
   }
   if (selectedOrder.value.status !== '처리완료') {
-    alert('처리완료 상태만 배송중으로 변경할 수 있습니다.')
+    alert('처리완료 상태만 출고완료으로 변경할 수 있습니다.')
     return
   }
   try {
     const { data } = await axios.put(`/api/orders/${selectedOrder.value.orderId}/status`, {
-      status: '배송중'
+      status: '출고완료'
     })
     if (data.status === 'success') {
-      alert('배송중으로 변경되었습니다.')
+      alert('출고완료로 변경되었습니다.')
       fetchOrders()
       fetchOrderDetail(selectedOrder.value.orderId)
     } else {
