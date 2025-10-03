@@ -538,28 +538,28 @@ public ResponseEntity<Map<String, Object>> createDeliveryInstruction(
 
 // ================================================================
 // 16. 출하 등록(출하시지등록아님!!헷갈림주의) (복수 주문 → 출고완료)
-// ================================================================
-@PostMapping("/orders/shipment")
-public ResponseEntity<Map<String, Object>> registerShipment(@RequestBody List<String> orderIds) {
-    Map<String, Object> response = new HashMap<>();
-    try {
-        boolean success = goDelSvc.registerShipment(orderIds);
-        if (success) {
-            response.put("status", "success");
-            response.put("message", "출하 등록 완료 (출고완료)");
-            return ResponseEntity.ok(response);
-        } else {
-            response.put("status", "error");
-            response.put("message", "출하 등록 실패");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-        }
-    } catch (Exception e) {
-        e.printStackTrace();
-        response.put("status", "error");
-        response.put("message", "서버 오류: 출하 등록 실패");
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-    }
-}
+// // ================================================================
+// @PostMapping("/orders/shipment")
+// public ResponseEntity<Map<String, Object>> registerShipment(@RequestBody List<String> orderIds) {
+//     Map<String, Object> response = new HashMap<>();
+//     try {
+//         boolean success = goDelSvc.registerShipment(orderIds);
+//         if (success) {
+//             response.put("status", "success");
+//             response.put("message", "출하 등록 완료 (출고완료)");
+//             return ResponseEntity.ok(response);
+//         } else {
+//             response.put("status", "error");
+//             response.put("message", "출하 등록 실패");
+//             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+//         }
+//     } catch (Exception e) {
+//         e.printStackTrace();
+//         response.put("status", "error");
+//         response.put("message", "서버 오류: 출하 등록 실패");
+//         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+//     }
+// }
 // ================================================================
 // 17. 출하지시 대기 주문 조회 (상태: 처리완료)
 // ================================================================

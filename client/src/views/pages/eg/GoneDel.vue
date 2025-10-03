@@ -3,7 +3,7 @@
     <header class="header">
       <div class="title">
         <h1>배송 준비중</h1>
-        <p class="subtitle">바코드를 스캔해 빠르게 배송완료 처리하세요</p>
+        <p class="subtitle">바코드를 스캔해 출고완료 처리하세요</p>
       </div>
       <div class="header-actions">
         <Button
@@ -19,7 +19,7 @@
     <section class="card">
       <DataTable
         :value="orders"
-        dataKey="orderId"
+        dataKey="shipId"
         :loading="isLoading"
         :paginator="true"
         :rows="10"
@@ -28,9 +28,9 @@
         class="order-table"
         emptyMessage="‘배송준비중’ 상태의 주문이 없습니다."
       >
-        <Column field="orderId" header="주문번호" :sortable="true">
+        <Column field="shipId" header="출하번호" :sortable="true">
           <template #body="{ data }">
-            <span class="mono">{{ data.ORDERID }}</span>
+            <span class="mono">{{ data.SHIPID }}</span>
           </template>
         </Column>
 
@@ -40,13 +40,13 @@
           </template>
         </Column>
 
-        <Column header="액션" style="width: 180px">
+        <Column header="출고 바코드" style="width: 180px">
           <template #body="{ data }">
             <Button
               label="바코드 보기"
               icon="pi pi-qrcode"
               :disabled="!isJsBarcodeReady"
-              @click="showBarcode(data.ORDERID)"
+              @click="showBarcode(data.SHIPID)"
             />
           </template>
         </Column>
@@ -64,7 +64,7 @@
     >
       <div class="barcode-wrap barcode-print" ref="barcodeArea">
         <svg id="barcode-selected"></svg>
-        <div class="barcode-caption mono">{{ selectedOrderId }}</div>
+        <div class="barcode-caption mono">{{ selectedShipId }}</div>
       </div>
       <template #footer>
         <Button label="닫기" class="p-button-text" @click="closeModal" />
@@ -88,7 +88,7 @@ const isLoading = ref(true)
 const isJsBarcodeReady = ref(false)
 
 const barcodeVisible = ref(false)
-const selectedOrderId = ref(null)
+const selectedShipId = ref(null)
 const barcodeArea = ref(null)
 
 async function fetchOrders() {
@@ -109,14 +109,14 @@ onMounted(fetchOrders)
 
 const refresh = () => fetchOrders()
 
-const showBarcode = async (orderId) => {
-  selectedOrderId.value = orderId
+const showBarcode = async (shipId) => {
+  selectedShipId.value = shipId
   barcodeVisible.value = true
   await nextTick()
   if (!window || !window.JsBarcode) return
   const svg = document.querySelector('#barcode-selected')
   if (svg) svg.innerHTML = ''
-  window.JsBarcode('#barcode-selected', orderId, {
+  window.JsBarcode('#barcode-selected', shipId, {
     format: 'CODE128',
     width: 2,
     height: 60,
