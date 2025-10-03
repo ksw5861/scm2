@@ -24,6 +24,7 @@
    <association property="purStatusLogVO" resultMap="com.yedam.scm.common.CommonMapper.PurStatusLogMap"/>
 </resultMap>
 
+
 <!--자재구매목록-->
 <select id="getMatOerderList" parameterType="string" resultMap="purchaseMatMap">
 SELECT pm.pur_id,
@@ -122,22 +123,36 @@ WHERE pm.pur_mat_status IN ('ms4','ms5')
   AND pm.vendor_id = #{vendorId}
 ORDER BY pm.expect_date ASC, psl.re_date ASC
 </select>
-
+<!--출고등록-->
 <!--1)마스터 seq"GET"-->
 <select id="getInboundMasterPK" resultType="long">
 SELECT seq_inbound.NEXTVAL FROM dual
 </select>
+<!--출고등록 테이블 [입고마스터 + 배송정보 ]-->
+<select id="callShipmentMasterPoc" parameterType="InboundVO" statementType="CALLABLE">
+    { call PROC_SHIPMENT_MASTER(
+        #{vendorId,      mode=IN, jdbcType=VARCHAR},
+        #{shipmentInfoVO.carrierName, mode=IN, jdbcType=VARCHAR},
+        #{shipmentInfoVO.trackingNo, mode=IN, jdbcType=VARCHAR},
+        #{shipmentInfoVO.shipTo,     mode=IN, jdbcType=VARCHAR},
+        #{shipmentInfoVO.vehicleNo,  mode=IN, jdbcType=VARCHAR},
+        #{inboundId,     mode=IN, jdbcType=NUMERIC},
+        #{shipmentInfoVO.shipFrom,   mode=IN, jdbcType=VARCHAR},
+        #{venName,       mode=IN, jdbcType=VARCHAR}
+    )}
+</select>
 
-<!--3)공급처 출고시 입고마스터 insert [위에서 받은 seq + 공급처코드]-->
+
+<!-- 3)공급처 출고시 입고마스터 insert [위에서 받은 seq + 공급처코드]
 <insert id="insertInboundMaster" parameterType="map">
 INSERT INTO inbound(inbound_id, inbound_no, vendor_id, ven_out_no)
 VALUES (#{inboundId}, next_date_code('MI'), #{vendorId}, next_date_code('VO'))
 </insert>
 
-<!--4)입고상세테이블 insert-->
+4)입고상세테이블 insert
 <insert id="insertInboundDetail" parameterType="map">
 INSERT INTO inbound_detail(inbound_det_id, inbound_id, pur_id, out_qty, vendor_id, mat_id )
 VALUES (seq_inbound_detail.NEXTVAL, #{inboundId}, #{purId}, #{outQty}, #{vendorId}, #{matId})
-</insert>
+</insert> -->
 
 </mapper>
