@@ -5,10 +5,21 @@
   <!-- 공통 조건 블록 -->
   <sql id="vendorConditions">
     <if test="condition.type != null and condition.type.size() > 0">
-      AND type IN
-      <foreach item="st" collection="condition.type" open="(" separator="," close=")">
-        #{st}
-      </foreach>
+      AND (
+        <foreach item="st" collection="condition.type" separator=" OR ">
+          <choose>
+            <when test="st == 0">
+              type IN (0, 2)
+            </when>
+            <when test="st == 1">
+              type IN (1, 2)
+            </when>
+            <otherwise>
+              type = #{st}
+            </otherwise>
+          </choose>
+        </foreach>
+      )
     </if>
 
     <if test="condition.isActive != null and condition.isActive.size() > 0">
