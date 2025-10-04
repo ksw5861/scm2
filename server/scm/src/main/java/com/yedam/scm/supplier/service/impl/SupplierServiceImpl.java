@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.yedam.scm.supplier.mapper.SupplierMapper;
 import com.yedam.scm.supplier.service.SupplierService;
+import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
@@ -81,38 +82,32 @@ public class SupplierServiceImpl implements SupplierService  {
     //출고등록
      /*
      1. 입고마스터테이블 seq -> 입고마스터 insert / 출고정보 insert 
-     2. 입고상세 seq -> 입고상세insert / 입고이력 insert / 기존발주테이블 요청수량 = 누적출고수량은 종결처리
+     2. 입고상세 seq -> 입고상세insert / 입고이력 insert / 기존발주테이블 요청수량 = 누적출고수량은 종결처리 / 발주이력 출고상태 Y
     */
     @Transactional
     @Override
     public void insertShipmentInfo(InboundVO MatShipInfo) {
-        //1)입고마스터테이블 PK
+        //1-1)입고마스터테이블 PK
         Long inboundMastPk = mapper.getInboundMasterPK();
+        MatShipInfo.setInboundId(inboundMastPk); //InboundVOVO에 PK 세팅
+           
+        //shipmetT필요한 값세팅
+        MatShipInfo.getShipmentInfoVO().setInboundId(inboundMastPk); // inboundId 세팅
+        MatShipInfo.getShipmentInfoVO().setShipFrom(MatShipInfo.getVendorId()); // 공급처코드 세팅
 
-        //1)입고마스터 insert / 출고정보 insert 
+        //1-2)입고마스터 insert 출고정보 insert 
         mapper.callShipmentMasterPoc(MatShipInfo);
+
+        //requestBody에서 리스트만 뽑기
+        List<InboundDetailVO> detailList = MatShipInfo.getDetails();
+
+        //행별로 뽑아서 정리
+        for (InboundDetailVO detail : detailList) {
+           // 2-1) 입고마스터 외래키 등록
+           detail.setInboundId(inboundMastPk);  // FK
+
+           // 2-2) 입고상세 insert (프로시저 or 일반 insert)
+           mapper.callShipmentDetailPoc(detail);
+       }
     }
 }
-
-
-
-// //입고마스터 PK가지고 옴. 
-
-// String vendorId = null;
-//         Long inboundMasterPK = mapper.getInboundMasterPK(); 
-        
-//         //1) 마스터테이블 isert [PK/verderId]
-//         mapper.insertInboundMaster(inboundMasterPK, vendorId);
-
-//         //2) 디테일테이블 (for순환)[입고마스터PK/발주아이디/출고수량/제품코드/vnderId]
-//         for(PurchaseMatVO row : payload) {
-            
-//             Long purId   = row.getPurId();
-//             String matId = row.getMatId();
-//             //String purNo = row.getPurNo(); //발주번호 = 주문번호
-//             Long outQty = row.getPurStatusLogVO().getLogSupOutQty(); //이력관리VO에 있음.
-//             vendorId = row.getVendorId();
-
-//             mapper.insertInboundDetail(inboundMasterPK, purId, matId, outQty, vendorId);
-
-//         }

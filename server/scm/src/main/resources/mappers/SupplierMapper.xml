@@ -124,11 +124,11 @@ WHERE pm.pur_mat_status IN ('ms4','ms5')
 ORDER BY pm.expect_date ASC, psl.re_date ASC
 </select>
 <!--출고등록-->
-<!--1)마스터 seq"GET"-->
+<!--[1-1]마스터 seq"GET"-->
 <select id="getInboundMasterPK" resultType="long">
 SELECT seq_inbound.NEXTVAL FROM dual
 </select>
-<!--출고등록 테이블 [입고마스터 + 배송정보 ]-->
+<!--[1-2]출고등록 테이블 [입고마스터 + 배송정보 ]-->
 <select id="callShipmentMasterPoc" parameterType="InboundVO" statementType="CALLABLE">
     { call PROC_SHIPMENT_MASTER(
         #{vendorId,      mode=IN, jdbcType=VARCHAR},
@@ -141,18 +141,18 @@ SELECT seq_inbound.NEXTVAL FROM dual
         #{venName,       mode=IN, jdbcType=VARCHAR}
     )}
 </select>
+<!--[2] 입고상세 프로시저 -->
+<select id="callShipmentDetailPoc" parameterType="InboundDetailVO" statementType="CALLABLE">
+    { call PROC_SHIPMENT_DETAIL(
+        #{inboundId,      mode=IN, jdbcType=NUMERIC},
+        #{purId,      mode=IN, jdbcType=NUMERIC},
+        #{matId,       mode=IN, jdbcType=VARCHAR},
+        #{outQty,      mode=IN, jdbcType=NUMERIC},
+        #{vendorId,   mode=IN, jdbcType=VARCHAR},
+        #{purStatusId,      mode=IN, jdbcType=NUMERIC}
+    )}
+</select>
 
 
-<!-- 3)공급처 출고시 입고마스터 insert [위에서 받은 seq + 공급처코드]
-<insert id="insertInboundMaster" parameterType="map">
-INSERT INTO inbound(inbound_id, inbound_no, vendor_id, ven_out_no)
-VALUES (#{inboundId}, next_date_code('MI'), #{vendorId}, next_date_code('VO'))
-</insert>
-
-4)입고상세테이블 insert
-<insert id="insertInboundDetail" parameterType="map">
-INSERT INTO inbound_detail(inbound_det_id, inbound_id, pur_id, out_qty, vendor_id, mat_id )
-VALUES (seq_inbound_detail.NEXTVAL, #{inboundId}, #{purId}, #{outQty}, #{vendorId}, #{matId})
-</insert> -->
 
 </mapper>

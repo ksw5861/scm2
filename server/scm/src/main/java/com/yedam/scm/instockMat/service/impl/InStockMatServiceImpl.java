@@ -1,0 +1,35 @@
+package com.yedam.scm.instockMat.service.impl;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.yedam.scm.instockMat.mapper.InStockMatMapper;
+import com.yedam.scm.instockMat.service.InStockMatService;
+import com.yedam.scm.vo.InboundDetailVO;
+import com.yedam.scm.vo.InboundVO;
+
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+@Service
+public class InStockMatServiceImpl implements InStockMatService {
+    
+    final InStockMatMapper mapper;
+
+    @Override
+    public List<InboundVO> getVenShipList() {
+        return mapper.getVenShipList();
+    }
+
+    @Override
+    public List<InboundDetailVO> getVenShipDetailList(Long inboundId) {
+       return mapper.getVenShipDetailList(inboundId);
+    }
+
+    @Override
+    public void callApproveUnload(Long inboundId, String unloadEmp) {
+        mapper.callApproveUnload(inboundId, unloadEmp);
+    } 
+
+}

@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.yedam.scm.supplier.service.SupplierService;
 import com.yedam.scm.vo.InboundVO;
-import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
 import lombok.RequiredArgsConstructor;
@@ -60,7 +59,7 @@ public class SupplierController {
     //2)출고등록
     /*
      1. 입고마스터테이블 seq -> 입고마스터 insert / 출고정보 insert 
-     2.  입고상세 seq -> 입고상세insert / 입고이력 insert / 기존발주테이블 요청수량 = 누적출고수량은 종결처리
+     2. 입고상세insert / 입고이력 insert / 기존발주테이블 요청수량 = 누적출고수량은 종결처리
     */
     @PostMapping("/shipment")
     public void insertShipmentInfo(@RequestBody InboundVO MatShipInfo) {       
@@ -69,35 +68,3 @@ public class SupplierController {
     
 }
 
-/*
-======== 출고등록시
-입고M
-- 출고일 [sysdate]
-- 공급처 코드
-- 출고번호(생성)
-- 입고대기로 상태값
-
-출고정보
-- 입고M아이디
-- 운송업체
-- 차량번호
-- 출발지?? 거래처에서 선택해서 주소들어가는걸로 
-- 하차지 (공장코드)
-
-입고상세
-- 입고M 아이디
-- 출고수량
-- 공급처코드
-- 자재코드
-- 상태(입고대기)
-- 발주테이블 아이디
-
-입고이력관리
-- 입고상세아이디
-- 상태값(입고대기)
-- 상태변경일[sysdate]
-
-===기존 발주테이블에
-상태값 종결처리
-
- */

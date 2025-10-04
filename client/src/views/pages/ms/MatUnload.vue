@@ -23,33 +23,75 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const shipDetailList = ref();
+const empName = ref('최길동');
+
+const shipedListData = ref();
+const selectedRows = ref();
+const shipDetailListData = ref();
 
 const pageLoad = async () => {
   try {
+    const list = await axios.get(`/api/mat/shipedList`);
+    console.log(list)
+    shipedListData.value = list.data.map((item) => ({
+      id: item.inboundId,
+      shipedDate: useDateFormat(item.vendorOutDate).value,
+      vanOutNo: item.venOutNo,
+      companyName: item.vendorVO.companyName,
+      inStatus: item.inboundStatus,
+      vanEmpName: item.venName,
+      }));
   } catch (err) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
 };
 
+const detailInfo = async () => {
+  try {
+    const list = await axios.get('/api/mat/shipedDetailList', { params: {inboundId : selectedRows.value.id} });
+    console.log(list)
+    //상세테이블
+    shipDetailListData.value = list.data.map((item) => ({
+        id: item.inboundDetId,
+        matId: item.matId ,
+        matName: item.materialVO.matName,
+        outQty: item.outQty ,
+        unit: item.materialVO.unit,
+        purStatusId: item.purStatusId
+    }));
+  } catch (error) {
+    toast('error', '상세정보 실패', '상세정보 불러오기 실패:', '3000');
+  }
+};
+
+const approve = async() => {
+    try{
+        await axios.post('/api/mat/approveUnload', null, { params: { inboundId : selectedRows.value.id, unloadEmp : empName.value} })
+        toast('info', '하차승인 성공', '하차승인 성공:', '3000');
+        await pageLoad();
+    } catch(error){
+        toast('error', '하차승인 실패', '하차승인 실패:', '3000');
+    }
+}
+
 onMounted(() => {
   pageLoad();
 });
 
-const shipmentListColumn = [
-  { label: '출고일', field: 'regDate' },
-  { label: '출고번호', field: 'purNo' },
+const shipedColumn = [
+  { label: '출고일', field: 'shipedDate' },
+  { label: '출고번호', field: 'vanOutNo' },
   { label: '공급처', field: 'companyName' },
-  { label: '상태', field: 'companyName' }, //출고 ->  미도착 -> 1) 하차완료 2) 하차거부 -> 입고대기
-  { label: '공급처 담당자', field: 'empName' }
+ // { label: '상태', field: 'inStatus' }, //출고 ->  미도착 -> 1) 하차완료 2) 하차거부 -> 입고대기
+  { label: '공급처 담당자', field: 'vanEmpName' }
   //운송정보 (운송사, 차량번호, 기사 연락처 등), 송장번호
 ];
 
 const shipDetailColumn = [
-  { label: '자재코드', field: 'regDate' },
-  { label: '자재명', field: 'purNo' },
-  { label: '출고수량', field: 'companyName' },
-  { label: '단위', field: 'companyName' }
+  { label: '자재코드', field: 'matId' },
+  { label: '자재명', field: 'matName' },
+  { label: '출고수량', field: 'outQty' },
+  { label: '단위', field: 'unit' }
 ];
 </script>
 
@@ -92,7 +134,7 @@ const shipDetailColumn = [
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">하차대기 목록</div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipmentListColumn" :data="shipmentList" :paginator="false" :showCheckbox="true" @row-select="detailInfo" />
+            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" :showCheckbox="false"/>
           </div>
         </div>
       </div>
@@ -106,12 +148,12 @@ const shipDetailColumn = [
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
               <btn color="warn" icon="pi pi-file-excel" label="거부" />
-              <btn color="info" icon="pi pi-file-pdf" label="승인" />
+              <btn color="info" icon="pi pi-file-pdf" label="승인" @click="approve"/>
             </div>
           </div>
 
           <Divider />
-          <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipDetailColumn" :data="shipDetailList" :paginator="false" :showCheckbox="false" @row-select="detailInfo" />
+          <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipDetailColumn" :data="shipDetailListData" :paginator="false" :showCheckbox="false" @row-select="detailInfo" />
         </div>
       </div>
     </div>

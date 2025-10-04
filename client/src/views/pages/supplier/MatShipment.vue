@@ -21,21 +21,27 @@ const getNowDate = () => {
   return `${year}/${month}/${day}`;
 };
 
+
 const vendorId = ref('VEN001');
 const vanEmpName = ref('홍길동')
+const shipmentDate = ref(getNowDate()); //출고일
+const deliveryPlace = ref(''); //배송창고 바인딩용
+const carrier = ref()//운송업체
+const trackingNo = ref() //운송번호
+const carNo = ref()//
+//검색
 const dateRange = ref({ start: null, end: null }); // 초기값을 객체로
 const materialName = ref();
 const statusList = ref();
-const approveShipData = ref();
-const selectedRows = ref();
-const deliveryPlace = ref(''); //배송창고 바인딩용
+
+const approveShipData = ref(); //페이지로드시 목록
 const warehoustListOpt = ref([]); //창고드롭다운용
+
+
 const shipDetailList = ref([
-  { matId: '', matName: '', ortQty: null, unit: ''},
-  { matId: '', matName: '', ortQty: null, unit: ''},
   { matId: '', matName: '', ortQty: null, unit: ''}
 ]);
-const shipmentDate = ref(getNowDate()); //출고일
+
 
 // breadcrumb
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
@@ -65,7 +71,7 @@ const addShipColumns = [
   { label: '단위', field: 'unit' }
 ];
 
-
+//페이지로드시 목록출력
 const pageLoad = async () => {
   try {
     const list = await axios.get(`/api/supplier/ApprovedList/${vendorId.value}`);
@@ -100,9 +106,9 @@ console.log(row.id)
       ortQty:row.ortQty,
       unit: row.unit,
     //DB입력시 행별 필요데이터[]
-       shipOrderNo: row.logShipOrderNo, //출고지시번호
-       purId: row.purId,  //주문테이블 아이디
-       buyerName: row.empName,
+      shipOrderNo: row.logShipOrderNo, //출고지시번호
+      purId: row.purId,  //주문테이블 아이디
+      buyerName: row.empName,
   };
   if (emptyRowIndex !== -1) {
    shipDetailList.value[emptyRowIndex] = newRow;     // 빈행 있으면 교체
@@ -112,29 +118,47 @@ console.log(row.id)
 };
 
 const submit = async () => {
-//   const list = JSON.parse(JSON.stringify(shipDetailList.value));
-//   console.log(list);
-
-  // const payload = list.map((row) => ({
-  //   purId: row.id,
-  //   matId: row.matId,
-  //   purNo: row.purNo,
-  //   expectDate: row.expectDate,
-  //   purStatusLogVO: { logSupOutQty: row.outQty }, //이걸 백 로그VO에 넣기위해!
-  //   vendorId: vendorId.value //이렇게 넣으면 행 마다 다 들어감.
-  // }));
-
-  // console.log(payload);
+  const list = JSON.parse(JSON.stringify(shipDetailList.value));
+  console.log(list);
+  //마스터 필요데이터들 [공급처 코드, 운송업체코드, 차량번호, 공장코드, 운송번호, 거래처 담당자이름]
+  //디테일 필요데이터 [출고수량, 공급처코드, 자재코드, 주문이력아이디]
+  const payload = ({
+  //입고마스터
+  venName: vanEmpName.value,
+  vendorId: vendorId.value,
+  //입고상세
+  details: list.map((row) => ({
+      purId: row.purId,               //주문테이블 아이디
+      matId: row.matId,               // 자재 코드
+      outQty: row.ortQty,             // 공급처 출고수량
+      purStatusId: row.purStatusId,   //주문로그T아이디 : : 출고상태값 제어필수
+      vendorId: vendorId.value        // 공급처코드 (공통)
+    })),
+  //배송정보
+  shipmentInfoVO: {
+    carrierName: carrier.value,
+    vehicleNo: carNo.value,
+    shipTo: deliveryPlace.value,
+    trackingNo: trackingNo.value
+   }
+  });
+  console.log(payload);
 
   try {
     await axios.post('/api/supplier/shipment', payload);
     toast('info', '등록 성공', '출고등록  성공:', '3000');
-    selectedRows.value = [];
+
     await pageLoad();
+    deliveryPlace.value = '';
+    carrier.value = '';
+    trackingNo.value = '';
+    carNo.value = '';
+
   } catch (error) {
     toast('error', '등록 실패', '출고등록  실패:', '3000');
   }
 };
+
 
 //창고리스트: 드롭다운용
 const warehouseList = async () => {
@@ -149,7 +173,6 @@ const warehouseList = async () => {
     toast('error', '리스트 로드 실패', '창고 리스트 불러오기 실패:', '3000');
   }
 };
-
 
 onMounted(() => {
   pageLoad();
