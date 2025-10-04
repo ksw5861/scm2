@@ -36,6 +36,7 @@
     <result property="purStatusId"  column="PUR_STATUS_ID"/>
 
     <association property="inboundLogVO" resultMap="InboundLogMap"/>
+    <association property="materialVO" resultMap="com.yedam.scm.common.CommonMapper.MaterialMap"/>
 </resultMap>
 
 <resultMap id="InboundLogMap" type="InboundLogVO">
@@ -49,7 +50,7 @@
     <result property="logResult"      column="LOG_RESULT"/>
     <result property="logImg"         column="LOG_IMG"/>
 </resultMap>
-
+<!--입고마스터T 출력-->
 <select id ="getVenShipList" resultMap="inboundResultMap">
 SELECT i.inbound_id,
        i.ven_name,
@@ -62,5 +63,31 @@ JOIN vendor v
 ON i.vendor_id = v.vendor_id
 WHERE i.inbound_status = 'm1'
 </select>
+
+<!--입고상세T 출력-->
+<select id ="getVenShipDetailList" parameterType = "long" resultMap ="inboundDetailResultMap">
+SELECT id.inbound_det_id,
+       id.pur_id,
+       id.mat_id,
+       m.mat_name,
+       m.unit,
+       id.out_qty,
+       id.pur_status_id
+FROM inbound_detail id
+JOIN material m
+ON id.mat_id = m.mat_id
+WHERE id.inbound_id = #{inboundId}
+</select>
+<!--하차등록-->
+<select id="callApproveUnload" statementType="CALLABLE">
+    {call PROC_APPROVE_UNLOAD(
+        #{inboundId, mode=IN, jdbcType=NUMERIC},
+        #{unloadEmp,  mode=IN, jdbcType=VARCHAR}
+     )}
+</select>
+
+<!-- <select id = "getApproveUnload" >
+</select> -->
+
 
 </mapper>

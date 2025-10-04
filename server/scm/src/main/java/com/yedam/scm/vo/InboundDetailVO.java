@@ -23,6 +23,8 @@ public class InboundDetailVO {
     private Long purStatusId;    //출고지시번호 최종출고 상태변경(분할출고로 인해 필요) => 출고완료시 'Y' 해당 아이디 찾기용
 
     InboundLogVO inboundLogVO;
+
+    MaterialVO materialVO;
 }
 
 

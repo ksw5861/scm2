@@ -194,6 +194,7 @@
     WHERE log_pur_id = #{purId}
     ORDER BY re_date DESC
     </select>
+    
 <!--드롭다운/모달용===============================================================================-->
 <!--제품목록-->
 <select id="getProductList" resultType="ProductVO">

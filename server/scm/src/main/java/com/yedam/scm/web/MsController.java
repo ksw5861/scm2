@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
+import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatVendorVO;
 import com.yedam.scm.vo.MrpDetailVO;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
+
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -75,15 +77,22 @@ public class MsController {
         return purchaseMatService.getPurchaseStatus(purId);
     }
     //============================================================================ 입고Part
-    //하차대기목록
+    //하차대기목록(마스터)
     @GetMapping("/shipedList")
     public List<InboundVO> getVenShipList() {
         return inStockMatService.getVenShipList();
     }
-    
-    
+    //하차대기목록(상세)
+    @GetMapping("/shipedDetailList")
+    public List<InboundDetailVO> getVenShipDetailList(@RequestParam Long inboundId) {
+        return inStockMatService.getVenShipDetailList(inboundId);
+    }
     //하차승인
-    
+    @PostMapping("/approveUnload")
+    public void callApproveUnload(@RequestParam Long inboundId, @RequestParam String unloadEmp ) {      
+        inStockMatService.callApproveUnload(inboundId, unloadEmp);
+    }
+
     //입고승인
     
     //재고조정
