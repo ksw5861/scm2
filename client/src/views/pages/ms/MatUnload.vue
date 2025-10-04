@@ -23,25 +23,57 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const shipDetailList = ref();
+
+const shipedListData = ref();
+const selectedRows = ref();
 
 const pageLoad = async () => {
   try {
+    const list = await axios.get(`/api/mat/shipedList`);
+    console.log(list)
+    shipedListData.value = list.data.map((item) => ({
+      id: item.inboundId,
+      shipedDate: useDateFormat(item.vendorOutDate).value,
+      vanOutNo: item.venOutNo,
+      companyName: item.vendorVO.companyName,
+      inStatus: item.inboundStatus,
+      vanEmpName: item.venName,
+      }));
   } catch (err) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
 };
 
+const detailInfo = async () => {
+  const inboundId = selectedRows.value.id; //주문테이블 id get!
+  console.log(inboundId);
+  try {
+    const list = await axios.get('/api/mat/purchaseListStatus', { params: { inboundId } });
+    console.log(list)
+    //상세테이블
+    statusList.value = list.data.map((item) => ({
+      updateDate: useDateFormat(item.reDate).value,
+      chargeName: item.logName,
+      status: item.logPurMatStatus,
+      supOutQty: item.logSupOutQty,
+      expectDate: useDateFormat(item.logExpectDate).value
+    }));
+  } catch (error) {
+    toast('error', '상세정보 실패', '상세정보 불러오기 실패:', '3000');
+  }
+};
+
+
 onMounted(() => {
   pageLoad();
 });
 
-const shipmentListColumn = [
-  { label: '출고일', field: 'regDate' },
-  { label: '출고번호', field: 'purNo' },
+const shipedColumn = [
+  { label: '출고일', field: 'shipedDate' },
+  { label: '출고번호', field: 'vanOutNo' },
   { label: '공급처', field: 'companyName' },
-  { label: '상태', field: 'companyName' }, //출고 ->  미도착 -> 1) 하차완료 2) 하차거부 -> 입고대기
-  { label: '공급처 담당자', field: 'empName' }
+ // { label: '상태', field: 'inStatus' }, //출고 ->  미도착 -> 1) 하차완료 2) 하차거부 -> 입고대기
+  { label: '공급처 담당자', field: 'vanEmpName' }
   //운송정보 (운송사, 차량번호, 기사 연락처 등), 송장번호
 ];
 
@@ -92,7 +124,7 @@ const shipDetailColumn = [
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">하차대기 목록</div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipmentListColumn" :data="shipmentList" :paginator="false" :showCheckbox="true" @row-select="detailInfo" />
+            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" :showCheckbox="false"/>
           </div>
         </div>
       </div>

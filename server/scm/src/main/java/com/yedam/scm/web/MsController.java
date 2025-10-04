@@ -2,7 +2,9 @@ package com.yedam.scm.web;
 
 import org.springframework.web.bind.annotation.RestController;
 
+import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
+import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatVendorVO;
 import com.yedam.scm.vo.MrpDetailVO;
 import com.yedam.scm.vo.PrdPlanDetailVO;
@@ -27,8 +29,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequiredArgsConstructor
 public class MsController {
     
-    final PurchaseMatService purchaseMatService;
-
+    final PurchaseMatService purchaseMatService;  //자재주문
+    final InStockMatService inStockMatService;    //자재입고
+    
+    //======================================================================주문part
     //생산계획등록
      @PostMapping("/productionPlan")
      public int insertProductionPlan(@RequestBody ProductionPlanVO productionPlan) {
@@ -70,13 +74,20 @@ public class MsController {
     public List<PurStatusLogVO> getPurchaseStatus(@RequestParam Long purId) {
         return purchaseMatService.getPurchaseStatus(purId);
     }
+    //============================================================================ 입고Part
+    //하차대기목록
+    @GetMapping("/shipedList")
+    public List<InboundVO> getVenShipList() {
+        return inStockMatService.getVenShipList();
+    }
     
-    //입고대기목록
     
-    //입고등록
-
+    //하차승인
+    
+    //입고승인
+    
     //재고조정
-
+    
     /*======================
     드롭다운/모달용   
     ======================*/

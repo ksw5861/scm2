@@ -8,20 +8,22 @@ import lombok.Data;
 @Data
 public class InboundVO {
     
-    private Long inboundId;       // INBOUND_ID (PK)
-    private String inboundNo;     // INBOUND_NO (입고번호)
-    private Date vendorOutDate;   // VANDER_OUT_DATE (공급처출고일자)
-    private String venName;       // VAN_NAME (공급처담당자)
-    private String inboundStatus; // INBOUND_STATUS (상태: 입고대기, 부분입고, 입고완료 등)
-    private String vendorId;      // VANDER_ID (공급처코드)
-    private String venOutNo;      // VAN_OUT_NO (출고번호)
-    private Integer count;        // COUNT (품목수량)
-    private String rejMemo;       //REJ_MEMO (거부사유)
-    private String purChargeName; //자재주문담당자
+    private Long inboundId;       // PK
+    private String inboundNo;     // 입고번호
+    private Date vendorOutDate;   // 공급처출고일자
+    private String venName;       // 공급처담당자
+    private String inboundStatus; // 상태
+    private String vendorId;      // 공급처코드
+    private String venOutNo;      // 출고번호
+    private String rejMemo;       // 하차거부사유
+    private String unloadEmp;     //하차담당자
+    private Date unloadDate; //하차일
 
     List<InboundDetailVO> details;     // 입고 상세들
 
     ShipmentInfoVO shipmentInfoVO; //배송정보
+    
+    VendorVO vendorVO; //거래처
 }
 
 

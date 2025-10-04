@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
@@ -29,12 +30,13 @@ public interface SupplierMapper {
     //출고등록
     /*
     1. 입고마스터테이블 seq -> 입고마스터 insert / 출고정보 insert 
-    2. 입고상세 seq -> 입고상세insert / 입고이력 insert / 기존발주테이블 요청수량 = 누적출고수량은 종결처리
+    2. 입고상세insert / 입고이력 insert / 기존발주테이블 요청수량 = 누적출고수량은 종결처리
      */
-
     //1)입고마스터테이블 GET'seq'
     Long getInboundMasterPK();
     //입고마스터 + 출고정보 insert 프로시저!
     void callShipmentMasterPoc(InboundVO MatShipInfo);
+    //2) 프로시저
+    void callShipmentDetailPoc(InboundDetailVO detail);
     
 }

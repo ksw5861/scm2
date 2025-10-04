@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yedam.scm.instockMat.mapper.InStockMatMapper">
+
+<resultMap id="inboundResultMap" type="InboundVO">
+    <id     property="inboundId"      column="INBOUND_ID"/>
+    <result property="inboundNo"      column="INBOUND_NO"/>
+    <result property="vendorOutDate"  column="VENDOR_OUT_DATE"/>
+    <result property="venName"        column="VEN_NAME"/>
+    <result property="inboundStatus"  column="INBOUND_STATUS"/>
+    <result property="vendorId"       column="VENDOR_ID"/>
+    <result property="venOutNo"       column="VEN_OUT_NO"/>
+    <result property="rejMemo"        column="REJ_MEMO"/>
+    <result property="unloadEmp"      column="UNLOAD_EMP"/>
+    <result property="unloadDate"     column="UNLOAD_DATE"/>
+
+    <association property="shipmentInfoVO" resultMap="com.yedam.scm.common.CommonMapper.ShipmentInfoMap"/>
+    <association property="vendorVO" resultMap="com.yedam.scm.common.CommonMapper.VendorMap"/>
+    <collection property="details" resultMap="inboundDetailResultMap"/>
+</resultMap>
+
+<resultMap id="inboundDetailResultMap" type="InboundDetailVO">
+    <id     property="inboundDetId" column="INBOUND_DET_ID"/>
+    <result property="inQty"        column="IN_QTY"/>
+    <result property="status"       column="MAT_STATUS"/>
+    <result property="inboundId"    column="INBOUND_ID"/>
+    <result property="result"       column="RESULT"/>
+    <result property="img"          column="IMG"/>
+    <result property="purId"        column="PUR_ID"/>
+    <result property="inspectDate"  column="INSPECT_DATE"/>
+    <result property="inTotalQty"   column="IN_TOTAL_QTY"/>
+    <result property="matId"        column="MAT_ID"/>
+    <result property="empName"      column="EMP_NAME"/>
+    <result property="vendorId"     column="VENDOR_ID"/>
+    <result property="outQty"       column="OUT_QTY"/>
+    <result property="purStatusId"  column="PUR_STATUS_ID"/>
+
+    <association property="inboundLogVO" resultMap="InboundLogMap"/>
+</resultMap>
+
+<resultMap id="InboundLogMap" type="InboundLogVO">
+    <id     property="inLogId"        column="IN_LOG_ID"/>
+    <result property="inboundDetId"   column="INBOUND_DET_ID"/>
+    <result property="logInQty"       column="LOG_IN_QTY"/>
+    <result property="logMatStatus"   column="LOG_MAT_STATUS"/>
+    <result property="reDate"         column="RE_DATE"/>
+    <result property="logName"        column="LOG_NAME"/>
+    <result property="logInspectDate" column="LOG_INSPECT_DATE"/>
+    <result property="logResult"      column="LOG_RESULT"/>
+    <result property="logImg"         column="LOG_IMG"/>
+</resultMap>
+
+<select id ="getVenShipList" resultMap="inboundResultMap">
+SELECT i.inbound_id,
+       i.ven_name,
+       i.vendor_out_date,
+       v.company_name,
+       i.ven_out_no,
+       i.inbound_status
+FROM inbound i
+JOIN vendor v
+ON i.vendor_id = v.vendor_id
+WHERE i.inbound_status = 'm1'
+</select>
+
+</mapper>
