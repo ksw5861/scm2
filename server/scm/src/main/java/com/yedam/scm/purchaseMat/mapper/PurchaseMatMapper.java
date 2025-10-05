@@ -28,7 +28,7 @@ public interface PurchaseMatMapper {
     List<MrpDetailVO> getMrpDetailList();
 
     //자재주문등록
-    boolean callReqestMatProc(PurchaseMatVO requestList);
+    void callReqestMatProc(PurchaseMatVO requestList);
    
     //자재주문목록
     List<PurchaseMatVO> getPurchaseList();

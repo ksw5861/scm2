@@ -90,7 +90,7 @@ const shipedColumn = [
 const shipDetailColumn = [
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
-  { label: '출고수량', field: 'outQty' },
+  { label: '수량', field: 'outQty' },
   { label: '단위', field: 'unit' }
 ];
 </script>
