@@ -22,15 +22,11 @@
 <resultMap id="inboundDetailResultMap" type="InboundDetailVO">
     <id     property="inboundDetId" column="INBOUND_DET_ID"/>
     <result property="inQty"        column="IN_QTY"/>
-    <result property="status"       column="MAT_STATUS"/>
+    <result property="inboundStatus" column="INBOUND_STATUS"/>
     <result property="inboundId"    column="INBOUND_ID"/>
-    <result property="result"       column="RESULT"/>
-    <result property="img"          column="IMG"/>
     <result property="purId"        column="PUR_ID"/>
-    <result property="inspectDate"  column="INSPECT_DATE"/>
     <result property="inTotalQty"   column="IN_TOTAL_QTY"/>
     <result property="matId"        column="MAT_ID"/>
-    <result property="empName"      column="EMP_NAME"/>
     <result property="vendorId"     column="VENDOR_ID"/>
     <result property="outQty"       column="OUT_QTY"/>
     <result property="purStatusId"  column="PUR_STATUS_ID"/>
@@ -40,15 +36,17 @@
 </resultMap>
 
 <resultMap id="InboundLogMap" type="InboundLogVO">
-    <id     property="inLogId"        column="IN_LOG_ID"/>
-    <result property="inboundDetId"   column="INBOUND_DET_ID"/>
-    <result property="logInQty"       column="LOG_IN_QTY"/>
-    <result property="logMatStatus"   column="LOG_MAT_STATUS"/>
-    <result property="reDate"         column="RE_DATE"/>
-    <result property="logName"        column="LOG_NAME"/>
-    <result property="logInspectDate" column="LOG_INSPECT_DATE"/>
-    <result property="logResult"      column="LOG_RESULT"/>
-    <result property="logImg"         column="LOG_IMG"/>
+    <id     property="inLogId"        column="IN_LOG_ID" />
+    <result property="inboundDetId"   column="INBOUND_DET_ID" />
+    <result property="logInQty"       column="LOG_IN_QTY" />
+    <result property="logInboundStatus"   column="LOG_INBOUND_STATUS" />
+    <result property="reDate"         column="RE_DATE" />
+    <result property="logName"        column="LOG_NAME" />
+    <result property="logResult"      column="LOG_RESULT" />
+    <result property="logImg"         column="LOG_IMG" />
+    <result property="logRejQty"      column="LOG_REJ_QTY" />
+    <result property="logMemo"        column="LOG_MEMO" />
+    <result property="logExpDate"     column="LOG_EXP_DATE" />
 </resultMap>
 <!--입고마스터T 출력-->
 <select id ="getVenShipList" resultMap="inboundResultMap">
@@ -85,9 +83,45 @@ WHERE id.inbound_id = #{inboundId}
         #{unloadEmp,  mode=IN, jdbcType=VARCHAR}
      )}
 </select>
-
-<!-- <select id = "getApproveUnload" >
-</select> -->
-
+<!--입고대기목록-->
+<select id = "getApproveUnload" resultMap="inboundResultMap">
+SELECT i.inbound_id,
+       i.inbound_no,
+       i.unload_date,
+       i.unload_emp,
+       i.inbound_status,
+       v.company_name
+FROM inbound i
+JOIN vendor v
+ON i.vendor_id = v.vendor_id
+WHERE inbound_status = 'app'
+</select>
+<!--입고대기목록상세-->
+<select id = "getApproveUnloadDetailList" parameterType = "long" resultMap ="inboundDetailResultMap">
+SELECT id.inbound_det_id,
+       id.pur_id,
+       id.mat_id,
+       m.mat_name,
+       m.unit,
+       id.out_qty,
+       id.pur_status_id,
+       id.in_total_qty
+FROM inbound_detail id
+JOIN material m
+ON id.mat_id = m.mat_id
+WHERE id.inbound_id = #{inboundId}
+AND id.inbound_status in ('d1', 'd3')
+</select>
+<!--입고등록-->
+<update id="callMatInboundStock" parameterType="InboundDetailVO" statementType="CALLABLE">
+    { call PROC_MAT_INBOUND_STOCK  (
+        #{inboundDetId,      mode=IN, jdbcType=NUMERIC},
+        #{inboundId,         mode=IN, jdbcType=NUMERIC},
+        #{inQty,             mode=IN, jdbcType=NUMERIC},
+        #{inboundLogVO.logName,    mode=IN, jdbcType=VARCHAR},
+        #{inboundLogVO.logExpDate, mode=IN, jdbcType=DATE}
+      )
+    }
+  </update>
 
 </mapper>

@@ -30,6 +30,21 @@ public class InStockMatServiceImpl implements InStockMatService {
     @Override
     public void callApproveUnload(Long inboundId, String unloadEmp) {
         mapper.callApproveUnload(inboundId, unloadEmp);
+    }
+
+    @Override
+    public List<InboundVO> getApproveUnload() {
+        return mapper.getApproveUnload();
+    }
+
+     @Override
+    public List<InboundDetailVO> getApproveUnloadDetailList(Long inboundId) {
+       return mapper.getApproveUnloadDetailList(inboundId);
     } 
+
+    @Override
+    public void callMatInboundStock(InboundDetailVO inStockInfo) {
+        mapper.callMatInboundStock(inStockInfo);
+    }
 
 }

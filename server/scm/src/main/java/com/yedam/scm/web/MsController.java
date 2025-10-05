@@ -92,8 +92,21 @@ public class MsController {
     public void callApproveUnload(@RequestParam Long inboundId, @RequestParam String unloadEmp ) {      
         inStockMatService.callApproveUnload(inboundId, unloadEmp);
     }
-
-    //입고승인
+    //입고대기목록
+    @GetMapping("/unloadList")
+    public List<InboundVO> getApproveUnload() {
+        return inStockMatService.getApproveUnload();
+    }
+    //입고대기목록(상세)
+    @GetMapping("/unloadDetailList")
+    public List<InboundDetailVO> getApproveUnloadDetailList(@RequestParam Long inboundId) {
+        return inStockMatService.getApproveUnloadDetailList(inboundId);
+    }
+    //입고등록
+    @PostMapping("/matInStock")
+    public void callMatInboundStock(@RequestBody InboundDetailVO inStockInfo) {      
+        inStockMatService.callMatInboundStock(inStockInfo);
+    }
     
     //재고조정
     
