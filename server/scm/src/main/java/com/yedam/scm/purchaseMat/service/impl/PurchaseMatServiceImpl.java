@@ -35,7 +35,10 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
         if (plan.getPrdPlanDetailList() != null) {  //생산계획에 디테일이 있으면 
             for (PrdPlanDetailVO details : plan.getPrdPlanDetailList()) {
                 details.setPlId(plan.getPlId()); // FK 세팅
-                 mapper.insertProductionPlanDetail(details);
+                mapper.insertProductionPlanDetail(details);
+                //자재요청프로시저!!!
+                mapper.callInsertReqMatProc(details.getPlDetId());
+
             }
         }
     return result; 
