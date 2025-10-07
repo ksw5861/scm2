@@ -111,6 +111,12 @@
              NEXT_DATE_CODE('PNO') <!--제품LOT번호-->
         )
     </insert>
+
+    <!--3. 자재요청insert프로시저-->
+    <select id="callInsertReqMatProc" statementType="CALLABLE">
+    { call PROC_INSERT_REQ_MAT( #{plDetId, mode=IN, jdbcType=NUMERIC} ) }
+    </select>
+
     <!--#자재요청-->
     <!--생산계획마스터-->
     <select id="getPlanMasterList" resultType="ProductionPlanVO">

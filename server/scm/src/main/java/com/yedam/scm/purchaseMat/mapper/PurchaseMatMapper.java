@@ -23,6 +23,7 @@ public interface PurchaseMatMapper {
     //제품생산계획리스트
     List<ProductionPlanVO> getPlanMasterList();
     List<PrdPlanDetailVO> getPlanList();
+    void callInsertReqMatProc(Long plDetId);
 
     //mrp목록
     List<MrpDetailVO> getMrpDetailList();
