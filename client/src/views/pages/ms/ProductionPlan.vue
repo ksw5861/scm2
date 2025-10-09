@@ -35,8 +35,9 @@ const getNowDate = () => {
 const empName = ref('로그인');
 const dateRange = ref({ start: null, end: null });
 const resDate = ref(getNowDate());
-const planType = ref();
 const memo = ref('');
+const statusOptions = ref([])
+const planType = ref('');
 
 //테이블 행 key값
 const columnId = ref(1);
@@ -63,7 +64,21 @@ const pageLoad = async () => {
 
 onMounted(() => {
   pageLoad();
+  planTypeList();
 });
+
+const planTypeList = async () => {
+    try{
+        const res = await axios.get('/api/mat/status/p03')
+        statusOptions.value = res.data.map(item => ({
+          name: item.codeName, // 화면 표시용
+          value: item.codeId    // 실제 값
+        }))
+    } catch(error){
+        toast('error', '상태값 로드 실패', '코드 불러오기 실패', '3000');
+    }
+}
+
 
 //옵션선택시 컬럼반영
 const selectOpt = (row, value) => {
@@ -84,8 +99,8 @@ const detailColumns = computed(() => [
 
 //상단박스버튼
 const resetForm = () => {
-  //planType = null;
-  //memo = [];
+  planType.value = '';
+  memo.value = '';
   dateRange.value = { start: null, end: null };
   productionPlans.value = [{ id: columnId.value, prodId: '', prdName: '', proQty: null, unit: '', proDate: '' }];
   columnId.value = 1;
@@ -120,6 +135,8 @@ const submit = async () => {
     return;
   }
 
+   console.log('plan', JSON.stringify(plan, null, 2));
+
   try {
     const response = await axios.post('/api/mat/productionPlan', plan);
     toast('info', '등록 성공', '생산 계획등록 성공:', '3000');
@@ -151,11 +168,7 @@ const submit = async () => {
             label="계획유형"
             v-model="planType"
             class="w-64"
-            :options="[
-              { name: '정규생산', value: 'pt1' },
-              { name: '특별생산', value: 'pt2' },
-              { name: '긴급생산', value: 'pt3' }
-            ]"
+            :options="statusOptions"
           />
           <searchField type="dateRange" label="생산계획기간" v-model="dateRange" class="w-100" />
           <searchField type="text" label="비고" v-model="memo" class="w-96" />

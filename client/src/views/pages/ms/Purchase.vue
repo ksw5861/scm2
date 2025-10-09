@@ -7,6 +7,7 @@ import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import { useIcon } from '@/composables/useIcon';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
+import CommonModal from '@/components/common/Modal.vue';
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -24,6 +25,7 @@ const breadcrumbItems = computed(() => {
 
 //데이터
 const planMasterList = ref([]);
+const planList = ref([]);
 const mrpList = ref([]);
 const purchaseList = ref([
   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
@@ -32,43 +34,100 @@ const purchaseList = ref([
 ]);
 const empName = ref('로그인');
 
-//생산계획목록
-const pageLoadplan = async () => {
+
+//모달
+const showPlanModal = ref(false);
+const selectedPlan = ref(null);
+
+// 모달 열기
+const openPlanModal = () => {
+  showPlanModal.value = true;
+};
+
+// 모달 닫기
+const closePlanModal = () => {
+  showPlanModal.value = false;
+};
+//모달내부에 생산마스터리스트 넘기기
+const fetchPlanMaster = async () => {
+  const res = await axios.get('/api/mat/planMasterList');
+  return { items: res.data }; // 공통 모달 구조상 이렇게 리턴
+};
+
+
+//생산계획마스터
+// const productPlanMaster= async () => {
+//   try {
+//     const list = await axios.get('/api/mat/planMasterList');
+//     planMasterList.value = list.data.map((item) => ({
+//       id: item.plId,
+//       planType: item.planType,
+//       planNo: item.planNo,
+//       startDate: useDateFormat(item.startDate).value,
+//       endDate: useDateFormat(item.endDate).value,
+//       memo: item.memo,
+//       empName: item.empName
+//     }));
+//   } catch (error) {
+//     toast('error', '리스트 로드 실패', '생산계획 리스트 불러오기 실패:', '3000');
+//   }
+// };
+
+
+
+//모달내부 계획선택
+const onSelectPlan = async (plan) => {
+  selectedPlan.value = plan;
+  closePlanModal();
+
+  // 상세 불러오기
+  const res = await axios.get(`/api/mat/planDetailList/${plan.plId}`);
+  planList.value = res.data.map((item) => ({
+    id: item.plDetId,
+    prodId: item.prodId,
+    prodName: item.productVO.prodName,
+    planQty: item.proQty,
+    unit: item.productVO.unit,
+    planDueDate: useDateFormat(item.proDate).value
+  }));
+
+  toast('info', '선택된 생산계획 불러오기 완료', `${plan.planNo}의 상세를 로드했습니다.`);
+};
+
+//mrp산출
+const calculatMrp = async () => {
+  if (!selectedPlan.value?.plId) {
+    toast('warn', '생산계획을 먼저 선택하세요.');
+    return;
+  }
+
   try {
-    const list = await axios.get('/api/mat/planMasterList');
-    planMasterList.value = list.data.map((item) => ({
-      id: item.plId,
-      planType: item.planType,
-      planNo: item.planNo,
-      startDate: useDateFormat(item.startDate).value,
-      endDate: useDateFormat(item.endDate).value,
-      memo: item.memo,
-      empName: item.empName
-    }));
+    await axios.post(`/api/mat/calcMrp/${selectedPlan.value.plId}`, null, {
+      params: { empName: empName.value }
+    });
+    toast('success', 'MRP 산출 완료', '산출 결과가 저장되었습니다.');
+    pageLoadplan(); // 산출된 계획 제거됨
+    pageLoadMrp();  // 최신 MRP_DETAIL 로드
   } catch (error) {
-    toast('error', '리스트 로드 실패', '생산계획 리스트 불러오기 실패:', '3000');
+    toast('error', 'MRP 산출 실패', '프로시저 실행 중 오류 발생.');
   }
 };
 
 //mrp목록
 const pageLoadMrp = async () => {
-  try {
-    const list = await axios.get('/api/mat/mrpList');
-    mrpList.value = list.data.map((item) => ({
-      id: item.mrpDetId,
-      matId: item.matId,
-      matName: item.materialVO.matName,
-      mrpQty: item.needsQty,
-      unit: item.materialVO.unit,
-      leadTime: item.materialVO.leadTime
-    }));
-  } catch (error) {
-    toast('error', '리스트 로드 실패', 'mrp 리스트 불러오기 실패:', '3000');
-  }
+  const res = await axios.get('/api/mat/mrpList');
+    mrpList.value = res.data.map((item) => ({
+    id: item.mrpDetId,
+    matId: item.matId,
+    matName: item.materialVO.matName,
+    mrpQty: item.shortageQty,
+    unit: item.unit,
+    leadTime: item.leadTime
+  }));
 };
 
+
 onMounted(() => {
-  pageLoadplan();
   pageLoadMrp();
 });
 
@@ -120,11 +179,8 @@ const addToPurchase = (row) => {
   }
 };
 
-const calculatMrp = () => {
-  console.log('mrp산출');
-  pageLoadplan();
-};
 
+//주문등록
 const reqSubmit = async () => {
   const reqList = purchaseList.value.map((row) => ({
     mrpDetId: row.id,
@@ -148,18 +204,26 @@ const reqSubmit = async () => {
 
 //테이블 컬럼
 const planMasterColumns = [
-  { field: 'planType', label: '계획유형', style: 'width: 8rem' },
-  { field: 'startDate', label: '생산시작일', style: 'width: 15rem', sortable: true },
-  { field: 'endDate', label: '생산종료일', style: 'width: 15rem', sortable: true },
-  { field: 'planNo', label: '계획번호', style: 'width: 15rem' },
+  { field: 'planNo', label: '계획번호', style: 'width: 10rem' },
+  { field: 'planType', label: '유형', style: 'width: 8rem' },
+  { field: 'startDate', label: '시작일', style: 'width: 10rem' },
+  { field: 'endDate', label: '종료일', style: 'width: 10rem' },
   { field: 'empName', label: '담당자', style: 'width: 10rem' },
   { field: 'memo', label: '비고', style: 'width: 20rem' }
+];
+
+const planColumns = [
+  { field: 'planDueDate', label: '생산예정일', style: 'width: 15rem' },
+  { field: 'prodId', label: '제품코드', style: 'width: 8rem' },
+  { field: 'prodName', label: '제품명', style: 'width: 20rem' },
+  { field: 'planQty', label: '생산수량', style: 'width: 10rem' },
+  { field: 'unit', label: '단위', style: 'width: 5rem' }
 ];
 
 const mrpColumns = [
   { field: 'matId', label: '자재코드', style: 'width: 8rem' },
   { field: 'matName', label: '자재명', style: 'width: 20rem', sortable: true },
-  { field: 'mrpQty', label: '소요수량', style: 'width: 10rem', sortable: true },
+  { field: 'mrpQty', label: '필요수량', style: 'width: 10rem', sortable: true },
   { field: 'unit', label: '단위', style: 'width: 8rem' },
   { field: 'leadTime', label: '리드타임(일)', style: 'width: 10rem' }
 ];
@@ -175,31 +239,6 @@ const purchaseColumns = [
   { field: 'dueDate', label: '납기요청일', style: 'width: 12rem', datePicker: true }
 ];
 
-//계획상세
-// const planList = ref([]);
-// const planColumns = [
-//   { field: 'planDueDate', label: '생산예정일', style: 'width: 15rem' },
-//   { field: 'prodId', label: '제품코드', style: 'width: 8rem' },
-//   { field: 'prodName', label: '제품명', style: 'width: 20rem' },
-//   { field: 'planQty', label: '생산수량', style: 'width: 10rem' },
-//   { field: 'unit', label: '단위', style: 'width: 5rem' }
-// ];
-// onMounted(async () => {
-//   try {
-//     const list = await axios.get('/api/mat/planList');
-//     planList.value = list.data.map((item) => ({
-//       id: item.prodNo,
-//       planId: item.prodNo,
-//       planDueDate: useDateFormat(item.proDate).value,
-//       prodId: item.prodId,
-//       prodName: item.productVO.prodName,
-//       planQty: item.proQty,
-//       unit: item.productVO.unit
-//     }));
-//   } catch (error) {
-//     toast('제품별 생산계획 리스트 불러오기 실패:', error);
-//   }
-// });
 </script>
 
 <template>
@@ -207,47 +246,62 @@ const purchaseColumns = [
     <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
+
     <div class="flex flex-col gap-8">
-      <!-- 상단-->
+      <!-- 상단 -->
       <div class="header">
         <div class="card flex flex-col gap-4">
           <div class="flex items-center justify-between font-semibold text-m">
-            <span>주문 등록</span>
+            <span>MRP 산출 및 자재 발주</span>
             <btn color="secondary" icon="pi pi-file-excel" @click="reqSubmit" label="주문" />
           </div>
           <Divider />
-          <selectTable :columns="purchaseColumns" :scrollable="true" :data="purchaseList" :paginator="false" :showCheckbox="false" @row-select="selectVendor" />
+          <selectTable
+            :columns="purchaseColumns"
+            :scrollable="true"
+            :data="purchaseList"
+            :paginator="false"
+            :showCheckbox="false"
+            @row-select="selectVendor"
+          />
         </div>
       </div>
-      <!--하단-->
+
+      <!-- 하단 -->
       <div class="flex flex-col md:flex-row gap-8">
         <div class="md:w-1/2 planList">
           <div class="card flex flex-col gap-4 h-full">
-            <!-- h-full 고정 -->
-            <div class="card flex flex-col gap-4">
-              <div class="flex items-center justify-between font-semibold text-m">
-                <span>생산계획 목록</span>
-                <btn color="secondary" icon="pi pi-file-excel" @click="calculatMrp" label="mrp산출" />
+            <div class="flex items-center justify-between font-semibold text-m">
+              <span>생산계획 상세</span>
+              <div class="flex gap-2">
+                <btn color="secondary" icon="pi pi-search" label="생산계획불러오기" @click="openPlanModal" />
+                <btn color="secondary" icon="pi pi-cog" label="MRP산출" @click="calculatMrp" />
               </div>
-              <Divider />
-              <selectTable :columns="planMasterColumns" :data="planMasterList" :paginator="false" :showCheckbox="false" />
             </div>
+            <Divider />
+            <selectTable :columns="planColumns" :data="planList" :paginator="false" :showCheckbox="false" />
           </div>
         </div>
-        <!--하단우측-->
+
+        <!-- 우측 -->
         <div class="md:w-1/2">
           <div class="card flex flex-col gap-4 h-full">
-            <!-- h-full 고정 -->
-            <div class="card flex flex-col gap-4">
-              <div class="font-semibold text-m">MRP 합산자재 소요량</div>
-              <Divider />
-              <selectTable :columns="mrpColumns" :data="mrpList" :paginator="false" :showCheckbox="false" @row-select="addToPurchase" />
-            </div>
+            <div class="font-semibold text-m">MRP 합산 자재 소요량</div>
+            <Divider />
+            <selectTable :columns="mrpColumns" :data="mrpList" :paginator="false" :showCheckbox="false" @row-select="addToPurchase" />
           </div>
         </div>
       </div>
     </div>
+
+    <!-- 생산계획 선택 모달 -->
+    <CommonModal
+      :visible="showPlanModal"
+      title="생산계획 선택"
+      :columns="planMasterColumns"
+      :fetchData="fetchPlanMaster"
+      @close="closePlanModal"
+      @select="onSelectPlan"
+    />
   </div>
 </template>
-
-<style scoped></style>

@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.yedam.scm.purchaseMat.mapper.PurchaseMatMapper;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
+import com.yedam.scm.vo.MatStatusVO;
 import com.yedam.scm.vo.MatVendorVO;
 import com.yedam.scm.vo.MrpDetailVO;
 import com.yedam.scm.vo.PrdPlanDetailVO;
@@ -44,21 +45,28 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
     return result; 
     }
     
-    //생산계획목록
+    //생산계획마스터목록(모달)
     @Override
     public List<ProductionPlanVO> getPlanMasterList(){
         return mapper.getPlanMasterList();
     };
 
+    // 생산계획 상세조회
     @Override
-    public List<PrdPlanDetailVO> getPlanList(){
-        return mapper.getPlanList();
+    public List<PrdPlanDetailVO> getPlanDetailList(Long plId) {
+        return mapper.selectPlanDetailList(plId);
+    }
+    
+    //mrp산출
+    @Override
+    public void callCalcMrpProc(Long plId, String empName) {
+        mapper.callCalcMrpProc(plId, empName);
     }
     
     //mrp목록
     @Override
-    public List<MrpDetailVO> getMrpDetailList(){
-        return mapper.getMrpDetailList();
+    public List<MrpDetailVO> getMrpList() {
+        return mapper.getMrpList();
     }
     
     //자재주문등록
@@ -107,5 +115,14 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
     @Override
     public List<WareHouseVO> getWarehouseList() {
         return mapper.getWarehouseList();
-    }  
+    }
+
+    /*======================================
+     * 공통코드 상태값
+     * ======================================*/
+    @Override
+    public List<MatStatusVO> selectCodeList(String groupId) {
+       return mapper.selectCodeList(groupId);
+    }
+
 }

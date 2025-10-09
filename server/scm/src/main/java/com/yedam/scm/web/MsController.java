@@ -6,6 +6,7 @@ import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundVO;
+import com.yedam.scm.vo.MatStatusVO;
 import com.yedam.scm.vo.MatVendorVO;
 import com.yedam.scm.vo.MrpDetailVO;
 import com.yedam.scm.vo.PrdPlanDetailVO;
@@ -21,7 +22,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
@@ -41,23 +44,29 @@ public class MsController {
          return purchaseMatService.insertProductionPlan(productionPlan);
      }
 
-    //생산계획마스터목록
+    //생산계획마스터목록(모달)
     @GetMapping("/planMasterList")
     public List<ProductionPlanVO > getPlanMasterList() {
         return purchaseMatService.getPlanMasterList();
     }
 
-    //생산계획디테일목록
-    @GetMapping("/planList")
-    public List<PrdPlanDetailVO> getPlanList() {
-        return purchaseMatService.getPlanList();
+     // 생산계획 상세조회 (MRP 모달에서 선택 시)
+    @GetMapping("/planDetailList/{plId}")
+    public List<PrdPlanDetailVO> getPlanDetailList(@PathVariable Long plId) {
+        return purchaseMatService.getPlanDetailList(plId);
     }
-    
+    //MRP산출
+    @PostMapping("/calcMrp/{plId}")
+    public ResponseEntity<String> calcMrp(@PathVariable Long plId, @RequestParam String empName) {
+        purchaseMatService.callCalcMrpProc(plId, empName);
+        return ResponseEntity.ok("MRP 산출 완료");
+}
+
     //map 자재소요량
     @GetMapping("/mrpList")
-    public List<MrpDetailVO> getMrpDetailList(){
-        return purchaseMatService.getMrpDetailList();
-    }
+    public List<MrpDetailVO> getMrpList() {
+    return purchaseMatService.getMrpList();
+}
 
     //자재주문등록
     @PostMapping("/reqMaterial")
@@ -130,6 +139,15 @@ public class MsController {
     public List<WareHouseVO> getWarehouseList(){
         return purchaseMatService.getWarehouseList();
     }
+
+    /*======================================
+     * 공통코드 상태값
+     * ======================================*/
+    @GetMapping("/status/{groupId}")
+    public List<MatStatusVO> selectCodeList(@PathVariable String groupId) {
+        return purchaseMatService.selectCodeList(groupId);
+    }
+
 }
 
 
