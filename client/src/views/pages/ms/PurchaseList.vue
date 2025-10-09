@@ -28,6 +28,7 @@ const events = ref(); //타임라인용!
 const statusList = ref();
 const purchaseList = ref();
 const selectedRows = ref();
+const codeMap = ref({}); // codeId → codeName 매핑용
 
 const pageLoad = async () => {
   try {
@@ -48,7 +49,21 @@ const pageLoad = async () => {
 
 onMounted(() => {
   pageLoad();
+  loadStatusCodes();
 });
+
+const loadStatusCodes = async () => {
+  try {
+    const res = await axios.get('/api/mat/status/m01');
+    // {"ms1":"요청등록","ms2":"요청승인",...} 형태로 변환
+    codeMap.value = res.data.reduce((acc, cur) => {
+      acc[cur.codeId] = cur.codeName;
+      return acc;
+    }, {});
+  } catch (err) {
+    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
+  }
+};
 
 const detailInfo = async () => {
   const purId = selectedRows.value.id; //주문테이블 id get!
@@ -59,15 +74,15 @@ const detailInfo = async () => {
     //타임라인
     events.value = list.data.map((item) => ({
       date: useDateFormat(item.reDate).value,
-      status: item.logPurMatStatus
+      status: codeMap.value[item.logPurMatStatus] || item.logPurMatStatus
     }));
     //상세테이블
     statusList.value = list.data.map((item) => ({
-      updateDate: useDateFormat(item.reDate).value,
-      chargeName: item.logName,
-      status: item.logPurMatStatus,
-      supOutQty: item.logSupOutQty,
-      expectDate: useDateFormat(item.logExpectDate).value
+        updateDate: useDateFormat(item.reDate).value,
+        chargeName: item.logName,
+        status: codeMap.value[item.logPurMatStatus] || item.logPurMatStatus,
+        supOutQty: item.logSupOutQty,
+        expectDate: useDateFormat(item.logExpectDate).value
     }));
   } catch (error) {
     toast('error', '상세정보 실패', '상세정보 불러오기 실패:', '3000');

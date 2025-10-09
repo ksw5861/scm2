@@ -22,6 +22,8 @@ public class ProductionPlanVO {
     private Date reDate;    // 등록일 -> sysdate
     private String planType;
     private String memo;
+    private String mrpStatus;  // MPR 상태
+    private Date mrpDate;
 
     List<PrdPlanDetailVO> prdPlanDetailList;
 

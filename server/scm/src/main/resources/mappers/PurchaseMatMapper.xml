@@ -11,18 +11,25 @@
   <result property="plId" column="pl_id"/>
   <result property="matStatus" column="mat_status"/>
   <result property="prodNo" column="prod_no"/>
-  <result property="mprStatus" column="mpr_status"/>
 
   <association property="productVO" resultMap="com.yedam.scm.common.CommonMapper.ProductMap"/>
 </resultMap>
 
 <!--mrp상세-->
 <resultMap id="MrpDetailMap" type="MrpDetailVO">
-  <id property="mrpDetId" column="mrp_det_id"/>
-  <result property="matId" column="mat_id"/>
-  <result property="needsQty" column="needs_qty"/>
-  <result property="status" column="status"/>
-  <result property="mrpId" column="mrp_id"/>
+    <id property="mrpDetId" column="MRP_DET_ID"/>
+    <result property="plId" column="PL_ID"/>
+    <result property="matId" column="MAT_ID"/>
+    <result property="needsQty" column="NEEDS_QTY"/>
+    <result property="currentStock" column="CURRENT_STOCK"/>
+    <result property="onOrderQty" column="ON_ORDER_QTY"/>
+    <result property="safeStock" column="SAFE_STOCK"/>
+    <result property="shortageQty" column="SHORTAGE_QTY"/>
+    <result property="unit" column="UNIT"/>
+    <result property="leadTime" column="LEAD_TIME"/>
+    <result property="calDate" column="CAL_DATE"/>
+    <result property="empName" column="EMP_NAME"/>
+    <result property="status" column="STATUS"/>
 
   <association property="materialVO" resultMap="com.yedam.scm.common.CommonMapper.MaterialMap"/>
 </resultMap>
@@ -112,7 +119,7 @@
         )
     </insert>
 
-    <!--3. 자재요청insert프로시저-->
+    <!--3. 생산시 내부 자재요청insert프로시저-->
     <select id="callInsertReqMatProc" statementType="CALLABLE">
     { call PROC_INSERT_REQ_MAT( #{plDetId, mode=IN, jdbcType=NUMERIC} ) }
     </select>
@@ -129,35 +136,51 @@
            emp_name,
            re_date
     FROM product_plan
+    WHERE mrp_status = 'pp0'
     </select>
 
-    <!--생산계획디테일-->
-    <select id="getPlanList" resultMap="PrdPlanDetailMap">
-    SELECT ppd.prod_id,
-           ppd.pro_date,
-           ppd.prod_no,
-           po.prod_name,
-           ppd.pro_qty,
-           po.unit
-    FROM product_plan_detail ppd
-    JOIN product po
-    ON ppd.prod_id = po.prod_id
-    WHERE ppd.mpr_status = 'pp0'
-    AND po.status = '사용'
+  <!-- 생산계획 상세조회 -->
+    <select id="selectPlanDetailList" parameterType="long" resultMap="PrdPlanDetailMap">
+        SELECT 
+            pd.pl_det_id,
+            pd.prod_id,
+            p.prod_name,
+            pd.pro_qty,
+            pd.pro_date,
+            p.unit,
+            p.spec,
+            p.status,
+            p.bom_version
+        FROM product_plan_detail pd
+        JOIN product p
+          ON pd.prod_id = p.prod_id
+        WHERE pd.pl_id = #{plId}
+        ORDER BY pd.pro_date
+    </select>
+
+    <!--mrp산출-->
+    <select id="callCalcMrpProc" statementType="CALLABLE">
+        { call PROC_CALC_MRP(
+            #{plId, mode=IN, jdbcType=NUMERIC},
+            #{empName, mode=IN, jdbcType=VARCHAR}
+        )}
     </select>
 
     <!--mrp목록-->
-    <select id="getMrpDetailList" resultMap="MrpDetailMap">
+    <select id="getMrpList" resultMap="MrpDetailMap">
     SELECT md.mrp_det_id,
            md.mat_id,
-           md.needs_qty,
            m.mat_name,
-           m.unit,
-           m.lead_time
+           md.needs_qty,
+           md.safe_stock,
+           md.shortage_qty,
+           md.unit,
+           md.lead_time
     FROM mrp_detail md
-    JOIN material m
-    ON md.mat_id = m.mat_id
-    WHERE req_status = 're0'
+    JOIN material m ON md.mat_id = m.mat_id
+    WHERE md.status = 're0'   
+    ORDER BY md.mrp_det_id DESC
+
     </select>
 
     <!--자재주문프로시저-->
@@ -234,6 +257,17 @@ SELECT wh_id,
 FROM warehouse
 WHERE status = '정상'
 </select>
+
+<!-- 자재공통코드 상태값 -->
+<select id="selectCodeList" parameterType="string" resultType="MatStatusVO">
+SELECT GROUP_ID,
+       CODE_ID,
+       CODE_NAME
+FROM MAT_STATUS_DETAIL
+WHERE GROUP_ID = #{groupId}
+ORDER BY CODE_ID
+</select>
+
 
 
 </mapper>
