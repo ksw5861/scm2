@@ -48,7 +48,16 @@ const dw = {
       component: () => import('@/views/pages/dw/ShipPlan.vue'),
       meta: { requiresAuth: true, roles: ['admin', 'employee'] }
     },
-    { path: '/ship-register', name: '출하등록', component: () => import('@/views/pages/dw/ShipRegister.vue'), meta: { requiresAuth: true, roles: ['admin', 'employee'] } }
+    { path: '/ship-register',
+      name: '출하등록', 
+      component: () => import('@/views/pages/dw/ShipRegister.vue'),
+      meta: { requiresAuth: true, roles: ['admin', 'employee'] }
+    },
+    { path: '/account-ledger',
+      name: '거래처원장', 
+      component: () => import('@/views/pages/dw/AccountLedger.vue'),
+      meta: { requiresAuth: true, roles: ['admin', 'employee'] }
+    }
   ]
 };
 
