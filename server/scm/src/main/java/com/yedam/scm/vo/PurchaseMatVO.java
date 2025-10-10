@@ -23,9 +23,11 @@ public class PurchaseMatVO {
     private Date expectDate;
     private String shipOrderNo;
     private Long outQty; //출고승인시 입력되는 출고수량 (부분출고시 매번 바뀜)
+    private String toWarehouse;
 
     MaterialVO materialVO;
     VendorVO vendorVO;
+    WareHouseVO wareHouseVO;
 
     PurStatusLogVO purStatusLogVO;
 }

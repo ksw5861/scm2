@@ -1,5 +1,5 @@
 const MaterialReceip = {
-  label: '자재 입고',
+  label: '자재입고',
   icon: 'pi pi-microchip',
   to: '/MaterialReceip',
   roles: ['admin', 'employee']

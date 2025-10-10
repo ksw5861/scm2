@@ -10,7 +10,7 @@ public class MrpDetailVO {
     private Long mrpDetId;          // MRP_DET_ID
     private Long plId;              // PL_ID
     private String matId;           // MAT_ID
-    private Double needsQty;        // NEEDS_QTY
+    private Double needsWeight;        //NEEDS_WEIGHT
     private Double currentStock;    // CURRENT_STOCK
     private Double onOrderQty;      // ON_ORDER_QTY
     private Double safeStock;       // SAFE_STOCK
@@ -25,3 +25,4 @@ public class MrpDetailVO {
 }
 
  
+

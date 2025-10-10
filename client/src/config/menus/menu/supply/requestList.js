@@ -1,5 +1,5 @@
 const requestList = {
-    label: '주문 조회',
+    label: '발주승인',
     icon: 'pi pi-fw pi-list',
     to: '/requstList',
     roles: ['admin', 'employee']

@@ -9,8 +9,6 @@ import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 
-// 반려처리방식!
-
 const route = useRoute();
 const { toast } = useAppToast();
 
@@ -25,25 +23,13 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-//공급처코드
-const vendorId = ref('VEN001');
-const dateRange = ref({ start: null, end: null });
-const materialName = ref();
-const statusList = ref([]);
-const matOrderData = ref([]);
-const selectedRows = ref([]);
-
 const matOrderColumns = [
-  { label: '주문일자', field: 'orderDate', sortable: true },
-  { label: '구매요청번호', field: 'orderNo' },
-  { label: '납기요청일', field: 'dueDate', sortable: true },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName', sortable: true },
-  { label: '주문수량', field: 'orderQty', sortable: true },
+  { label: '현재재고', field: 'unit', sortable: true },
   { label: '단위', field: 'unit' },
-  { label: '도착지', field: 'toWarehouse'},
-  { label: '총 금액', field: 'total', sortable: true },
-  { label: '구매처 담당자', field: 'buyerName', sortable: true }
+  { label: '환산재고', field: 'unit', sortable: true },
+  { label: '환산단위', field: 'unit' }
 ];
 
 //주문목록(페이지로드시)
@@ -58,8 +44,8 @@ const pageLoad = async () => {
       matId: item.matId,
       matName: item.materialVO.matName,
       orderQty: item.reqQty,
-      unit: item.materialVO.stockUnit,
-      toWarehouse: item.wareHouseVO.whName,
+      unit: item.materialVO.unit,
+      price: item.materialVO.matUnitPrice,
       total: item.total,
       buyerName: item.empName
     }));
@@ -94,7 +80,7 @@ const approve = async () => {
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
     <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">주문 조회</div>
+      <div class="font-semibold text-xl">재고 조회</div>
       <Divider />
       <!--search BOX 영역-->
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
@@ -124,13 +110,8 @@ const approve = async () => {
 
     <!--중간버튼영역-->
     <div class="card flex flex-col gap-4">
-      <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="contrast" icon="pi pi-plus" label="Excel 다운로드" />
-        <btn color="warn" icon="pi pi-file-excel" label="반려" />
-        <btn color="info" icon="pi pi-file-pdf" @click="approve" label="승인" />
-      </div>
-      <div class="font-semibold text-xl mb-5">조회 내역</div>
-      <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" />
+      <div class="font-semibold text-xl mb-5">재고 현황</div>
+      <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" :showCheckbox="false" />
     </div>
   </div>
 </template>

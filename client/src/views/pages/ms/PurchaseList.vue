@@ -39,6 +39,7 @@ const pageLoad = async () => {
       purNo: row.purNo,
       matName: row.materialVO.matName,
       reqQty: row.reqQty,
+      unit: row.materialVO.stockUnit,
       companyName: row.vendorVO.companyName,
       empName: row.empName
     }));
@@ -94,6 +95,7 @@ const purchaseListColumn = [
   { label: '주문번호', field: 'purNo' },
   { label: '자재명', field: 'matName' },
   { label: '주문수량', field: 'reqQty' },
+  { label: '단위', field: 'unit' },
   { label: '공급처', field: 'companyName' },
   { label: '담당자', field: 'empName' }
 ];

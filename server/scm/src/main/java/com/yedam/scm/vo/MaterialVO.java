@@ -15,4 +15,7 @@ public class MaterialVO {
     private String status;          // 상태
     private String spec;            // 규격
     private String unit;            // 단위
+
+    //추가(min)
+    private String stockUnit;    //발주, 입고용 (ea)
 }

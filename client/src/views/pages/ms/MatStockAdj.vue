@@ -59,18 +59,16 @@ const approveShipColumns = [
   { label: '출고지시번호', field: 'shipOrderNo' },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
-  //{ label: '구매처 담당자', field: 'buyerName' },
-  { label: '도착지', field: 'toWarehouse' },
-  //{ label: '출고수량', field: 'ortQty' },
-  //{ label: '단위', field: 'unit' }
+  { label: '구매처 담당자', field: 'buyerName' },
+  { label: '출고수량', field: 'ortQty' },
+  { label: '단위', field: 'unit' }
 ];
 
 const addShipColumns = [
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
   { label: '출고수량', field: 'ortQty' },
-  { label: '단위', field: 'unit' },
-  { label: '구매처 담당자', field: 'purName' }
+  { label: '단위', field: 'unit' }
 ];
 
 //페이지로드시 목록출력
@@ -87,10 +85,9 @@ const pageLoad = async () => {
       matName: item.matName,
       buyerName: item.empName,
       ortQty: item.outQty, // 출고수량
-      unit: item.stockUnit, // VO에서 unit
+      unit: item.unit, // VO에서 unit
       vendorId: item.vendorId, // 거래처코드
-      purId: item.purId, // 주문테이블아이디
-      toWarehouse: item.warehouseName
+      purId: item.purId // 주문테이블아이디
     }));
   } catch (error) {
     toast('error', '리스트 로드 실패', '리스트 불러오기 실패:', '3000');
@@ -108,7 +105,6 @@ console.log(row.id)
       matName:row.matName,
       ortQty:row.ortQty,
       unit: row.unit,
-      purName: row.buyerName,
     //DB입력시 행별 필요데이터[]
       shipOrderNo: row.logShipOrderNo, //출고지시번호
       purId: row.purId,  //주문테이블 아이디

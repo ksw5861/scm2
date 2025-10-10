@@ -60,6 +60,7 @@ FROM inbound i
 JOIN vendor v
 ON i.vendor_id = v.vendor_id
 WHERE i.inbound_status = 'm1'
+ORDER BY i.vendor_out_date DESC
 </select>
 
 <!--입고상세T 출력-->
@@ -94,7 +95,7 @@ SELECT i.inbound_id,
 FROM inbound i
 JOIN vendor v
 ON i.vendor_id = v.vendor_id
-WHERE inbound_status = 'app'
+WHERE inbound_status in ('app', 'm2')
 </select>
 <!--입고대기목록상세-->
 <select id = "getApproveUnloadDetailList" parameterType = "long" resultMap ="inboundDetailResultMap">
@@ -102,7 +103,7 @@ SELECT id.inbound_det_id,
        id.pur_id,
        id.mat_id,
        m.mat_name,
-       m.unit,
+       m.stock_unit,
        id.out_qty,
        id.pur_status_id,
        id.in_total_qty

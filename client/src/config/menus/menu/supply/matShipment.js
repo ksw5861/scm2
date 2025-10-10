@@ -1,5 +1,5 @@
 const matShipment = {
-  label: '출고 등록',
+  label: '출고등록',
   icon: 'pi pi-fw pi-list',
   to: '/matShipment',
   roles: ['admin', 'employee']

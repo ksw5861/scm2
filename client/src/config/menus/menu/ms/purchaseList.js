@@ -1,5 +1,5 @@
 const purchaseList = {
-  label: '주문 조회',
+  label: '발주현황',
   icon: 'pi pi-microchip',
   to: '/purchaseList',
   roles: ['admin', 'employee']
