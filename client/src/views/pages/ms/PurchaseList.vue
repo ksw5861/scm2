@@ -75,7 +75,8 @@ const detailInfo = async () => {
     //타임라인
     events.value = list.data.map((item) => ({
       date: useDateFormat(item.reDate).value,
-      status: codeMap.value[item.logPurMatStatus] || item.logPurMatStatus
+      status: codeMap.value[item.logPurMatStatus] || item.logPurMatStatus,
+      rejMemo: item.logResonComm
     }));
     //상세테이블
     statusList.value = list.data.map((item) => ({
@@ -165,7 +166,7 @@ const statusColumn = [
                 <template #opposite="slotProps">
                   <small class="text-surface-500 dark:text-surface-400">{{ slotProps.item.date }}</small>
                 </template>
-                <template #content="slotProps"> {{ slotProps.item.status }} </template>
+                <template #content="slotProps"> [{{ slotProps.item.status }}] {{ slotProps.item.rejMemo }} </template>
               </Timeline>
             </div>
             <div>

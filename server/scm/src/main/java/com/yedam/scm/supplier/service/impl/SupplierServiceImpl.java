@@ -21,13 +21,13 @@ public class SupplierServiceImpl implements SupplierService  {
 
     final SupplierMapper mapper;
 
-    //주문목록
+    //발주목록
     @Override
     public List<PurchaseMatVO> getMatOerderList(String vendorId) {
         return mapper.getMatOerderList(vendorId);
     }
 
-    //주문승인
+    //발주승인
     @Transactional
     @Override
     public int updateOrderApprove(Map<String, Object> data) {
@@ -46,6 +46,12 @@ public class SupplierServiceImpl implements SupplierService  {
             mapper.insertStatusLog(purId, name);
         }
         return updatedCount;
+    }
+
+    //발주반려
+     @Override
+    public void updateOrderReject(Long purId, String rejMemo, String staff) {
+        mapper.callUpdateOrderReject(purId, rejMemo, staff);
     }
 
     //출고지시대기목록
@@ -110,4 +116,5 @@ public class SupplierServiceImpl implements SupplierService  {
            mapper.callShipmentDetailPoc(detail);
        }
     }
+
 }

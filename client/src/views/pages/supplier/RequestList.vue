@@ -8,6 +8,9 @@ import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
+import Dialog from 'primevue/dialog';
+import Textarea from 'primevue/textarea';
+
 
 // 반려처리방식!
 
@@ -25,13 +28,15 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-//공급처코드
-const vendorId = ref('VEN001');
+const vendorName = ref('공급처담당자이름'); //공급처담당자이름으로 로그찍히니 변경xxx
+const vendorId= ref('V800'); //공급처코드
 const dateRange = ref({ start: null, end: null });
 const materialName = ref();
 const statusList = ref([]);
 const matOrderData = ref([]);
 const selectedRows = ref([]);
+const rejModal = ref(false);
+const rejMemo = ref('');
 
 const matOrderColumns = [
   { label: '주문일자', field: 'orderDate', sortable: true },
@@ -86,6 +91,38 @@ const approve = async () => {
     toast('error', '승인 실패', '주문 승인 실패:', '3000');
   }
 };
+
+//반려모달
+const oepnRejModal = () =>{
+    const selectedCount = selectedRows.value.length;
+
+    if (selectedCount === 0) {
+        toast('warn', '선택 필요', '반려할 항목을 선택해주세요:', '3000');
+        return;
+    }
+
+    if (selectedCount > 1) {
+        toast('info', '반려 불가', '1건씩만 처리 가능합니다:', '3000');
+        return;
+    }
+
+    rejModal.value = true;
+}
+
+const closeRejModal = () => {
+  rejModal.value = false;
+};
+
+const rejectPurchase = async () => {
+
+    try {
+        await axios.post('/api/supplier/reject', null, {params: { purId: selectedRows.value[0].id, rejMemo: rejMemo.value, staff: vendorName.value}})
+        rejModal.value = false;
+    } catch (error) {
+        toast('error', '등록 실패', '주문 승인 실패:', '3000');
+    }
+};
+
 </script>
 
 <template>
@@ -126,13 +163,26 @@ const approve = async () => {
     <div class="card flex flex-col gap-4">
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
         <btn color="contrast" icon="pi pi-plus" label="Excel 다운로드" />
-        <btn color="warn" icon="pi pi-file-excel" label="반려" />
+        <btn color="warn" icon="pi pi-file-excel" label="반려" @click="oepnRejModal" />
         <btn color="info" icon="pi pi-file-pdf" @click="approve" label="승인" />
       </div>
       <div class="font-semibold text-xl mb-5">조회 내역</div>
       <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" />
     </div>
   </div>
+
+<!--반려모달-->
+<Dialog v-model:visible="rejModal" modal header="반려 사유(공급처)" :style="{ width: '500px' }">
+     <div class="card flex justify-center">
+        <Textarea v-model="rejMemo" rows="5" cols="100" />
+    </div>
+     <div class="flex justify-center gap-2">
+        <btn color="warn" icon="pi pi-file-excel" label="취소" @click="closeRejModal" />
+        <btn color="warn" icon="pi pi-file-excel" label="등록" @click="rejectPurchase" />
+    </div>
+</Dialog>
+
 </template>
 
 <style scoped></style>
+

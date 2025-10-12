@@ -48,6 +48,25 @@
     <result property="logMemo"        column="LOG_MEMO" />
     <result property="logExpDate"     column="LOG_EXP_DATE" />
 </resultMap>
+
+<resultMap id="matlotMap" type="MatLotVO">
+    <id property="lotId" column="LOT_ID"/>
+    <result property="matId" column="MAT_ID"/>
+    <result property="lotNo" column="LOT_NO"/>
+    <result property="regDate" column="REG_DATE"/>
+    <result property="initQty" column="INIT_QTY"/>
+    <result property="currQty" column="CURR_QTY"/>
+    <result property="expDate" column="EXP_DATE"/>
+    <result property="warehouse" column="WAREHOUSE"/>
+    <result property="empName" column="EMP_NAME"/>
+    <result property="lotStatus" column="LOT_STATUS"/>
+    <result property="inboundDetId" column="INBOUND_DET_ID"/>
+    <result property="initWeight" column="INIT_WEIGHT"/>
+    <result property="currWeight" column="CURR_WEIGHT"/>
+
+    <association property="materialVO" resultMap="com.yedam.scm.common.CommonMapper.MaterialMap"/>
+</resultMap>
+
 <!--입고마스터T 출력-->
 <select id ="getVenShipList" resultMap="inboundResultMap">
 SELECT i.inbound_id,
@@ -77,6 +96,7 @@ JOIN material m
 ON id.mat_id = m.mat_id
 WHERE id.inbound_id = #{inboundId}
 </select>
+
 <!--하차등록-->
 <select id="callApproveUnload" statementType="CALLABLE">
     {call PROC_APPROVE_UNLOAD(
@@ -84,6 +104,7 @@ WHERE id.inbound_id = #{inboundId}
         #{unloadEmp,  mode=IN, jdbcType=VARCHAR}
      )}
 </select>
+
 <!--입고대기목록-->
 <select id = "getApproveUnload" resultMap="inboundResultMap">
 SELECT i.inbound_id,
@@ -97,6 +118,7 @@ JOIN vendor v
 ON i.vendor_id = v.vendor_id
 WHERE inbound_status in ('app', 'm2')
 </select>
+
 <!--입고대기목록상세-->
 <select id = "getApproveUnloadDetailList" parameterType = "long" resultMap ="inboundDetailResultMap">
 SELECT id.inbound_det_id,
@@ -113,6 +135,7 @@ ON id.mat_id = m.mat_id
 WHERE id.inbound_id = #{inboundId}
 AND id.inbound_status in ('d1', 'd3')
 </select>
+
 <!--입고등록-->
 <update id="callMatInboundStock" parameterType="InboundDetailVO" statementType="CALLABLE">
     { call PROC_MAT_INBOUND_STOCK  (
@@ -124,5 +147,40 @@ AND id.inbound_status in ('d1', 'd3')
       )
     }
   </update>
+
+<!--재고현황-->
+<select id="getMatStockList" resultMap="matlotMap">
+SELECT ml.mat_id,
+       m.mat_name,
+       sum(ml.curr_weight) as curr_weight,
+       m.unit,
+       sum(ml.curr_qty) as curr_qty,
+       m.stock_unit
+FROM mat_lot ml
+JOIN material m
+ON ml.mat_id = m.mat_id
+GROUP BY ml.mat_id, 
+    m.mat_name, 
+    m.unit, 
+    m.stock_unit
+ORDER BY ml.mat_id
+</select>
+<!--자재별 LOT현황-->
+<select id="getMatLotList" resultMap="matlotMap">
+SELECT ml.lot_id,
+       ml.lot_no,
+       m.mat_name,
+       ml.curr_weight,
+       m.unit,
+       ml.curr_qty,
+       m.stock_unit,
+       ml.reg_date,
+       ml.warehouse
+FROM mat_lot ml
+JOIN material m
+ON ml.mat_id = m.mat_id
+where ml.mat_id = #{matId}
+ORDER BY ml.lot_id
+</select>
 
 </mapper>

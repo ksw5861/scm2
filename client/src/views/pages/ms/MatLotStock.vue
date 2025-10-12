@@ -1,13 +1,14 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, getCurrentWatcher } from 'vue';
 import axios from 'axios';
 import btn from '@/components/common/Btn.vue';
 import selectTable from '@/components/common/checkBoxTable.vue';
 import SearchField from '@/components/common/SearchBox.vue';
+import CommonModal from '@/components/common/Modal.vue'
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
-import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
+import { useDateFormat, useNumberFormat } from '@/composables/useFormat';1
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -23,34 +24,57 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const matOrderColumns = [
-  { label: '자재코드', field: 'matId' },
-  { label: '자재명', field: 'matName', sortable: true },
-  { label: '현재재고', field: 'unit', sortable: true },
-  { label: '단위', field: 'unit' },
-  { label: '환산재고', field: 'unit', sortable: true },
-  { label: '환산단위', field: 'unit' }
-];
+const matStockList = ref();
+const selectedRows = ref();
+const showMatLot = ref(false);
+// 모달 열기
+const openPlanModal = (row) => {
+  selectedRows.value = row;
+  showMatLot.value = true;
+};
 
-//주문목록(페이지로드시)
+// 모달 닫기
+const closePlanModal = () => {
+  showMatLot.value = false;
+};
+
+const matLotList = async () => {
+  try {
+    const res = await axios.get('/api/mat/matLotList', { params: {matId : selectedRows.value.id} })
+    console.log(selectedRows.value.id)
+    console.log(res)
+    return {
+      items: res.data.map((item) => ({
+        ...item,
+        lotNo: item.lotNo,
+        matName: item.materialVO.matName,
+        currWeight: item.currWeight,
+        unit: item.materialVO.unit,
+        currQty: item.currQty,
+        stockUnit: item.materialVO.stockUnit
+      }))
+    }
+  } catch (error) {
+    toast('error', '리스트 로드 실패', 'LOT 리스트 불러오기 실패', '3000')
+    return { items: [] }
+  }
+}
+
 const pageLoad = async () => {
   try {
-    const list = await axios.get(`/api/supplier/OrderList/${vendorId.value}`);
-    matOrderData.value = list.data.map((item) => ({
-      id: item.purId,
-      orderDate: useDateFormat(item.regDate).value,
-      orderNo: item.purNo,
-      dueDate: useDateFormat(item.dueDate).value,
+    const list = await axios.get('/api/mat/matStockList');
+    console.log(list)
+    matStockList.value = list.data.map((item) => ({
+      id: item.matId,
       matId: item.matId,
       matName: item.materialVO.matName,
-      orderQty: item.reqQty,
+      currWeight: item.currWeight,
       unit: item.materialVO.unit,
-      price: item.materialVO.matUnitPrice,
-      total: item.total,
-      buyerName: item.empName
+      currQty: item.currQty,
+      qtyUnit: item.materialVO.stockUnit
     }));
   } catch (error) {
-    toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
+    toast('error', '자재 재고 현황', '재고 리스트 불러오기 실패:', '3000');
   }
 };
 
@@ -58,20 +82,24 @@ onMounted(() => {
   pageLoad();
 });
 
-//주문승인
-const approve = async () => {
-  const list = JSON.parse(JSON.stringify(selectedRows.value));
-  const idList = list.map((row) => row.id);
+const matStock = [
+  { label: '자재코드', field: 'matId' },
+  { label: '자재명', field: 'matName', sortable: true },
+  { label: '현재재고', field: 'currWeight', sortable: true },
+  { label: '단위', field: 'unit' },
+  { label: '환산재고', field: 'currQty', sortable: true },
+  { label: '환산단위', field: 'qtyUnit' }
+];
 
-  try {
-    await axios.post('/api/supplier/approve', { purId: idList, name: vendorId.value });
-     toast('info', '승인 성공', '주문 승인 성공:', '3000');
-
-    pageLoad();
-  } catch (error) {
-    toast('error', '승인 실패', '주문 승인 실패:', '3000');
-  }
-};
+//모달컬럼
+const matLotColumns = [
+  { field: 'lotNo', label: 'LOT번호', style: 'width: 10rem' },
+  { field: 'matName', label: '자재명', style: 'width: 8rem' },
+  { field: 'currWeight', label: '현재재고', style: 'width: 10rem' },
+  { field: 'unit', label: '단위', style: 'width: 10rem' },
+  { field: 'currQty', label: '환산재고', style: 'width: 10rem' },
+  { field: 'stockUnit', label: '환산단위', style: 'width: 20rem' }
+];
 </script>
 
 <template>
@@ -108,12 +136,19 @@ const approve = async () => {
     </div>
     <!--검색박스 end-->
 
-    <!--중간버튼영역-->
     <div class="card flex flex-col gap-4">
       <div class="font-semibold text-xl mb-5">재고 현황</div>
-      <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" :showCheckbox="false" />
+      <selectTable v-model:selection="selectedRows"  selectionMode="single" :columns="matStock" :data="matStockList" :paginator="true" :rows="15" :showCheckbox="false"  @row-select="openPlanModal"/>
     </div>
   </div>
+  <!-- 자재별 LOT현황 모달 -->
+    <CommonModal
+      :visible="showMatLot"
+      title="자재별 LOT 현황"
+      :columns="matLotColumns"
+      :fetchData="matLotList"
+      @close="closePlanModal"
+    />
 </template>
 
 <style scoped></style>

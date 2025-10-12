@@ -26,7 +26,7 @@
 </resultMap>
 
 
-<!--자재구매목록-->
+<!--발주구매목록-->
 <select id="getMatOerderList" parameterType="string" resultMap="purchaseMatMap">
 SELECT pm.pur_id,
        pm.req_qty,
@@ -49,17 +49,26 @@ WHERE pur_mat_status = 'ms1'
 AND pm.vendor_id = #{vendorId}
 </select>
 
-<!--주문승인상태변경-->
+<!--발주승인상태변경-->
 <update id="updateOrderApprove" parameterType="int">
 UPDATE purchase_mat
 SET pur_mat_status = 'ms2'
 WHERE pur_id = #{purId}
 </update>
-<!--주문상태변경이력등록-->
+<!--발주상태변경이력등록-->
 <insert id="insertStatusLog" parameterType="map">
 INSERT INTO purchase_status_log (pur_status_id, log_name, log_pur_mat_status, log_pur_id)
 VALUES (seq_purchase_status_log.NEXTVAL, #{name}, 'ms2', #{purId})
 </insert>
+
+<!--발주반려-->
+<select id="callUpdateOrderReject" parameterType="map" statementType="CALLABLE">
+        { call PROC_ORDER_REJECT(
+            #{p_pur_id,    mode=IN, jdbcType=NUMERIC},   
+            #{p_rej_memo,   mode=IN, jdbcType=VARCHAR},
+            #{p_staff,   mode=IN, jdbcType=VARCHAR}
+        )}
+</select>
 
 <!--출고지시대기목록-->
 <select id= "getMatWReleaseList" resultMap="purchaseMatMap">

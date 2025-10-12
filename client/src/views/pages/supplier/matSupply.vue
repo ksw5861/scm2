@@ -12,7 +12,7 @@ import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 const route = useRoute();
 const { toast } = useAppToast();
 
-const vendorId = ref('VEN001');
+const vendorId = ref('V800');
 const dateRange = ref({ start: null, end: null }); // 초기값을 객체로
 const materialName = ref();
 const statusList = ref();

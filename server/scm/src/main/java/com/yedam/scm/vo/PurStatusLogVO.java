@@ -15,6 +15,7 @@ public class PurStatusLogVO {
     private Long logPurId;          // PUR_ID
     private Long logSupOutQty;      //공급처 출고수량 (for 부분출고)
     private String logVendorId;
+    private String logResonComm; //반려사유(공급처)
     //부분출고처리때문에 컬럼추가 
     private Date logExpectDate;
     private String logShipOrderNo;

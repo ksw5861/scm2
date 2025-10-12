@@ -118,7 +118,6 @@ const calculatMrp = async () => {
       params: { empName: empName.value }
     });
     toast('success', 'MRP 산출 완료', '산출 결과가 저장되었습니다.');
-    await pageLoadplan(); // 산출된 계획 제거됨
     await pageLoadMrp();  // 최신 MRP_DETAIL 로드
   } catch (error) {
     toast('error', 'MRP 산출 실패', '프로시저 실행 중 오류 발생.');
@@ -232,6 +231,11 @@ const reqSubmit = async () => {
 
     toast('info', '등록 성공', '자재주문 등록 성공', '5000');
     await pageLoadMrp();
+    purchaseList.value = [
+  { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
+  { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
+  { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
+];
   } catch (error) {
     toast('error', '등록 실패', '자재주문 등록 실패:', '500');
   }

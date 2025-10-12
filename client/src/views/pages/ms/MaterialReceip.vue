@@ -39,8 +39,6 @@ const inputMatName = ref();
 const expDate = ref();
 const inQty = ref();
 const result = ref();
-const rejMemo = ref();
-const restQty = ref(0);
 // codeId → codeName 매핑용
 const codeMap = ref({});
 //반품모달용
@@ -136,7 +134,11 @@ const submit = async () => {
     try{
        await axios.post('/api/mat/matInStock', payload)
        await detailInfo();
-        toast('success', '입고등록 성공', '입고등록 성공:', '3000');
+       toast('success', '입고등록 성공', '입고등록 성공:', '3000');
+       expDate.value = null;
+       inQty.value = null;
+       result.value = null;
+       inputMatName.value = '';
     } catch(error) {
         toast('error', '입고등록 실패', '입고등록 실패:', '3000');
     }
@@ -250,8 +252,8 @@ const approveUnloadDetaiColumn = [
             <div class="font-semibold text-m">상세정보</div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
-              <btn color="warn" icon="pi pi-file-excel" label="반품" @click="openReturnModal"/>
-              <btn color="info" icon="pi pi-file-pdf" label="등록" @click="submit"/>
+              <btn color="warn" icon="pi pi-file-excel" label="불량등록" @click="openReturnModal"/>
+              <btn color="info" icon="pi pi-file-pdf" label="입고등록" @click="submit"/>
             </div>
           </div>
 

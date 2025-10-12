@@ -7,10 +7,12 @@ import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
 public interface SupplierService {
-    //주문목록
+    //발주목록
     List<PurchaseMatVO> getMatOerderList(String vendorId);
-    //주문승인
+    //발주승인
     int updateOrderApprove( Map<String, Object> data);
+    //발주반려
+    void updateOrderReject(Long purId, String rejMemo, String staff);
     //출고지시대기목록
     List<PurchaseMatVO> getMatWReleaseList(String vendorId);
     //출고지시(출고수량/출고예정일 입력)

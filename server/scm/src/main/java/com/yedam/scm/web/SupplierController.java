@@ -1,6 +1,7 @@
 package com.yedam.scm.web;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yedam.scm.supplier.service.SupplierService;
@@ -25,18 +26,24 @@ public class SupplierController {
 
     final SupplierService service;
 
-    //주문목록
+    //발주목록
     @GetMapping("/OrderList/{vendorId}")
     public List<PurchaseMatVO> getMatOerderList(@PathVariable String vendorId) {
         return service.getMatOerderList(vendorId);
     }
     
-    //주문승인처리
+    //발주승인처리
     @PostMapping("/approve")
     public int updateOrderApprove(@RequestBody Map<String, Object> data) {
         return service.updateOrderApprove(data);
     }
     
+    //발주반려
+    @PostMapping("/reject")
+    public void updateOrderReject(@RequestParam Long purId, @RequestParam String rejMemo, @RequestParam String staff ){
+        service.updateOrderReject(purId, rejMemo, staff);
+    }
+
     //출고승인된목록(출고지시등록페이지 로드시 출력되는 목록)
     @GetMapping("/releaseList/{vendorId}")
     public List<PurchaseMatVO> getMatWReleaseList (@PathVariable String vendorId) {

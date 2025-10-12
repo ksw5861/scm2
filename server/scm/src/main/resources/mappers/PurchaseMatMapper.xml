@@ -56,6 +56,7 @@
     <result property="outTotalQty" column="OUT_TOTAL_QTY" />
     <result property="purMatStatus" column="PUR_MAT_STATUS" />
     <result property="resonComm" column="RESON_COMM" />
+    <result property="rejDate" column="REJ_DATE" />
     <result property="mrpDetId" column="MRP_DET_ID" />
     <result property="vendorId" column="VENDOR_ID" />
     <result property="empName" column="EMP_NAME" />
@@ -218,7 +219,7 @@ ORDER BY md.mrp_det_id DESC
     ON pm.mat_id = m.mat_id
     JOIN vendor v
     ON pm.vendor_id = v.vendor_id
-    ORDER BY pm.req_qty DESC
+    ORDER BY pm.reg_date DESC
     </select>
     <!--자재주문상세이력-->
     <select id ="getPurchaseStatus" parameterType="long" resultType = "PurStatusLogVO">
@@ -226,7 +227,8 @@ ORDER BY md.mrp_det_id DESC
            psl.log_name,
            psl.log_pur_mat_status,
            NVL(psl.log_sup_out_qty,0) as log_sup_out_qty,
-           psl.log_expect_date
+           psl.log_expect_date,
+           psl.log_reson_comm
     FROM purchase_status_log psl
     WHERE log_pur_id = #{purId}
     ORDER BY re_date DESC

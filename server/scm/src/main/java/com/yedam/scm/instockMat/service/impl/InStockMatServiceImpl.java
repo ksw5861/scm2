@@ -8,6 +8,7 @@ import com.yedam.scm.instockMat.mapper.InStockMatMapper;
 import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundVO;
+import com.yedam.scm.vo.MatLotVO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -45,6 +46,16 @@ public class InStockMatServiceImpl implements InStockMatService {
     @Override
     public void callMatInboundStock(InboundDetailVO inStockInfo) {
         mapper.callMatInboundStock(inStockInfo);
+    }
+
+    @Override
+    public List<MatLotVO> getMatStockList() {
+        return mapper.getMatStockList();
+    }
+
+    @Override
+    public List<MatLotVO> getMatLotList(String matId) {
+       return mapper.getMatLotList(matId);
     }
 
 }

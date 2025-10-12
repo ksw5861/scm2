@@ -12,7 +12,8 @@ public class PurchaseMatVO {
     private Long reqQty;  //주문수량
     private Long outTotalQty;   //누적출고수량
     private String purMatStatus;
-    private String resonComm;
+    private String resonComm; //(공급처)발주반려
+    private Date rejDate; //반려일자
     private Long mrpDetId;
     private String vendorId;
     private String empName;

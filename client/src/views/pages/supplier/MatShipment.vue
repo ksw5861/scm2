@@ -22,8 +22,8 @@ const getNowDate = () => {
 };
 
 
-const vendorId = ref('VEN001');
-const vanEmpName = ref('홍길동')
+const vendorId = ref('V800');
+const vanEmpName = ref('홍길동');
 const shipmentDate = ref(getNowDate()); //출고일
 const deliveryPlace = ref(''); //배송창고 바인딩용
 const carrier = ref()//운송업체
@@ -99,7 +99,11 @@ const pageLoad = async () => {
 
 //(좌측)제품클릭시 우측테이블 행 push
 const addTOshipmentList = (row) => {
-console.log(row.id)
+    //클릭시 1번만 들어가도록 제어
+    if (shipDetailList.value.some(r => r.matId === row.matId && r.purId === row.purId)) {
+    return;
+  }
+  console.log(row.id)
   const emptyRowIndex = shipDetailList.value.findIndex((r) => !r.matId);
   const newRow = {
      //테이블 출력데이터
@@ -157,6 +161,7 @@ const submit = async () => {
     carrier.value = '';
     trackingNo.value = '';
     carNo.value = '';
+    shipDetailList.value = [{ matId: '', matName: '', ortQty: null, unit: ''}];
 
   } catch (error) {
     toast('error', '등록 실패', '출고등록  실패:', '3000');
