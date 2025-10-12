@@ -253,4 +253,98 @@
 
 
 
+
+<!-- ===================== 거래처원장 목록 ===================== -->
+<select id="selectAccountLedgerList" parameterType="map" resultType="com.yedam.scm.vo.SalesOrderVO">
+  SELECT
+      v.vendor_id        AS vendorId,
+      v.company_name     AS companyName,
+      v.type             AS vendorType,
+      NVL(SUM(a.total_price), 0) AS totalSales,
+      NVL(SUM(a.return_price), 0) AS totalReturn,
+      NVL(SUM(a.pay_amount), 0) AS totalPayment,
+      NVL(SUM(
+          CASE 
+              WHEN v.type IN ('1','2','판매처') THEN 
+                  (NVL(a.total_price,0) - NVL(a.return_price,0) - NVL(a.pay_amount,0))
+              ELSE 0 
+          END
+      ),0) AS totalAr,
+      NVL(SUM(
+          CASE 
+              WHEN v.type IN ('S','P','공급처') THEN 
+                  (NVL(a.total_price,0) - NVL(a.return_price,0) - NVL(a.pay_amount,0)) * -1
+              ELSE 0 
+          END
+      ),0) AS totalAp
+  FROM vendor v
+  LEFT JOIN (
+      SELECT vendor_id,
+             total_price,
+             NULL AS return_price,
+             NULL AS pay_amount
+        FROM sales_order
+      UNION ALL
+      SELECT vendor_id,
+             NULL AS total_price,
+             return_price,
+             NULL AS pay_amount
+        FROM return
+      UNION ALL
+      SELECT vendor_id,
+             NULL AS total_price,
+             NULL AS return_price,
+             pay_amount
+        FROM payment
+  ) a ON v.vendor_id = a.vendor_id
+  GROUP BY v.vendor_id, v.company_name, v.type
+  ORDER BY v.company_name
+</select>
+
+
+  <!-- ===================== 거래처원장 상단 요약 ===================== -->
+<select id="selectAccountLedgerSummary" parameterType="map" resultType="com.yedam.scm.vo.SalesOrderVO">
+  SELECT
+      NVL(SUM(a.total_price), 0) AS totalSales,
+      NVL(SUM(a.return_price), 0) AS totalReturn,
+      NVL(SUM(a.pay_amount), 0) AS totalPayment,
+      NVL(SUM(
+          CASE 
+              WHEN v.type IN ('1','2','판매처') THEN 
+                  (NVL(a.total_price,0) - NVL(a.return_price,0) - NVL(a.pay_amount,0))
+              ELSE 0 
+          END
+      ),0) AS totalAr,
+      NVL(SUM(
+          CASE 
+              WHEN v.type IN ('S','P','공급처') THEN 
+                  (NVL(a.total_price,0) - NVL(a.return_price,0) - NVL(a.pay_amount,0)) * -1
+              ELSE 0 
+          END
+      ),0) AS totalAp
+  FROM vendor v
+  LEFT JOIN (
+      SELECT vendor_id,
+             total_price,
+             NULL AS return_price,
+             NULL AS pay_amount
+        FROM sales_order
+      UNION ALL
+      SELECT vendor_id,
+             NULL AS total_price,
+             return_price,
+             NULL AS pay_amount
+        FROM return
+      UNION ALL
+      SELECT vendor_id,
+             NULL AS total_price,
+             NULL AS return_price,
+             pay_amount
+        FROM payment
+  ) a ON v.vendor_id = a.vendor_id
+</select>
+
+
+
+
 </mapper>

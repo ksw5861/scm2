@@ -28,4 +28,7 @@ public class ReturnVO {
 
     private String companyName; // 판매처명
 
+    // 거래처원장 최종추가
+    private String odetailId; // 주문상세ID (sales_order_detail과 조인용)
+
 }
