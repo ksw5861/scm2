@@ -11,7 +11,7 @@ import com.yedam.scm.vo.ReturnDetailVO;
 import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
-import com.yedam.scm.vo.ShipOrderVO;
+// import com.yedam.scm.vo.ShipOrderVO;
 
 public interface InboundService {
 
@@ -28,7 +28,6 @@ public interface InboundService {
     // 제품입고 창고모달
     WarehouseListRes getWarehouseList(String condition, PageDTO paging);
 
-
     /* ===================== 주문승인 ===================== */
     List<SalesOrderVO> getApprovalList(SalesOrderVO vo);
 
@@ -37,7 +36,6 @@ public interface InboundService {
     int approveDetails(List<String> odetailIds);
 
     int rejectDetails(List<String> odetailIds);
-
 
     /* ===================== 반품승인 ===================== */
     List<ReturnVO> getReturnList();
@@ -48,16 +46,18 @@ public interface InboundService {
 
     int rejectReturnDetails(List<String> ids, String reason);
 
+    /* ===================== 출하지시 ===================== */
 
-/* ===================== 출하지시 ===================== */
+    // 출하지시 대상 목록 (주문건 기준)
+    List<SalesOrderVO> getShipOrders(SalesOrderVO vo);
 
-// 출하지시 대상 목록 (주문건 기준)
-List<SalesOrderVO> getShipOrders(SalesOrderVO vo);
+    // 여러 주문건 출하지시 등록 (헤더 단위)
+    int createShipOrders(List<SalesOrderVO> orders);
 
-// 여러 주문건 출하지시 등록 (헤더 단위)
-int createShipOrders(List<SalesOrderVO> orders);
+    // 단일 주문 부분출고 등록 (상세 단위)
+    int createShipOrderDetails(List<SalesOrderDetailVO> details);
 
-// 단일 주문 부분출고 등록 (상세 단위)
-int createShipOrderDetails(List<SalesOrderDetailVO> details);
+    // 거래처원장 조회
+    Map<String, Object> getAccountLedger(Map<String, Object> params);
 
 }

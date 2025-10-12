@@ -147,12 +147,12 @@ public class DwController {
     }
 
     // 출하지시 상세 조회
-@GetMapping("/ship/order-details")
-public Map<String, Object> getShipOrderDetails(@RequestParam String orderId) {
-    List<SalesOrderDetailVO> details = service.getApprovalDetails(orderId); 
-    // 기존 주문상세 조회 재활용 가능
-    return Map.of("data", details);
-}
+    @GetMapping("/ship/order-details")
+    public Map<String, Object> getShipOrderDetails(@RequestParam String orderId) {
+        List<SalesOrderDetailVO> details = service.getApprovalDetails(orderId);
+        // 기존 주문상세 조회 재활용 가능
+        return Map.of("data", details);
+    }
 
     // 출하지시 등록 (여러 주문건)
     @PostMapping("/ship/orders")
@@ -167,4 +167,21 @@ public Map<String, Object> getShipOrderDetails(@RequestParam String orderId) {
         int cnt = service.createShipOrderDetails(details);
         return ResponseEntity.ok(Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt));
     }
-}
+
+    /* ===================== 거래처원장 ===================== */
+
+    // 거래처원장 목록 + 요약 (AccountLedger.vue)
+    @GetMapping("/account-ledger")
+    public ResponseEntity<Map<String, Object>> getAccountLedger(
+            @RequestParam(required = false, defaultValue = "전체") String vendorType,
+            @RequestParam(required = false, defaultValue = "") String keyword) {
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("vendorType", vendorType);
+        params.put("keyword", keyword);
+
+        Map<String, Object> result = service.getAccountLedger(params);
+        return ResponseEntity.ok(result);
+    }
+
+}// end

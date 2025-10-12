@@ -72,4 +72,8 @@ public class PaymentVO {
         public Integer getTotalPrice() { return totalPrice; }
         public void setTotalPrice(Integer totalPrice) { this.totalPrice = totalPrice; }
     }
+
+
+
+    
 }
