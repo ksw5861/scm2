@@ -6,6 +6,7 @@ import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundVO;
+import com.yedam.scm.vo.MatLotVO;
 import com.yedam.scm.vo.MatStatusVO;
 import com.yedam.scm.vo.MatVendorVO;
 import com.yedam.scm.vo.MrpDetailVO;
@@ -68,19 +69,19 @@ public class MsController {
     return purchaseMatService.getMrpList();
 }
 
-    //자재주문등록
+    //자재발주등록
     @PostMapping("/reqMaterial")
     public void callReqestMaterial(@RequestBody List<PurchaseMatVO> requestList) {      
         purchaseMatService.callReqestMatProc(requestList);
     }
     
-    //주문목록
+    //발주목록
     @GetMapping("/purchaseList")
     public List<PurchaseMatVO> getPurchaseList() {
         return purchaseMatService.getPurchaseList();
     }
     
-    //주문상세조회
+    //발주상세조회
     @GetMapping("/purchaseListStatus")
     public List<PurStatusLogVO> getPurchaseStatus(@RequestParam Long purId) {
         return purchaseMatService.getPurchaseStatus(purId);
@@ -117,8 +118,17 @@ public class MsController {
         inStockMatService.callMatInboundStock(inStockInfo);
     }
     
-    //재고조정
-    
+    //=============================================================================================재고part
+    //자재재고현황
+    @GetMapping("/matStockList")
+    public List<MatLotVO> getMatStockList() {
+        return inStockMatService.getMatStockList();
+    }
+    //자재별LOT현황
+    @GetMapping("/matLotList")
+    public List<MatLotVO> getMatLotList(@RequestParam String matId) {
+        return inStockMatService.getMatLotList(matId);
+    }
     /*======================
     드롭다운/모달용   
     ======================*/

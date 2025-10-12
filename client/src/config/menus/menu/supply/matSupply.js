@@ -1,5 +1,5 @@
 const matSupply = {
-  label: '출고 지시',
+  label: '출고지시',
   icon: 'pi pi-fw pi-list',
   to: '/matSupply',
   roles: ['admin', 'employee']

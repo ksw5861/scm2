@@ -3,8 +3,10 @@ package com.yedam.scm.instockMat.mapper;
 import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundVO;
+import com.yedam.scm.vo.MatLotVO;
 
 @Mapper
 public interface InStockMatMapper {
@@ -20,4 +22,8 @@ public interface InStockMatMapper {
     List<InboundDetailVO> getApproveUnloadDetailList(@Param("inboundId")Long inboundId);
     //입고등록
     void callMatInboundStock(InboundDetailVO inStockInfo);
+    //재고목록
+    List<MatLotVO> getMatStockList();
+    //자재별LOT목록
+    List<MatLotVO> getMatLotList(@Param("matId") String matId);
 }

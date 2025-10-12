@@ -8,6 +8,9 @@ import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
+import FileUpload from 'primevue/fileupload';
+import Dialog from 'primevue/dialog';
+
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -36,8 +39,20 @@ const inputMatName = ref();
 const expDate = ref();
 const inQty = ref();
 const result = ref();
-const rejMemo = ref();
-const restQty = ref(0);
+// codeId → codeName 매핑용
+const codeMap = ref({});
+//반품모달용
+const returnDialogVisible = ref(false);
+const previewUrl = ref(null);
+const selectedFile = ref(null);
+const returnForm = ref({
+  matName: '',
+  inboundDetId: null,
+  inboundId: null,
+  returnQty: '',
+  memo: ''
+});
+
 
  const pageLoad = async () => {
   try {
@@ -47,9 +62,10 @@ const restQty = ref(0);
         unloadDate: useDateFormat(item.unloadDate).value,
         inboundNo: item.inboundNo,
         companyName: item.vendorVO.companyName,
-        inboundStatus: item.inboundStatus,
+        inboundStatus: codeMap.value[item.inboundStatus] || item.inboundStatus,
         unloadEmp: item.unloadEmp
     }));
+    console.log(list)
    } catch (error) {
      toast('error', '리스트 로드 실패', '입고대기 리스트 불러오기 실패:', '3000');
    }
@@ -66,7 +82,7 @@ const detailInfo = async () => {
         matId: item.matId ,
         matName: item.materialVO.matName,
         outQty: item.outQty ,
-        unit: item.materialVO.unit,
+        unit: item.materialVO.stockUnit,
         restQty: item.outQty - (item.inTotalQty),
         inTotalQty: item.inTotalQty,
         purStatusId: item.purStatusId
@@ -77,14 +93,18 @@ const detailInfo = async () => {
   }
 };
 
+//행선택시 자재명 인풋박스 바인딩용!
 const inputInfo = () => {
-    if(outQty.value == inTotalQty.value){
-        toast('info', '입고등록 완료', '입고등록이 완료된 자재입니다.', '3000');
-        return
-    }
   const row = selectedDetail.value; // 선택된 행 데이터
-  console.log(row.matName)
-  inputMatName.value = row.matName
+
+  if (row.outQty === row.inTotalQty) {
+    toast('info', '입고등록 완료', '입고등록이 완료된 자재입니다.', '3000');
+    return;
+  }
+
+  inputMatName.value = row.matName;
+  console.log('선택된 자재명:', row.matName);
+
 };
 
 
@@ -113,15 +133,53 @@ const submit = async () => {
     console.log(payload);
     try{
        await axios.post('/api/mat/matInStock', payload)
-        toast('success', '입고등록 성공', '입고등록 성공:', '3000');
+       await detailInfo();
+       toast('success', '입고등록 성공', '입고등록 성공:', '3000');
+       expDate.value = null;
+       inQty.value = null;
+       result.value = null;
+       inputMatName.value = '';
     } catch(error) {
         toast('error', '입고등록 실패', '입고등록 실패:', '3000');
     }
 }
 
 
+//반품모달open
+const openReturnModal = () => {
+    const row = selectedDetail.value;
+    if (!row) {
+        toast('info', '선택 필요', '반품할 자재를 선택하세요.', '3000');
+        return;
+    }
+    returnForm.value = {
+        matName: row.matName,
+        inboundDetId: row.id,
+        inboundId: selectedMaster.value.id,
+        returnQty: '',
+        memo: ''
+    };
+    returnDialogVisible.value = true;
+};
+
+//공통코드
+const loadStatusCodes = async () => {
+  try {
+    const res = await axios.get('/api/mat/status/inm');
+    // {"ms1":"요청등록","ms2":"요청승인",...} 형태로 변환
+    codeMap.value = res.data.reduce((acc, cur) => {
+      acc[cur.codeId] = cur.codeName;
+      return acc;
+    }, {});
+  } catch (err) {
+    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
+  }
+};
+
+
 onMounted(() => {
    pageLoad();
+   loadStatusCodes();
 });
 
 const approveUnloadColumn = [
@@ -194,8 +252,8 @@ const approveUnloadDetaiColumn = [
             <div class="font-semibold text-m">상세정보</div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
-              <btn color="warn" icon="pi pi-file-excel" label="반품" />
-              <btn color="info" icon="pi pi-file-pdf" label="등록" @click="submit"/>
+              <btn color="warn" icon="pi pi-file-excel" label="불량등록" @click="openReturnModal"/>
+              <btn color="info" icon="pi pi-file-pdf" label="입고등록" @click="submit"/>
             </div>
           </div>
 
@@ -210,11 +268,41 @@ const approveUnloadDetaiColumn = [
             <searchField type="dropDown" label="검수결과" v-model="result" class="w-full" :options="[ { name: '합격', value: 'Y' },
                                                                                                       { name: '불합격', value: 'N' }]" />
         </div>
-            <SearchField type="text" label="비고" v-model="rejMemo" />
+            <!-- <SearchField type="text" label="비고" v-model="rejMemo" /> -->
         </div>
       </div>
     </div>
   </div>
+
+<!--반품모달-->
+<!-- 반품 모달 -->
+<Dialog v-model:visible="returnDialogVisible" modal header="반품 등록" class="w-[500px]">
+  <div class="flex flex-col gap-4">
+    <SearchField type="readOnly" label="자재명" v-model="returnForm.matName" />
+    <SearchField type="text" label="반품수량" v-model="returnForm.returnQty" />
+    <SearchField type="text" label="반품사유" v-model="returnForm.memo" />
+
+    <div>
+      <label class="font-semibold text-sm mb-2">사진 첨부</label>
+      <FileUpload
+        mode="basic"
+        name="file"
+        chooseLabel="파일 선택"
+        accept="image/*"
+        @select="onFileSelect"
+      />
+      <div v-if="previewUrl" class="mt-2">
+        <img :src="previewUrl" alt="미리보기" class="w-32 rounded-lg border" />
+      </div>
+    </div>
+  </div>
+
+  <template #footer>
+    <btn color="contrast" label="취소" @click="returnDialogVisible = false" />
+    <btn color="warn" label="등록" @click="submitReturn" />
+  </template>
+</Dialog>
+
 </template>
 
 <scoped>

@@ -14,8 +14,9 @@ public class ZApprovedShipmentRowVO {
     private String logShipOrderNo;
     private String matId;
     private String matName;
-    private String unit;
+    private String stockUnit;
     private String empName;
     private String vendorId;
     private Long purStatusId;
+    private String warehouseName;
 }

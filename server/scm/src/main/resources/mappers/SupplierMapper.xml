@@ -22,10 +22,11 @@
 
    <association property="materialVO" resultMap="com.yedam.scm.common.CommonMapper.MaterialMap"/>
    <association property="purStatusLogVO" resultMap="com.yedam.scm.common.CommonMapper.PurStatusLogMap"/>
+   <association property="wareHouseVO" resultMap="com.yedam.scm.common.CommonMapper.wareHouseResultMap"/>
 </resultMap>
 
 
-<!--자재구매목록-->
+<!--발주구매목록-->
 <select id="getMatOerderList" parameterType="string" resultMap="purchaseMatMap">
 SELECT pm.pur_id,
        pm.req_qty,
@@ -36,27 +37,38 @@ SELECT pm.pur_id,
        pm.pur_no,
        pm.total,
        pm.due_date,
+       w.wh_name,
        m.mat_name,
-       m.mat_unit_price,
-       m.unit
+       m.stock_unit
 FROM purchase_mat pm
 JOIN material m
 ON pm.mat_id = m.mat_id 
+JOIN warehouse w
+ON pm.to_warehouse = w.wh_id
 WHERE pur_mat_status = 'ms1'
 AND pm.vendor_id = #{vendorId}
 </select>
 
-<!--주문승인상태변경-->
+<!--발주승인상태변경-->
 <update id="updateOrderApprove" parameterType="int">
 UPDATE purchase_mat
 SET pur_mat_status = 'ms2'
 WHERE pur_id = #{purId}
 </update>
-<!--주문상태변경이력등록-->
+<!--발주상태변경이력등록-->
 <insert id="insertStatusLog" parameterType="map">
 INSERT INTO purchase_status_log (pur_status_id, log_name, log_pur_mat_status, log_pur_id)
 VALUES (seq_purchase_status_log.NEXTVAL, #{name}, 'ms2', #{purId})
 </insert>
+
+<!--발주반려-->
+<select id="callUpdateOrderReject" parameterType="map" statementType="CALLABLE">
+        { call PROC_ORDER_REJECT(
+            #{p_pur_id,    mode=IN, jdbcType=NUMERIC},   
+            #{p_rej_memo,   mode=IN, jdbcType=VARCHAR},
+            #{p_staff,   mode=IN, jdbcType=VARCHAR}
+        )}
+</select>
 
 <!--출고지시대기목록-->
 <select id= "getMatWReleaseList" resultMap="purchaseMatMap">
@@ -68,7 +80,7 @@ SELECT pm.pur_id,
        pm.emp_name,
        pm.pur_no,
        m.mat_name,
-       m.unit,
+       m.stock_unit,
        pm.pur_mat_status,
        psl.re_date
 FROM purchase_mat pm
@@ -101,7 +113,7 @@ WHERE pm.vendor_id = #{vendorId}
 <!--공급처출고등록시:  1)출고승인목록 출력 2)입고마스터테이블 INSERT 3)입고마스터테이블데이터insert 3)입고상세테이블insert  4)배송정보테이블insert-->
 <!--출고승인목록-->
 <select id="getApprovedShipmentList" parameterType="string" resultType="com.yedam.scm.vo.ZApprovedShipmentRowVO">
-SELECT 
+ SELECT 
     pm.pur_id         AS purId,
     psl.log_expect_date    AS expectDate,
     psl.log_sup_out_qty AS outQty,
@@ -110,19 +122,23 @@ SELECT
     pm.emp_name       AS empName,
     pm.vendor_id      AS vendorId,
     m.mat_name        AS matName,
-    m.unit            AS unit,
-    psl.pur_status_id AS purStatusId
+    m.stock_unit      AS stockUnit,
+    psl.pur_status_id AS purStatusId,
+    w.wh_name        AS warehouseName
 FROM purchase_mat pm
 JOIN material m
   ON pm.mat_id = m.mat_id
 JOIN purchase_status_log psl
   ON psl.log_pur_id = pm.pur_id
+JOIN warehouse w
+  ON pm.to_warehouse = w.wh_id
 WHERE pm.pur_mat_status IN ('ms4','ms5')
   AND psl.log_pur_mat_status IN ('ms4','ms5')
   AND psl.final_ship_con = 'N'
   AND pm.vendor_id = #{vendorId}
 ORDER BY pm.expect_date ASC, psl.re_date ASC
 </select>
+
 <!--출고등록-->
 <!--[1-1]마스터 seq"GET"-->
 <select id="getInboundMasterPK" resultType="long">

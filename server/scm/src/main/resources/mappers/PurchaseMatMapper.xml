@@ -20,7 +20,7 @@
     <id property="mrpDetId" column="MRP_DET_ID"/>
     <result property="plId" column="PL_ID"/>
     <result property="matId" column="MAT_ID"/>
-    <result property="needsQty" column="NEEDS_QTY"/>
+    <result property="needsWeight" column="NEEDS_WEIGHT"/>
     <result property="currentStock" column="CURRENT_STOCK"/>
     <result property="onOrderQty" column="ON_ORDER_QTY"/>
     <result property="safeStock" column="SAFE_STOCK"/>
@@ -50,19 +50,24 @@
 
 <!--자재주문-->
 <resultMap id="PurchaseMatMap" type="PurchaseMatVO">
-    <id property="purId" column="PUR_ID"/>
-    <result property="matId" column="MAT_ID"/>
-    <result property="reqQty" column="REQ_QTY"/>
-    <result property="outTotalQty" column="OUT_TOTAL_QTY"/>
-    <result property="purMatStatus" column="PUR_MAT_STATUS"/>
-    <result property="resonComm" column="RESON_COMM"/>
-    <result property="mrpDetId" column="MRP_DET_ID"/>
-    <result property="vendorId" column="VENDOR_ID"/>
-    <result property="empName" column="EMP_NAME"/>
-    <result property="regDate" column="REG_DATE"/>
-    <result property="purNo" column="PUR_NO"/>
-    <result property="total" column="TOTAL"/>
-    <result property="dueDate" column="DUE_DATE"/>
+    <id property="purId" column="PUR_ID" />
+    <result property="matId" column="MAT_ID" />
+    <result property="reqQty" column="REQ_QTY" />
+    <result property="outTotalQty" column="OUT_TOTAL_QTY" />
+    <result property="purMatStatus" column="PUR_MAT_STATUS" />
+    <result property="resonComm" column="RESON_COMM" />
+    <result property="rejDate" column="REJ_DATE" />
+    <result property="mrpDetId" column="MRP_DET_ID" />
+    <result property="vendorId" column="VENDOR_ID" />
+    <result property="empName" column="EMP_NAME" />
+    <result property="regDate" column="REG_DATE" />
+    <result property="purNo" column="PUR_NO" />
+    <result property="total" column="TOTAL" />
+    <result property="dueDate" column="DUE_DATE" />
+    <result property="expectDate" column="EXPECT_DATE" />
+    <result property="outQty" column="OUT_QTY" />
+    <result property="shipOrderNo" column="SHIP_ORDER_NO" />
+    <result property="toWarehouse" column="TO_WAREHOUSE" />
 
     <association property="materialVO" resultMap="com.yedam.scm.common.CommonMapper.MaterialMap"/>
     <association property="purStatusLogVO" resultMap="com.yedam.scm.common.CommonMapper.PurStatusLogMap"/>
@@ -168,18 +173,19 @@
 
     <!--mrp목록-->
     <select id="getMrpList" resultMap="MrpDetailMap">
-    SELECT md.mrp_det_id,
-           md.mat_id,
-           m.mat_name,
-           md.needs_qty,
-           md.safe_stock,
-           md.shortage_qty,
-           md.unit,
-           md.lead_time
-    FROM mrp_detail md
-    JOIN material m ON md.mat_id = m.mat_id
-    WHERE md.status = 're0'   
-    ORDER BY md.mrp_det_id DESC
+SELECT md.mrp_det_id,
+       md.mat_id,
+       m.mat_name,
+       md.needs_weight,
+       md.safe_stock,
+       md.shortage_qty,
+       md.unit,
+       md.lead_time
+FROM mrp_detail md
+JOIN material m ON md.mat_id = m.mat_id
+WHERE md.status = 're0'
+  AND md.shortage_qty > 0
+ORDER BY md.mrp_det_id DESC
 
     </select>
 
@@ -191,7 +197,8 @@
             #{vendorId, mode=IN, jdbcType=VARCHAR}, 
             #{total,    mode=IN, jdbcType=NUMERIC},  
             #{dueDate,  mode=IN, jdbcType=DATE},     
-            #{mrpDetId, mode=IN, jdbcType=NUMERIC},  
+            #{mrpDetId, mode=IN, jdbcType=NUMERIC}, 
+            #{toWarehouse,  mode=IN, jdbcType=VARCHAR}, 
             #{empName,  mode=IN, jdbcType=VARCHAR}   
         )}
     </select>
@@ -205,12 +212,14 @@
            m.mat_name,
            v.company_name,
            pm.pur_mat_status,
-           pm.emp_name
+           pm.emp_name,
+           m.stock_unit
     FROM purchase_mat pm
     JOIN material m
     ON pm.mat_id = m.mat_id
     JOIN vendor v
     ON pm.vendor_id = v.vendor_id
+    ORDER BY pm.reg_date DESC
     </select>
     <!--자재주문상세이력-->
     <select id ="getPurchaseStatus" parameterType="long" resultType = "PurStatusLogVO">
@@ -218,7 +227,8 @@
            psl.log_name,
            psl.log_pur_mat_status,
            NVL(psl.log_sup_out_qty,0) as log_sup_out_qty,
-           psl.log_expect_date
+           psl.log_expect_date,
+           psl.log_reson_comm
     FROM purchase_status_log psl
     WHERE log_pur_id = #{purId}
     ORDER BY re_date DESC

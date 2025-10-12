@@ -22,8 +22,8 @@ const getNowDate = () => {
 };
 
 
-const vendorId = ref('V800');
-const vanEmpName = ref('홍길동');
+const vendorId = ref('VEN001');
+const vanEmpName = ref('홍길동')
 const shipmentDate = ref(getNowDate()); //출고일
 const deliveryPlace = ref(''); //배송창고 바인딩용
 const carrier = ref()//운송업체
@@ -59,18 +59,16 @@ const approveShipColumns = [
   { label: '출고지시번호', field: 'shipOrderNo' },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
-  //{ label: '구매처 담당자', field: 'buyerName' },
-  { label: '도착지', field: 'toWarehouse' },
-  //{ label: '출고수량', field: 'ortQty' },
-  //{ label: '단위', field: 'unit' }
+  { label: '구매처 담당자', field: 'buyerName' },
+  { label: '출고수량', field: 'ortQty' },
+  { label: '단위', field: 'unit' }
 ];
 
 const addShipColumns = [
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
   { label: '출고수량', field: 'ortQty' },
-  { label: '단위', field: 'unit' },
-  { label: '구매처 담당자', field: 'purName' }
+  { label: '단위', field: 'unit' }
 ];
 
 //페이지로드시 목록출력
@@ -87,10 +85,9 @@ const pageLoad = async () => {
       matName: item.matName,
       buyerName: item.empName,
       ortQty: item.outQty, // 출고수량
-      unit: item.stockUnit, // VO에서 unit
+      unit: item.unit, // VO에서 unit
       vendorId: item.vendorId, // 거래처코드
-      purId: item.purId, // 주문테이블아이디
-      toWarehouse: item.warehouseName
+      purId: item.purId // 주문테이블아이디
     }));
   } catch (error) {
     toast('error', '리스트 로드 실패', '리스트 불러오기 실패:', '3000');
@@ -99,11 +96,7 @@ const pageLoad = async () => {
 
 //(좌측)제품클릭시 우측테이블 행 push
 const addTOshipmentList = (row) => {
-    //클릭시 1번만 들어가도록 제어
-    if (shipDetailList.value.some(r => r.matId === row.matId && r.purId === row.purId)) {
-    return;
-  }
-  console.log(row.id)
+console.log(row.id)
   const emptyRowIndex = shipDetailList.value.findIndex((r) => !r.matId);
   const newRow = {
      //테이블 출력데이터
@@ -112,7 +105,6 @@ const addTOshipmentList = (row) => {
       matName:row.matName,
       ortQty:row.ortQty,
       unit: row.unit,
-      purName: row.buyerName,
     //DB입력시 행별 필요데이터[]
       shipOrderNo: row.logShipOrderNo, //출고지시번호
       purId: row.purId,  //주문테이블 아이디
@@ -161,7 +153,6 @@ const submit = async () => {
     carrier.value = '';
     trackingNo.value = '';
     carNo.value = '';
-    shipDetailList.value = [{ matId: '', matName: '', ortQty: null, unit: ''}];
 
   } catch (error) {
     toast('error', '등록 실패', '출고등록  실패:', '3000');

@@ -14,6 +14,7 @@
     <result property="status"       column="STATUS"/>
     <result property="spec"         column="SPEC"/>
     <result property="unit"         column="UNIT"/>
+    <result property="stockUnit"    column="STOCK_UNIT"/>
 </resultMap>
 
 <!-- PurStatusLog 매핑 -->
@@ -28,6 +29,7 @@
     <result property="logExpectDate"     column="LOG_EXPECT_DATE"/>
     <result property="logShipOrderNo"     column="LOG_SHIP_ORDER_NO"/>
     <result property="finalShipCon"     column="FINAL_SHIP_CON"/>
+    <result property="logResonComm"     column="LOG_RESON_COMM"/>
 </resultMap>
 
 <!--거래처 resultMap -->
@@ -92,6 +94,16 @@
     <result property="logInspectDate" column="LOG_INSPECT_DATE" />
     <result property="logResult" column="LOG_RESULT" />
     <result property="logImg" column="LOG_IMG" />
+</resultMap>
+
+<!--창고resultMap-->
+<resultMap id="wareHouseResultMap" type="WareHouseVO">
+    <result property="whId"       column="WH_ID" />
+    <result property="whName"     column="WH_NAME" />
+    <result property="whAddress"  column="WH_ADDRESS" />
+    <result property="whOwner"    column="WH_OWNER" />
+    <result property="ownerTel"   column="OWNER_TEL" />
+    <result property="status"     column="STATUS" />
 </resultMap>
 
 </mapper>

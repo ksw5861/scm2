@@ -39,6 +39,7 @@ const pageLoad = async () => {
       purNo: row.purNo,
       matName: row.materialVO.matName,
       reqQty: row.reqQty,
+      unit: row.materialVO.stockUnit,
       companyName: row.vendorVO.companyName,
       empName: row.empName
     }));
@@ -74,7 +75,8 @@ const detailInfo = async () => {
     //타임라인
     events.value = list.data.map((item) => ({
       date: useDateFormat(item.reDate).value,
-      status: codeMap.value[item.logPurMatStatus] || item.logPurMatStatus
+      status: codeMap.value[item.logPurMatStatus] || item.logPurMatStatus,
+      rejMemo: item.logResonComm
     }));
     //상세테이블
     statusList.value = list.data.map((item) => ({
@@ -94,6 +96,7 @@ const purchaseListColumn = [
   { label: '주문번호', field: 'purNo' },
   { label: '자재명', field: 'matName' },
   { label: '주문수량', field: 'reqQty' },
+  { label: '단위', field: 'unit' },
   { label: '공급처', field: 'companyName' },
   { label: '담당자', field: 'empName' }
 ];
@@ -163,7 +166,7 @@ const statusColumn = [
                 <template #opposite="slotProps">
                   <small class="text-surface-500 dark:text-surface-400">{{ slotProps.item.date }}</small>
                 </template>
-                <template #content="slotProps"> {{ slotProps.item.status }} </template>
+                <template #content="slotProps"> [{{ slotProps.item.status }}] {{ slotProps.item.rejMemo }} </template>
               </Timeline>
             </div>
             <div>

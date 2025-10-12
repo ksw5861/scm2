@@ -12,7 +12,7 @@ import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 const route = useRoute();
 const { toast } = useAppToast();
 
-const vendorId = ref('VEN001');
+const vendorId = ref('V800');
 const dateRange = ref({ start: null, end: null }); // 초기값을 객체로
 const materialName = ref();
 const statusList = ref();
@@ -36,14 +36,14 @@ const matOutColumns = [
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
   { label: '구매처 담당자', field: 'buyerName' },
-  { label: '주문수량', field: 'orderQty' },
+  { label: '수량', field: 'orderQty' },
   { label: '단위', field: 'unit' },
   { label: '잔여수량', field: 'restQty' },
   { label: '출고수량', field: 'outQty', inputText: true },
   { label: '출고예정일', field: 'expectDate', datePicker: true },
   { label: '누적출고수량', field: 'outTotalQty' },
-  { label: '상태', field: 'releaseStatus' },
-  { label: '출고승인일', field: 'approveDate' }
+  //{ label: '상태', field: 'releaseStatus' },
+  //{ label: '출고승인일', field: 'approveDate' }
 ];
 
 const pageLoad = async () => {
@@ -59,7 +59,7 @@ const pageLoad = async () => {
       matName: item.materialVO.matName,
       buyerName: item.empName,
       orderQty: item.reqQty,
-      unit: item.materialVO.unit,
+      unit: item.materialVO.stockUnit,
       outQty: '',
       expectDate: '',
       outTotalQty: item.outTotalQty,

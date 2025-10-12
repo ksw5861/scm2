@@ -56,6 +56,24 @@ const ms = {
         requiresAuth: true,
         roles: ['admin', 'employee']
       }
+    },
+    {
+      path: '/matLotStock',
+      name: '재고현황',
+      component: () => import('@/views/pages/ms/MatLotStock.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    },
+    {
+      path: '/matStockadj',
+      name: '재고조정',
+      component: () => import('@/views/pages/ms/MatStockAdj.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
     }
   ]
 };

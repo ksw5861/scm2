@@ -27,7 +27,12 @@ const empName = ref('최길동');
 
 const shipedListData = ref();
 const selectedRows = ref();
-const shipDetailListData = ref();
+const shipDetailListData = ref([
+  { matId: '', matName: '', ortQty: null, unit: ''}
+]);
+//모달
+const returnModal = ref(false);
+const returnMemo = ('');
 
 const pageLoad = async () => {
   try {
@@ -69,8 +74,19 @@ const approve = async() => {
         await axios.post('/api/mat/approveUnload', null, { params: { inboundId : selectedRows.value.id, unloadEmp : empName.value} })
         toast('info', '하차승인 성공', '하차승인 성공:', '3000');
         await pageLoad();
+        shipDetailListData.value =[{ matId: '', matName: '', ortQty: null, unit: ''}];
     } catch(error){
         toast('error', '하차승인 실패', '하차승인 실패:', '3000');
+    }
+}
+
+const returnSubmit = async() => { //사유, 담당자, 하차등록시 해당 마스터와 디테일 모두 상태값 변경하고 기록해줘야함. [입고마스터 + 디테일]
+    try{
+        await axios.post('')
+        toast('info', '반품등록 성공', '반품등록 성공:', '3000');
+        await pageLoad();
+    } catch(error) {
+        toast('error', '반품등록 실패', '반품등록 실패:', '3000');
     }
 }
 
@@ -78,6 +94,21 @@ onMounted(() => {
   pageLoad();
 });
 
+const openRetrunModal = () =>{
+
+    if (selectedRows.value.length === 0) {
+        toast('info', '선택 필요', '반품등록할 항목을 출고번호를 선택해주세요:', '3000');
+        return;
+    }
+
+    toast('info', '반품등록', '반품등록시 전량 반품처리됩니다.', '5000');
+
+    returnModal.value= true;
+}
+
+const closeReturnModal = () => {
+    returnModal.value= false;
+}
 const shipedColumn = [
   { label: '출고일', field: 'shipedDate' },
   { label: '출고번호', field: 'vanOutNo' },
@@ -134,7 +165,7 @@ const shipDetailColumn = [
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">하차대기 목록</div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" :showCheckbox="false"/>
+            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" />
           </div>
         </div>
       </div>
@@ -147,17 +178,29 @@ const shipDetailColumn = [
             <div class="font-semibold text-m">상세정보</div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
-              <btn color="warn" icon="pi pi-file-excel" label="거부" />
+              <btn color="warn" icon="pi pi-file-excel" label="반품" @click="openRetrunModal"/>
               <btn color="info" icon="pi pi-file-pdf" label="승인" @click="approve"/>
             </div>
           </div>
 
           <Divider />
-          <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipDetailColumn" :data="shipDetailListData" :paginator="false" :showCheckbox="false" @row-select="detailInfo" />
+          <selectTable v-model:selection="selectedDeRow" :selectionMode="'single'" :columns="shipDetailColumn" :data="shipDetailListData" :paginator="false" :showCheckbox="false" />
         </div>
       </div>
     </div>
   </div>
+
+<!--반품모달-->
+<Dialog v-model:visible="returnModal" modal header="반품 사유" :style="{ width: '500px' }">
+     <div class="card flex justify-center">
+        <Textarea v-model="returnMemo" rows="5" cols="100" />
+    </div>
+     <div class="flex justify-center gap-2">
+        <btn color="warn" icon="pi pi-file-excel" label="취소" @click="closeReturnModal" />
+        <btn color="warn" icon="pi pi-file-excel" label="등록" @click="returnSubmit" />
+    </div>
+</Dialog>
+
 </template>
 
 <scoped>
