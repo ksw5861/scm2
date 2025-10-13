@@ -174,19 +174,6 @@
     </dependencies>
 
     <build>
-        <!-- jasper 한글-->
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <includes>
-                    <include>**/*.xml</include>
-                    <include>**/*.ttf</include>
-                    <include>**/*.jasper</include>
-                    <include>**/*.properties</include>
-                </includes>
-            </resource>
-        </resources>
-        
         <plugins>
             <!-- Compiler Plugin -->
             <plugin>
