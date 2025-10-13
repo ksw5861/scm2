@@ -47,7 +47,7 @@ file:
   upload:
     employee-dir: C:/uploads/employee   # 개발 환경
     # employee-dir: /home/app/uploads/employee  # 배포 환경
-
+ 
 jwt:
   secret: ENC(dzfcQtWysP6YaJ/3ZshuUyeqb/Jqc23jSsctfL6ZfFEZHFBIOtIJIvjoknh2MiWnPQN3a2bYnUxzSV51QCoQ0A==)
   expiration: 18000000
@@ -64,3 +64,6 @@ recaptcha:
 kakao:
   client:
     key: ENC(N3XaOG+/y9q1lWNAhCQEw3jUZulEkGqDEHkAVX6ROKJImTLdXCo9nkWh0wxItLFy)
+
+
+
