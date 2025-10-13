@@ -505,95 +505,98 @@ onMounted(fetchEmployeeList);
 
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
 
-    <SearchCard
-      title="사원 검색"
-      @search="handleSearch"
-      @reset="handleReset"
-    >
-      <div class="flex flex-wrap w-full">
-        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
-          <InputGroup>
-            <InputGroupAddon><i :class="icons.employee" /></InputGroupAddon>
-            <IftaLabel>
-              <InputText v-model="searchParams.empName" inputId="name" />
-              <label for="name">사원명</label>
-            </IftaLabel>
-          </InputGroup>
-        </div>
-
-        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
-          <InputGroup>
-            <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
-            <IftaLabel>
-              <InputText
-                v-model="searchParams.phone"
-                inputId="phone"
-                @input="searchParams.phone = formatPhone(searchParams.phone)"
-              />
-              <label for="phone">휴대전화 번호</label>
-            </IftaLabel>
-          </InputGroup>
-        </div>
-
-        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
-          <InputGroup>
-            <InputGroupAddon><i :class="icons.id" /></InputGroupAddon>
-            <IftaLabel>
-              <InputText v-model="searchParams.empId" inputId="employeeId" />
-              <label for="employeeId">사원 번호</label>
-            </IftaLabel>
-          </InputGroup>
-        </div>
-
-        <div class="hidden lg:block lg:w-1/2 xl:w-full"></div>
-
-        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
-          <label class="font-semibold mb-1">재직 상태</label>
-          <div class="flex flex-wrap gap-4">
-            <div
-              v-for="opt in STATUS_OPTIONS"
-              :key="opt.value"
-              class="flex items-center gap-2"
-            >
-              <Checkbox
-                v-model="searchParams.status"
-                :inputId="'status-' + opt.value"
-                :value="opt.value"
-              />
-              <label
-                :for="'status-' + opt.value"
-                class="select-none cursor-pointer"
-              >
-                {{ opt.label }}
-              </label>
+    <SearchCard title="사원 검색" @search="handleSearch" @reset="handleReset">
+        <div class="flex flex-wrap w-full">
+            <!-- 1행: 재직 상태 + 사용 여부 -->
+            <div class="flex flex-wrap p-2 gap-4 xl:gap-0 w-full xl:w-full">
+            <!-- 재직 상태 -->
+            <div class="flex flex-col gap-2 w-full xl:w-1/4 lg:w-1/2">
+                <label class="font-semibold mb-1">재직 상태</label>
+                <div class="flex flex-wrap gap-4">
+                <div
+                    v-for="opt in STATUS_OPTIONS"
+                    :key="opt.value"
+                    class="flex items-center gap-2"
+                >
+                    <Checkbox
+                    v-model="searchParams.status"
+                    :inputId="'status-' + opt.value"
+                    :value="opt.value"
+                    />
+                    <label
+                    :for="'status-' + opt.value"
+                    class="select-none cursor-pointer"
+                    >
+                    {{ opt.label }}
+                    </label>
+                </div>
+                </div>
             </div>
-          </div>
-        </div>
 
-        <div class="flex flex-col gap-2 p-2 w-full xl:w-1/3 lg:w-1/2">
-          <label class="font-semibold mb-1">사용 여부</label>
-          <div class="flex flex-wrap gap-4">
-            <div
-              v-for="opt in ACTIVE_OPTIONS"
-              :key="opt.value"
-              class="flex items-center gap-2"
-            >
-              <Checkbox
-                v-model="searchParams.isActive"
-                :inputId="'isActive-' + opt.value"
-                :value="opt.value"
-              />
-              <label
-                :for="'isActive-' + opt.value"
-                class="select-none cursor-pointer"
-              >
-                {{ opt.label }}
-              </label>
+            <!-- 사용 여부 -->
+            <div class="flex flex-col gap-2 w-full xl:w-1/4 lg:w-1/2">
+                <label class="font-semibold mb-1">사용 여부</label>
+                <div class="flex flex-wrap gap-4">
+                <div
+                    v-for="opt in ACTIVE_OPTIONS"
+                    :key="opt.value"
+                    class="flex items-center gap-2"
+                >
+                    <Checkbox
+                    v-model="searchParams.isActive"
+                    :inputId="'isActive-' + opt.value"
+                    :value="opt.value"
+                    />
+                    <label
+                    :for="'isActive-' + opt.value"
+                    class="select-none cursor-pointer"
+                    >
+                    {{ opt.label }}
+                    </label>
+                </div>
+                </div>
             </div>
-          </div>
+
+            <div class="hidden xl:block w-full xl:w-1/2"></div>
+            </div>
+
+            <!-- 2행: 사원명 / 휴대전화 / 사원 번호 -->
+            <div class="flex flex-col gap-2 p-2 w-full xl:w-1/4 lg:w-1/2">
+            <InputGroup>
+                <InputGroupAddon><i :class="icons.employee" /></InputGroupAddon>
+                <IftaLabel>
+                <InputText v-model="searchParams.empName" inputId="name" />
+                <label for="name">사원명</label>
+                </IftaLabel>
+            </InputGroup>
+            </div>
+
+            <div class="flex flex-col gap-2 p-2 w-full xl:w-1/4 lg:w-1/2">
+            <InputGroup>
+                <InputGroupAddon><i :class="icons.phone" /></InputGroupAddon>
+                <IftaLabel>
+                <InputText
+                    v-model="searchParams.phone"
+                    inputId="phone"
+                    @input="searchParams.phone = formatPhone(searchParams.phone)"
+                />
+                <label for="phone">휴대전화 번호</label>
+                </IftaLabel>
+            </InputGroup>
+            </div>
+
+            <div class="flex flex-col gap-2 p-2 w-full xl:w-1/4 lg:w-1/2">
+            <InputGroup>
+                <InputGroupAddon><i :class="icons.id" /></InputGroupAddon>
+                <IftaLabel>
+                <InputText v-model="searchParams.empId" inputId="employeeId" />
+                <label for="employeeId">사원 번호</label>
+                </IftaLabel>
+            </InputGroup>
+            </div>
         </div>
-      </div>
     </SearchCard>
+
 
     <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
       <div class="w-full xl:w-5/12 lg:w-1/2">

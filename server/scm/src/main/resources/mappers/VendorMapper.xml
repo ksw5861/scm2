@@ -9,13 +9,13 @@
         <foreach item="st" collection="condition.type" separator=" OR ">
           <choose>
             <when test="st == 0">
-              type IN (0, 2)
+              type IN ('0', '2')
             </when>
             <when test="st == 1">
-              type IN (1, 2)
+              type IN ('1', '2')
             </when>
             <otherwise>
-              type = #{st}
+              1 = 1
             </otherwise>
           </choose>
         </foreach>
@@ -23,10 +23,18 @@
     </if>
 
     <if test="condition.isActive != null and condition.isActive.size() > 0">
-      AND is_active IN
-      <foreach item="st" collection="condition.isActive" open="(" separator="," close=")">
-        #{st}
-      </foreach>
+      AND (
+        <foreach item="st" collection="condition.isActive" separator=" OR ">
+          <choose>
+            <when test="st == 'Y'">
+              is_active = 'Y'
+            </when>
+            <when test="st == 'N'">
+              is_active = 'N'
+            </when>
+          </choose>
+        </foreach>
+      )
     </if>
 
     <if test="condition.companyName != null and condition.companyName != ''">
