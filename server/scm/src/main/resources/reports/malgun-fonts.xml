@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fontFamilies>
+  <fontFamily name="Malgun Gothic">
+    <normal><![CDATA[reports/MALGUN.TTF]]></normal>
+    <bold><![CDATA[reports/MALGUNBD.TTF]]></bold>
+    <italic><![CDATA[reports/MALGUNSL.TTF]]></italic>
+    <pdfEncoding>Identity-H</pdfEncoding>
+    <pdfEmbedded>true</pdfEmbedded>
+  </fontFamily>
+</fontFamilies>

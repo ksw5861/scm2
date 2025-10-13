@@ -4,7 +4,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.InputStream;
 
+
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,12 +20,23 @@ import com.yedam.scm.order.service.IamportService;
 import com.yedam.scm.order.service.OrderService;
 import com.yedam.scm.order.service.ReturnService;
 import com.yedam.scm.order.service.PayService;
-import com.yedam.scm.vo.SalesOrderVO;
+
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+
 import com.yedam.scm.vo.PaymentVO;
 import com.yedam.scm.vo.ReturnVO;
+import com.yedam.scm.vo.SalesOrderVO;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ReturnDetailVO;
+
+
 
 /**
  * EgController
@@ -617,5 +632,39 @@ public ResponseEntity<?> getDeliveryDetailList(@PathVariable("orderId") String o
         List<Map<String, Object>> list = goDelSvc.selectReadyToDeliverSimple(); 
         return ResponseEntity.ok(list);
     }
+
+// ================================================================
+// 20. 주문목록조회 - 주문상세건 PDF 출력
+// ================================================================
+@GetMapping("/orders/{orderId}/pdf")
+public ResponseEntity<byte[]> exportOrderPdf(@PathVariable String orderId) throws Exception {
+
+    // 1. 데이터 조회
+    List<SalesOrderDetailVO> details = orderSvc.getOrderDetails(orderId);
+
+    // 2. JasperReport 로드 (클래스패스 기반)
+    InputStream jasperStream = getClass().getResourceAsStream("/reports/order_detail.jasper");
+    JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(details);
+
+    // 3. 파라미터 설정
+    Map<String, Object> params = new HashMap<>();
+    params.put("orderId", orderId);
+    params.put("totalPrice", details.stream()
+        .mapToLong(SalesOrderDetailVO::getTotalUnitPrice)
+        .sum());
+
+    params.put("REPORT_LOGO", getClass().getResource("/reports/logo.png").toString());
+
+    // 4. PDF 생성
+    JasperPrint jasperPrint = JasperFillManager.fillReport(jasperStream, params, dataSource);
+    byte[] pdfBytes = JasperExportManager.exportReportToPdf(jasperPrint);
+
+    // 5. 응답 설정
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_PDF);
+    headers.setContentDispositionFormData("attachment", "order_" + orderId + ".pdf");
+
+    return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
+}
 
 }
