@@ -3,6 +3,7 @@ package com.yedam.scm.supplier.service;
 import java.util.List;
 import java.util.Map;
 
+import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
@@ -21,4 +22,8 @@ public interface SupplierService {
     List<PurchaseMatVO> getApprovedShipmentList (String vendorId);
     //출고등록
     void insertShipmentInfo(InboundVO MatShipInfo);
+    //공급(출고)목록
+    List<InboundVO> getSupplyList(String vendorId);
+    //출고상세목록
+    List<InboundLogVO> getSupplyDetailList(Long inboundDetId);
 }

@@ -34,6 +34,12 @@ public class InStockMatServiceImpl implements InStockMatService {
     }
 
     @Override
+    public void callUnloadReturn(Long inboundId, String unloadEmp, String rejMemo) {
+        mapper.callUnloadReturn(inboundId, unloadEmp, rejMemo);
+    }
+
+
+    @Override
     public List<InboundVO> getApproveUnload() {
         return mapper.getApproveUnload();
     }
@@ -57,5 +63,4 @@ public class InStockMatServiceImpl implements InStockMatService {
     public List<MatLotVO> getMatLotList(String matId) {
        return mapper.getMatLotList(matId);
     }
-
 }

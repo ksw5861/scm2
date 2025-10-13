@@ -2,8 +2,6 @@ package com.yedam.scm.instockMat.service;
 
 import java.util.List;
 
-import org.springframework.web.bind.annotation.RequestParam;
-
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatLotVO;
@@ -15,6 +13,8 @@ public interface InStockMatService {
     List<InboundDetailVO> getVenShipDetailList(Long inboundId);
     //하차승인
     void callApproveUnload(Long inboundId, String unloadEmp);
+    //하차반품
+    void callUnloadReturn(Long inboundId, String unloadEmp, String rejMemo);
     //입고대기목록
     List<InboundVO> getApproveUnload();
     //입고대기목록(상세)
@@ -24,5 +24,5 @@ public interface InStockMatService {
     //재고목록
     List<MatLotVO> getMatStockList();
     //자재별LOT현황
-    List<MatLotVO> getMatLotList(@RequestParam String matId);
+    List<MatLotVO> getMatLotList(String matId);
 }

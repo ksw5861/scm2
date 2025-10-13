@@ -68,4 +68,8 @@ public interface OrderMapper {
     // 주문 삭제
     int deleteOrder(String orderId);
 
+    // =============================================================
+    // 주문조회페이지 PDF
+    // =============================================================
+    List<SalesOrderDetailVO> findOrderDetails(String orderId);
 }

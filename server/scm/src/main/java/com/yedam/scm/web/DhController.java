@@ -3,6 +3,8 @@ package com.yedam.scm.web;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yedam.scm.common.service.MailService;
+import com.yedam.scm.dto.AccountListRes;
+import com.yedam.scm.dto.AccountSearchDTO;
 import com.yedam.scm.dto.AuthRes;
 import com.yedam.scm.dto.EmailDTO;
 import com.yedam.scm.dto.EmployeeListRes;
@@ -12,6 +14,7 @@ import com.yedam.scm.dto.LoginRes;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.login.service.AppLoginService;
 import com.yedam.scm.login.service.LoginService;
+import com.yedam.scm.master.service.AccountService;
 import com.yedam.scm.master.service.EmployeeService;
 import com.yedam.scm.order.service.GoDelService;
 import com.yedam.scm.security.JwtUtil;
@@ -38,9 +41,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-
-
 
 /**
  * DhController
@@ -59,6 +59,7 @@ public class DhController {
   private final JwtUtil jwtUtil;
   private final MailService mailSvc;
   private final GoDelService godelSvc;
+  private final AccountService accountSvc;
 
   /**
    * 확장자 없이 요청 시 자동으로 탐색하여 이미지 반환
@@ -436,5 +437,65 @@ public class DhController {
       return updated ? ResponseEntity.ok("주문 " + shipId + " 배송완료 처리됨")
                     : ResponseEntity.badRequest().body("처리 실패");
   }
+
+  // 계정 관리
+  @GetMapping("/account")
+  public ResponseEntity<AccountListRes> getAccountList(
+    @ModelAttribute AccountSearchDTO condition,
+    @ModelAttribute PageDTO paging
+  ) {
+
+    AccountListRes res = accountSvc.getAccountList(condition, paging);
+    
+    return res == null 
+      ? ResponseEntity.noContent().build()
+      : ResponseEntity.ok(res);
+
+  }
+
+  @PutMapping("/account/{accountId}/active")
+  public ResponseEntity<?> updateAccountActive(
+      @PathVariable String accountId,
+      @RequestBody Map<String, Object> body
+  ) {
+      Map<String, Object> response = new HashMap<>();
+
+      try {
+          String isActiveStr = String.valueOf(body.get("isActive"));
+          Character isActive = isActiveStr.charAt(0);
+
+          if (accountSvc.updateUseYn(accountId, isActive)) {
+              return ResponseEntity.ok().build();
+          } else {
+              return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+          }
+
+      } catch (Exception e) {
+          e.printStackTrace();
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+      }
+  }
+
+  @PostMapping("/account/{accountId}/reset-password")
+  public ResponseEntity<?> resetPassword(
+      @PathVariable String accountId
+  ) {
+      Map<String, Object> response = new HashMap<>();
+
+      try {
+
+          if (accountSvc.resetPassword(accountId)) {
+              return ResponseEntity.ok().build();
+          } else {
+              return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+          }
+
+      } catch (Exception e) {
+          e.printStackTrace();
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+      }
+  }
+
+
 
 }

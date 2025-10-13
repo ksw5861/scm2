@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.yedam.scm.supplier.service.SupplierService;
+import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
@@ -12,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
-
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -73,5 +73,15 @@ public class SupplierController {
         service.insertShipmentInfo(MatShipInfo);
     }
     
+    //출고(공급)목록
+    @GetMapping("/supplyList/{vendorId}")
+    public List<InboundVO> getSupplyList(@PathVariable String vendorId) {
+        return service.getSupplyList(vendorId);
+    }
+    //출고상세목록
+    @GetMapping("/supplyDetailList")
+    public List<InboundLogVO> getSupplyDetailList(@RequestParam Long inboundDetId) {
+        return service.getSupplyDetailList(inboundDetId);
+    }
 }
 

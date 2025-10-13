@@ -7,6 +7,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.yedam.scm.vo.InboundDetailVO;
+import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
@@ -40,5 +41,10 @@ public interface SupplierMapper {
     void callShipmentMasterPoc(InboundVO MatShipInfo);
     //2) 프로시저
     void callShipmentDetailPoc(InboundDetailVO detail);
+
+    //공급목록
+    List<InboundVO> getSupplyList(String vendorId);
+    //출고상세목록
+    List<InboundLogVO> getSupplyDetailList(Long inboundDetId);
     
 }

@@ -10,7 +10,7 @@ import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import FileUpload from 'primevue/fileupload';
 import Dialog from 'primevue/dialog';
-
+import Textarea from 'primevue/textarea';
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -42,52 +42,52 @@ const result = ref();
 // codeId → codeName 매핑용
 const codeMap = ref({});
 //반품모달용
-const returnDialogVisible = ref(false);
+const defectModal = ref(false);
 const previewUrl = ref(null);
 const selectedFile = ref(null);
-const returnForm = ref({
+//불량정보를 백단에서 받을 inboundLogVO랑 바로 매핑가능하도록 사용!
+const defectForm = ref({
   matName: '',
   inboundDetId: null,
-  inboundId: null,
-  returnQty: '',
-  memo: ''
+  logRejQty: '',
+  logMemo: '',
+  logName: empName.value
 });
 
-
- const pageLoad = async () => {
+const pageLoad = async () => {
   try {
     const list = await axios.get('/api/mat/unloadList');
-     approveUnloadList.value = list.data.map((item) => ({
-        id: item.inboundId,
-        unloadDate: useDateFormat(item.unloadDate).value,
-        inboundNo: item.inboundNo,
-        companyName: item.vendorVO.companyName,
-        inboundStatus: codeMap.value[item.inboundStatus] || item.inboundStatus,
-        unloadEmp: item.unloadEmp
+    approveUnloadList.value = list.data.map((item) => ({
+      id: item.inboundId,
+      unloadDate: useDateFormat(item.unloadDate).value,
+      inboundNo: item.inboundNo,
+      companyName: item.vendorVO.companyName,
+      inboundStatus: codeMap.value[item.inboundStatus] || item.inboundStatus,
+      unloadEmp: item.unloadEmp
     }));
-    console.log(list)
-   } catch (error) {
-     toast('error', '리스트 로드 실패', '입고대기 리스트 불러오기 실패:', '3000');
-   }
- };
+    console.log(list);
+  } catch (error) {
+    toast('error', '리스트 로드 실패', '입고대기 리스트 불러오기 실패:', '3000');
+  }
+};
 
 const detailInfo = async () => {
   try {
-    console.log(selectedMaster.value.id)
-    const list = await axios.get('/api/mat/unloadDetailList', { params: {inboundId : selectedMaster.value.id} });
-    console.log(list)
+    console.log(selectedMaster.value.id);
+    const list = await axios.get('/api/mat/unloadDetailList', { params: { inboundId: selectedMaster.value.id } });
+    console.log(list);
     //상세테이블
     approveUnloadDetailList.value = list.data.map((item) => ({
-        id: item.inboundDetId,
-        matId: item.matId ,
-        matName: item.materialVO.matName,
-        outQty: item.outQty ,
-        unit: item.materialVO.stockUnit,
-        restQty: item.outQty - (item.inTotalQty),
-        inTotalQty: item.inTotalQty,
-        purStatusId: item.purStatusId
+      id: item.inboundDetId,
+      matId: item.matId,
+      matName: item.materialVO.matName,
+      outQty: item.outQty,
+      unit: item.materialVO.stockUnit,
+      restQty: item.outQty - item.inTotalQty,
+      inTotalQty: item.inTotalQty,
+      purStatusId: item.purStatusId
     }));
-    inputMatName.value ='';
+    inputMatName.value = '';
   } catch (error) {
     toast('error', '상세정보 실패', '상세정보 불러오기 실패:', '3000');
   }
@@ -104,62 +104,88 @@ const inputInfo = () => {
 
   inputMatName.value = row.matName;
   console.log('선택된 자재명:', row.matName);
-
 };
 
-
 const submit = async () => {
+  //불합격시 등록버튼 제어
+  if (result.value === 'N') {
+    toast('info', '입고등록 실패', '검수결과 합격자재만 입고가능합니다.', '3000');
+    return;
+  }
+  //입고수량 > 입고잔여수량 초과제어
+  // if(Number(inQty.value) > Number(restQty.value)){
+  //     toast('info', '입고등록 실패', '입고수량이 입고잔여수량을 초과할 수 없습니다.', '3000');
+  //     return
+  // }
 
-    //불합격시 등록버튼 제어
-    if(result.value === 'N'){
-        toast('info', '입고등록 실패', '검수결과 합격자재만 입고가능합니다.', '3000');
-        return
+  const payload = {
+    inboundDetId: selectedDetail.value.id,
+    inboundId: selectedMaster.value.id,
+    inQty: inQty.value,
+    inboundLogVO: {
+      logExpDate: expDate.value,
+      logName: empName.value
     }
-    //입고수량 > 입고잔여수량 초과제어
-    // if(Number(inQty.value) > Number(restQty.value)){
-    //     toast('info', '입고등록 실패', '입고수량이 입고잔여수량을 초과할 수 없습니다.', '3000');
-    //     return
-    // }
-
-    const payload = {
-         inboundDetId: selectedDetail.value.id,
-         inboundId: selectedMaster.value.id,
-         inQty: inQty.value,
-         inboundLogVO: {
-            logExpDate: expDate.value,
-            logName: empName.value
-        }
-    }
-    console.log(payload);
-    try{
-       await axios.post('/api/mat/matInStock', payload)
-       await detailInfo();
-       toast('success', '입고등록 성공', '입고등록 성공:', '3000');
-       expDate.value = null;
-       inQty.value = null;
-       result.value = null;
-       inputMatName.value = '';
-    } catch(error) {
-        toast('error', '입고등록 실패', '입고등록 실패:', '3000');
-    }
-}
-
+  };
+  console.log(payload);
+  try {
+    await axios.post('/api/mat/matInStock', payload);
+    await detailInfo();
+    toast('success', '입고등록 성공', '입고등록 성공:', '3000');
+    expDate.value = null;
+    inQty.value = null;
+    result.value = null;
+    inputMatName.value = '';
+  } catch (error) {
+    toast('error', '입고등록 실패', '입고등록 실패:', '3000');
+  }
+};
 
 //반품모달open
 const openReturnModal = () => {
-    const row = selectedDetail.value;
-    if (!row) {
-        toast('info', '선택 필요', '반품할 자재를 선택하세요.', '3000');
-        return;
-    }
-    returnForm.value = {
-        matName: row.matName,
-        inboundDetId: row.id,
-        inboundId: selectedMaster.value.id,
-        returnQty: '',
-        memo: ''
-    };
-    returnDialogVisible.value = true;
+  const row = selectedDetail.value;
+  if (!row) {
+    toast('info', '선택 필요', '반품할 자재를 선택하세요.', '3000');
+    return;
+  }
+
+  if (result.value === 'Y') {
+    toast('info', '확인 필요', '검수결과 불합격자재만 입고가능합니다.', '3000');
+    return;
+  }
+  returnForm.value = {
+    matName: row.matName,
+    inboundDetId: row.id,
+    logRejQty: '',
+    logMemo: '',
+    logName: empName.value
+  };
+  defectModal.value = true;
+};
+
+const defectSubmit = async () => {
+  //[메모, 불량수량, 상세아이디, 담당자]
+  const defectPayload = new FormData();
+
+  //JSON 포장해서 FormData에 추가
+  defectPayload.append(
+    'data',
+    new Blob(
+      [JSON.stringify(defectForm.value)], // 이미 VO 구조랑 같음
+      { type: 'application/json' }
+    )
+  );
+  //이미지도 추가
+  if (selectedFile.value) {
+    defectPayload.append('file', selectedFile.value);
+  }
+
+  try {
+    await axios.post('/api/inbound/defect', formData);
+    toast('success', '불량 등록 완료', '불량 정보가 성공적으로 저장되었습니다.');
+  } catch (error) {
+    toast('error', '불량 등록 실패', '서버 오류가 발생했습니다.');
+  }
 };
 
 //공통코드
@@ -176,10 +202,9 @@ const loadStatusCodes = async () => {
   }
 };
 
-
 onMounted(() => {
-   pageLoad();
-   loadStatusCodes();
+  pageLoad();
+  loadStatusCodes();
 });
 
 const approveUnloadColumn = [
@@ -252,57 +277,58 @@ const approveUnloadDetaiColumn = [
             <div class="font-semibold text-m">상세정보</div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
-              <btn color="warn" icon="pi pi-file-excel" label="불량등록" @click="openReturnModal"/>
-              <btn color="info" icon="pi pi-file-pdf" label="입고등록" @click="submit"/>
+              <btn color="warn" icon="pi pi-file-excel" label="불량등록" @click="openReturnModal" />
+              <btn color="info" icon="pi pi-file-pdf" label="입고등록" @click="submit" />
             </div>
           </div>
 
           <Divider />
-          <selectTable v-model:selection="selectedDetail" :selectionMode="'single'" :columns="approveUnloadDetaiColumn" :data="approveUnloadDetailList" :paginator="false" :showCheckbox="false"  @row-select="inputInfo"/>
+          <selectTable v-model:selection="selectedDetail" :selectionMode="'single'" :columns="approveUnloadDetaiColumn" :data="approveUnloadDetailList" :paginator="false" :showCheckbox="false" @row-select="inputInfo" />
           <Divider />
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
             <SearchField type="readOnly" label="자재명" v-model="inputMatName" />
             <SearchField type="date" label="유통기한" v-model="expDate" />
             <SearchField type="text" label="입고수량" v-model="inQty" />
             <!-- <searchField type="dropDown" label="창고" v-model="deliveryPlace" class="w-full" :options="warehoustListOpt" /> -->
-            <searchField type="dropDown" label="검수결과" v-model="result" class="w-full" :options="[ { name: '합격', value: 'Y' },
-                                                                                                      { name: '불합격', value: 'N' }]" />
-        </div>
-            <!-- <SearchField type="text" label="비고" v-model="rejMemo" /> -->
+            <searchField
+              type="dropDown"
+              label="검수결과"
+              v-model="result"
+              class="w-full"
+              :options="[
+                { name: '합격', value: 'Y' },
+                { name: '불합격', value: 'N' }
+              ]"
+            />
+          </div>
+          <!-- <SearchField type="text" label="비고" v-model="rejMemo" /> -->
         </div>
       </div>
     </div>
   </div>
 
-<!--반품모달-->
-<!-- 반품 모달 -->
-<Dialog v-model:visible="returnDialogVisible" modal header="반품 등록" class="w-[500px]">
-  <div class="flex flex-col gap-4">
-    <SearchField type="readOnly" label="자재명" v-model="returnForm.matName" />
-    <SearchField type="text" label="반품수량" v-model="returnForm.returnQty" />
-    <SearchField type="text" label="반품사유" v-model="returnForm.memo" />
+  <!-- 반품 모달 -->
+  <Dialog v-model:visible="defectModal" modal header="불량등록" :style="{ width: '500px' }">
+    <div class="flex justify-center gap-2 mb-3">
+      <SearchField type="readOnly" label="자재명" v-model="defectForm.matName" />
+      <SearchField type="text" label="불량수량" v-model="defectForm.logRejQty" />
+    </div>
+    <div class="flex justify-center gap-2 mb-3">
+      <Textarea type="text" label="불량사유" v-model="defectForm.logMemo" placeholder="불량사유를 입력하세요" rows="5" cols="53" />
+    </div>
 
     <div>
-      <label class="font-semibold text-sm mb-2">사진 첨부</label>
-      <FileUpload
-        mode="basic"
-        name="file"
-        chooseLabel="파일 선택"
-        accept="image/*"
-        @select="onFileSelect"
-      />
+      <FileUpload mode="basic" name="file" chooseLabel="파일 선택" accept="image/*" @select="onFileSelect" />
       <div v-if="previewUrl" class="mt-2">
         <img :src="previewUrl" alt="미리보기" class="w-32 rounded-lg border" />
       </div>
     </div>
-  </div>
 
-  <template #footer>
-    <btn color="contrast" label="취소" @click="returnDialogVisible = false" />
-    <btn color="warn" label="등록" @click="submitReturn" />
-  </template>
-</Dialog>
-
+    <template #footer>
+      <btn color="contrast" label="취소" @click="returnDialogVisible = false" />
+      <btn color="warn" label="등록" @click="submitReturn" />
+    </template>
+  </Dialog>
 </template>
 
 <scoped>

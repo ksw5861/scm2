@@ -126,4 +126,10 @@ public class OrderServiceImpl implements OrderService {
         return orderMapper.deleteOrder(orderId);
     }   
 
+    // =============================================================
+    // 주문조회페이지 PDF
+    // =============================================================
+    public List<SalesOrderDetailVO> getOrderDetails(String orderId) {
+        return orderMapper.findOrderDetails(orderId);
+    }
 }

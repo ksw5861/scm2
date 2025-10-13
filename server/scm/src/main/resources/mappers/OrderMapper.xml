@@ -211,6 +211,27 @@
     AND status = '대기'
     </delete>
 
+    <!-- ============================================================= -->
+    <!-- 13. 주문조회페이지 PDF -->
+    <!-- ============================================================= -->
+    <select id="findOrderDetails" parameterType="String" resultType="SalesOrderDetailVO">
+        SELECT
+            d.odetail_id,
+            d.order_id,
+            d.prod_id,
+            p.prod_name,
+            p.spec,
+            p.unit,
+            d.order_qty,
+            d.prod_unit_price,
+            (d.order_qty * d.prod_unit_price) AS totalUnitPrice,
+            d.prod_status
+        FROM SALES_ORDER_DETAIL d
+        JOIN PRODUCT p
+          ON d.prod_id = p.prod_id
+        WHERE d.order_id = #{orderId}
+        ORDER BY d.odetail_id
+    </select>
 
 
 </mapper>

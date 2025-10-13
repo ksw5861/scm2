@@ -16,6 +16,7 @@ public interface InStockMatMapper {
     List<InboundDetailVO> getVenShipDetailList(@Param("inboundId")Long inboundId);
     //하차승인
     void callApproveUnload(@Param("inboundId")Long inboundId, @Param("unloadEmp")String unloadEmp);
+    void callUnloadReturn(@Param("inboundId")Long inboundId,  @Param("unloadEmp")String unloadEmp,  @Param("rejMemo")String rejMemo);
     //입고대기목록
     List<InboundVO> getApproveUnload();
     //입고대기목록(상세)

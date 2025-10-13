@@ -342,14 +342,33 @@ const cancelOrder = async () => {
 }
 
 
+// -----------------------------
+// PDF 출력  
+// -----------------------------
+const exportPDF = async () => {
+  try {
+    const response = await axios.get(`/api/orders/${selectedOrder.value.orderId}/pdf`, {
+      responseType: 'blob' // ✅ PDF binary 데이터 받기
+    });
+
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `order_${selectedOrder.value.orderId}.pdf`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    alert('PDF 생성 중 오류가 발생했습니다.');
+    console.error(err);
+  }
+};
 
 
 // -----------------------------
-// PDF / 엑셀 / 초기화
+// 엑셀 / 초기화
 // -----------------------------
-const exportPDF = () => {
-  alert('PDF 출력 기능은 아직 구현되지 않았습니다.')
-}
+
 
 const exportExcel = () => {
   alert('엑셀 다운로드 기능은 아직 구현되지 않았습니다.')
