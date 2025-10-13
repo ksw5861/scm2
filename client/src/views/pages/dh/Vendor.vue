@@ -169,7 +169,7 @@ const page = ref({
 });
 
 const searchParams = reactive({
-    type: [], // 체크박스 바인딩을 위해 배열
+    type: [0, 1], // 체크박스 바인딩을 위해 배열
     isActive: ['Y'],
     companyName: '',
     ceoName: '',
@@ -195,7 +195,7 @@ const editForm = reactive({
 // ===== State Reset Functions =====
 const resetSearchParams = () => {
     Object.assign(searchParams, {
-        type: [],
+        type: [0, 1],
         isActive: ['Y'],
         companyName: '',
         ceoName: '',
@@ -499,7 +499,7 @@ const handleEdit = () => {
     Object.assign(editForm, {
          ...vendorDetail.value,
          // 배열 요소들을 숫자로 변환하여 체크박스 바인딩의 타입 일치를 보장
-         type: typeArray.map(v => Number(v)).filter(v => !isNaN(v)), 
+         type: typeArray.map(v => Number(v)).filter(v => !isNaN(v)),
          isActive: vendorDetail.value.isActive || 'N'
     });
 
@@ -919,11 +919,11 @@ onMounted(fetchVendorList);
                                 <InputGroup>
                                     <InputGroupAddon><i :class="icons.address" /></InputGroupAddon>
                                     <IftaLabel>
-                                        <InputText 
-                                        v-model="editForm.address" 
-                                        inputId="editAddress" 
-                                        placeholder="주소 선택" 
-                                        readonly 
+                                        <InputText
+                                        v-model="editForm.address"
+                                        inputId="editAddress"
+                                        placeholder="주소 선택"
+                                        readonly
                                         @click="openAddressModal"
                                         style="cursor: pointer;"
                                         />
