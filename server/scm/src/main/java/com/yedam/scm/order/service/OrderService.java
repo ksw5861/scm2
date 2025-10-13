@@ -47,5 +47,7 @@ public interface OrderService {
     // --- 주문 취소 ---
     int deleteOrderWithDetails(String orderId);
     
+    // --- 주문조회페이지 PDF ---
+    List<SalesOrderDetailVO> getOrderDetails(String orderId);
 
 }
