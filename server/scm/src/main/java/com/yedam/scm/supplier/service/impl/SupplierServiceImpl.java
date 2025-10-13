@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.yedam.scm.supplier.mapper.SupplierMapper;
 import com.yedam.scm.supplier.service.SupplierService;
 import com.yedam.scm.vo.InboundDetailVO;
+import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.PurchaseMatVO;
 
@@ -115,6 +116,17 @@ public class SupplierServiceImpl implements SupplierService  {
            // 2-2) 입고상세 insert (프로시저 or 일반 insert)
            mapper.callShipmentDetailPoc(detail);
        }
+    }
+
+    //공급목록
+    @Override
+    public List<InboundVO> getSupplyList(String vendorId) {
+       return mapper.getSupplyList(vendorId);
+    }
+
+    @Override
+    public List<InboundLogVO> getSupplyDetailList(Long inboundDetId) {
+       return mapper.getSupplyDetailList(inboundDetId);
     }
 
 }

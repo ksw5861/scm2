@@ -29,6 +29,15 @@ const supplier = {
         requiresAuth: true,
         roles: ['admin', 'employee']
       }
+    },
+    {
+      path: '/supplyList',
+      name: '공급 목록',
+      component: () => import('@/views/pages/supplier/SupplyList.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
     }
   ]
 };

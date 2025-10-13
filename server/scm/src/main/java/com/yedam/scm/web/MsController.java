@@ -102,6 +102,12 @@ public class MsController {
     public void callApproveUnload(@RequestParam Long inboundId, @RequestParam String unloadEmp ) {      
         inStockMatService.callApproveUnload(inboundId, unloadEmp);
     }
+    //하차반품
+    @PostMapping("/unloadReturn")
+    public void callUnloadReturn(@RequestParam Long inboundId, @RequestParam String unloadEmp, @RequestParam String rejMemo) {
+        inStockMatService.callUnloadReturn(inboundId, unloadEmp, rejMemo);
+    }
+    
     //입고대기목록
     @GetMapping("/unloadList")
     public List<InboundVO> getApproveUnload() {
