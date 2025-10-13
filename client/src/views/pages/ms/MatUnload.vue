@@ -27,25 +27,24 @@ const empName = ref('최길동');
 
 const shipedListData = ref();
 const selectedRows = ref();
-const shipDetailListData = ref([
-  { matId: '', matName: '', ortQty: null, unit: ''}
-]);
+const selectedDeRow = ref();
+const shipDetailListData = ref([{ matId: '', matName: '', ortQty: null, unit: '' }]);
 //모달
 const returnModal = ref(false);
-const returnMemo = ('');
+const returnMemo = ref('');
 
 const pageLoad = async () => {
   try {
     const list = await axios.get(`/api/mat/shipedList`);
-    console.log(list)
+    console.log(list);
     shipedListData.value = list.data.map((item) => ({
       id: item.inboundId,
       shipedDate: useDateFormat(item.vendorOutDate).value,
       vanOutNo: item.venOutNo,
       companyName: item.vendorVO.companyName,
       inStatus: item.inboundStatus,
-      vanEmpName: item.venName,
-      }));
+      vanEmpName: item.venName
+    }));
   } catch (err) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
@@ -53,67 +52,69 @@ const pageLoad = async () => {
 
 const detailInfo = async () => {
   try {
-    const list = await axios.get('/api/mat/shipedDetailList', { params: {inboundId : selectedRows.value.id} });
-    console.log(list)
+    const list = await axios.get('/api/mat/shipedDetailList', { params: { inboundId: selectedRows.value.id } });
+    console.log(list);
     //상세테이블
     shipDetailListData.value = list.data.map((item) => ({
-        id: item.inboundDetId,
-        matId: item.matId ,
-        matName: item.materialVO.matName,
-        outQty: item.outQty ,
-        unit: item.materialVO.unit,
-        purStatusId: item.purStatusId
+      id: item.inboundDetId,
+      matId: item.matId,
+      matName: item.materialVO.matName,
+      outQty: item.outQty,
+      unit: item.materialVO.unit,
+      purStatusId: item.purStatusId,
+      purId: item.purId
     }));
   } catch (error) {
     toast('error', '상세정보 실패', '상세정보 불러오기 실패:', '3000');
   }
 };
 
-const approve = async() => {
-    try{
-        await axios.post('/api/mat/approveUnload', null, { params: { inboundId : selectedRows.value.id, unloadEmp : empName.value} })
-        toast('info', '하차승인 성공', '하차승인 성공:', '3000');
-        await pageLoad();
-        shipDetailListData.value =[{ matId: '', matName: '', ortQty: null, unit: ''}];
-    } catch(error){
-        toast('error', '하차승인 실패', '하차승인 실패:', '3000');
-    }
-}
+const approve = async () => {
+  try {
+    await axios.post('/api/mat/approveUnload', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName.value } });
+    toast('info', '하차승인 성공', '하차승인 성공:', '3000');
+    await pageLoad();
+    shipDetailListData.value = [{ matId: '', matName: '', ortQty: null, unit: '' }];
+  } catch (error) {
+    toast('error', '하차승인 실패', '하차승인 실패:', '3000');
+  }
+};
 
-const returnSubmit = async() => { //사유, 담당자, 하차등록시 해당 마스터와 디테일 모두 상태값 변경하고 기록해줘야함. [입고마스터 + 디테일]
-    try{
-        await axios.post('')
-        toast('info', '반품등록 성공', '반품등록 성공:', '3000');
-        await pageLoad();
-    } catch(error) {
-        toast('error', '반품등록 실패', '반품등록 실패:', '3000');
-    }
-}
+const returnSubmit = async () => {
+  //사유, 담당자, 하차등록시 해당 마스터와 디테일 모두 상태값 변경하고 기록해줘야함. [입고마스터 + 디테일 + 상태변경로그] + @ 발주상태값 반품으로도 가능??/??
+  try {
+    await axios.post('/api/mat/unloadReturn', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName.value, rejMemo: returnMemo.value } });
+    toast('info', '반품등록 성공', '반품등록 성공:', '3000');
+    await pageLoad();
+    closeReturnModal();
+  } catch (error) {
+    toast('error', '반품등록 실패', '반품등록 실패:', '3000');
+  }
+};
 
 onMounted(() => {
   pageLoad();
 });
 
-const openRetrunModal = () =>{
+const openRetrunModal = () => {
+  if (selectedRows.value.length === 0) {
+    toast('info', '선택 필요', '반품등록할 항목을 출고번호를 선택해주세요:', '3000');
+    return;
+  }
 
-    if (selectedRows.value.length === 0) {
-        toast('info', '선택 필요', '반품등록할 항목을 출고번호를 선택해주세요:', '3000');
-        return;
-    }
+  toast('info', '반품등록', '반품등록시 전량 반품처리됩니다.', '5000');
 
-    toast('info', '반품등록', '반품등록시 전량 반품처리됩니다.', '5000');
-
-    returnModal.value= true;
-}
+  returnModal.value = true;
+};
 
 const closeReturnModal = () => {
-    returnModal.value= false;
-}
+  returnModal.value = false;
+};
 const shipedColumn = [
   { label: '출고일', field: 'shipedDate' },
   { label: '출고번호', field: 'vanOutNo' },
   { label: '공급처', field: 'companyName' },
- // { label: '상태', field: 'inStatus' }, //출고 ->  미도착 -> 1) 하차완료 2) 하차거부 -> 입고대기
+  // { label: '상태', field: 'inStatus' }, //출고 ->  미도착 -> 1) 하차완료 2) 하차거부 -> 입고대기
   { label: '공급처 담당자', field: 'vanEmpName' }
   //운송정보 (운송사, 차량번호, 기사 연락처 등), 송장번호
 ];
@@ -178,8 +179,8 @@ const shipDetailColumn = [
             <div class="font-semibold text-m">상세정보</div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
-              <btn color="warn" icon="pi pi-file-excel" label="반품" @click="openRetrunModal"/>
-              <btn color="info" icon="pi pi-file-pdf" label="승인" @click="approve"/>
+              <btn color="warn" icon="pi pi-file-excel" label="반송" @click="openRetrunModal" />
+              <btn color="info" icon="pi pi-file-pdf" label="승인" @click="approve" />
             </div>
           </div>
 
@@ -190,17 +191,16 @@ const shipDetailColumn = [
     </div>
   </div>
 
-<!--반품모달-->
-<Dialog v-model:visible="returnModal" modal header="반품 사유" :style="{ width: '500px' }">
-     <div class="card flex justify-center">
-        <Textarea v-model="returnMemo" rows="5" cols="100" />
+  <!--반품모달-->
+  <Dialog v-model:visible="returnModal" modal header="반송 사유" :style="{ width: '500px' }">
+    <div class="card flex justify-center">
+      <Textarea v-model="returnMemo" rows="5" cols="100" />
     </div>
-     <div class="flex justify-center gap-2">
-        <btn color="warn" icon="pi pi-file-excel" label="취소" @click="closeReturnModal" />
-        <btn color="warn" icon="pi pi-file-excel" label="등록" @click="returnSubmit" />
+    <div class="flex justify-center gap-2">
+      <btn color="warn" icon="pi pi-file-excel" label="취소" @click="closeReturnModal" />
+      <btn color="warn" icon="pi pi-file-excel" label="등록" @click="returnSubmit" />
     </div>
-</Dialog>
-
+  </Dialog>
 </template>
 
 <scoped>

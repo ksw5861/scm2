@@ -20,9 +20,7 @@ public class InboundVO {
     private Date unloadDate; //하차일
 
     List<InboundDetailVO> details;     // 입고 상세들
-
     ShipmentInfoVO shipmentInfoVO; //배송정보
-    
     VendorVO vendorVO; //거래처
 }
 

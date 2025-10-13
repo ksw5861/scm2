@@ -169,6 +169,35 @@ SELECT seq_inbound.NEXTVAL FROM dual
     )}
 </select>
 
-
+<!--공급목록-->
+<select id="getSupplyList" parameterType="string" resultMap="com.yedam.scm.instockMat.mapper.InStockMatMapper.inboundResultMap">
+SELECT id.inbound_det_id,
+        i.vendor_out_date,
+        i.ven_out_no,
+        i.ven_name,
+        id.mat_id,
+        m.mat_name,
+        m.stock_unit,
+        id.out_qty 
+FROM inbound i
+JOIN inbound_detail id
+ON i.inbound_id = id.inbound_id
+JOIN material m
+ON id.mat_id = m.mat_id
+WHERE i.vendor_id = #{vendorId}
+ORDER BY i.vendor_out_date DESC
+</select>
+<!--공급목록상세-->
+<select id="getSupplyDetailList" parameterType="Long" resultMap="com.yedam.scm.common.CommonMapper.InboundLogResultMap">
+SELECT il.in_log_id,
+       il.log_inbound_status,
+       il.log_rej_qty,
+       il.log_memo,
+       il.log_name,
+       il.re_date
+FROM inbound_log il
+WHERE il.inbound_det_id = #{inboundDetId}
+ORDER BY il.re_date DESC
+</select>
 
 </mapper>
