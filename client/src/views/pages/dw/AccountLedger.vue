@@ -55,6 +55,8 @@ async function loadData() {
     };
     const { data } = await axios.get('/api/account-ledger', { params });
 
+    console.log(data);
+
     summary.value = data.summary || {
       totalSales: 0,
       totalReturn: 0,
@@ -159,11 +161,11 @@ function renderBarChart() {
 /* ------------------ 상세 데이터 ------------------ */
 const selectedVendor = ref({
   companyName: '-',
-  totalSales: 0,
-  totalReturn: 0,
+  totalPrice: 0,
+  returnPrice: 0,
   totalPayment: 0,
   totalAr: 0,
-  lastTradeDate: null // ✅ 최근거래일자 추가
+  lastOrderDate: null // ✅ 최근거래일자 추가
 });
 const detailChartRef = ref(null);
 let detailChart = null;
@@ -181,8 +183,8 @@ function renderDetailChart() {
 
   const labels = ['총매출', '총반품', '총입금', '미수금'];
   const values = [
-    selectedVendor.value.totalSales,
-    selectedVendor.value.totalReturn,
+    selectedVendor.value.totalPrice,
+    selectedVendor.value.returnPrice,
     selectedVendor.value.totalPayment,
     selectedVendor.value.totalAr
   ];
@@ -247,8 +249,8 @@ onMounted(() => loadData());
 
     <!-- 요약 카드 -->
     <div class="summary-grid">
-      <div class="card"><p>총매출</p><h3 class="blue">{{ fmt(summary.totalSales) }}</h3></div>
-      <div class="card"><p>총반품</p><h3 class="red">{{ fmt(summary.totalReturn) }}</h3></div>
+      <div class="card"><p>총매출</p><h3 class="blue">{{ fmt(summary.totalPrice) }}</h3></div>
+      <div class="card"><p>총반품</p><h3 class="red">{{ fmt(summary.returnPrice) }}</h3></div>
       <div class="card"><p>총입금</p><h3 class="green">{{ fmt(summary.totalPayment) }}</h3></div>
       <div class="card"><p>총미수금</p><h3 class="orange">{{ fmt(summary.totalAr) }}</h3></div>
     </div>
@@ -273,7 +275,7 @@ onMounted(() => loadData());
         >
           <Column field="companyName" header="거래처명" />
           <Column field="totalSales" header="총금액">
-            <template #body="{ data }">{{ fmt(data.totalSales) }}</template>
+            <template #body="{ data }">{{ fmt(data.totalPrice) }}</template>
           </Column>
           <Column field="totalAr" header="미수금">
             <template #body="{ data }">{{ fmt(data.totalAr) }}</template>
@@ -294,11 +296,11 @@ onMounted(() => loadData());
           <div class="grid grid-cols-3 gap-4">
             <div class="p-3 bg-gray-50 rounded-md">
               <p class="text-gray-500 text-sm">총매출</p>
-              <p class="font-semibold text-blue-600">{{ fmt(selectedVendor.totalSales) }}</p>
+              <p class="font-semibold text-blue-600">{{ fmt(selectedVendor.totalPrice) }}</p>
             </div>
             <div class="p-3 bg-gray-50 rounded-md">
               <p class="text-gray-500 text-sm">총반품</p>
-              <p class="font-semibold text-red-500">{{ fmt(selectedVendor.totalReturn) }}</p>
+              <p class="font-semibold text-red-500">{{ fmt(selectedVendor.returnPrice) }}</p>
             </div>
             <div class="p-3 bg-gray-50 rounded-md">
               <p class="text-gray-500 text-sm">총입금</p>
@@ -312,7 +314,7 @@ onMounted(() => loadData());
             <div class="p-3 bg-gray-50 rounded-md">
               <p class="text-gray-500 text-sm">최근거래일자</p>
               <p class="font-semibold text-indigo-500">
-                {{ selectedVendor.lastTradeDate ? selectedVendor.lastTradeDate : '-' }}
+                {{ selectedVendor.lastOrderDate }}
               </p>
             </div>
           </div>
