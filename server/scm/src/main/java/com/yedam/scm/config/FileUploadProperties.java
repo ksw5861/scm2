@@ -12,4 +12,5 @@ import lombok.Setter;
 @ConfigurationProperties(prefix = "file.upload")
 public class FileUploadProperties {
     private String employeeDir;
+    private String defectDir;   // 신규 불량 이미지용
 }

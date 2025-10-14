@@ -1,10 +1,12 @@
 package com.yedam.scm.web;
 
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
 import com.yedam.scm.vo.InboundDetailVO;
+import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatLotVO;
 import com.yedam.scm.vo.MatStatusVO;
@@ -23,10 +25,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 
 
 
@@ -107,7 +111,6 @@ public class MsController {
     public void callUnloadReturn(@RequestParam Long inboundId, @RequestParam String unloadEmp, @RequestParam String rejMemo) {
         inStockMatService.callUnloadReturn(inboundId, unloadEmp, rejMemo);
     }
-    
     //입고대기목록
     @GetMapping("/unloadList")
     public List<InboundVO> getApproveUnload() {
@@ -123,7 +126,24 @@ public class MsController {
     public void callMatInboundStock(@RequestBody InboundDetailVO inStockInfo) {      
         inStockMatService.callMatInboundStock(inStockInfo);
     }
-    
+    //불량등록
+    @PostMapping("/defect")
+    public ResponseEntity<?> callRegMatDefect( @RequestPart("data") InboundLogVO defectData, @RequestPart(value = "file", required = false) MultipartFile file) {       
+        try {
+            // 서비스 호출
+            inStockMatService.callRegMatDefect(defectData, file);
+            return ResponseEntity.ok("불량 등록 완료");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("불량 등록 실패: " + e.getMessage());
+        }
+    }
+    /*
+     * ResponseEntity<?> : Controller가 응답을 “정교하게 제어”할 수 있게 해주는 클래스
+     * HTTP 응답 코드 + 데이터 + 헤더를 전부 다 설정가능.
+     * 
+     */
+
     //=============================================================================================재고part
     //자재재고현황
     @GetMapping("/matStockList")

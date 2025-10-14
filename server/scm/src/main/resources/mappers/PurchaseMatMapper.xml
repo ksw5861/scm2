@@ -223,7 +223,8 @@ ORDER BY md.mrp_det_id DESC
     </select>
     <!--자재주문상세이력-->
     <select id ="getPurchaseStatus" parameterType="long" resultType = "PurStatusLogVO">
-    SELECT psl.re_date,
+    SELECT psl.PUR_STATUS_ID,
+           psl.re_date,
            psl.log_name,
            psl.log_pur_mat_status,
            NVL(psl.log_sup_out_qty,0) as log_sup_out_qty,

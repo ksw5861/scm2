@@ -2,7 +2,11 @@ package com.yedam.scm.instockMat.service;
 
 import java.util.List;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.yedam.scm.vo.InboundDetailVO;
+import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatLotVO;
 
@@ -21,6 +25,8 @@ public interface InStockMatService {
     List<InboundDetailVO> getApproveUnloadDetailList(Long inboundId);
     //입고등록
     void callMatInboundStock(InboundDetailVO inStockInfo);
+    //불량등록
+    ResponseEntity<?> callRegMatDefect(InboundLogVO defectData, MultipartFile file);
     //재고목록
     List<MatLotVO> getMatStockList();
     //자재별LOT현황

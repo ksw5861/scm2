@@ -71,7 +71,7 @@ const detailInfo = async () => {
   console.log(purId);
   try {
     const list = await axios.get('/api/mat/purchaseListStatus', { params: { purId } });
- console.log(list )
+    console.log(list);
     //타임라인
     events.value = list.data.map((item) => ({
       date: useDateFormat(item.reDate).value,
@@ -80,11 +80,12 @@ const detailInfo = async () => {
     }));
     //상세테이블
     statusList.value = list.data.map((item) => ({
-        updateDate: useDateFormat(item.reDate).value,
-        chargeName: item.logName,
-        status: codeMap.value[item.logPurMatStatus] || item.logPurMatStatus,
-        supOutQty: item.logSupOutQty,
-        expectDate: useDateFormat(item.logExpectDate).value
+      id: item.purStatusId,
+      updateDate: useDateFormat(item.reDate).value,
+      chargeName: item.logName,
+      status: codeMap.value[item.logPurMatStatus] || item.logPurMatStatus,
+      supOutQty: item.logSupOutQty,
+      expectDate: useDateFormat(item.logExpectDate).value
     }));
   } catch (error) {
     toast('error', '상세정보 실패', '상세정보 불러오기 실패:', '3000');
@@ -98,15 +99,15 @@ const purchaseListColumn = [
   { label: '주문수량', field: 'reqQty' },
   { label: '단위', field: 'unit' },
   { label: '공급처', field: 'companyName' },
-  { label: '담당자', field: 'empName' }
+  { label: '발주 담당자', field: 'empName' }
 ];
 
 const statusColumn = [
   { label: '변경일', field: 'updateDate' },
-  { label: '담당자', field: 'chargeName' },
   { label: '상태', field: 'status' },
   { label: '공급처 출고수량', field: 'supOutQty' },
-  { label: '출고예정일', field: 'expectDate' }
+  { label: '출고예정일', field: 'expectDate' },
+  { label: '공급처 담당자', field: 'chargeName' }
 ];
 </script>
 

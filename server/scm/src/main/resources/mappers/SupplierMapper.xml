@@ -63,11 +63,10 @@ VALUES (seq_purchase_status_log.NEXTVAL, #{name}, 'ms2', #{purId})
 
 <!--발주반려-->
 <select id="callUpdateOrderReject" parameterType="map" statementType="CALLABLE">
-        { call PROC_ORDER_REJECT(
-            #{p_pur_id,    mode=IN, jdbcType=NUMERIC},   
-            #{p_rej_memo,   mode=IN, jdbcType=VARCHAR},
-            #{p_staff,   mode=IN, jdbcType=VARCHAR}
-        )}
+{ call PROC_ORDER_REJECT(
+        #{p_pur_id,    mode=IN, jdbcType=NUMERIC},   
+        #{p_rej_memo,   mode=IN, jdbcType=VARCHAR},
+        #{p_staff,   mode=IN, jdbcType=VARCHAR}     )}
 </select>
 
 <!--출고지시대기목록-->
@@ -197,7 +196,7 @@ SELECT il.in_log_id,
        il.re_date
 FROM inbound_log il
 WHERE il.inbound_det_id = #{inboundDetId}
-ORDER BY il.re_date DESC
+ORDER BY il.in_log_id DESC
 </select>
 
 </mapper>

@@ -142,7 +142,7 @@ const submit = async () => {
 };
 
 //반품모달open
-const openReturnModal = () => {
+const opendefectModal = () => {
   const row = selectedDetail.value;
   if (!row) {
     toast('info', '선택 필요', '반품할 자재를 선택하세요.', '3000');
@@ -153,7 +153,7 @@ const openReturnModal = () => {
     toast('info', '확인 필요', '검수결과 불합격자재만 입고가능합니다.', '3000');
     return;
   }
-  returnForm.value = {
+  defectForm.value = {
     matName: row.matName,
     inboundDetId: row.id,
     logRejQty: '',
@@ -161,6 +161,21 @@ const openReturnModal = () => {
     logName: empName.value
   };
   defectModal.value = true;
+};
+
+const closeDefectModal = () => {
+  defectModal.value = false;
+};
+//이미지
+const onFileSelect = (event) => {
+  // PrimeVue는 배열 형태로 전달됨
+  selectedFile.value = event.files[0];
+  console.log('선택된 파일:', selectedFile.value);
+
+  // 미리보기용 Blob URL 생성
+  if (selectedFile.value) {
+    previewUrl.value = URL.createObjectURL(selectedFile.value);
+  }
 };
 
 const defectSubmit = async () => {
@@ -180,9 +195,15 @@ const defectSubmit = async () => {
     defectPayload.append('file', selectedFile.value);
   }
 
+  for (const [key, value] of defectPayload.entries()) {
+    console.log(key, value);
+  }
+
+  defectPayload.get('data').text().then(console.log);
   try {
-    await axios.post('/api/inbound/defect', formData);
+    await axios.post('/api/mat/defect', defectPayload);
     toast('success', '불량 등록 완료', '불량 정보가 성공적으로 저장되었습니다.');
+    closeDefectModal();
   } catch (error) {
     toast('error', '불량 등록 실패', '서버 오류가 발생했습니다.');
   }
@@ -277,7 +298,7 @@ const approveUnloadDetaiColumn = [
             <div class="font-semibold text-m">상세정보</div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
-              <btn color="warn" icon="pi pi-file-excel" label="불량등록" @click="openReturnModal" />
+              <btn color="warn" icon="pi pi-file-excel" label="불량등록" @click="opendefectModal" />
               <btn color="info" icon="pi pi-file-pdf" label="입고등록" @click="submit" />
             </div>
           </div>
@@ -289,7 +310,6 @@ const approveUnloadDetaiColumn = [
             <SearchField type="readOnly" label="자재명" v-model="inputMatName" />
             <SearchField type="date" label="유통기한" v-model="expDate" />
             <SearchField type="text" label="입고수량" v-model="inQty" />
-            <!-- <searchField type="dropDown" label="창고" v-model="deliveryPlace" class="w-full" :options="warehoustListOpt" /> -->
             <searchField
               type="dropDown"
               label="검수결과"
@@ -301,7 +321,6 @@ const approveUnloadDetaiColumn = [
               ]"
             />
           </div>
-          <!-- <SearchField type="text" label="비고" v-model="rejMemo" /> -->
         </div>
       </div>
     </div>
@@ -325,8 +344,8 @@ const approveUnloadDetaiColumn = [
     </div>
 
     <template #footer>
-      <btn color="contrast" label="취소" @click="returnDialogVisible = false" />
-      <btn color="warn" label="등록" @click="submitReturn" />
+      <btn color="contrast" label="취소" @click="closeDefectModal" />
+      <btn color="warn" label="등록" @click="defectSubmit" />
     </template>
   </Dialog>
 </template>
