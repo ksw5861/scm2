@@ -41,7 +41,6 @@ public class SupplierServiceImpl implements SupplierService  {
         System.out.println("리스트용" + idList);
         System.out.println("이름이세요" + name);
 
-
         for(Integer purId : idList ){
             updatedCount += mapper.updateOrderApprove(purId);
             mapper.insertStatusLog(purId, name);

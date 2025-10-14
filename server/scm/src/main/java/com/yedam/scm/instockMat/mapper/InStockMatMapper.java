@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.yedam.scm.vo.InboundDetailVO;
+import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatLotVO;
 
@@ -23,6 +24,10 @@ public interface InStockMatMapper {
     List<InboundDetailVO> getApproveUnloadDetailList(@Param("inboundId")Long inboundId);
     //입고등록
     void callMatInboundStock(InboundDetailVO inStockInfo);
+    //불량등록 [1.불량정보등록 프로시저 2.불량정보등록 시퀀스아이디get 3. 이미지등록]
+    void callRegMatDefect(InboundLogVO defectData);
+    Long selectRecentSeq();
+    void updateDefectImagePath(InboundLogVO defectData);
     //재고목록
     List<MatLotVO> getMatStockList();
     //자재별LOT목록

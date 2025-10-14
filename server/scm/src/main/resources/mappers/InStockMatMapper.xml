@@ -155,7 +155,26 @@ AND id.inbound_status in ('d6', 'd3')
         #{inboundLogVO.logExpDate, mode=IN, jdbcType=DATE}
       )
     }
-  </update>
+</update>
+
+<!--불량등록[1)정보등록  2)불량정보등록 시퀀스아이디get 3)이미지첨부여부에 따른 이미지 등록]-->
+<select id="callRegMatDefect" parameterType="map" statementType="CALLABLE">
+{ call PROC_REGISTER_DEFECT(
+        #{inboundDetId, mode=IN, jdbcType=NUMERIC},   
+        #{logRejQty,   mode=IN, jdbcType=NUMERIC},
+        #{logMemo,   mode=IN, jdbcType=VARCHAR},     
+        #{logName,   mode=IN, jdbcType=VARCHAR}   )} 
+</select>
+
+<select id="selectRecentSeq" resultType="long">
+SELECT SEQ_INBOUND_LOG.CURRVAL FROM dual
+</select>
+
+<update id="updateDefectImagePath" parameterType="InboundLogVO">
+UPDATE inbound_log
+SET log_img = #{logImg}
+WHERE in_log_id = #{inLogId}
+</update>
 
 <!--재고현황-->
 <select id="getMatStockList" resultMap="matlotMap">

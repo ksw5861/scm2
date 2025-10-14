@@ -85,6 +85,7 @@ const detailInfo = async () => {
     }));
     //상세테이블
     statusList.value = list.data.map((item) => ({
+      id: item.inLogId,
       updateDate: useDateFormat(item.reDate).value,
       chargeName: item.logName,
       status: codeMap.value[item.logInboundStatus] || item.logInboundStatus,
@@ -106,9 +107,9 @@ const supplyListColumn = [
 
 const statusColumn = [
   { label: '변경일', field: 'updateDate' },
-  { label: '담당자', field: 'chargeName' },
+  { label: '발주처 담당자', field: 'chargeName' },
   { label: '상태', field: 'status' },
-  { label: '반품수량', field: 'rejQty' }
+  { label: '반송 및 불량수량', field: 'rejQty' }
 ];
 </script>
 
