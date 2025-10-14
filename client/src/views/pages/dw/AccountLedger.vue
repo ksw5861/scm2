@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import axios from 'axios';
 import { useAppToast } from '@/composables/useAppToast';
 import InputText from 'primevue/inputtext';
@@ -10,8 +10,32 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Paginator from 'primevue/paginator';
 import Chart from 'chart.js/auto';
+import { useIcon } from '@/composables/useIcon';
+import { useRoute } from 'vue-router';
 
+const route = useRoute();
 const { toast } = useAppToast();
+
+const icons = {
+  home: useIcon('home'),
+  vendor: useIcon('vendor'),
+  list: useIcon('list')
+};
+
+
+/* ───────────────────────────────
+ *  Breadcrumb 구성
+ * ─────────────────────────────── */
+const breadcrumbHome = { icon: icons.home, to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter(r => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  return [
+    { label: current.meta.breadcrumb?.parent || '' },
+    { label: current.name || '', to: route.fullPath }
+  ];
+});
 
 /* ------------------ 검색 상태 ------------------ */
 const search = ref({
@@ -81,8 +105,8 @@ function renderDonutChart() {
 
   const labels = ['총매출', '총반품', '총입금', '총미수금'];
   const values = [
-    summary.value.totalSales,
-    summary.value.totalReturn,
+    summary.value.totalPrice,
+    summary.value.returnPrice,
     summary.value.totalPayment,
     summary.value.totalAr
   ];
@@ -224,69 +248,99 @@ onMounted(() => loadData());
 </script>
 
 <template>
-  <div class="page-wrap">
-    <h2 class="page-title">거래처원장 (판매처)</h2>
+    <Fluid>
+        <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
 
-    <!-- 검색폼 -->
-    <div class="box">
-      <div class="form-grid-4">
-        <div class="field">
-          <label>거래유형</label>
-          <Dropdown v-model="search.tradeType" :options="['전체', '매출', '매입']" class="w-full" />
+        <div class="mt-4 flex flex-row gap-4">
+            <div class="card" style="width: 25%; height: 156px; margin-bottom: 0;">
+                <p>총 매출</p>
+                <h4>{{ fmt(summary.totalPrice) }}</h4>
+            </div>
+            <div class="card" style="width: 25%; height: 156px; margin-bottom: 0;">
+                <p>총 반품</p>
+                <h4>{{ fmt(summary.returnPrice) }}</h4>
+            </div>
+            <div class="card" style="width: 25%; height: 156px; margin-bottom: 0;">
+                <p>총 입금</p>
+                <h4>{{ fmt(summary.totalPayment) }}</h4>
+            </div>
+            <div class="card" style="width: 25%; height: 156px; margin-bottom: 0;">
+                <p>총 미수금</p>
+                <h4>{{ fmt(summary.totalAr) }}</h4>
+            </div>
         </div>
-        <div class="field">
-          <label>거래처명</label>
-          <InputGroup>
-            <InputText v-model="search.keyword" placeholder="거래처명" />
-          </InputGroup>
+
+        <!-- 그래프 -->
+        <div class="mt-4 flex flex-row gap-4 overflow-hidden">
+            <div class="card chart-box w-1/3 min-w-0" style="margin-bottom: 0;">
+                <canvas ref="chartRefDonut" class="w-full h-auto"></canvas>
+            </div>
+            <div class="card chart-box w-2/3 min-w-0">
+                <canvas ref="chartRefBar" class="w-full h-auto"></canvas>
+            </div>
         </div>
-      </div>
-      <div class="actions">
-        <Button label="초기화" icon="pi pi-refresh" @click="resetForm" />
-        <Button label="조회" icon="pi pi-search" @click="loadData" />
-      </div>
-    </div>
 
-    <!-- 요약 카드 -->
-    <div class="summary-grid">
-      <div class="card"><p>총매출</p><h3 class="blue">{{ fmt(summary.totalPrice) }}</h3></div>
-      <div class="card"><p>총반품</p><h3 class="red">{{ fmt(summary.returnPrice) }}</h3></div>
-      <div class="card"><p>총입금</p><h3 class="green">{{ fmt(summary.totalPayment) }}</h3></div>
-      <div class="card"><p>총미수금</p><h3 class="orange">{{ fmt(summary.totalAr) }}</h3></div>
-    </div>
 
-    <!-- 그래프 -->
-    <div class="chart-grid">
-      <div class="chart-box"><canvas ref="chartRefDonut"></canvas></div>
-      <div class="chart-box"><canvas ref="chartRefBar"></canvas></div>
-    </div>
+        <!-- 검색 -->
+        <SearchCard title="거래처 검색" @search="loadData" @reset="resetForm">
+            <div class="flex flex-wrap w-full">
 
-    <!-- ✅ 하단 -->
-    <div class="box table-wrap">
-      <div class="w-2/5">
-        <DataTable
-          :value="list"
-          dataKey="vendorId"
-          size="small"
-          rowHover
-          selectionMode="single"
-          v-model:selection="selectedVendor"
-          @rowSelect="handleRowSelect"
-        >
-          <Column field="companyName" header="거래처명" />
-          <Column field="totalSales" header="총금액">
-            <template #body="{ data }">{{ fmt(data.totalPrice) }}</template>
-          </Column>
-          <Column field="totalAr" header="미수금">
-            <template #body="{ data }">{{ fmt(data.totalAr) }}</template>
-          </Column>
-        </DataTable>
-        <Paginator
-          :rows="rows"
-          :totalRecords="totalRecords"
-          @page="(e) => { page.value = e.page + 1; loadData(); }"
-        />
-      </div>
+                <div class="flex flex-col gap-2 p-2 w-full">
+                <InputGroup>
+                    <InputGroupAddon><i :class="icons.vendor" /></InputGroupAddon>
+                    <IftaLabel>
+                    <InputText v-model="search.keyword" inputId="searchName" />
+                    <label for="searchName">거래처명</label>
+                    </IftaLabel>
+                </InputGroup>
+                </div>
+            </div>
+        </SearchCard>
+
+        <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
+            <div class="w-full xl:w-5/12 lg:w-1/2">
+                <div class="card flex flex-col">
+                    <div class="font-semibold text-lg sm:text-xl flex items-center justify-between gap-4 h-10">
+                        <div class="flex items-center gap-4">
+                            <span :class="icons.list"></span>
+                            거래처 목록
+                        </div>
+                        <div class="text-sm text-gray-400">
+                            총 <span class="font-semibold text-sm text-gray-700">
+                                <span v-if="page.totalElements > 0">
+                                    <CountUp :end-val="page.totalElements" />
+                                </span>
+                                <span v-else>0</span>
+                            </span>건
+                        </div>
+                    </div>
+                    <Divider />
+                    <DataTable
+                        :value="list"
+                        dataKey="vendorId"
+                        size="small"
+                        rowHover
+                        selectionMode="single"
+                        v-model:selection="selectedVendor"
+                        @rowSelect="handleRowSelect"
+                        >
+                        <Column field="companyName" header="거래처명" />
+                        <Column field="totalSales" header="총금액">
+                            <template #body="{ data }">{{ fmt(data.totalPrice) }}</template>
+                        </Column>
+                        <Column field="totalAr" header="미수금">
+                            <template #body="{ data }">{{ fmt(data.totalAr) }}</template>
+                        </Column>
+                        </DataTable>
+                        <Paginator
+                        :rows="rows"
+                        :totalRecords="totalRecords"
+                        @page="(e) => { page.value = e.page + 1; loadData(); }"
+                    />
+                </div>
+            </div>
+        </div>
+
 
       <!-- 우측 상세 -->
       <div class="w-3/5">
@@ -320,57 +374,5 @@ onMounted(() => loadData());
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </Fluid>
 </template>
-
-<style scoped>
-.page-wrap { padding: 16px; background: #f5f7fb; }
-.page-title { font-weight: 700; font-size: 22px; margin-bottom: 20px; }
-.box { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; margin-bottom: 24px; }
-.form-grid-4 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.field { display: flex; flex-direction: column; gap: 6px; }
-.actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
-
-.summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
-.card { background: #fff; text-align: center; border-radius: 10px; padding: 14px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.08); display: flex; flex-direction: column; justify-content: center; align-items: center; height: 110px; }
-.card p { color: #777; font-size: 13px; margin-bottom: 4px; }
-.card h3 { font-size: 20px; font-weight: 700; margin: 0; }
-.blue { color: #1976d2; } .red { color: #d32f2f; } .green { color: #388e3c; } .orange { color: #ff9800; }
-
-.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; align-items: stretch; }
-.chart-box { background: #fff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 10px; height: 330px; display: flex; align-items: center; justify-content: center; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-.chart-box canvas { max-width: 95%; max-height: 95%; }
-
-.box.table-wrap {
-  display: flex;
-  align-items: stretch;
-  gap: 1rem;
-  height: 420px;
-}
-.table-wrap .w-2\/5 {
-  width: 40%;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.table-wrap .w-3\/5 {
-  width: 60%;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-.detail-card {
-  background: #fff;
-  border-radius: 10px;
-  padding: 16px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  height: 100%;
-}
-.chart-small { flex: 1; max-height: 200px; overflow: hidden; }
-.chart-small canvas { width: 100%; height: 100%; }
-</style>

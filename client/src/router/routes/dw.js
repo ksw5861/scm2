@@ -49,14 +49,19 @@ const dw = {
       meta: { requiresAuth: true, roles: ['admin', 'employee'] }
     },
     { path: '/ship-register',
-      name: '출하등록', 
+      name: '출하등록',
       component: () => import('@/views/pages/dw/ShipRegister.vue'),
       meta: { requiresAuth: true, roles: ['admin', 'employee'] }
     },
     { path: '/account-ledger',
-      name: '거래처원장', 
+      name: '거래처 원장',
       component: () => import('@/views/pages/dw/AccountLedger.vue'),
-      meta: { requiresAuth: true, roles: ['admin', 'employee'] }
+      meta: {
+        breadcrumb: {
+          parent: '영업'
+        },
+        requiresAuth: true,
+        roles: ['admin', 'employee'] }
     }
   ]
 };

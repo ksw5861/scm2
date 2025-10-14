@@ -270,6 +270,7 @@
           vendor_id,
           SUM(total_price) AS total_price
       FROM sales_order
+      WHERE status in ('출고완료', '배송완료')
       GROUP BY vendor_id
   ) s ON v.vendor_id = s.vendor_id
   LEFT JOIN (
@@ -307,7 +308,7 @@
       NVL(s.total_price, 0) - NVL(r.return_price, 0) - NVL(p.pay_amount, 0) AS totalAr,
       MAX_SO.last_order_date AS lastOrderDate
   FROM
-      (SELECT SUM(total_price) AS total_price FROM sales_order) s,
+      (SELECT SUM(total_price) AS total_price FROM sales_order WHERE status in ('출고완료', '배송완료')) s,
       (SELECT SUM(rd.return_qty * rd.prod_unit_price) AS return_price
       FROM return r
       JOIN return_detail rd ON r.return_id = rd.return_id
