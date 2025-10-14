@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.yedam.scm.dto.AccountLedgerSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.vo.ItemInboundVO;
 import com.yedam.scm.vo.ProductVO;
@@ -82,7 +83,7 @@ public interface InboundMapper {
         int insertShipOrderDetails(@Param("details") List<SalesOrderDetailVO> details);
 
         // 거래처원장 목록 조회
-        List<SalesOrderVO> selectAccountLedgerList(Map<String, Object> params);
+        List<SalesOrderVO> selectAccountLedgerList(AccountLedgerSearchDTO condition);
 
         // 요약 합계(총매출/총반품/총입금/총미수금/총미지급)
         SalesOrderVO selectAccountLedgerSummary(Map<String, Object> params);

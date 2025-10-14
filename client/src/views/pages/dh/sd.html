@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>거래처원장</title>
+<style>
+  body {
+    font-family: "Pretendard", sans-serif;
+    background: #f8f9fa;
+    margin: 0;
+    padding: 30px;
+    color: #333;
+  }
+
+  h2 {
+    margin-bottom: 15px;
+  }
+
+  /* 검색 조건 */
+  .search-box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    margin-bottom: 25px;
+  }
+
+  .search-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+
+  .search-row label {
+    width: 70px;
+    font-weight: 600;
+  }
+
+  input[type="date"], input[type="text"] {
+    padding: 6px 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+
+  button {
+    padding: 6px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+    font-weight: 600;
+  }
+
+  button:hover {
+    background: #0056b3;
+  }
+
+  /* 요약 카드 */
+  .summary {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+
+  .card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    padding: 15px;
+    text-align: center;
+    border: 1px solid #eee;
+  }
+
+  .card h4 {
+    margin: 0;
+    color: #555;
+    font-size: 15px;
+  }
+
+  .card p {
+    font-size: 18px;
+    margin: 8px 0 0;
+    font-weight: 600;
+    color: #222;
+  }
+
+  /* 데이터 테이블 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  th, td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #eee;
+  }
+
+  th {
+    background: #007bff;
+    color: white;
+  }
+
+  tr:hover {
+    background: #f1f5ff;
+  }
+
+  td.highlight {
+    color: #d9534f;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<h2>📘 거래처원장</h2>
+
+<!-- 검색 조건 -->
+<div class="search-box">
+  <div class="search-row">
+    <label>기간</label>
+    <input type="date" id="dateFrom">
+    <span>~</span>
+    <input type="date" id="dateTo">
+  </div>
+  <div class="search-row">
+    <label>거래처</label>
+    <input type="text" id="vendor" placeholder="전체" readonly>
+    <button onclick="alert('거래처 모달 열림 (예시)')">검색</button>
+  </div>
+  <div class="search-row">
+    <button onclick="alert('조회 실행 (예시)')">조회</button>
+    <button onclick="resetForm()">초기화</button>
+  </div>
+</div>
+
+<!-- 요약 카드 -->
+<div class="summary">
+  <div class="card">
+    <h4>이월금액</h4>
+    <p id="carryOver">1,200,000원</p>
+  </div>
+  <div class="card">
+    <h4>매출액</h4>
+    <p id="sales">5,200,000원</p>
+  </div>
+  <div class="card">
+    <h4>반품액</h4>
+    <p id="returns">300,000원</p>
+  </div>
+  <div class="card">
+    <h4>합계액</h4>
+    <p id="net">4,900,000원</p>
+  </div>
+  <div class="card">
+    <h4>입금액</h4>
+    <p id="payment">4,000,000원</p>
+  </div>
+  <div class="card">
+    <h4>미수금</h4>
+    <p id="ar" style="color:#d9534f;">900,000원</p>
+  </div>
+</div>
+
+<!-- 테이블 -->
+<table>
+  <thead>
+    <tr>
+      <th>거래처명</th>
+      <th>매출액</th>
+      <th>반품액</th>
+      <th>입금액</th>
+      <th>미수금</th>
+      <th>주문건수</th>
+      <th>미수건수</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>한빛상사</td>
+      <td>2,000,000원</td>
+      <td>0원</td>
+      <td>1,500,000원</td>
+      <td class="highlight">500,000원</td>
+      <td>3건</td>
+      <td>1건</td>
+    </tr>
+    <tr>
+      <td>새한유통</td>
+      <td>3,200,000원</td>
+      <td>300,000원</td>
+      <td>2,500,000원</td>
+      <td class="highlight">400,000원</td>
+      <td>4건</td>
+      <td>1건</td>
+    </tr>
+  </tbody>
+</table>
+
+<script>
+  // 기본값: 종료일 = 오늘
+  document.getElementById('dateTo').value = new Date().toISOString().slice(0,10);
+
+  function resetForm() {
+    document.getElementById('dateFrom').value = '';
+    document.getElementById('dateTo').value = new Date().toISOString().slice(0,10);
+    document.getElementById('vendor').value = '';
+  }
+</script>
+
+</body>
+</html>

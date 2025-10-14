@@ -3,6 +3,9 @@ package com.yedam.scm.product.service;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.ibatis.annotations.Param;
+
+import com.yedam.scm.dto.AccountLedgerSearchDTO;
 import com.yedam.scm.dto.InboundListRes;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.WarehouseListRes;
@@ -58,6 +61,6 @@ public interface InboundService {
     int createShipOrderDetails(List<SalesOrderDetailVO> details);
 
     // 거래처원장 조회
-    Map<String, Object> getAccountLedger(Map<String, Object> params);
+    Map<String, Object> getAccountLedger(AccountLedgerSearchDTO condition);
 
 }

@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.yedam.scm.dto.AccountLedgerSearchDTO;
 import com.yedam.scm.dto.InboundListRes;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.WarehouseListRes;
@@ -143,12 +144,10 @@ public class InboundServiceImpl implements InboundService {
 
     // 거래처원장
     @Override
-    public Map<String, Object> getAccountLedger(Map<String, Object> params) {
+    public Map<String, Object> getAccountLedger(AccountLedgerSearchDTO condition) {
         Map<String, Object> result = new HashMap<>();
-        List<SalesOrderVO> list = inboundMapper.selectAccountLedgerList(params);
-        SalesOrderVO summary = inboundMapper.selectAccountLedgerSummary(params);
+        List<SalesOrderVO> list = inboundMapper.selectAccountLedgerList(condition);
         result.put("items", list);
-        result.put("summary", summary);
         return result;
     }
 

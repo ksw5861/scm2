@@ -255,10 +255,11 @@
 
 
 <!-- ===================== 거래처원장 목록 ===================== -->
-<select id="selectAccountLedgerList" parameterType="map" resultType="SalesOrderVO">
+<select id="selectAccountLedgerList" parameterType="AccountLedgerSearchDTO" resultType="SalesOrderVO">
   SELECT
       v.vendor_id AS vendorId,
       v.company_name AS companyName,
+      NVL(prev.total_price, 0) AS prevTotalPrice,
       NVL(s.total_price, 0) AS totalPrice,
       NVL(r.return_price, 0) AS returnPrice,
       NVL(p.pay_amount, 0) AS totalPayment,
@@ -266,13 +267,36 @@
       MAX_SO.last_order_date AS lastOrderDate
   FROM vendor v
   LEFT JOIN (
+      SELECT 
+          vendor_id,
+          SUM(total_price) AS total_price
+      FROM sales_order
+      WHERE pay_status = '대기'
+        AND status IN ('출고완료', '배송완료')
+        <if test="startDate != null">
+          AND order_date &lt; #{startDate}
+        </if>
+      GROUP BY vendor_id
+  ) prev ON v.vendor_id = prev.vendor_id
+
+  LEFT JOIN (
       SELECT
           vendor_id,
           SUM(total_price) AS total_price
       FROM sales_order
-      WHERE status in ('출고완료', '배송완료')
+      WHERE status IN ('출고완료', '배송완료')
+        <if test="startDate != null and endDate != null">
+          AND order_date BETWEEN #{startDate} AND #{endDate}
+        </if>
+        <if test="startDate != null and endDate == null">
+          AND order_date &gt;= #{startDate}
+        </if>
+        <if test="startDate == null and endDate != null">
+          AND order_date &lt;= #{endDate}
+        </if>
       GROUP BY vendor_id
   ) s ON v.vendor_id = s.vendor_id
+
   LEFT JOIN (
       SELECT
           r.vendor_id,
@@ -280,15 +304,37 @@
       FROM return r
       JOIN return_detail rd ON r.return_id = rd.return_id
       WHERE rd.rdetail_status = '승인'
+        <if test="startDate != null and endDate != null">
+          AND r.return_date BETWEEN #{startDate} AND #{endDate}
+        </if>
+        <if test="startDate != null and endDate == null">
+          AND r.return_date &gt;= #{startDate}
+        </if>
+        <if test="startDate == null and endDate != null">
+          AND r.return_date &lt;= #{endDate}
+        </if>
       GROUP BY r.vendor_id
   ) r ON v.vendor_id = r.vendor_id
+
   LEFT JOIN (
       SELECT
           vendor_id,
           SUM(pay_amount) AS pay_amount
       FROM payment
+        <trim prefix="WHERE" prefixOverrides="AND |OR ">
+          <if test="startDate != null and endDate != null">
+            pay_date BETWEEN #{startDate} AND #{endDate}
+          </if>
+          <if test="startDate != null and endDate == null">
+            pay_date &gt;= #{startDate}
+          </if>
+          <if test="startDate == null and endDate != null">
+            pay_date &lt;= #{endDate}
+          </if>
+        </trim>
       GROUP BY vendor_id
   ) p ON v.vendor_id = p.vendor_id
+
   LEFT JOIN (
       SELECT
           vendor_id,
@@ -296,6 +342,12 @@
       FROM sales_order
       GROUP BY vendor_id
   ) MAX_SO ON v.vendor_id = MAX_SO.vendor_id
+
+  <where>
+      <if test="vendorId != null and vendorId != ''">
+          v.vendor_id = #{vendorId}
+      </if>
+  </where>
 </select>
 
 
@@ -316,6 +368,11 @@
       (SELECT SUM(pay_amount) AS pay_amount FROM payment) p,
       (SELECT MAX(order_date) AS last_order_date FROM sales_order) MAX_SO
 </select>
+
+
+
+
+
 
 
 

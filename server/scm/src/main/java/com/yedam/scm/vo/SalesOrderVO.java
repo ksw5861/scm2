@@ -101,4 +101,7 @@ public class SalesOrderVO {
     @JsonFormat(pattern = "yyyy-MM-dd")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Date lastOrderDate;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private BigDecimal prevTotalPrice; // 이전 금엑
 }
