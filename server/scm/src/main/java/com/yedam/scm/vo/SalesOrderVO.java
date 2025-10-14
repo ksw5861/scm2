@@ -1,29 +1,62 @@
 package com.yedam.scm.vo;
 
+
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.Data;
 
 @Data
 public class SalesOrderVO {
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     String orderId;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     Date orderDate;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     Long totalPrice;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     String vendorId;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     String status;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     Date deliveryDate;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     String payStatus;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     Date sendDate;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     Date paydueDate;
+    
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     Long returnPrice;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     String dataType; // 'ORDER' or 'RETURN'
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     BigDecimal finalAmount;
+
     // 추가된 대표 제품명 필드
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String prodName;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String shipId;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<SalesOrderDetailVO> details;
 
     // Getter / Setter
@@ -35,19 +68,37 @@ public class SalesOrderVO {
         this.prodName = prodName;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String prodId;
 
     // 동원 추가
-
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String companyName;
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String prodStatus;
 
     // 거래처원장용 집계 필드
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String vendorType; // 거래처구분 (판매처 / 공급처)
-    private java.math.BigDecimal totalSales; // 총매출
-    private java.math.BigDecimal totalReturn; // 총반품
-    private java.math.BigDecimal totalPayment; // 총입금
-    private java.math.BigDecimal totalAr; // 미수금
-    private java.math.BigDecimal totalAp; // 미지급금
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private BigDecimal totalSales; // 총매출
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private BigDecimal totalReturn; // 총반품
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private BigDecimal totalPayment; // 총입금
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private BigDecimal totalAr; // 미수금
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private BigDecimal totalAp; // 미지급금
+
+    // 마지막 거래 일자
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private Date lastOrderDate;
 }

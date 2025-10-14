@@ -1,5 +1,13 @@
 {
+  "scripts": {
+    "serve": "cd client && npm run dev",
+    "backend": "cd server/scm && mvnw.cmd spring-boot:run",
+    "dev": "npx concurrently \"npm run serve\" \"npm run backend\""
+  },
   "dependencies": {
     "chartjs-adapter-date-fns": "^3.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }

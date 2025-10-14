@@ -255,93 +255,65 @@
 
 
 <!-- ===================== 거래처원장 목록 ===================== -->
-<select id="selectAccountLedgerList" parameterType="map" resultType="com.yedam.scm.vo.SalesOrderVO">
+<select id="selectAccountLedgerList" parameterType="map" resultType="SalesOrderVO">
   SELECT
-      v.vendor_id        AS vendorId,
-      v.company_name     AS companyName,
-      v.type             AS vendorType,
-      NVL(SUM(a.total_price), 0) AS totalSales,
-      NVL(SUM(a.return_price), 0) AS totalReturn,
-      NVL(SUM(a.pay_amount), 0) AS totalPayment,
-      NVL(SUM(
-          CASE 
-              WHEN v.type IN ('1','2','판매처') THEN 
-                  (NVL(a.total_price,0) - NVL(a.return_price,0) - NVL(a.pay_amount,0))
-              ELSE 0 
-          END
-      ),0) AS totalAr,
-      NVL(SUM(
-          CASE 
-              WHEN v.type IN ('S','P','공급처') THEN 
-                  (NVL(a.total_price,0) - NVL(a.return_price,0) - NVL(a.pay_amount,0)) * -1
-              ELSE 0 
-          END
-      ),0) AS totalAp
+      v.vendor_id AS vendorId,
+      v.company_name AS companyName,
+      NVL(s.total_price, 0) AS totalPrice,
+      NVL(r.return_price, 0) AS returnPrice,
+      NVL(p.pay_amount, 0) AS totalPayment,
+      NVL(s.total_price, 0) - NVL(r.return_price, 0) - NVL(p.pay_amount, 0) AS totalAr,
+      MAX_SO.last_order_date AS lastOrderDate
   FROM vendor v
   LEFT JOIN (
-      SELECT vendor_id,
-             total_price,
-             NULL AS return_price,
-             NULL AS pay_amount
-        FROM sales_order
-      UNION ALL
-      SELECT vendor_id,
-             NULL AS total_price,
-             return_price,
-             NULL AS pay_amount
-        FROM return
-      UNION ALL
-      SELECT vendor_id,
-             NULL AS total_price,
-             NULL AS return_price,
-             pay_amount
-        FROM payment
-  ) a ON v.vendor_id = a.vendor_id
-  GROUP BY v.vendor_id, v.company_name, v.type
-  ORDER BY v.company_name
+      SELECT
+          vendor_id,
+          SUM(total_price) AS total_price
+      FROM sales_order
+      GROUP BY vendor_id
+  ) s ON v.vendor_id = s.vendor_id
+  LEFT JOIN (
+      SELECT
+          r.vendor_id,
+          SUM(rd.return_qty * rd.prod_unit_price) AS return_price
+      FROM return r
+      JOIN return_detail rd ON r.return_id = rd.return_id
+      WHERE rd.rdetail_status = '승인'
+      GROUP BY r.vendor_id
+  ) r ON v.vendor_id = r.vendor_id
+  LEFT JOIN (
+      SELECT
+          vendor_id,
+          SUM(pay_amount) AS pay_amount
+      FROM payment
+      GROUP BY vendor_id
+  ) p ON v.vendor_id = p.vendor_id
+  LEFT JOIN (
+      SELECT
+          vendor_id,
+          MAX(order_date) AS last_order_date
+      FROM sales_order
+      GROUP BY vendor_id
+  ) MAX_SO ON v.vendor_id = MAX_SO.vendor_id
 </select>
 
 
   <!-- ===================== 거래처원장 상단 요약 ===================== -->
-<select id="selectAccountLedgerSummary" parameterType="map" resultType="com.yedam.scm.vo.SalesOrderVO">
+<select id="selectAccountLedgerSummary" parameterType="map" resultType="SalesOrderVO">
   SELECT
-      NVL(SUM(a.total_price), 0) AS totalSales,
-      NVL(SUM(a.return_price), 0) AS totalReturn,
-      NVL(SUM(a.pay_amount), 0) AS totalPayment,
-      NVL(SUM(
-          CASE 
-              WHEN v.type IN ('1','2','판매처') THEN 
-                  (NVL(a.total_price,0) - NVL(a.return_price,0) - NVL(a.pay_amount,0))
-              ELSE 0 
-          END
-      ),0) AS totalAr,
-      NVL(SUM(
-          CASE 
-              WHEN v.type IN ('S','P','공급처') THEN 
-                  (NVL(a.total_price,0) - NVL(a.return_price,0) - NVL(a.pay_amount,0)) * -1
-              ELSE 0 
-          END
-      ),0) AS totalAp
-  FROM vendor v
-  LEFT JOIN (
-      SELECT vendor_id,
-             total_price,
-             NULL AS return_price,
-             NULL AS pay_amount
-        FROM sales_order
-      UNION ALL
-      SELECT vendor_id,
-             NULL AS total_price,
-             return_price,
-             NULL AS pay_amount
-        FROM return
-      UNION ALL
-      SELECT vendor_id,
-             NULL AS total_price,
-             NULL AS return_price,
-             pay_amount
-        FROM payment
-  ) a ON v.vendor_id = a.vendor_id
+      NVL(s.total_price, 0) AS totalPrice,
+      NVL(r.return_price, 0) AS returnPrice,
+      NVL(p.pay_amount, 0) AS totalPayment,
+      NVL(s.total_price, 0) - NVL(r.return_price, 0) - NVL(p.pay_amount, 0) AS totalAr,
+      MAX_SO.last_order_date AS lastOrderDate
+  FROM
+      (SELECT SUM(total_price) AS total_price FROM sales_order) s,
+      (SELECT SUM(rd.return_qty * rd.prod_unit_price) AS return_price
+      FROM return r
+      JOIN return_detail rd ON r.return_id = rd.return_id
+      WHERE rd.rdetail_status = '승인') r,
+      (SELECT SUM(pay_amount) AS pay_amount FROM payment) p,
+      (SELECT MAX(order_date) AS last_order_date FROM sales_order) MAX_SO
 </select>
 
 
