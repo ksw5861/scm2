@@ -111,9 +111,13 @@
 
     <update id="updateOrderStatus">
         UPDATE sales_order
-        SET status = #{status}
+        <set>
+            status = #{status}
+            <if test="status eq '배송완료'">
+                , delivery_date = sysdate
+            </if>
+        </set>
         WHERE ship_id = #{shipId}
     </update>
-
 
 </mapper>
