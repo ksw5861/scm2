@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
@@ -13,18 +14,22 @@ import org.springframework.web.bind.annotation.RestController;
 import com.yedam.scm.master.service.MaterialService;
 import com.yedam.scm.master.service.ProductService;
 import com.yedam.scm.master.service.WareHouseService1;
+import com.yedam.scm.outboundMat.service.PlanService;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.VendorSearchDTO;
 import com.yedam.scm.master.service.BomService;
 import com.yedam.scm.master.service.UnitService;
 import com.yedam.scm.master.service.VendorService;
 import com.yedam.scm.vo.MaterialVO;
+import com.yedam.scm.vo.PrdPlanDetailVO;
 import com.yedam.scm.vo.ProductVO;
+import com.yedam.scm.vo.ReqMatVO;
 import com.yedam.scm.vo.UnitVO;
 import com.yedam.scm.vo.VendorVO;
 import com.yedam.scm.vo.WareHouseVO;
 import com.yedam.scm.vo.BomVO;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -34,6 +39,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
+
+
+
 /*
  * 개발자:김상우
  * 자재, 제품, 창고, bom정보, 단위정보 관리
@@ -42,6 +50,8 @@ import org.springframework.web.bind.annotation.RequestParam;
  *  ----------   -------    ---------------------------
  *  2025.09.28   김상우            최초 생성
  */
+@CrossOrigin(origins = "http://localhost:5173")
+
 @RestController
 public class SwController {
 
@@ -59,6 +69,12 @@ public class SwController {
 
     @Autowired
     UnitService unitSvc;
+
+    @Autowired
+    PlanService planSvc;
+
+    @Autowired
+    PlanService planService;
 
     // =========================================================
     // ================ Material API ==========================
@@ -357,4 +373,23 @@ public class SwController {
     public int deleteMaterialVendor(@PathVariable String matVendorId) {
         return materialVendorSvc.deleteMaterialVendor(matVendorId);
     }
+
+
+    // 좌측 목록: PRODUCT_PLAN_DETAIL
+    @GetMapping("/api/mat/issue/planDetails")
+    public List<PrdPlanDetailVO> getPlanDetails(
+            @RequestParam(required = false) Long plId,
+            @RequestParam(required = false) String prodNo,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date dateFrom,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") Date dateTo
+    ) {
+        return planService.getPlanDetails(plId, prodNo, dateFrom, dateTo);
+    }
+
+    // 우측 상세: REQ_MAT + MATERIAL (자재명까지)
+    @GetMapping("/api/mat/issue/reqMat")
+    public List<ReqMatVO> getReqMat(@RequestParam Long plDetId) {
+        return planService.getReqMatWithMaterialByPlDetId(plDetId);
+    }
+   
 }

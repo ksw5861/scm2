@@ -1,9 +1,18 @@
 <script setup>
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import axios from 'axios';
+
+// 공용 컴포넌트
 import btn from '@/components/common/Btn.vue';
 import selectTable from '@/components/common/checkBoxTable.vue';
-import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
+
+// PrimeVue
+import Breadcrumb from 'primevue/breadcrumb';
+import Calendar from 'primevue/calendar';
+import InputText from 'primevue/inputtext';
+import Divider from 'primevue/divider';
+
+import { useDateFormat } from '@/composables/useFormat';
 import { useIcon } from '@/composables/useIcon';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
@@ -13,7 +22,9 @@ const route = useRoute();
 const { toast } = useAppToast();
 const userStore = useUserStore();
 
-// breadcrumb
+/* =========================
+   breadcrumb
+========================= */
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
 const breadcrumbItems = computed(() => {
   const matched = route.matched.filter((r) => r.meta);
@@ -28,106 +39,197 @@ const breadcrumbItems = computed(() => {
    검색/상태
 ========================= */
 const search = ref({
-  poNo: '', // 발주번호
-  matKeyword: '', // 자재코드/자재명
-  regDate: null // 등록일 (Date 또는 [start,end])
+  plId: '', // PL_ID
+  prodNo: '', // PROD_NO
+  regDate: null // Date | [Date, Date] (PRO_DATE 기준)
 });
 const loading = ref(false);
 
 /* =========================
-   데이터
+   좌측 목록 페이지네이션
 ========================= */
-// 1) 자재요청 목록(좌측)
-const requestList = ref([]);
-
-// 2) 상세 (우측 상단 필드)
-const detailHead = ref({
-  workOrderNo: '', // 생산지시번호
-  workDate: '', // 생산일
-  productId: '', // 제품코드
-  productName: '' // 제품명
-});
-
-// 3) 상세 하단 테이블(요청/출고 수량)
-const detailRows = ref([]); // { woNo, matId, matName, reqQty, issueQty, unit }
+const page = ref(1);
+const pageSize = 5;
+const total = ref(0);
+const totalPages = computed(() => Math.max(1, Math.ceil(total.value / pageSize)));
+const canPrev = computed(() => page.value > 1 && !loading.value);
+const canNext = computed(() => page.value < totalPages.value && !loading.value);
 
 /* =========================
-   컬럼 정의 (selectTable)
+   데이터
 ========================= */
-// 자재요청 목록
+// 좌측: 생산계획 상세 목록 (PRODUCT_PLAN_DETAIL)
+const requestList = ref([]);
+// 단일 선택
+const selectedRow = ref(null);
+
+// 우측 상단: 선택된 상세 기본 정보
+const detailHead = ref({
+  plDetId: '',
+  plId: '',
+  prodNo: '',
+  prodId: '',
+  proDate: '',
+  matStatus: ''
+});
+
+// 우측 하단: 요청 상세(REQ_MAT)
+const detailRows = ref([]); // { id, woNo, matId, matName?, reqQty, issueQty, unit? }
+
+/* =========================
+   우측 상세 페이지네이션 (최대 2건)
+========================= */
+const dPage = ref({ page: 1, size: 2 }); // size 고정: 2
+const dTotal = computed(() => detailRows.value.length);
+const dTotalPages = computed(() => Math.max(1, Math.ceil(dTotal.value / dPage.value.size)));
+const pagedDetailRows = computed(() => {
+  const start = (dPage.value.page - 1) * dPage.value.size;
+  return detailRows.value.slice(start, start + dPage.value.size);
+});
+const canDPrev = computed(() => dPage.value.page > 1);
+const canDNext = computed(() => dPage.value.page < dTotalPages.value);
+const dPrev = () => {
+  if (canDPrev.value) dPage.value.page -= 1;
+};
+const dNext = () => {
+  if (canDNext.value) dPage.value.page += 1;
+};
+
+// 합계(요청/출고)
+const sumReqQty = computed(() => detailRows.value.reduce((acc, r) => acc + Number(r.reqQty || 0), 0));
+const sumIssueQty = computed(() => detailRows.value.reduce((acc, r) => acc + Number(r.issueQty || 0), 0));
+
+/* =========================
+   컬럼 정의
+========================= */
+// ① 좌측: 생산계획 상세 목록
 const requestColumns = [
-  { field: 'workDate', label: '생산일', style: 'width: 10rem', sortable: true },
-  { field: 'workOrderNo', label: '생산지시번호', style: 'width: 12rem' },
-  { field: 'productId', label: '제품코드', style: 'width: 10rem' },
-  { field: 'productName', label: '제품명', style: 'width: 16rem', sortable: true },
-  { field: 'reqCount', label: '요청건수', style: 'width: 8rem' },
-  { field: 'charger', label: '담당자', style: 'width: 8rem' }
+  { field: 'proDate', label: '생산일', style: 'width: 10rem', sortable: true },
+  { field: 'prodNo', label: '생산번호', style: 'width: 12rem', sortable: true },
+  { field: 'prodId', label: '제품코드', style: 'width: 12rem' },
+  { field: 'proQty', label: '계획수량', style: 'width: 10rem' },
+  { field: 'matStatus', label: '상태', style: 'width: 10rem' }
 ];
 
-// 상세 테이블
+// ② 우측: 요청 상세(REQ_MAT)
 const detailColumns = [
-  { field: 'woNo', label: '생산지시번호', style: 'width: 12rem' },
-  { field: 'matId', label: '자재코드', style: 'width: 10rem' },
-  { field: 'matName', label: '자재명', style: 'width: 18rem', sortable: true },
-  { field: 'reqQty', label: '요청수량', style: 'width: 9rem' },
-  // 요청수량(출고수량) - 사용자가 수정 가능하도록 editable 옵션
-  { field: 'issueQty', label: '출고수량', style: 'width: 9rem', number: true, editable: true },
+  { field: 'woNo', label: '계획ID', style: 'width: 10rem' },
+  { field: 'matId', label: '자재코드', style: 'width: 12rem' },
+  { field: 'matName', label: '자재명', style: 'width: 16rem', sortable: true },
+  { field: 'reqQty', label: '요청중량', style: 'width: 10rem' },
+  { field: 'issueQty', label: '출고중량', style: 'width: 10rem', number: true, editable: true },
   { field: 'unit', label: '단위', style: 'width: 6rem' }
 ];
 
 /* =========================
+   유틸
+========================= */
+const fmtDate = (d) => (d ? useDateFormat(d).value : null);
+
+/* =========================
    API 로딩
 ========================= */
-// 좌측 목록 조회
+/**
+ * 좌측 목록: PRODUCT_PLAN_DETAIL 기준 조회 (페이지네이션)
+ * GET  http://localhost:8080/api/mat/issue/planDetails
+ * q   plId, prodNo, dateFrom, dateTo, page, size
+ * res { items: [...], total: number }  또는  [...array]
+ */
 const loadRequestList = async () => {
   loading.value = true;
   try {
     const params = {
-      poNo: search.value.poNo || null,
-      keyword: search.value.matKeyword || null,
-      regDate: Array.isArray(search.value.regDate) ? search.value.regDate.map((d) => useDateFormat(d).value).join(',') : search.value.regDate ? useDateFormat(search.value.regDate).value : null
+      plId: search.value.plId || null,
+      prodNo: search.value.prodNo || null,
+      dateFrom: Array.isArray(search.value.regDate) && search.value.regDate[0] ? fmtDate(search.value.regDate[0]) : search.value.regDate ? fmtDate(search.value.regDate) : null,
+      dateTo: Array.isArray(search.value.regDate) && search.value.regDate[1] ? fmtDate(search.value.regDate[1]) : null,
+      page: page.value,
+      size: pageSize
     };
-    const { data } = await axios.get('/api/mat/issue/requests', { params });
-    requestList.value = (data || []).map((r) => ({
-      id: r.reqId,
-      workOrderNo: r.workOrderNo,
-      workDate: useDateFormat(r.workDate).value,
-      productId: r.productId,
-      productName: r.productName,
-      reqCount: r.reqCount,
-      charger: r.empName
+
+    const { data } = await axios.get('http://localhost:8080/api/mat/issue/planDetails', { params });
+
+    // 백엔드가 {items,total} 주는 경우
+    const items = Array.isArray(data) ? data : (data?.items ?? []);
+    total.value = Array.isArray(data) ? data.length : Number(data?.total ?? items.length);
+
+    requestList.value = (items || []).map((r) => ({
+      id: r.plDetId,
+      plDetId: r.plDetId,
+      prodId: r.prodId,
+      proQty: Number(r.proQty ?? 0),
+      proDate: r.proDate ? useDateFormat(r.proDate).value : '',
+      plId: r.plId,
+      matStatus: r.matStatus ?? '',
+      prodNo: r.prodNo ?? ''
     }));
+
+    // 프론트 컷(백엔드가 배열만 주는 경우 목록 5개로 제한)
+    if (Array.isArray(data)) {
+      const start = (page.value - 1) * pageSize;
+      requestList.value = requestList.value.slice(start, start + pageSize);
+    }
+
+    // 목록 갱신 시 단일 선택/상세 초기화
+    selectedRow.value = null;
+    clearDetail();
   } catch (e) {
-    toast('error', '리스트 로드 실패', '자재요청 목록 불러오기 실패', '3000');
+    console.error(e);
+    toast('error', '리스트 로드 실패', '생산계획 상세 목록 불러오기 실패', '3000');
   } finally {
     loading.value = false;
   }
 };
 
-// 목록에서 행 선택 시 상세 채움
-const onSelectRequest = async (row) => {
+const clearDetail = () => {
+  detailHead.value = { plDetId: '', plId: '', prodNo: '', prodId: '', proDate: '', matStatus: '' };
+  detailRows.value = [];
+  dPage.value.page = 1; // 상세 페이지 리셋
+};
+
+/**
+ * 우측 상세: REQ_MAT 조회
+ * GET  http://localhost:8080/api/mat/issue/reqMat?plDetId=..  (조인: MATERIAL로 자재명 포함)
+ * res  REQ_ID, MAT_ID, PL_DET_ID, REQ_WEIGHT, matName?, unit?
+ */
+const loadReqMatByPlDetId = async (row) => {
   try {
-    const { data } = await axios.get('/api/mat/issue/requestDetail', { params: { workOrderNo: row.workOrderNo } });
-    // 우측 상단 필드
-    detailHead.value = {
-      workOrderNo: row.workOrderNo,
-      workDate: row.workDate,
-      productId: row.productId,
-      productName: row.productName
-    };
-    // 상세 테이블
-    detailRows.value = (data || []).map((d) => ({
-      id: d.mrpDetId || `${row.workOrderNo}-${d.matId}`,
-      woNo: row.workOrderNo,
-      matId: d.matId,
-      matName: d.matName,
-      reqQty: d.reqQty,
-      issueQty: d.issueQty ?? d.reqQty, // 초기값: 요청=출고
-      unit: d.unit
+    const { data } = await axios.get('http://localhost:8080/api/mat/issue/reqMat', {
+      params: { plDetId: row.plDetId }
+    });
+
+    detailRows.value = (data || []).map((m) => ({
+      id: m.reqId ?? `${row.plDetId}-${m.matId}`,
+      woNo: row.plId,
+      matId: m.matId,
+      matName: m.matName ?? '',
+      reqQty: Number(m.reqWeight ?? 0),
+      issueQty: Number(m.reqWeight ?? 0),
+      unit: m.unit ?? ''
     }));
+    dPage.value.page = 1; // 데이터 로드 후 상세 페이지 1로
   } catch (e) {
-    toast('error', '상세 로드 실패', '자재요청 상세 불러오기 실패', '3000');
+    console.error(e);
+    toast('error', '요청상세 로드 실패', 'REQ_MAT 불러오기 실패', '3000');
   }
+};
+
+/**
+ * 목록에서 행 선택 → 단일 선택 유지 + 헤더 채우고 + REQ_MAT 조회
+ */
+const onSelectRequest = async (row) => {
+  selectedRow.value = row;
+
+  detailHead.value = {
+    plDetId: row.plDetId,
+    plId: row.plId,
+    prodNo: row.prodNo,
+    prodId: row.prodId,
+    proDate: row.proDate,
+    matStatus: row.matStatus
+  };
+
+  await loadReqMatByPlDetId(row);
 };
 
 /* =========================
@@ -135,53 +237,83 @@ const onSelectRequest = async (row) => {
 ========================= */
 // 출고 등록
 const submitIssue = async () => {
-  if (!detailHead.value.workOrderNo) {
-    toast('warn', '선택 필요', '좌측 목록에서 출고할 건을 선택하세요.', '3000');
+  if (!detailHead.value.plDetId) {
+    toast('warn', '선택 필요', '좌측 목록에서 출고할 상세를 선택하세요.', '3000');
     return;
   }
+
   const payload = {
-    workOrderNo: detailHead.value.workOrderNo,
-    workDate: detailHead.value.workDate,
-    productId: detailHead.value.productId,
-    productName: detailHead.value.productName,
+    workOrderNo: String(detailHead.value.plId || ''),
+    workDate: detailHead.value.proDate,
+    productId: detailHead.value.prodId,
+    productName: detailHead.value.prodNo,
     lines: detailRows.value.map((r) => ({
       matId: r.matId,
       issueQty: Number(r.issueQty || 0),
       unit: r.unit
-    }))
+    })),
+    plDetId: detailHead.value.plDetId
   };
 
   try {
-    await axios.post('/api/mat/issue/register', payload);
+    await axios.post('http://localhost:8080/api/mat/issue/register', payload);
     toast('info', '출고등록 완료', '자재 출고가 등록되었습니다.', '4000');
-    // 성공 후 목록 및 상세 리프레시
     await loadRequestList();
-    if (requestList.value.length) onSelectRequest(requestList.value[0]);
   } catch (e) {
+    console.error(e);
     toast('error', '출고등록 실패', '저장 중 오류가 발생했습니다.', '4000');
   }
 };
 
-// 생산계획 불러오기 (별도 테이블 없이 생산계획 DB에서 산출)
+// “생산계획 반영” (옵션)
 const pullPlan = async () => {
   try {
-    await axios.post('/api/mat/issue/pullPlan'); // 서버에서 생산계획을 기준으로 요청 집계 처리
+    await axios.post('http://localhost:8080/api/mat/issue/pullPlan');
     toast('info', '생산계획 반영', '생산계획 기준 자재요청이 갱신되었습니다.', '3500');
     loadRequestList();
   } catch (e) {
+    console.error(e);
     toast('error', '실패', '생산계획 불러오기에 실패했습니다.', '3000');
   }
 };
 
 // 조회/초기화
-const doSearch = () => loadRequestList();
+const doSearch = () => {
+  page.value = 1;
+  loadRequestList();
+};
 const doReset = () => {
-  search.value = { poNo: '', matKeyword: '', regDate: null };
+  search.value = { plId: '', prodNo: '', regDate: null };
+  page.value = 1;
+  selectedRow.value = null;
+  clearDetail();
   loadRequestList();
 };
 
+// 좌측 페이지 이동
+const goPrev = () => {
+  if (canPrev.value) {
+    page.value -= 1;
+    loadRequestList();
+  }
+};
+const goNext = () => {
+  if (canNext.value) {
+    page.value += 1;
+    loadRequestList();
+  }
+};
+
+// 검색값 변경 시 좌측 페이지 1로
+watch(
+  () => [search.value.plId, search.value.prodNo, search.value.regDate],
+  () => {
+    page.value = 1;
+  }
+);
+
 onMounted(() => {
-  console.log(userStore.name);
+  console.log('[user]', userStore?.name);
   loadRequestList();
 });
 </script>
@@ -196,22 +328,22 @@ onMounted(() => {
       <!-- 상단 검색 영역 -->
       <div class="card flex flex-col gap-4">
         <div class="font-semibold text-m">자재출고등록</div>
-        <div class="text-sm text-gray-500 -mt-2">자재별로 출고처리합니다.</div>
+        <div class="text-sm text-gray-500 -mt-2">생산계획 상세(DETAIL) 기준으로 출고 처리합니다.</div>
         <Divider />
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
-            <label class="text-sm block mb-2">발주번호</label>
-            <InputText v-model="search.poNo" placeholder="발주번호" class="w-full" />
+            <label class="text-sm block mb-2">계획ID</label>
+            <InputText v-model="search.plId" placeholder="PL_ID" class="w-full" />
           </div>
           <div>
-            <label class="text-sm block mb-2">자재코드/자재명</label>
-            <InputText v-model="search.matKeyword" placeholder="자재코드/자재명" class="w-full" />
+            <label class="text-sm block mb-2">생산번호</label>
+            <InputText v-model="search.prodNo" placeholder="PROD_NO" class="w-full" />
           </div>
           <div>
-            <label class="text-sm block mb-2">등록일</label>
-            <Calendar v-model="search.regDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
+            <label class="text-sm block mb-2">생산일자</label>
+            <Calendar v-model="search.regDate" selectionMode="range" dateFormat="yy-mm-dd" showIcon class="w-full" />
           </div>
-          <div class="flex items-end gap-2">
+          <div class="md:col-span-2 flex items-end gap-2">
             <btn icon="pi pi-search" :loading="loading" label="조회" @click="doSearch" />
             <btn icon="pi pi-refresh" color="secondary" label="초기화" @click="doReset" />
           </div>
@@ -220,59 +352,81 @@ onMounted(() => {
 
       <!-- 본문 2단 레이아웃 -->
       <div class="flex flex-col md:flex-row gap-8">
-        <!-- 1. 자재요청 목록 -->
+        <!-- 1. 생산계획 상세 목록 -->
         <div class="md:w-1/2">
           <div class="card flex flex-col gap-4 h-full">
             <div class="flex items-center justify-between">
-              <div class="font-semibold text-m">① 자재요청 목록</div>
-              <btn icon="pi pi-database" color="secondary" label="생산계획불러오기" @click="pullPlan" />
+              <div class="font-semibold text-m">① 생산계획 상세 목록</div>
+              <btn icon="pi pi-database" color="secondary" label="생산계획반영" @click="pullPlan" />
             </div>
             <Divider />
-            <selectTable :columns="requestColumns" :data="requestList" :scrollable="true" :paginator="false" :showCheckbox="true" @row-select="onSelectRequest" />
+            <!-- 좌측: 단일 선택 유지 -->
+            <selectTable :columns="requestColumns" :data="requestList" :scrollable="true" :paginator="false" :showCheckbox="false" selection-mode="single" v-model:selected="selectedRow" @row-select="onSelectRequest" />
+            <!-- 좌측 페이지네이션 -->
+            <div class="flex items-center justify-between pt-2">
+              <span class="text-sm text-gray-500">총 {{ total }}건 · {{ page }} / {{ totalPages }} 페이지</span>
+              <div class="flex gap-2">
+                <btn :disabled="!canPrev" color="secondary" icon="pi pi-angle-left" label="이전" @click="goPrev" />
+                <btn :disabled="!canNext" color="secondary" icon="pi pi-angle-right" label="다음" @click="goNext" />
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- 2. 자재요청 상세 정보 -->
+        <!-- 2. 요청 상세 정보 (REQ_MAT) -->
         <div class="md:w-1/2">
           <div class="card flex flex-col gap-4 h-full">
             <div class="flex items-center justify-between">
-              <div class="font-semibold text-m">② 자재요청 상세 정보</div>
+              <div class="font-semibold text-m">② 요청 상세 정보</div>
               <btn icon="pi pi-plus" label="출고등록" @click="submitIssue" />
             </div>
             <Divider />
             <!-- 상세 헤더 필드 -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="text-sm block mb-2">생산지시번호</label>
-                <InputText v-model="detailHead.workOrderNo" readonly class="w-full" />
+                <label class="text-sm block mb-2">상세ID</label>
+                <InputText v-model="detailHead.plDetId" readonly class="w-full" />
               </div>
               <div>
-                <label class="text-sm block mb-2">생산일</label>
-                <InputText v-model="detailHead.workDate" readonly class="w-full" />
+                <label class="text-sm block mb-2">계획ID</label>
+                <InputText v-model="detailHead.plId" readonly class="w-full" />
+              </div>
+              <div>
+                <label class="text-sm block mb-2">생산번호</label>
+                <InputText v-model="detailHead.prodNo" readonly class="w-full" />
               </div>
               <div>
                 <label class="text-sm block mb-2">제품코드</label>
-                <InputText v-model="detailHead.productId" readonly class="w-full" />
+                <InputText v-model="detailHead.prodId" readonly class="w-full" />
               </div>
               <div>
-                <label class="text-sm block mb-2">제품명</label>
-                <InputText v-model="detailHead.productName" readonly class="w-full" />
+                <label class="text-sm block mb-2">생산일자</label>
+                <InputText v-model="detailHead.proDate" readonly class="w-full" />
+              </div>
+              <div>
+                <label class="text-sm block mb-2">상태</label>
+                <InputText v-model="detailHead.matStatus" readonly class="w-full" />
               </div>
             </div>
 
-            <!-- 상세 테이블 -->
+            <!-- 요청 상세 테이블 (우측 2건 페이지네이션 적용)
+                 ✅ 우측은 selection 비활성화: selection-mode 를 null 로 명시 -->
             <div class="mt-2">
-              <selectTable :columns="detailColumns" :data="detailRows" :scrollable="true" :paginator="false" :showCheckbox="false" editable />
+              <selectTable :columns="detailColumns" :data="pagedDetailRows" :scrollable="true" :paginator="false" :showCheckbox="false" :selection-mode="null" editable />
+            </div>
+
+            <!-- 합계 + 우측 페이지네이션 바 -->
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2 pt-3">
+              <div class="text-sm text-gray-600">
+                전체 요청합계: <span class="font-semibold">{{ sumReqQty.toLocaleString() }}</span> · 출고합계: <span class="font-semibold">{{ sumIssueQty.toLocaleString() }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-500">총 {{ dTotal }}건 · {{ dPage.page }} / {{ dTotalPages }} 페이지</span>
+                <btn :disabled="!canDPrev" color="secondary" icon="pi pi-angle-left" label="이전" @click="dPrev" />
+                <btn :disabled="!canDNext" color="secondary" icon="pi pi-angle-right" label="다음" @click="dNext" />
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- 우측 안내 문구 영역 (모형 참고) -->
-      <div class="card">
-        <div class="text-center py-8 text-lg md:text-2xl font-semibold leading-relaxed">
-          별도 테이블이나 페이지 생성없이<br />
-          생산계획 DB로 출고처리
         </div>
       </div>
     </div>
@@ -282,5 +436,10 @@ onMounted(() => {
 <style scoped>
 .container :deep(.card) {
   @apply rounded-xl shadow-sm p-4 md:p-6;
+}
+:deep(.ellipsis) {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 </style>
