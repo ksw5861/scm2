@@ -14,11 +14,17 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${file.upload.employee-dir}")
     private String employeeUploadDir;
 
+    @Value("${file.upload.defect-dir}")
+    private String defectUploadDir;
+
     @Override
     public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
         // URL 예시: http://localhost:8080/uploads/employee/EMP001.jpg
         registry.addResourceHandler("/uploads/employee/**")
                 .addResourceLocations("file:///" + employeeUploadDir + "/");
+        
+        registry.addResourceHandler("/uploads/defect/**")
+                .addResourceLocations("file:///" + defectUploadDir + "/");
     }
 
     @Bean
