@@ -57,7 +57,7 @@ const onSort = (event) => {
 </script>
 
 <template>
-  <DataTable v-model:selection="selectedRows" dataKey="id" :scrollable="true" scroll-height="400px" :selectionMode="selectionMode" :value="localData" :paginator="props.paginator" :rows="props.page.size" :totalRecords="props.page.totalElements" :lazy="true" :loading="loading" :first="(props.page.page - 1) * props.page.size" :sortField="sortField" :sortOrder="sortOrder" :stripedRows="true" :rowHover="true" showGridlines @row-select="onRowSelect" @selection-change="onSelectionChange" @page-change="onPage" @sort="onSort">
+  <DataTable v-model:selection="selectedRows" dataKey="id" :scrollable="true" scroll-height="400px" :selectionMode="selectionMode" :value="localData" :paginator="props.paginator" :rows="props.page.size" :totalRecords="props.page.totalElements" :lazy="false" :loading="loading" :first="(props.page.page - 1) * props.page.size" :sortField="sortField" :sortOrder="sortOrder" :stripedRows="true" :rowHover="true" showGridlines @row-select="onRowSelect" @selection-change="onSelectionChange" @page-change="onPage" @sort="onSort" @page="onPage">
     <!-- 행 선택 체크박스 -->
     <Column v-if="showCheckbox" :selectionMode="selectionMode" headerStyle="width: 3rem" />
 

@@ -40,7 +40,8 @@ public interface PurchaseMatMapper {
     void callReqestMatProc(PurchaseMatVO requestList);
    
     //자재주문목록
-    List<PurchaseMatVO> getPurchaseList();
+    List<PurchaseMatVO> getPurchaseList(@Param("startRow")int startRow, @Param("endRow")int endRow);
+    Long getPurchaseMasterCount();
 
     //자재주문상태목록
      List<PurStatusLogVO> getPurchaseStatus(Long purId);

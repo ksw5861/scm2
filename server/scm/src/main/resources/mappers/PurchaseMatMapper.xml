@@ -205,6 +205,9 @@ ORDER BY md.mrp_det_id DESC
 
     <!--자재주문목록-->
     <select id = "getPurchaseList" resultMap="PurchaseMatMap">
+SELECT * FROM (
+ SELECT a.*, ROWNUM rnum
+  FROM (
     SELECT pm.pur_id,
            pm.reg_date,
            pm.pur_no,
@@ -220,6 +223,15 @@ ORDER BY md.mrp_det_id DESC
     JOIN vendor v
     ON pm.vendor_id = v.vendor_id
     ORDER BY pm.reg_date DESC
+     ) a
+    WHERE ROWNUM &lt;= #{endRow}
+)
+WHERE rnum &gt;= #{startRow}
+    </select>
+    <!--자재주문마스터 수량 for pagenation-->
+    <select id="getPurchaseMasterCount" resultType="long">
+    SELECT count (pur_id)
+    FROM purchase_mat
     </select>
     <!--자재주문상세이력-->
     <select id ="getPurchaseStatus" parameterType="long" resultType = "PurStatusLogVO">

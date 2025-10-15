@@ -1,10 +1,13 @@
 package com.yedam.scm.purchaseMat.service.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.purchaseMat.mapper.PurchaseMatMapper;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
 import com.yedam.scm.vo.MatStatusVO;
@@ -84,8 +87,17 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
 
     //자재주문목록
     @Override
-    public List<PurchaseMatVO> getPurchaseList() {
-       return mapper.getPurchaseList();
+    public Map<String, Object> getPurchaseList(PageDTO pageDTO) {
+        List<PurchaseMatVO> list = mapper.getPurchaseList(pageDTO.getStartRow(), pageDTO.getEndRow());
+        Long total = mapper.getPurchaseMasterCount();
+
+        pageDTO.updatePageInfo(total);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("page", pageDTO);
+
+        return result;
     }
 
     //자재주문상태

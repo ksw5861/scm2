@@ -12,13 +12,6 @@ import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 const route = useRoute();
 const { toast } = useAppToast();
 
-const vendorId = ref('V800');
-const dateRange = ref({ start: null, end: null }); // 초기값을 객체로
-const materialName = ref();
-const statusList = ref();
-const matOutData = ref();
-const selectedRows = ref();
-
 // breadcrumb
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
 const breadcrumbItems = computed(() => {
@@ -30,21 +23,13 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const matOutColumns = [
-  { label: '납기요청일', field: 'dueDate' },
-  { label: '주문번호', field: 'purNo' },
-  { label: '자재코드', field: 'matId' },
-  { label: '자재명', field: 'matName' },
-  { label: '구매처 담당자', field: 'buyerName' },
-  { label: '수량', field: 'orderQty' },
-  { label: '단위', field: 'unit' },
-  { label: '잔여수량', field: 'restQty' },
-  { label: '출고수량', field: 'outQty', inputText: true },
-  { label: '출고예정일', field: 'expectDate', datePicker: true },
-  { label: '누적출고수량', field: 'outTotalQty' },
-  //{ label: '상태', field: 'releaseStatus' },
-  //{ label: '출고승인일', field: 'approveDate' }
-];
+const vendorId = ref('V800');
+const dateRange = ref({ start: null, end: null }); // 초기값을 객체로
+const materialName = ref();
+const statusList = ref();
+const matOutData = ref();
+const selectedRows = ref();
+const page = ref({ page: 1, size: 10, totalElements: 0 });
 
 const pageLoad = async () => {
   try {
@@ -71,7 +56,13 @@ const pageLoad = async () => {
     toast('error', '리스트 로드 실패', '리스트 불러오기 실패:', '3000');
   }
 };
-//vp
+
+const onPage = (event) => {
+  page.value.page = event.page + 1;
+  page.value.size = event.rows;
+  pageLoad();
+};
+
 onMounted(() => {
   pageLoad();
 });
@@ -121,6 +112,22 @@ const approvedShip = async () => {
     toast('error', '등록 실패', '출고등록  실패:', '3000');
   }
 };
+
+const matOutColumns = [
+  { label: '납기요청일', field: 'dueDate' },
+  { label: '주문번호', field: 'purNo' },
+  { label: '자재코드', field: 'matId' },
+  { label: '자재명', field: 'matName' },
+  { label: '구매처 담당자', field: 'buyerName' },
+  { label: '수량', field: 'orderQty' },
+  { label: '단위', field: 'unit' },
+  { label: '잔여수량', field: 'restQty' },
+  { label: '출고수량', field: 'outQty', inputText: true },
+  { label: '출고예정일', field: 'expectDate', datePicker: true },
+  { label: '누적출고수량', field: 'outTotalQty' }
+  //{ label: '상태', field: 'releaseStatus' },
+  //{ label: '출고승인일', field: 'approveDate' }
+];
 </script>
 
 <template>

@@ -52,19 +52,24 @@ const closePlanModal = () => {
 
 const fetchMatList = async () => {
   const pageParam = { page: page.value.page, size: page.value.size };
+
   console.log(pageParam);
   try {
     const res = await axios.get('/api/mat/matStockList', { params: pageParam });
-    console.log(res);
-    // matStockList.value = list.data.map((item) => ({
-    //   id: item.matId,
-    //   matId: item.matId,
-    //   matName: item.materialVO.matName,
-    //   currWeight: item.currWeight,
-    //   unit: item.materialVO.unit,
-    //   currQty: item.currQty,
-    //   qtyUnit: item.materialVO.stockUnit
-    // }));
+    const { list, page: pageInfo } = res.data;
+    console.log(res.data);
+    matStockList.value = list.map((item) => ({
+      id: item.matId,
+      matId: item.matId,
+      matName: item.materialVO.matName,
+      currWeight: item.currWeight,
+      unit: item.materialVO.unit,
+      currQty: item.currQty,
+      qtyUnit: item.materialVO.stockUnit
+    }));
+
+    page.value.totalElements = pageInfo.totalElements;
+    console.log(pageInfo);
   } catch (error) {
     toast('error', '자재 재고 현황', '재고 리스트 불러오기 실패:', '3000');
   }
@@ -172,7 +177,7 @@ const matLotColumns = [
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">자재별 재고 목록</div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" selectionMode="single" :columns="matStock" :data="matStockList" :paginator="true" :showCheckbox="false" @page-change="onPage" @row-select="detailInfo" />
+            <selectTable v-model:selection="selectedRows" selectionMode="single" :columns="matStock" :data="matStockList" :paginator="true" :page="page" :showCheckbox="false" @page-change="onPage" @row-select="detailInfo" />
           </div>
         </div>
       </div>

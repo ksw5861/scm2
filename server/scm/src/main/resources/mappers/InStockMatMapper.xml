@@ -193,9 +193,9 @@ SELECT * FROM (
         GROUP BY ml.mat_id, m.mat_name, m.unit, m.stock_unit
         ORDER BY ml.mat_id
     ) a
-    WHERE ROWNUM &lt;= #{endRow}
+    WHERE ROWNUM &lt;= #{end}
 )
-WHERE rnum &gt;= #{startRow}
+WHERE rnum &gt;= #{start}
 </select>
 <!--총 데이터수-->
 <select id="getMatStockCount" resultType="long">

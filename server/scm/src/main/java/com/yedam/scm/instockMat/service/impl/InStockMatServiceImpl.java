@@ -72,7 +72,7 @@ public class InStockMatServiceImpl implements InStockMatService {
     public Map<String, Object> getMatStockList(PageDTO pageDTO) {
        
        List<MatLotVO> list = mapper.getMatStockList(pageDTO.getStartRow(), pageDTO.getEndRow());
-       long total = mapper.getMatStockCount();
+       Long total = mapper.getMatStockCount();
 
        pageDTO.updatePageInfo(total);
 

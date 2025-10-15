@@ -67,13 +67,13 @@ public class MsController {
     public ResponseEntity<String> calcMrp(@PathVariable Long plId, @RequestParam String empName) {
         purchaseMatService.callCalcMrpProc(plId, empName);
         return ResponseEntity.ok("MRP 산출 완료");
-}
+    }
 
     //map 자재소요량
     @GetMapping("/mrpList")
     public List<MrpDetailVO> getMrpList() {
     return purchaseMatService.getMrpList();
-}
+    }
 
     //자재발주등록
     @PostMapping("/reqMaterial")
@@ -83,8 +83,8 @@ public class MsController {
     
     //발주목록
     @GetMapping("/purchaseList")
-    public List<PurchaseMatVO> getPurchaseList() {
-        return purchaseMatService.getPurchaseList();
+    public Map<String, Object> getPurchaseList(PageDTO pageDTO) {
+        return purchaseMatService.getPurchaseList(pageDTO);
     }
     
     //발주상세조회
@@ -149,7 +149,7 @@ public class MsController {
     //=============================================================================================재고part
     //자재재고현황
     @GetMapping("/matStockList")
-    public Map<String, Object> getMatStockList(@RequestParam PageDTO pageDTO) {
+    public Map<String, Object> getMatStockList(PageDTO pageDTO) {
         return inStockMatService.getMatStockList(pageDTO);
     }
     //자재별LOT현황
