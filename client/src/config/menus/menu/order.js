@@ -7,12 +7,14 @@ import payList from "./eg/payList";
 import branchDash from "./eg/branchDash";
 import goDel from "./eg/goDel";
 import goneDel from "./eg/goneDel";
+import branchPos from "./eg/branchPos";
 
 
 const order =
   {
     label: '판매처',
     items: [
+        branchPos,
         branchDash,
         insertOrder,
         orderList,

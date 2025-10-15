@@ -131,7 +131,7 @@ const createDeliveryInstruction = async () => {
     const ids = selectedOrders.value.map(o => o.orderId)
     const { data } = await axios.post('/api/goDel/create', { orders: ids })
     if (data.status === 'success') {
-      alert(`출하지시 등록 완료! (출하번호: ${data.shipId})`)
+      alert(`출하지시 등록 완료! `)
       fetchOrders()
       selectedOrders.value = []
       orderDetails.value = []

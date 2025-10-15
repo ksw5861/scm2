@@ -83,6 +83,15 @@ const eg = {
         requiresAuth: true,
         roles: ['admin', 'employee']
       }
+    },
+    {
+      path: '/branchpos',
+      name: 'POS',
+      component: () => import('@/views/pages/eg/BranchPos.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
     }
 
   ]
