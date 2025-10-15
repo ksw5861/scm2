@@ -132,6 +132,7 @@ const handleVerify = async () => {
 
       userStore.setUserInfo(user);
 
+      console.log(userStore.role);
       if (user.tempPassword === 'Y') {
         router.push('/change-password');
       } else {
