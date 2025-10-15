@@ -161,7 +161,7 @@
     <!-- ============================================================= -->
     <!-- 7. 반품 가능 주문 상세 조회 (단일 주문) -->
     <!--  - 진행/완료 상태의 반품수량을 returnedQty로 합산 -->
-    <!--  - 반려/취소 상태는 집계 제외 //조건 추가하다 열받아서 포기함. 나중에 여유될때 재도전각-->
+    <!--  //////////////////////////////// 반려/취소 상태는 집계 제외 //조건 추가하다 열받아서 포기함. 나중에 여유될때 재도전각-->
     <!-- ============================================================= -->
 
     <select id="getReturnableOrderDetails" parameterType="String" resultType="ReturnDetailVO">
@@ -177,14 +177,14 @@
             d.prod_status       AS prodStatus,
             NVL(SUM(
                 CASE 
-                    WHEN r.return_status IN ('대기','승인','배송중','배송완료','완료') 
+                    WHEN r.return_status IN ('대기','배송중','배송완료','처리중','처리완료') 
                     THEN rd.return_qty 
                     ELSE 0 
                 END
             ), 0)               AS returnedQty,
             (d.order_qty - NVL(SUM(
                 CASE 
-                    WHEN r.return_status IN ('대기','승인','배송중','배송완료','완료') 
+                    WHEN r.return_status IN ('대기','배송중','배송완료','처리중','처리완료') 
                     THEN rd.return_qty 
                     ELSE 0 
                 END
