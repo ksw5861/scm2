@@ -158,7 +158,7 @@ const shipDetailColumn = [
         </div>
       </div>
     </div>
-    <!--테이블영역--><!--테이블영역-->
+    <!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">
       <div class="md:w-1/2">
         <div class="card flex flex-col gap-4 h-full">
