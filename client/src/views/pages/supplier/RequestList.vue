@@ -11,7 +11,6 @@ import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
 
-
 // 반려처리방식!
 
 const route = useRoute();
@@ -29,7 +28,7 @@ const breadcrumbItems = computed(() => {
 });
 
 const vendorName = ref('공급처담당자이름'); //공급처담당자이름으로 로그찍히니 변경xxx
-const vendorId= ref('V800'); //공급처코드
+const vendorId = ref('V800'); //공급처코드
 const dateRange = ref({ start: null, end: null });
 const materialName = ref();
 const statusList = ref([]);
@@ -38,23 +37,13 @@ const selectedRows = ref([]);
 const rejModal = ref(false);
 const rejMemo = ref('');
 
-const matOrderColumns = [
-  { label: '주문일자', field: 'orderDate', sortable: true },
-  { label: '구매요청번호', field: 'orderNo' },
-  { label: '납기요청일', field: 'dueDate', sortable: true },
-  { label: '자재코드', field: 'matId' },
-  { label: '자재명', field: 'matName', sortable: true },
-  { label: '주문수량', field: 'orderQty', sortable: true },
-  { label: '단위', field: 'unit' },
-  { label: '도착지', field: 'toWarehouse'},
-  { label: '총 금액', field: 'total', sortable: true },
-  { label: '구매처 담당자', field: 'buyerName', sortable: true }
-];
+const page = ref({ page: 1, size: 10, totalElements: 0 });
 
 //주문목록(페이지로드시)
-const pageLoad = async () => {
+const fetchList = async () => {
   try {
     const list = await axios.get(`/api/supplier/OrderList/${vendorId.value}`);
+    console.log(list);
     matOrderData.value = list.data.map((item) => ({
       id: item.purId,
       orderDate: useDateFormat(item.regDate).value,
@@ -68,13 +57,21 @@ const pageLoad = async () => {
       total: item.total,
       buyerName: item.empName
     }));
+
+    page.value.totalElements = matOrderData.value.length;
   } catch (error) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
 };
 
+const onPage = (event) => {
+  page.value.page = event.page + 1;
+  page.value.size = event.rows;
+  fetchList();
+};
+
 onMounted(() => {
-  pageLoad();
+  fetchList();
 });
 
 //주문승인
@@ -84,7 +81,7 @@ const approve = async () => {
 
   try {
     await axios.post('/api/supplier/approve', { purId: idList, name: vendorId.value });
-     toast('info', '승인 성공', '주문 승인 성공:', '3000');
+    toast('info', '승인 성공', '주문 승인 성공:', '3000');
 
     pageLoad();
   } catch (error) {
@@ -93,36 +90,47 @@ const approve = async () => {
 };
 
 //반려모달
-const oepnRejModal = () =>{
-    const selectedCount = selectedRows.value.length;
+const oepnRejModal = () => {
+  const selectedCount = selectedRows.value.length;
 
-    if (selectedCount === 0) {
-        toast('warn', '선택 필요', '반려할 항목을 선택해주세요:', '3000');
-        return;
-    }
+  if (selectedCount === 0) {
+    toast('warn', '선택 필요', '반려할 항목을 선택해주세요:', '3000');
+    return;
+  }
 
-    if (selectedCount > 1) {
-        toast('info', '반려 불가', '1건씩만 처리 가능합니다:', '3000');
-        return;
-    }
+  if (selectedCount > 1) {
+    toast('info', '반려 불가', '1건씩만 처리 가능합니다:', '3000');
+    return;
+  }
 
-    rejModal.value = true;
-}
+  rejModal.value = true;
+};
 
 const closeRejModal = () => {
   rejModal.value = false;
 };
 
 const rejectPurchase = async () => {
-
-    try {
-        await axios.post('/api/supplier/reject', null, {params: { purId: selectedRows.value[0].id, rejMemo: rejMemo.value, staff: vendorName.value}})
-        rejModal.value = false;
-    } catch (error) {
-        toast('error', '등록 실패', '주문 승인 실패:', '3000');
-    }
+  try {
+    await axios.post('/api/supplier/reject', null, { params: { purId: selectedRows.value[0].id, rejMemo: rejMemo.value, staff: vendorName.value } });
+    rejModal.value = false;
+  } catch (error) {
+    toast('error', '등록 실패', '주문 승인 실패:', '3000');
+  }
 };
 
+const matOrderColumns = [
+  { label: '주문일자', field: 'orderDate', sortable: true },
+  { label: '구매요청번호', field: 'orderNo' },
+  { label: '납기요청일', field: 'dueDate', sortable: true },
+  { label: '자재코드', field: 'matId' },
+  { label: '자재명', field: 'matName', sortable: true },
+  { label: '주문수량', field: 'orderQty', sortable: true },
+  { label: '단위', field: 'unit' },
+  { label: '도착지', field: 'toWarehouse' },
+  { label: '총 금액', field: 'total', sortable: true },
+  { label: '구매처 담당자', field: 'buyerName', sortable: true }
+];
 </script>
 
 <template>
@@ -167,22 +175,20 @@ const rejectPurchase = async () => {
         <btn color="info" icon="pi pi-file-pdf" @click="approve" label="승인" />
       </div>
       <div class="font-semibold text-xl mb-5">조회 내역</div>
-      <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" />
+      <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" @page-change="onPage" :page="page" />
     </div>
   </div>
 
-<!--반려모달-->
-<Dialog v-model:visible="rejModal" modal header="반려 사유(공급처)" :style="{ width: '500px' }">
-     <div class="card flex justify-center">
-        <Textarea v-model="rejMemo" rows="5" cols="100" />
+  <!--반려모달-->
+  <Dialog v-model:visible="rejModal" modal header="반려 사유(공급처)" :style="{ width: '500px' }">
+    <div class="card flex justify-center">
+      <Textarea v-model="rejMemo" rows="5" cols="100" />
     </div>
-     <div class="flex justify-center gap-2">
-        <btn color="warn" icon="pi pi-file-excel" label="취소" @click="closeRejModal" />
-        <btn color="warn" icon="pi pi-file-excel" label="등록" @click="rejectPurchase" />
+    <div class="flex justify-center gap-2">
+      <btn color="warn" icon="pi pi-file-excel" label="취소" @click="closeRejModal" />
+      <btn color="warn" icon="pi pi-file-excel" label="등록" @click="rejectPurchase" />
     </div>
-</Dialog>
-
+  </Dialog>
 </template>
 
 <style scoped></style>
-

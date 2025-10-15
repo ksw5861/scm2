@@ -178,21 +178,31 @@ WHERE in_log_id = #{inLogId}
 
 <!--재고현황-->
 <select id="getMatStockList" resultMap="matlotMap">
-SELECT ml.mat_id,
-       m.mat_name,
-       sum(ml.curr_weight) as curr_weight,
-       m.unit,
-       sum(ml.curr_qty) as curr_qty,
-       m.stock_unit
-FROM mat_lot ml
-JOIN material m
-ON ml.mat_id = m.mat_id
-GROUP BY ml.mat_id, 
-    m.mat_name, 
-    m.unit, 
-    m.stock_unit
-ORDER BY ml.mat_id
+SELECT * FROM (
+    SELECT a.*, ROWNUM rnum
+    FROM (
+        SELECT
+          ml.mat_id,
+          m.mat_name,
+          SUM(ml.curr_weight) AS curr_weight,
+          m.unit,
+          SUM(ml.curr_qty) AS curr_qty,
+          m.stock_unit
+        FROM mat_lot ml
+        JOIN material m ON ml.mat_id = m.mat_id
+        GROUP BY ml.mat_id, m.mat_name, m.unit, m.stock_unit
+        ORDER BY ml.mat_id
+    ) a
+    WHERE ROWNUM &lt;= #{end}
+)
+WHERE rnum &gt;= #{start}
 </select>
+<!--총 데이터수-->
+<select id="getMatStockCount" resultType="long">
+SELECT count(DISTINCT mat_id)
+FROM mat_lot
+</select>
+
 <!--자재별 LOT현황-->
 <select id="getMatLotList" resultMap="matlotMap">
 SELECT ml.lot_id,
@@ -203,7 +213,9 @@ SELECT ml.lot_id,
        ml.curr_qty,
        m.stock_unit,
        ml.reg_date,
-       ml.warehouse
+       ml.warehouse,
+       ml.exp_date,
+       ml.lot_status
 FROM mat_lot ml
 JOIN material m
 ON ml.mat_id = m.mat_id

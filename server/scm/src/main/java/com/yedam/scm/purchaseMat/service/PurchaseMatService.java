@@ -1,7 +1,9 @@
 package com.yedam.scm.purchaseMat.service;
 
 import java.util.List;
+import java.util.Map;
 
+import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.vo.MatStatusVO;
 import com.yedam.scm.vo.MatVendorVO;
 import com.yedam.scm.vo.MrpDetailVO;
@@ -26,7 +28,7 @@ public interface PurchaseMatService {
     //자재주문등록
     void callReqestMatProc(List<PurchaseMatVO> requestList);
     //자재주문목록
-    List<PurchaseMatVO> getPurchaseList();
+    Map<String, Object> getPurchaseList(PageDTO pageDTO);
     //자재주문상태
      List<PurStatusLogVO> getPurchaseStatus(Long purId);
      /*=========================

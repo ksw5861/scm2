@@ -29,10 +29,14 @@ const statusList = ref();
 const purchaseList = ref();
 const selectedRows = ref();
 const codeMap = ref({}); // codeId → codeName 매핑용
+// pagination
+const page = ref({ page: 1, size: 10, totalElements: 0 });
 
 const pageLoad = async () => {
+  const pageParam = { page: page.value.page, size: page.value.size };
+
   try {
-    const list = await axios.get('/api/mat/purchaseList');
+    const list = await axios.get('/api/mat/purchaseList', { params: pageParam });
     purchaseList.value = list.data.map((row) => ({
       id: row.purId,
       regDate: useDateFormat(row.regDate).value,
@@ -43,27 +47,17 @@ const pageLoad = async () => {
       companyName: row.vendorVO.companyName,
       empName: row.empName
     }));
+    console.log(list);
+    page.value.totalElements = list.value.length;
   } catch (error) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
 };
 
-onMounted(() => {
-  pageLoad();
-  loadStatusCodes();
-});
-
-const loadStatusCodes = async () => {
-  try {
-    const res = await axios.get('/api/mat/status/m01');
-    // {"ms1":"요청등록","ms2":"요청승인",...} 형태로 변환
-    codeMap.value = res.data.reduce((acc, cur) => {
-      acc[cur.codeId] = cur.codeName;
-      return acc;
-    }, {});
-  } catch (err) {
-    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
-  }
+const onPage = (event) => {
+  page.value.page = event.page + 1; // PrimeVue는 0-based
+  page.value.size = event.rows;
+  pageLoad(); // 여기서 axios 호출
 };
 
 const detailInfo = async () => {
@@ -91,6 +85,24 @@ const detailInfo = async () => {
     toast('error', '상세정보 실패', '상세정보 불러오기 실패:', '3000');
   }
 };
+
+const loadStatusCodes = async () => {
+  try {
+    const res = await axios.get('/api/mat/status/m01');
+    // {"ms1":"요청등록","ms2":"요청승인",...} 형태로 변환
+    codeMap.value = res.data.reduce((acc, cur) => {
+      acc[cur.codeId] = cur.codeName;
+      return acc;
+    }, {});
+  } catch (err) {
+    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
+  }
+};
+
+onMounted(() => {
+  pageLoad();
+  loadStatusCodes();
+});
 
 const purchaseListColumn = [
   { label: '주문등록일', field: 'regDate' },
@@ -150,7 +162,7 @@ const statusColumn = [
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">자재주문 목록</div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="purchaseListColumn" :data="purchaseList" :paginator="false" :showCheckbox="false" @row-select="detailInfo" />
+            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="purchaseListColumn" :data="purchaseList" :paginator="true" :showCheckbox="false" @row-select="detailInfo" @page-change="onPage" :page="page" />
           </div>
         </div>
       </div>

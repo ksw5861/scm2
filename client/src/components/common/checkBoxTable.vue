@@ -10,8 +10,9 @@ import Select from 'primevue/select';
 const props = defineProps({
   columns: { type: Array, required: true }, // 동적 컬럼 정의
   data: { type: Array, required: true }, // 데이터 행
-  paginator: { type: Boolean, default: false }, // 페이지네이션 여부
+  page: { type: Object, default: () => ({ page: 1, size: 10, totalElements: 0 }) }, // 페이지네이션 여부
   rows: { type: Number, default: 10 }, // 페이지 당 행 수
+  paginator: { type: Boolean, default: true },
   totalRecords: { type: Number, default: 0 }, // 전체 데이터 수
   loading: { type: Boolean, default: false }, // 로딩 상태
   currentPage: { type: Number, default: 1 }, // 현재 페이지
@@ -47,7 +48,7 @@ const onSelectionChange = (event) => {
 };
 
 const onPage = (event) => {
-  emit('page-change', { first: event.first, rows: event.rows });
+  emit('page-change', { page: event.page + 1, size: event.rows });
 };
 
 const onSort = (event) => {
@@ -56,7 +57,7 @@ const onSort = (event) => {
 </script>
 
 <template>
-  <DataTable v-model:selection="selectedRows" dataKey="id" :scrollable="true" scroll-height="400px" :selectionMode="selectionMode" :value="localData" :paginator="paginator" :rows="rows" :totalRecords="totalRecords" :lazy="true" :loading="loading" :first="(currentPage - 1) * rows" :sortField="sortField" :sortOrder="sortOrder" :stripedRows="true" :rowHover="true" showGridlines @row-select="onRowSelect" @selection-change="onSelectionChange" @page="onPage" @sort="onSort">
+  <DataTable v-model:selection="selectedRows" dataKey="id" :scrollable="true" scroll-height="400px" :selectionMode="selectionMode" :value="localData" :paginator="props.paginator" :rows="props.page.size" :totalRecords="props.page.totalElements" :lazy="false" :loading="loading" :first="(props.page.page - 1) * props.page.size" :sortField="sortField" :sortOrder="sortOrder" :stripedRows="true" :rowHover="true" showGridlines @row-select="onRowSelect" @selection-change="onSelectionChange" @page-change="onPage" @sort="onSort" @page="onPage">
     <!-- 행 선택 체크박스 -->
     <Column v-if="showCheckbox" :selectionMode="selectionMode" headerStyle="width: 3rem" />
 

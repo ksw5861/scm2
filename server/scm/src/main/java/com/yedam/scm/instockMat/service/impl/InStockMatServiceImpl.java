@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.yedam.scm.config.FileUploadProperties;
+import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.instockMat.mapper.InStockMatMapper;
 import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.vo.InboundDetailVO;
@@ -66,8 +69,17 @@ public class InStockMatServiceImpl implements InStockMatService {
     }
 
     @Override
-    public List<MatLotVO> getMatStockList() {
-        return mapper.getMatStockList();
+    public Map<String, Object> getMatStockList(PageDTO pageDTO) {
+       
+       List<MatLotVO> list = mapper.getMatStockList(pageDTO.getStartRow(), pageDTO.getEndRow());
+       Long total = mapper.getMatStockCount();
+
+       pageDTO.updatePageInfo(total);
+
+       Map<String, Object> result = new HashMap<>();
+       result.put("list", list);
+       result.put("page", pageDTO);
+       return result;
     }
 
     @Override

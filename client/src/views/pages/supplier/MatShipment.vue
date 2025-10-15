@@ -21,6 +21,16 @@ const getNowDate = () => {
   return `${year}/${month}/${day}`;
 };
 
+// breadcrumb
+const breadcrumbHome = { icon: useIcon('home'), to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter((r) => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  const parentLabel = current.meta?.breadcrumb?.parent || '주문 조회';
+  const currentLabel = current.name || '';
+  return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
+});
 
 const vendorId = ref('V800');
 const vanEmpName = ref('홍길동');
@@ -37,41 +47,11 @@ const statusList = ref();
 const approveShipData = ref(); //페이지로드시 목록
 const warehoustListOpt = ref([]); //창고드롭다운용
 
+const page = ref({ page: 1, size: 10, totalElements: 0 });
 
 const shipDetailList = ref([
   { matId: '', matName: '', ortQty: null, unit: ''}
 ]);
-
-
-// breadcrumb
-const breadcrumbHome = { icon: useIcon('home'), to: '/' };
-const breadcrumbItems = computed(() => {
-  const matched = route.matched.filter((r) => r.meta);
-  if (!matched.length) return [];
-  const current = matched[matched.length - 1];
-  const parentLabel = current.meta?.breadcrumb?.parent || '주문 조회';
-  const currentLabel = current.name || '';
-  return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
-});
-
-const approveShipColumns = [
-  { label: '출고예정일', field: 'expectDate' },
-  { label: '출고지시번호', field: 'shipOrderNo' },
-  { label: '자재코드', field: 'matId' },
-  { label: '자재명', field: 'matName' },
-  //{ label: '구매처 담당자', field: 'buyerName' },
-  { label: '도착지', field: 'toWarehouse' },
-  //{ label: '출고수량', field: 'ortQty' },
-  //{ label: '단위', field: 'unit' }
-];
-
-const addShipColumns = [
-  { label: '자재코드', field: 'matId' },
-  { label: '자재명', field: 'matName' },
-  { label: '출고수량', field: 'ortQty' },
-  { label: '단위', field: 'unit' },
-  { label: '구매처 담당자', field: 'purName' }
-];
 
 //페이지로드시 목록출력
 const pageLoad = async () => {
@@ -92,6 +72,7 @@ const pageLoad = async () => {
       purId: item.purId, // 주문테이블아이디
       toWarehouse: item.warehouseName
     }));
+    page.value.totalElements = approveShipData.value.length;
   } catch (error) {
     toast('error', '리스트 로드 실패', '리스트 불러오기 실패:', '3000');
   }
@@ -168,7 +149,6 @@ const submit = async () => {
   }
 };
 
-
 //창고리스트: 드롭다운용
 const warehouseList = async () => {
   try {
@@ -183,10 +163,36 @@ const warehouseList = async () => {
   }
 };
 
+const onPage = (event) => {
+  page.value.page = event.page + 1;
+  page.value.size = event.rows;
+  pageLoad();
+};
+
 onMounted(() => {
   pageLoad();
   warehouseList();
 });
+
+const approveShipColumns = [
+  { label: '출고예정일', field: 'expectDate' },
+  { label: '출고지시번호', field: 'shipOrderNo' },
+  { label: '자재코드', field: 'matId' },
+  { label: '자재명', field: 'matName' },
+  //{ label: '구매처 담당자', field: 'buyerName' },
+  { label: '도착지', field: 'toWarehouse' },
+  //{ label: '출고수량', field: 'ortQty' },
+  //{ label: '단위', field: 'unit' }
+];
+
+const addShipColumns = [
+  { label: '자재코드', field: 'matId' },
+  { label: '자재명', field: 'matName' },
+  { label: '출고수량', field: 'ortQty' },
+  { label: '단위', field: 'unit' },
+  { label: '구매처 담당자', field: 'purName' }
+];
+
 </script>
 
 <template>
@@ -228,7 +234,7 @@ onMounted(() => {
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">출고대기 목록</div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" :columns="approveShipColumns" :data="approveShipData" :paginator="true" :rows="15" @row-select="addTOshipmentList" :showCheckbox="false"/>
+            <selectTable v-model:selection="selectedRows" :columns="approveShipColumns" :data="approveShipData" :paginator="true" :rows="15" @row-select="addTOshipmentList" :showCheckbox="false"  @page-change="onPage" :page="page" />
           </div>
         </div>
       </div>

@@ -33,11 +33,14 @@ const supplyList = ref();
 const selectedRows = ref();
 const codeMap = ref({}); // codeId → codeName 매핑용
 
-const pageLoad = async () => {
+const page = ref({ page: 1, size: 10, totalElements: 0 });
+
+const fetchSuppliyList = async () => {
   try {
     const list = await axios.get(`/api/supplier/supplyList/${vendorId.value}`);
     console.log(list);
-    supplyList.value = list.data.flatMap((row) =>
+    // flatMap으로 평탄화
+    const flattened = list.data.flatMap((row) =>
       row.details.map((detail) => ({
         id: detail.inboundDetId,
         outDate: useDateFormat(row.vendorOutDate).value,
@@ -48,13 +51,22 @@ const pageLoad = async () => {
         empName: row.venName
       }))
     );
+    //총 데이터 수 계산해서 paginator에 반영
+    supplyList.value = flattened;
+    page.value.totalElements = flattened.length;
   } catch (error) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
 };
 
+const onPage = (event) => {
+  page.value.page = event.page + 1;
+  page.value.size = event.rows;
+  fetchSuppliyList();
+};
+
 onMounted(() => {
-  pageLoad();
+  fetchSuppliyList();
   loadStatusCodes();
 });
 
@@ -152,7 +164,7 @@ const statusColumn = [
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">자재공급 목록</div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="supplyListColumn" :data="supplyList" :paginator="false" :showCheckbox="false" @row-select="detailInfo" />
+            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="supplyListColumn" :data="supplyList" :paginator="true" :showCheckbox="false" @row-select="detailInfo" @page-change="onPage" :page="page" />
           </div>
         </div>
       </div>

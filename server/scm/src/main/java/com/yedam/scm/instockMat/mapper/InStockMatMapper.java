@@ -24,12 +24,14 @@ public interface InStockMatMapper {
     List<InboundDetailVO> getApproveUnloadDetailList(@Param("inboundId")Long inboundId);
     //입고등록
     void callMatInboundStock(InboundDetailVO inStockInfo);
-    //불량등록 [1.불량정보등록 프로시저 2.불량정보등록 시퀀스아이디get 3. 이미지등록]
+    //불량등록 [1.불량정보등록 프로시저 2.불량정보등록 시퀀스아이디get 3.이미지등록]
     void callRegMatDefect(InboundLogVO defectData);
     Long selectRecentSeq();
     void updateDefectImagePath(InboundLogVO defectData);
     //재고목록
-    List<MatLotVO> getMatStockList();
+    List<MatLotVO> getMatStockList(@Param("start")int start, @Param("end")int end);
+    //품목수량 for Pagenation
+    Long getMatStockCount();
     //자재별LOT목록
     List<MatLotVO> getMatLotList(@Param("matId") String matId);
 }
