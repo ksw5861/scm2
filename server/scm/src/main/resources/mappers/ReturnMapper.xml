@@ -130,7 +130,7 @@
     </select>
 
     <!-- ============================================================= -->
-    <!-- 6. 반품 가능 주문 목록 조회 (모달/페이지 공용) //구현단계에서는 60일로 해두고 나중에 출고일자 기준으로 10일로 변경하기-->
+    <!-- 6. 반품 가능 주문 목록 조회 (모달/페이지 공용) -->
     <!-- ============================================================= -->
 <select id="getReturnableOrders" resultType="ReturnVO">
     SELECT DISTINCT
@@ -143,7 +143,7 @@
     FROM sales_order so
     WHERE so.vendor_id = #{vendorId}
       AND so.status = '배송완료'
-      AND so.delivery_date <![CDATA[>=]]> TRUNC(SYSDATE) - 60
+      AND so.delivery_date <![CDATA[>=]]> TRUNC(SYSDATE) - 7
       AND NOT EXISTS (
           SELECT 1
           FROM return r

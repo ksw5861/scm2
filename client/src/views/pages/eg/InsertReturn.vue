@@ -1,5 +1,15 @@
 <template>
   <div class="return-register">
+     
+    <!-- 공지사항 -->
+    <div class="notice">
+      <p>
+        <strong>공지사항:</strong><br />
+        고객님의 주문건은 <span class="highlight">배송 완료일로부터 7일 이내</span>에만 반품이 가능합니다.<br />
+        또한, 각 주문건은 <span class="highlight">한 번만 반품 신청</span>이 가능하오니, 신중하게 신청해 주시기 바랍니다.
+      </p>
+    </div>
+    
     <!-- 헤더 -->
     <div class="header">
       <h2>반품 등록 (판매처)</h2>
@@ -252,6 +262,21 @@ onMounted(fetchReturnableOrders)
 .return-register {
   padding: 20px;
 }
+.notice {
+  background-color: #f3f6fb;
+  border-left: 5px solid #007ad9;
+  padding: 15px 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #333;
+}
+.notice .highlight {
+  color: #007ad9;
+  font-weight: 600;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
