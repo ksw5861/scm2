@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+
+<mapper namespace="com.yedam.scm.order.mapper.SalesMarginMapper">
+
+  <sql id="Cols">
+    SALE_PROD_ID, SALE_PROD_NAME, SALE_PROD_PRICE,
+    PROD_UNIT_PRICE, SALE_MARGIN, SORT_NO, POS_SHOW_YN,
+    CREATE_DT, UPDATE_DT
+  </sql>
+
+  <!-- 목록 (POS 순서대로) -->
+  <select id="selectSalesMarginList" resultType="com.yedam.scm.vo.SalesMarginVO">
+    SELECT <include refid="Cols"/>
+      FROM SALES_MARGIN
+     ORDER BY SORT_NO
+  </select>
+
+  <!-- 단건 조회 -->
+  <select id="selectSalesMarginById" parameterType="string" resultType="com.yedam.scm.vo.SalesMarginVO">
+    SELECT <include refid="Cols"/>
+      FROM SALES_MARGIN
+     WHERE SALE_PROD_ID = #{saleProdId}
+  </select>
+
+  <!-- 단건 UPSERT (MERGE) -->
+  <insert id="updateSalesMargin" parameterType="com.yedam.scm.vo.SalesMarginVO">
+    MERGE INTO SALES_MARGIN T
+    USING (
+      SELECT
+        #{saleProdId}    AS SALE_PROD_ID,
+        #{saleProdName}  AS SALE_PROD_NAME,
+        #{saleProdPrice} AS SALE_PROD_PRICE,
+        #{prodUnitPrice} AS PROD_UNIT_PRICE,
+        #{saleMargin}    AS SALE_MARGIN,
+        #{sortNo}        AS SORT_NO,
+        #{posShowYn}     AS POS_SHOW_YN
+      FROM dual
+    ) S
+    ON (T.SALE_PROD_ID = S.SALE_PROD_ID)
+    WHEN MATCHED THEN
+      UPDATE SET
+        T.SALE_PROD_NAME  = S.SALE_PROD_NAME,
+        T.SALE_PROD_PRICE = S.SALE_PROD_PRICE,
+        T.PROD_UNIT_PRICE = S.PROD_UNIT_PRICE,
+        T.SALE_MARGIN     = S.SALE_MARGIN,
+        T.SORT_NO         = S.SORT_NO,
+        T.POS_SHOW_YN     = S.POS_SHOW_YN,
+        T.UPDATE_DT       = SYSDATE
+    WHEN NOT MATCHED THEN
+      INSERT (<include refid="Cols"/>)
+      VALUES (S.SALE_PROD_ID, S.SALE_PROD_NAME, S.SALE_PROD_PRICE,
+              S.PROD_UNIT_PRICE, S.SALE_MARGIN, S.SORT_NO, S.POS_SHOW_YN,
+              SYSDATE, SYSDATE)
+  </insert>
+
+  <!-- 삭제 -->
+  <delete id="deleteSalesMargin" parameterType="string">
+    DELETE FROM SALES_MARGIN WHERE SALE_PROD_ID = #{saleProdId}
+  </delete>
+
+
+
+
+  
+</mapper>

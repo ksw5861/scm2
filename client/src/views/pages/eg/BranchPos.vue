@@ -207,6 +207,8 @@ import InputText from "primevue/inputtext"
 import DataTable from "primevue/datatable"
 import Column from "primevue/column"
 import Tag from "primevue/tag"
+import axios from "axios"
+import { useUserStore } from "@/stores/user"
 
 const tabs = ["매출 발생", "매출 내역", "월별 매출"]
 const activeTab = ref("매출 발생")
@@ -239,11 +241,48 @@ const removeOrder = (id) => (orderList.value = orderList.value.filter((o) => o.i
 const subTotal = computed(() => orderList.value.reduce((sum, o) => sum + o.price * o.qty, 0))
 const tax = computed(() => Math.round(subTotal.value * 0.1))
 const total = computed(() => subTotal.value + tax.value)
-const handlePayment = () => {
+
+const handlePayment = async () => {
   if (!paymentMethod.value) return alert("결제 방식을 선택해주세요 💳💵")
-  alert(`✅ ${paymentMethod.value === "card" ? "카드" : "현금"} 결제가 완료되었습니다!\n총 금액: ${total.value.toLocaleString()}원`)
-  orderList.value = []
-  paymentMethod.value = ""
+  if (orderList.value.length === 0) return alert("상품을 선택해주세요 🛍️")
+
+  try {
+    // 1️⃣ 마스터 데이터 구성
+    const masterData = {
+      sdetailId: null,
+      saleTotalPrice: total.value,
+      salePayType: paymentMethod.value === "card" ? "CARD" : "CASH",
+      vendorId: useUserStore.code // 매장 ID (로그인 정보 기반으로 대체 가능)
+    }
+
+    // 2️⃣ 상세 데이터 구성
+    const detailList = orderList.value.map((o) => ({
+      saleProdId: o.id,
+      saleProdName: o.name,
+      saleProdPrice: o.price,
+      saleQty: o.qty,
+      saleMargin: 0, // 필요시 계산
+      saleUnitPrice: o.price
+    }))
+
+    // 3️⃣ 서버 전송 (MyBatis 매퍼 연결된 컨트롤러로)
+    const response = await axios.post("/sales/register", {
+      master: masterData,
+      details: detailList
+    })
+
+    // 4️⃣ 성공 처리
+    if (response.data?.result === "success") {
+      alert(`✅ ${paymentMethod.value === "card" ? "카드" : "현금"} 결제가 완료되었습니다!\n총 금액: ${total.value.toLocaleString()}원`)
+      orderList.value = []
+      paymentMethod.value = ""
+    } else {
+      alert("❌ 결제 저장 중 오류가 발생했습니다.")
+    }
+  } catch (err) {
+    console.error(err)
+    alert("서버 통신 중 오류가 발생했습니다 ⚠️")
+  }
 }
 
 // 매출 내역 탭 -----------------

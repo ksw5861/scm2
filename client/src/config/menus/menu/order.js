@@ -8,6 +8,7 @@ import branchDash from "./eg/branchDash";
 import goDel from "./eg/goDel";
 import goneDel from "./eg/goneDel";
 import branchPos from "./eg/branchPos";
+import posSetting from "./eg/posSetting";
 
 
 const order =
@@ -15,6 +16,7 @@ const order =
     label: '판매처',
     items: [
         branchPos,
+        posSetting,
         branchDash,
         insertOrder,
         orderList,

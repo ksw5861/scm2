@@ -92,6 +92,15 @@ const eg = {
         requiresAuth: true,
         roles: ['admin', 'employee']
       }
+    },
+    {
+      path: '/possetting',
+      name: 'POS설정',
+      component: () => import('@/views/pages/eg/PosSetting.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
     }
 
   ]
