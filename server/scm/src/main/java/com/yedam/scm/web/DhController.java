@@ -12,6 +12,7 @@ import com.yedam.scm.dto.EmployeeSearchDTO;
 import com.yedam.scm.dto.LoginDTO;
 import com.yedam.scm.dto.LoginRes;
 import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.img.service.ImgService;
 import com.yedam.scm.login.service.AppLoginService;
 import com.yedam.scm.login.service.LoginService;
 import com.yedam.scm.master.service.AccountService;
@@ -25,13 +26,18 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -54,6 +60,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class DhController {
 
   private final EmployeeService employeeSvc;
+  private final ImgService imgSvc;
   private final LoginService loginSvc;
   private final AppLoginService appLoginSvc;
   private final JwtUtil jwtUtil;
@@ -75,6 +82,31 @@ public class DhController {
           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
       }
   }
+
+    @GetMapping("/img/defect/{inLogId}")
+    public ResponseEntity<Resource> getDefectPhoto(@PathVariable String inLogId) {
+        try {
+            Resource image = imgSvc.getDefectImage(inLogId);
+
+            String contentType = Files.probeContentType(Paths.get(image.getFile().getAbsolutePath()));
+
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(image);
+
+        } catch (FileNotFoundException e) {
+            System.err.println(">> File not found: " + e.getMessage());
+            return ResponseEntity.notFound().build();
+        } catch (IOException e) {
+            System.err.println(">> IO Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
   /**
    * 사원 목록 조회
