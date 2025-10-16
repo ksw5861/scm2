@@ -1,10 +1,12 @@
+import { useIcon } from "@/composables/useIcon";
+
 const posSetting =
 
-      {
-        label: 'POS설정',
-        icon: 'pi pi-fw pi-home',
+    {
+        label: 'POS 설정',
+        icon: useIcon('setting'),
         to: '/possetting',
-        roles: ['admin', 'employee']
-      };
+        roles: ['customer']
+    };
 
 export default posSetting;

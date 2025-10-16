@@ -1,10 +1,11 @@
-const orderList =
+import { useIcon } from "@/composables/useIcon";
 
-      {
-        label: '주문 조회',
-        icon: 'pi pi-fw pi-home',
+const orderList =
+    {
+        label: '주문 내역 조회',
+        icon: useIcon('list'),
         to: '/orderlist',
-        roles: ['admin', 'employee']
-      };
+        roles: ['customer']
+    };
 
 export default orderList;

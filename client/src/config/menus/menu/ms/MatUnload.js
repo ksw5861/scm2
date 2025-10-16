@@ -1,6 +1,8 @@
+import { useIcon } from "@/composables/useIcon";
+
 const MatUnload = {
-  label: '하차등록',
-  icon: 'pi pi-microchip',
+  label: '자재 하차 등록',
+  icon: useIcon('send'),
   to: '/MatUnload',
   roles: ['admin', 'employee']
 };

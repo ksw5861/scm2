@@ -5,38 +5,50 @@ const supplier = {
   children: [
     {
       path: '/requstList',
-      name: '자재요청 조회',
+      name: '공급처 주문 조회',
       component: () => import('@/views/pages/supplier/RequestList.vue'),
       meta: {
+        breadcrumb: {
+          parent: '공급처'
+        },
         requiresAuth: true,
-        roles: ['admin', 'employee']
+        roles: ['supplier']
       }
     },
     {
       path: '/matSupply',
-      name: '출고 승인',
+      name: '공급처 출고 승인',
       component: () => import('@/views/pages/supplier/matSupply.vue'),
       meta: {
+        breadcrumb: {
+          parent: '공급처'
+        },
         requiresAuth: true,
-        roles: ['admin', 'employee']
+        roles: ['supplier']
       }
     },
     {
       path: '/matShipment',
-      name: '출고 등록',
+      name: '공급처 출고 등록',
       component: () => import('@/views/pages/supplier/MatShipment.vue'),
       meta: {
+        breadcrumb: {
+          parent: '공급처'
+        },
         requiresAuth: true,
-        roles: ['admin', 'employee']
+        roles: ['supplier']
       }
     },
     {
       path: '/supplyList',
-      name: '공급 목록',
+      name: '공급처 공급 내역 조회',
       component: () => import('@/views/pages/supplier/SupplyList.vue'),
       meta: {
+        breadcrumb: {
+          parent: '공급처'
+        },
         requiresAuth: true,
-        roles: ['admin', 'employee']
+        roles: ['supplier']
       }
     }
   ]

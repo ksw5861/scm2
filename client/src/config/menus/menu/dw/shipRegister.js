@@ -1,6 +1,8 @@
+import { useIcon } from "@/composables/useIcon";
+
 const shipRegister = {
-  label: '출하등록',
-  icon: 'pi pi-fw pi-send',
+  label: '출하 등록',
+  icon: useIcon('send'),
   to: '/ship-register',
   roles: ['admin', 'employee']
 };
