@@ -1,6 +1,6 @@
 package com.yedam.scm.web;
 
-import java.sql.Date;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.yedam.scm.master.service.MaterialService;
 import com.yedam.scm.master.service.ProductService;
 import com.yedam.scm.master.service.WareHouseService1;
+import com.yedam.scm.outboundMat.service.MatIssueService;
 import com.yedam.scm.outboundMat.service.PlanService;
+import com.yedam.scm.dto.MatIssueLineResult;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.VendorSearchDTO;
 import com.yedam.scm.master.service.BomService;
@@ -75,6 +77,10 @@ public class SwController {
 
     @Autowired
     PlanService planService;
+
+    @Autowired
+    MatIssueService issueService;
+
 
     // =========================================================
     // ================ Material API ==========================
@@ -376,7 +382,7 @@ public class SwController {
 
 
     // 좌측 목록: PRODUCT_PLAN_DETAIL
-    @GetMapping("/api/mat/issue/planDetails")
+    @GetMapping("/mat/issue/planDetails")
     public List<PrdPlanDetailVO> getPlanDetails(
             @RequestParam(required = false) Long plId,
             @RequestParam(required = false) String prodNo,
@@ -387,9 +393,31 @@ public class SwController {
     }
 
     // 우측 상세: REQ_MAT + MATERIAL (자재명까지)
-    @GetMapping("/api/mat/issue/reqMat")
+    @GetMapping("/mat/issue/reqMat")
     public List<ReqMatVO> getReqMat(@RequestParam Long plDetId) {
         return planService.getReqMatWithMaterialByPlDetId(plDetId);
     }
-   
+    
+    // 출고 프로시저
+
+    @PostMapping("/mat/issue/issue-by-proc")
+    public ResponseEntity<String> executeIssue(@RequestBody List<MatIssueLineResult> requests) {
+        try {
+            for (MatIssueLineResult req : requests) {
+                System.out.println("출고 요청 plDetId=" + req.getPlDetId() +
+                                   ", matId=" + req.getMatId() +
+                                   ", reqQty=" + req.getReqQty() +
+                                   ", managerId=" + req.getManagerId());
+                issueService.executeMatLotIssue(req);
+            }
+            return ResponseEntity.ok("출고 완료");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body("오류 발생: " + e.getMessage());
+        }
+    }
+
 }
+

@@ -29,6 +29,9 @@
       <if test="dateTo != null">
         AND PRO_DATE &lt;= #{dateTo}
       </if>
+
+      AND MAT_STATUS = '출고대기'
+       
     </where>
     ORDER BY PRO_DATE DESC, PL_DET_ID DESC
   </select>

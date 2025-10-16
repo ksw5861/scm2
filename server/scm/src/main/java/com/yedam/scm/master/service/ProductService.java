@@ -1,6 +1,6 @@
 package com.yedam.scm.master.service;
 
-import java.sql.Date;
+import java.util.Date;
 import java.util.List;
 
 import com.yedam.scm.vo.ProductVO;
