@@ -9,11 +9,11 @@ import stock from './menu/stock';
 const sideBar = [
     master,
     logistics,
-    order,
     customerOrder,
     production,
-    supplier,
-    stock
+    stock,
+    order,
+    supplier
 ];
 
 export default sideBar;
