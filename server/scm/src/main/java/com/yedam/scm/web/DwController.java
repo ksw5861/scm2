@@ -198,14 +198,13 @@ public class DwController {
 
 
     // 대시보드
-    @GetMapping("/dashboard")
+    @GetMapping("/account-dash")
     public ResponseEntity<Map<String, Object>> getDashboard() {
-    Map<String, Object> result = new HashMap<>();
-    result.put("summary", service.getDashboardSummary());
-    result.put("items", service.getDashboardList());
-    return ResponseEntity.ok(result);
-}
-
+        Map<String, Object> result = new HashMap<>();
+        result.put("summary", service.getDashboardSummary());
+        result.put("items", service.getDashboardList());
+        return ResponseEntity.ok(result);
+    }
 
 
 

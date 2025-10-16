@@ -27,7 +27,7 @@ function fmt(v) {
 /* 데이터 로드 */
 async function loadDashboard() {
   try {
-    const { data } = await axios.get('/api/dashboard');
+    const { data } = await axios.get('/api/account-dash');
     summary.value = data.summary;
     list.value = data.items;
     renderDonutChart();

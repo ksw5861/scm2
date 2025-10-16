@@ -94,7 +94,8 @@ public interface InboundMapper {
         SalesOrderVO selectAccountLedgerSummary(Map<String, Object> params);
 
         // 대시보드
-        Map<String, Object> selectDashboardSummary();
+        // Map<String, Object> selectDashboardSummary();
+        SalesOrderVO selectDashboardSummary();
         List<SalesOrderVO> selectDashboardList();
 
 

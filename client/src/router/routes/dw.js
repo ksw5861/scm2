@@ -29,7 +29,7 @@ const dw = {
     },
     {
       path: '/order-inquiry',
-      name: '판매처 주문 내역 조회',
+      name: '본사 판매처 주문 내역 조회',
       component: () => import('@/views/pages/dw/OrderInquiry.vue'),
       meta: {
         breadcrumb: {
@@ -93,6 +93,14 @@ const dw = {
         breadcrumb: {
           parent: '거래처 관리'
         },
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    },
+    { path: '/account-dash',
+      name: '본사 대시보드',
+      component: () => import('@/views/pages/dw/LedgerDashboard.vue'),
+      meta: {
         requiresAuth: true,
         roles: ['admin', 'employee']
       }
