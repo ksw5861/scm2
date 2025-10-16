@@ -7,9 +7,16 @@ import searchField from '@/components/common/SearchBox.vue';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
+import { useUserStore } from '@/stores/user';
 
 const route = useRoute();
 const { toast } = useAppToast();
+
+// Pinia Store
+const userStore = useUserStore();
+const vendorId = userStore.code;
+
+console.log(userStore.name);
 
 // breadcrumb
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
@@ -36,7 +43,7 @@ const empName = ref('로그인');
 const dateRange = ref({ start: null, end: null });
 const resDate = ref(getNowDate());
 const memo = ref('');
-const statusOptions = ref([])
+const statusOptions = ref([]);
 const planType = ref('');
 
 //테이블 행 key값
@@ -68,17 +75,16 @@ onMounted(() => {
 });
 
 const planTypeList = async () => {
-    try{
-        const res = await axios.get('/api/mat/status/p03')
-        statusOptions.value = res.data.map(item => ({
-          name: item.codeName, // 화면 표시용
-          value: item.codeId    // 실제 값
-        }))
-    } catch(error){
-        toast('error', '상태값 로드 실패', '코드 불러오기 실패', '3000');
-    }
-}
-
+  try {
+    const res = await axios.get('/api/mat/status/p03');
+    statusOptions.value = res.data.map((item) => ({
+      name: item.codeName, // 화면 표시용
+      value: item.codeId // 실제 값
+    }));
+  } catch (error) {
+    toast('error', '상태값 로드 실패', '코드 불러오기 실패', '3000');
+  }
+};
 
 //옵션선택시 컬럼반영
 const selectOpt = (row, value) => {
@@ -135,7 +141,7 @@ const submit = async () => {
     return;
   }
 
-   console.log('plan', JSON.stringify(plan, null, 2));
+  console.log('plan', JSON.stringify(plan, null, 2));
 
   try {
     const response = await axios.post('/api/mat/productionPlan', plan);
@@ -163,13 +169,7 @@ const submit = async () => {
       <div class="flex flex-col gap-6 mt-5 mb-10">
         <!-- 1행 -->
         <div class="flex flex-col gap-4 md:flex-row md:gap-10">
-          <searchField
-            type="dropDown"
-            label="계획유형"
-            v-model="planType"
-            class="w-64"
-            :options="statusOptions"
-          />
+          <searchField type="dropDown" label="계획유형" v-model="planType" class="w-64" :options="statusOptions" />
           <searchField type="dateRange" label="생산계획기간" v-model="dateRange" class="w-100" />
           <searchField type="text" label="비고" v-model="memo" class="w-96" />
           <searchField type="readOnly" label="등록일" v-model="resDate" class="w-45" />

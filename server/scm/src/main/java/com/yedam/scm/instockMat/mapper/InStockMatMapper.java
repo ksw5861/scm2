@@ -12,14 +12,16 @@ import com.yedam.scm.vo.MatLotVO;
 @Mapper
 public interface InStockMatMapper {
     //하차대기(마스터)
-    List<InboundVO> getVenShipList();
+    List<InboundVO> getVenShipList(@Param("startRow")int start, @Param("endRow")int end);
+    Long getVenShipListCount();
     //하차대기(상세)
     List<InboundDetailVO> getVenShipDetailList(@Param("inboundId")Long inboundId);
     //하차승인
     void callApproveUnload(@Param("inboundId")Long inboundId, @Param("unloadEmp")String unloadEmp);
     void callUnloadReturn(@Param("inboundId")Long inboundId,  @Param("unloadEmp")String unloadEmp,  @Param("rejMemo")String rejMemo);
     //입고대기목록
-    List<InboundVO> getApproveUnload();
+    List<InboundVO> getApproveUnload(@Param("startRow")int start, @Param("endRow")int end);
+    Long getApproveUnloadListCount();
     //입고대기목록(상세)
     List<InboundDetailVO> getApproveUnloadDetailList(@Param("inboundId")Long inboundId);
     //입고등록

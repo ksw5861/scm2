@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import btn from '@/components/common/Btn.vue';
+import Button from 'primevue/button';
 import selectTable from '@/components/common/checkBoxTable.vue';
 import SearchField from '@/components/common/SearchBox.vue';
 import { useAppToast } from '@/composables/useAppToast';
@@ -9,6 +10,7 @@ import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import Timeline from 'primevue/timeline';
+import Dialog from 'primevue/dialog';
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -32,6 +34,9 @@ const statusList = ref();
 const supplyList = ref();
 const selectedRows = ref();
 const codeMap = ref({}); // codeId → codeName 매핑용
+//이미지모달
+const imgModal = ref(false);
+const defectImg = ref();
 
 const page = ref({ page: 1, size: 10, totalElements: 0 });
 
@@ -59,16 +64,31 @@ const fetchSuppliyList = async () => {
   }
 };
 
-const onPage = (event) => {
-  page.value.page = event.page + 1;
-  page.value.size = event.rows;
-  fetchSuppliyList();
+const detailInfo = async () => {
+  const inboundDetId = selectedRows.value.id;
+  console.log(inboundDetId);
+  try {
+    const list = await axios.get('/api/supplier/supplyDetailList', { params: { inboundDetId } });
+    console.log(list);
+    //타임라인
+    events.value = list.data.map((item) => ({
+      date: useDateFormat(item.reDate).value,
+      status: codeMap.value[item.logInboundStatus] || item.logInboundStatus,
+      rejMemo: item.logMemo,
+      logId: item.inLogId
+    }));
+    //상세테이블
+    statusList.value = list.data.map((item) => ({
+      id: item.inLogId,
+      updateDate: useDateFormat(item.reDate).value,
+      chargeName: item.logName,
+      status: codeMap.value[item.logInboundStatus] || item.logInboundStatus,
+      rejQty: item.logRejQty
+    }));
+  } catch (error) {
+    toast('error', '상세정보 실패', '상세정보 불러오기 실패:', '3000');
+  }
 };
-
-onMounted(() => {
-  fetchSuppliyList();
-  loadStatusCodes();
-});
 
 const loadStatusCodes = async () => {
   try {
@@ -83,30 +103,35 @@ const loadStatusCodes = async () => {
   }
 };
 
-const detailInfo = async () => {
-  const inboundDetId = selectedRows.value.id;
-  console.log(inboundDetId);
+const openImgModal = async (inLogId) => {
   try {
-    const list = await axios.get('/api/supplier/supplyDetailList', { params: { inboundDetId } });
-    console.log(list);
-    //타임라인
-    events.value = list.data.map((item) => ({
-      date: useDateFormat(item.reDate).value,
-      status: codeMap.value[item.logInboundStatus] || item.logInboundStatus,
-      rejMemo: item.logMemo
-    }));
-    //상세테이블
-    statusList.value = list.data.map((item) => ({
-      id: item.inLogId,
-      updateDate: useDateFormat(item.reDate).value,
-      chargeName: item.logName,
-      status: codeMap.value[item.logInboundStatus] || item.logInboundStatus,
-      rejQty: item.logRejQty
-    }));
+    const res = await axios.get(`/api/img/defect/${inLogId}`, {
+      //이미지 데이터는 바이너리로 responseType: 'blob' 옵션을 줘야함!
+      responseType: 'blob'
+    });
+    // blob → 브라우저 URL로 변환
+    defectImg.value = URL.createObjectURL(res.data);
   } catch (error) {
-    toast('error', '상세정보 실패', '상세정보 불러오기 실패:', '3000');
+    toast('error', '이미지 로드 실패', '이미지불러오기 실패', '3000');
   }
+
+  imgModal.value = true;
 };
+
+const closeRejModal = () => {
+  imgModal.value = false;
+};
+
+const onPage = (event) => {
+  const startRow = event.page * event.rows + 1;
+  const endRow = (event.page + 1) * event.rows;
+  fetchSuppliyList({ startRow, endRow });
+};
+
+onMounted(() => {
+  fetchSuppliyList();
+  loadStatusCodes();
+});
 
 const supplyListColumn = [
   { label: '출고일', field: 'outDate' },
@@ -181,7 +206,8 @@ const statusColumn = [
                 <template #opposite="slotProps">
                   <small class="text-surface-500 dark:text-surface-400">{{ slotProps.item.date }}</small>
                 </template>
-                <template #content="slotProps"> [{{ slotProps.item.status }}] {{ slotProps.item.rejMemo }} </template>
+                <template #content="slotProps"> [{{ slotProps.item.status }}] {{ slotProps.item.rejMemo }} <btn v-if="slotProps.item.status === '불량'" icon="clip" color="secondary" variant="text" @click="openImgModal(slotProps.item.logId)" outlined :size="size" /> </template>
+                <!--d4[불량일경우] 돋보기 아이콘???-->
               </Timeline>
             </div>
             <div>
@@ -192,6 +218,15 @@ const statusColumn = [
       </div>
     </div>
   </div>
+
+  <Dialog v-model:visible="imgModal" modal header="불량 이미지(발주처)" :style="{ width: '500px' }">
+    <div class="card flex justify-center">
+      <img :src="defectImg" alt="불량 이미지" class="w-full rounded-lg" />
+    </div>
+    <div class="flex justify-center">
+      <btn color="warn" icon="cancel" label="닫기" @click="closeRejModal" />
+    </div>
+  </Dialog>
 </template>
 
 <style scoped></style>

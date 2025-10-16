@@ -65,9 +65,9 @@ const fetchList = async () => {
 };
 
 const onPage = (event) => {
-  page.value.page = event.page + 1;
-  page.value.size = event.rows;
-  fetchList();
+  const startRow = event.page * event.rows + 1;
+  const endRow = (event.page + 1) * event.rows;
+  fetchList({ startRow, endRow });
 };
 
 onMounted(() => {

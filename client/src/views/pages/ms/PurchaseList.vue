@@ -36,8 +36,9 @@ const pageLoad = async () => {
   const pageParam = { page: page.value.page, size: page.value.size };
 
   try {
-    const list = await axios.get('/api/mat/purchaseList', { params: pageParam });
-    purchaseList.value = list.data.map((row) => ({
+    const res = await axios.get('/api/mat/purchaseList', { params: pageParam });
+    const { list, page: pageInfo } = res.data;
+    purchaseList.value = list.map((row) => ({
       id: row.purId,
       regDate: useDateFormat(row.regDate).value,
       purNo: row.purNo,
@@ -47,17 +48,10 @@ const pageLoad = async () => {
       companyName: row.vendorVO.companyName,
       empName: row.empName
     }));
-    console.log(list);
-    page.value.totalElements = list.value.length;
+    page.value.totalElements = pageInfo.totalElements;
   } catch (error) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
-};
-
-const onPage = (event) => {
-  page.value.page = event.page + 1; // PrimeVue는 0-based
-  page.value.size = event.rows;
-  pageLoad(); // 여기서 axios 호출
 };
 
 const detailInfo = async () => {
@@ -84,6 +78,13 @@ const detailInfo = async () => {
   } catch (error) {
     toast('error', '상세정보 실패', '상세정보 불러오기 실패:', '3000');
   }
+};
+
+const onPage = (event) => {
+  const startRow = event.page * event.rows + 1;
+  const endRow = (event.page + 1) * event.rows;
+
+  pageLoad({ startRow, endRow }); // 여기서 axios 호출
 };
 
 const loadStatusCodes = async () => {

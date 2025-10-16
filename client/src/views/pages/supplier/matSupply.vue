@@ -58,9 +58,9 @@ const pageLoad = async () => {
 };
 
 const onPage = (event) => {
-  page.value.page = event.page + 1;
-  page.value.size = event.rows;
-  pageLoad();
+  const startRow = event.page * event.rows + 1;
+  const endRow = (event.page + 1) * event.rows;
+  pageLoad({ startRow, endRow });
 };
 
 onMounted(() => {
@@ -169,7 +169,7 @@ const matOutColumns = [
         <btn color="info" icon="pi pi-file-pdf" @click="approvedShip" label="승인" />
       </div>
       <div class="font-semibold text-xl mb-5">출고대기 목록</div>
-      <selectTable v-model:selection="selectedRows" :columns="matOutColumns" :data="matOutData" :paginator="true" :rows="15" />
+      <selectTable v-model:selection="selectedRows" :columns="matOutColumns" :data="matOutData" :paginator="true" :rows="15" :page="page" @page-change="onPage" />
     </div>
   </div>
 </template>

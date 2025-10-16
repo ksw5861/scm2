@@ -32,12 +32,16 @@ const shipDetailListData = ref([{ matId: '', matName: '', ortQty: null, unit: ''
 //모달
 const returnModal = ref(false);
 const returnMemo = ref('');
+// pagination
+const page = ref({ page: 1, size: 10, totalElements: 0 });
 
 const pageLoad = async () => {
+  const pageParam = { page: page.value.page, size: page.value.size };
+
   try {
-    const list = await axios.get(`/api/mat/shipedList`);
-    console.log(list);
-    shipedListData.value = list.data.map((item) => ({
+    const res = await axios.get(`/api/mat/shipedList`, { params: pageParam });
+    const { list, page: pageInfo } = res.data;
+    shipedListData.value = list.map((item) => ({
       id: item.inboundId,
       shipedDate: useDateFormat(item.vendorOutDate).value,
       vanOutNo: item.venOutNo,
@@ -45,6 +49,7 @@ const pageLoad = async () => {
       inStatus: item.inboundStatus,
       vanEmpName: item.venName
     }));
+    page.value.totalElements = pageInfo.totalElements;
   } catch (err) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
@@ -90,6 +95,13 @@ const returnSubmit = async () => {
   } catch (error) {
     toast('error', '반품등록 실패', '반품등록 실패:', '3000');
   }
+};
+
+const onPage = (event) => {
+  const startRow = event.page * event.rows + 1;
+  const endRow = (event.page + 1) * event.rows;
+
+  pageLoad({ startRow, endRow }); // 여기서 axios 호출
 };
 
 onMounted(() => {
@@ -166,7 +178,7 @@ const shipDetailColumn = [
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">하차대기 목록</div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" />
+            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" :page="page" @page-change="onPage" />
           </div>
         </div>
       </div>
@@ -179,8 +191,8 @@ const shipDetailColumn = [
             <div class="font-semibold text-m">상세정보</div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
-              <btn color="warn" icon="pi pi-file-excel" label="반송" @click="openRetrunModal" />
-              <btn color="info" icon="pi pi-file-pdf" label="승인" @click="approve" />
+              <btn color="warn" icon="cancel" label="반송" @click="openRetrunModal" />
+              <btn color="info" icon="add" label="승인" @click="approve" />
             </div>
           </div>
 
