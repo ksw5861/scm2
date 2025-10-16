@@ -96,6 +96,14 @@ const dw = {
         requiresAuth: true,
         roles: ['admin', 'employee']
       }
+    },
+    { path: '/account-dash',
+      name: '본사 대시보드',
+      component: () => import('@/views/pages/dw/LedgerDashboard.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
     }
   ]
 };

@@ -7,6 +7,8 @@ import StatsWidget from '@/components/dashboard/StatsWidget.vue';
 </script>
 
 <template>
+ <Button label="본사대시보드" @click="$router.push('/account-dash')" />
+
   <div class="grid grid-cols-12 gap-8">
     <StatsWidget />
 
