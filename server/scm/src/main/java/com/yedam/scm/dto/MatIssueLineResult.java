@@ -4,8 +4,8 @@ import lombok.Data;
 
 @Data
 public class MatIssueLineResult {
-    private String matId;
-    private Double requestedQty;
-    private String status;   // "OK" or "ERROR"
-    private String message;  // 에러 메시지나 설명
+    private Long plDetId;     // 생산계획상세 ID
+    private String matId;     // 자재코드
+    private Double reqQty;    // 요청중량(출고수량)
+    private String managerId; // 담당자 ID
 }

@@ -1,11 +1,11 @@
 package com.yedam.scm.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import java.util.List;
 
 @Data
+@AllArgsConstructor
 public class MatIssueRegisterResponse {
-    private Long plDetId;
-    private String result; // "OK" or "ERROR"
-    private List<MatIssueLineResult> lines;
+    private boolean success;
+    private String message;
 }
