@@ -1,21 +1,19 @@
-// src/main/java/com/yedam/scm/order/service/impl/SalesMarginServiceImpl.java
 package com.yedam.scm.order.service.impl;
+
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.yedam.scm.order.mapper.SalesMarginMapper;
 import com.yedam.scm.order.service.SalesMarginService;
 import com.yedam.scm.vo.SalesMarginVO;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-
 @Service
-@RequiredArgsConstructor
 public class SalesMarginServiceImpl implements SalesMarginService {
 
-    private final SalesMarginMapper mapper;
+    @Autowired
+    private SalesMarginMapper mapper;
 
     @Override
     public List<SalesMarginVO> getList() {
@@ -23,40 +21,28 @@ public class SalesMarginServiceImpl implements SalesMarginService {
     }
 
     @Override
-    @Transactional
-    public void save(SalesMarginVO vo) {
-        normalize(vo);
-        mapper.updateSalesMargin(vo);
+    public SalesMarginVO getById(String saleProdId) {
+        return mapper.selectSalesMarginById(saleProdId);
     }
 
     @Override
+    public int save(SalesMarginVO vo) {
+        return mapper.mergeSalesMargin(vo);
+    }
+
     @Transactional
-    public void saveAll(List<SalesMarginVO> list) {
-        if (list == null) return;
-        int i = 1;
+    @Override
+    public int saveAll(List<SalesMarginVO> list) {
+        int count = 0;
         for (SalesMarginVO vo : list) {
-            // sortNo가 비어있다면 화면 순서대로 자동 부여
-            if (vo.getSortNo() == null) vo.setSortNo(i++);
-            normalize(vo);
-            mapper.updateSalesMargin(vo);
+            count += mapper.mergeSalesMargin(vo);
         }
+        return count;
     }
+
 
     @Override
-    @Transactional
-    public void delete(String saleProdId) {
-        mapper.deleteSalesMargin(saleProdId);
-    }
-
-    /** 서버에서 가격/YN을 보정해서 신뢰성 유지 */
-    private void normalize(SalesMarginVO vo) {
-        if (vo.getPosShowYn() == null) vo.setPosShowYn("N");
-        // 판매가는 서버에서 재계산 (prod + prod*margin/100)
-        if (vo.getProdUnitPrice() != null && vo.getSaleMargin() != null) {
-            int price = (int) Math.round(
-                vo.getProdUnitPrice() + (vo.getProdUnitPrice() * (vo.getSaleMargin() / 100.0))
-            );
-            vo.setSaleProdPrice(price);
-        }
+    public int delete(String saleProdId) {
+        return mapper.deleteSalesMargin(saleProdId);
     }
 }
