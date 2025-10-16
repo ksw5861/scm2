@@ -4,13 +4,15 @@ import axios from 'axios';
 import btn from '@/components/common/Btn.vue';
 import selectTable from '@/components/common/checkBoxTable.vue';
 import SearchField from '@/components/common/SearchBox.vue';
-import CommonModal from '@/components/common/Modal.vue';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
-1;
+import { useUserStore } from '@/stores/user';
 
+// Pinia Store
+const userStore = useUserStore();
+const empName = ref(userStore.name);
 const route = useRoute();
 const { toast } = useAppToast();
 
@@ -24,6 +26,9 @@ const breadcrumbItems = computed(() => {
   const currentLabel = current.name || '';
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
+
+
+
 //테이블
 const matStockList = ref();
 const selectedRows = ref();
@@ -51,11 +56,15 @@ const closePlanModal = () => {
 };
 
 const fetchMatList = async () => {
-  const pageParam = { page: page.value.page, size: page.value.size };
 
-  console.log(pageParam);
+    const params = {
+    page: page.value.page,
+    size: page.value.size,
+    ...searchFilter.value
+  };
+console.log('요청 params:', params);
   try {
-    const res = await axios.get('/api/mat/matStockList', { params: pageParam });
+    const res = await axios.get('/api/mat/matStockList', { params });
     const { list, page: pageInfo } = res.data;
 
     matStockList.value = list.map((item) => ({
@@ -111,6 +120,17 @@ const loadStatusCodes = async () => {
   }
 };
 
+const resetSearch = () => {
+  searchFilter.value = {
+    materialId: '',
+    materialName: '',
+    lotNo: '',
+    lotStatus: ''
+  };
+  fetchMatList();
+};
+
+
 const onPage = (event) => {
   const startRow = event.page * event.rows + 1;
   const endRow = (event.page + 1) * event.rows;
@@ -153,16 +173,16 @@ const matLotColumns = [
       <Divider />
       <!--search BOX 영역-->
       <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
-        <SearchField type="textIcon" label="자재코드" v-model="materialId" />
-        <SearchField type="text" label="자재명" v-model="materialName" />
-        <SearchField type="text" label="LOT번호" v-model="lotNo" />
-        <SearchField type="dropDown" label="LOT상태" v-model="lotStatus" :options="statusOptions" />
+        <SearchField type="textIcon" label="자재코드" v-model="searchFilter.materialId" />
+        <SearchField type="text" label="자재명" v-model="searchFilter.materialName" />
+        <SearchField type="text" label="LOT번호" v-model="searchFilter.lotNo" />
+        <SearchField type="dropDown" label="LOT상태" v-model="searchFilter.lotStatus" :options="statusOptions" />
         <!-- <SearchField type="date" label="등록일" v-model="registerDate" /> -->
 
         <!-- 버튼 영역 -->
         <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화" />
-          <btn color="contrast" icon="pi pi-search" label="조회" />
+          <btn color="secondary" icon="pi pi-undo" label="초기화" @click="resetSearch" />
+          <btn color="contrast" icon="pi pi-search" label="조회" @click="fetchMatList"/>
         </div>
       </div>
     </div>

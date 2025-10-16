@@ -8,6 +8,10 @@ import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
+import { useUserStore } from '@/stores/user';
+
+// Pinia Store
+const userStore = useUserStore();
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -22,8 +26,8 @@ const getNowDate = () => {
 };
 
 
-const vendorId = ref('VEN001');
-const vanEmpName = ref('홍길동')
+const vendorId = ref(userStore.code);
+const vanEmpName = ref(userStore.name)
 const shipmentDate = ref(getNowDate()); //출고일
 const deliveryPlace = ref(''); //배송창고 바인딩용
 const carrier = ref()//운송업체

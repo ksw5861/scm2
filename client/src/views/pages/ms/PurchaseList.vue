@@ -9,6 +9,13 @@ import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import Timeline from 'primevue/timeline';
+import { useUserStore } from '@/stores/user';
+
+// Pinia Store
+const userStore = useUserStore();
+const empName = ref(userStore.name);
+const empId = ref(userStore.code);
+
 
 const route = useRoute();
 const { toast } = useAppToast();

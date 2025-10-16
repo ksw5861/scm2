@@ -9,14 +9,14 @@ import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useUserStore } from '@/stores/user';
 
-const route = useRoute();
-const { toast } = useAppToast();
-
 // Pinia Store
 const userStore = useUserStore();
-const vendorId = userStore.code;
+const empName = ref(userStore.name);
+const empId = ref(userStore.code);
 
-console.log(userStore.name);
+
+const route = useRoute();
+const { toast } = useAppToast();
 
 // breadcrumb
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
@@ -39,7 +39,6 @@ const getNowDate = () => {
 };
 
 //master 인풋박스
-const empName = ref('로그인');
 const dateRange = ref({ start: null, end: null });
 const resDate = ref(getNowDate());
 const memo = ref('');

@@ -8,6 +8,13 @@ import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
+import { useUserStore } from '@/stores/user';
+
+// Pinia Store
+const userStore = useUserStore();
+// const vendorId = userStore.code;
+const vendorId = ref('V800');
+const vanEmpName = ref('홍길동');
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -32,8 +39,7 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const vendorId = ref('V800');
-const vanEmpName = ref('홍길동');
+
 const shipmentDate = ref(getNowDate()); //출고일
 const deliveryPlace = ref(''); //배송창고 바인딩용
 const carrier = ref()//운송업체

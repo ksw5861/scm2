@@ -8,6 +8,12 @@ import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
+import { useUserStore } from '@/stores/user';
+
+// Pinia Store
+const userStore = useUserStore();
+const empName = ref(userStore.name);
+const empId = ref(userStore.code);
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -22,8 +28,6 @@ const breadcrumbItems = computed(() => {
   const currentLabel = current.name || '';
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
-
-const empName = ref('최길동');
 
 const shipedListData = ref();
 const selectedRows = ref();
