@@ -3,8 +3,6 @@ package com.yedam.scm.product.service;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.ibatis.annotations.Param;
-
 import com.yedam.scm.dto.AccountLedgerSearchDTO;
 import com.yedam.scm.dto.InboundListRes;
 import com.yedam.scm.dto.PageDTO;
@@ -40,6 +38,12 @@ public interface InboundService {
 
     int rejectDetails(List<String> odetailIds);
 
+    // 주문승인 프로시저 직접 호출 (반려 시 0원 처리용)
+    void callProcApproveOrder(Map<String, Object> param);
+
+
+
+
     /* ===================== 반품승인 ===================== */
     List<ReturnVO> getReturnList();
 
@@ -63,4 +67,18 @@ public interface InboundService {
     // 거래처원장 조회
     Map<String, Object> getAccountLedger(AccountLedgerSearchDTO condition);
 
+
+    // 대시보드
+    Map<String, Object> getDashboardSummary();
+    List<SalesOrderVO> getDashboardList();  
+
+
+     // 주문승인 프로시저 실행 (상세 상태 변경 + 부모 합산/상태 반영)
+    int approveOrderWithProc(List<String> odetailIds, String status);
+
+
+
+     
+
+  
 }
