@@ -53,7 +53,7 @@ const dw = {
     },
     {
       path: '/return-History',
-      name: '판매처 반품 내역 조회',
+      name: '본사 판매처 반품 내역 조회',
       component: () => import('@/views/pages/dw/ReturnHistory.vue'),
       meta: {
         breadcrumb: {
