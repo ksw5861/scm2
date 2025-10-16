@@ -59,10 +59,10 @@ function renderBarChart() {
   barChart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: top5.map(v => v.companyName),
+      labels: top5.map((v) => v.companyName),
       datasets: [
-        { label: '총매출', data: top5.map(v => v.totalPrice), backgroundColor: '#1976d2' },
-        { label: '미수금', data: top5.map(v => v.totalAr), backgroundColor: '#ff9800' }
+        { label: '총매출', data: top5.map((v) => v.totalPrice), backgroundColor: '#1976d2' },
+        { label: '미수금', data: top5.map((v) => v.totalAr), backgroundColor: '#ff9800' }
       ]
     },
     options: { plugins: { legend: { position: 'bottom' } } }
@@ -75,13 +75,19 @@ onMounted(() => loadDashboard());
 <template>
   <Fluid>
     <div class="flex gap-4">
-      <div class="card" v-for="(v, i) in [
-        {label:'총매출', val:summary.totalPrice},
-        {label:'총반품', val:summary.returnPrice},
-        {label:'총입금', val:summary.totalPayment},
-        {label:'총미수금', val:summary.totalAr}
-      ]" :key="i" style="width:25%;">
-        <p>{{ v.label }}</p><h4>{{ fmt(v.val) }}</h4>
+      <div
+        class="card"
+        v-for="(v, i) in [
+          { label: '총매출', val: summary.totalPrice },
+          { label: '총반품', val: summary.returnPrice },
+          { label: '총입금', val: summary.totalPayment },
+          { label: '총미수금', val: summary.totalAr }
+        ]"
+        :key="i"
+        style="width: 25%"
+      >
+        <p>{{ v.label }}</p>
+        <h4>{{ fmt(v.val) }}</h4>
       </div>
     </div>
 

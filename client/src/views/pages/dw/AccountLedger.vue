@@ -1,7 +1,6 @@
 <!-- ======================================================
 📄 AccountLedger.vue
-- 거래처 목록 및 상세 페이지
-- 요약/그래프는 Dashboard.vue로 이동함
+- 거래처 목록 및 상세 페이지 (UI 리터칭 / 고정 높이 + 톤 다운)
 ====================================================== -->
 <script setup>
 import { ref, onMounted, computed } from 'vue';
@@ -20,41 +19,31 @@ import { useRoute } from 'vue-router';
 const route = useRoute();
 const { toast } = useAppToast();
 
-/* ───────────── 아이콘/Breadcrumb ───────────── */
 const icons = { home: useIcon('home'), vendor: useIcon('vendor'), list: useIcon('list') };
 const breadcrumbHome = { icon: icons.home, to: '/' };
-const breadcrumbItems = computed(() => [
-  { label: '영업관리' },
-  { label: '거래처원장', to: route.fullPath }
-]);
+const breadcrumbItems = computed(() => [{ label: '영업관리' }, { label: '거래처원장', to: route.fullPath }]);
 
-/* ───────────── 상태 ───────────── */
 const search = ref({ keyword: '' });
 const list = ref([]);
-const totalRecords = ref(0);
 const selectedVendor = ref({});
 const page = ref(1);
 const rows = ref(10);
 
-/* ───────────── 금액 포맷 ───────────── */
 function fmt(v) {
   const n = Number(v);
   return isNaN(n) ? '₩0' : '₩' + n.toLocaleString('ko-KR');
 }
 
-/* ───────────── 거래처 목록 조회 ───────────── */
 async function loadData() {
   try {
     const params = { keyword: search.value.keyword, page: page.value, size: rows.value };
     const { data } = await axios.get('/api/account-ledger', { params });
     list.value = data.items || [];
-    totalRecords.value = data.total || 0;
   } catch (err) {
     toast('error', '거래처 조회 실패', err.message);
   }
 }
 
-/* ───────────── 상세 선택 이벤트 ───────────── */
 function handleRowSelect(e) {
   selectedVendor.value = e.data;
 }
@@ -64,9 +53,9 @@ onMounted(() => loadData());
 
 <template>
   <Fluid>
-    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <Breadcrumb class="rounded-lg mb-2" :home="breadcrumbHome" :model="breadcrumbItems" />
 
-    <!-- 🔍 검색 -->
+    <!-- 🔍 검색폼 -->
     <SearchCard title="거래처 검색" @search="loadData" @reset="() => (search.value.keyword = '')">
       <div class="p-2 w-full">
         <InputGroup>
@@ -79,67 +68,78 @@ onMounted(() => loadData());
       </div>
     </SearchCard>
 
-    <!-- 📋 목록 -->
+    <!-- 📋 목록 + 상세 -->
     <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
-      <div class="w-full xl:w-5/12 lg:w-1/2">
-        <div class="card flex flex-col">
-          <div class="font-semibold text-lg flex items-center justify-between gap-4 h-10">
-            <div class="flex items-center gap-4">
-              <span :class="icons.list"></span> 거래처 목록
-            </div>
-            <div class="text-sm text-gray-400">
-              총 <span class="font-semibold text-sm text-gray-700">{{ totalRecords }}</span>건
+      <!-- 🧾 거래처 목록 -->
+      <div class="w-full xl:w-6/12 lg:w-1/2">
+        <div class="card flex flex-col shadow-sm border border-gray-100 bg-white rounded-lg" style="min-height: 440px">
+          <div class="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-100 rounded-t-lg">
+            <div class="flex items-center gap-2 font-semibold text-gray-700">
+              <i :class="icons.list"></i>
+              <span>거래처 목록</span>
             </div>
           </div>
-          <Divider />
-          <DataTable
-            :value="list"
-            dataKey="vendorId"
-            size="small"
-            rowHover
-            selectionMode="single"
-            v-model:selection="selectedVendor"
-            @rowSelect="handleRowSelect"
-          >
+
+          <DataTable :value="list" dataKey="vendorId" size="small" rowHover selectionMode="single" v-model:selection="selectedVendor" @rowSelect="handleRowSelect">
             <Column field="companyName" header="거래처명" />
-            <Column field="totalPrice" header="총금액">
+            <Column field="prevTotalPrice" header="이월금액">
+              <template #body="{ data }">{{ fmt(data.prevTotalPrice) }}</template>
+            </Column>
+            <Column field="totalPrice" header="총매출">
               <template #body="{ data }">{{ fmt(data.totalPrice) }}</template>
+            </Column>
+            <Column field="returnPrice" header="총반품">
+              <template #body="{ data }">{{ fmt(data.returnPrice) }}</template>
+            </Column>
+            <Column field="totalPayment" header="총입금">
+              <template #body="{ data }">{{ fmt(data.totalPayment) }}</template>
             </Column>
             <Column field="totalAr" header="미수금">
               <template #body="{ data }">{{ fmt(data.totalAr) }}</template>
             </Column>
+            <Column field="lastOrderDate" header="최근거래일자" />
           </DataTable>
-          <Paginator :rows="rows" :totalRecords="totalRecords"
-                     @page="(e) => { page.value = e.page + 1; loadData(); }"/>
+
+          <div class="px-3 py-2 border-t border-gray-100 bg-gray-50 mt-auto">
+            <Paginator
+              :rows="rows"
+              :totalRecords="list.length"
+              template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+              currentPageReportTemplate="({currentPage} / {totalPages})"
+              @page="
+                (e) => {
+                  page.value = e.page + 1;
+                  loadData();
+                }
+              "
+            />
+          </div>
         </div>
       </div>
 
-      <!-- 📊 상세 -->
+      <!-- 📊 상세 카드 -->
       <div class="w-3/5">
-        <div class="detail-card">
-          <h3 class="text-lg font-bold mb-3">{{ selectedVendor.companyName }}</h3>
-          <div class="grid grid-cols-3 gap-4">
-            <div class="p-3 bg-gray-50 rounded-md">
-              <p class="text-gray-500 text-sm">총매출</p>
-              <p class="font-semibold text-blue-600">{{ fmt(selectedVendor.totalPrice) }}</p>
-            </div>
-            <div class="p-3 bg-gray-50 rounded-md">
-              <p class="text-gray-500 text-sm">총반품</p>
-              <p class="font-semibold text-red-500">{{ fmt(selectedVendor.returnPrice) }}</p>
-            </div>
-            <div class="p-3 bg-gray-50 rounded-md">
-              <p class="text-gray-500 text-sm">총입금</p>
-              <p class="font-semibold text-green-600">{{ fmt(selectedVendor.totalPayment) }}</p>
-            </div>
-            <div class="p-3 bg-gray-50 rounded-md">
-              <p class="text-gray-500 text-sm">미수금</p>
-              <p class="font-semibold text-orange-500">{{ fmt(selectedVendor.totalAr) }}</p>
-            </div>
-            <div class="p-3 bg-gray-50 rounded-md">
-              <p class="text-gray-500 text-sm">최근거래일자</p>
-              <p class="font-semibold text-indigo-500">
-                {{ selectedVendor.lastOrderDate || '-' }}
-              </p>
+        <div class="card shadow-sm border border-gray-100 bg-white rounded-lg p-5 flex flex-col" style="min-height: 440px">
+          <h3 class="text-lg font-bold mb-4 text-gray-700">
+            {{ selectedVendor.companyName || '거래처 선택' }}
+          </h3>
+
+          <!-- 🔹 상세 데이터 박스 -->
+          <div class="grid grid-cols-3 grid-rows-2 gap-4 flex-grow h-full">
+            <div
+              v-for="(v, i) in [
+                { label: '이월금액', value: fmt(selectedVendor.prevTotalPrice), color: 'text-gray-700' },
+                { label: '총매출', value: fmt(selectedVendor.totalPrice), color: 'text-blue-600' },
+                { label: '총반품', value: fmt(selectedVendor.returnPrice), color: 'text-red-500' },
+                { label: '총입금', value: fmt(selectedVendor.totalPayment), color: 'text-green-600' },
+                { label: '미수금', value: fmt(selectedVendor.totalAr), color: 'text-orange-500' },
+                { label: '최근거래일자', value: selectedVendor.lastOrderDate || '-', color: 'text-indigo-500' }
+              ]"
+              :key="i"
+              class="flex flex-col justify-center items-center bg-gray-50 border border-gray-100 rounded-lg shadow-sm"
+            >
+              <p class="text-sm text-gray-500 mb-1">{{ v.label }}</p>
+              <p class="font-bold text-lg" :class="v.color">{{ v.value }}</p>
             </div>
           </div>
         </div>
