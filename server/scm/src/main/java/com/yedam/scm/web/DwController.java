@@ -94,21 +94,37 @@ public class DwController {
         return Map.of("data", details);
     }
 
+    // @PostMapping("/approval/approve")
+    // public Map<String, Object> approve(@RequestBody Map<String, Object> body) {
+    //     @SuppressWarnings("unchecked")
+    //     List<String> odetailIds = (List<String>) body.get("odetailIds");
+    //     int cnt = service.approveDetails(odetailIds);
+    //     return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
+    // }
+
+    
     @PostMapping("/approval/approve")
     public Map<String, Object> approve(@RequestBody Map<String, Object> body) {
         @SuppressWarnings("unchecked")
         List<String> odetailIds = (List<String>) body.get("odetailIds");
-        int cnt = service.approveDetails(odetailIds);
+        int cnt = service.approveOrderWithProc(odetailIds, "승인");
         return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
     }
 
+        //기존 반려 프로시저 잠깐주석
     @PostMapping("/approval/reject")
     public Map<String, Object> reject(@RequestBody Map<String, Object> body) {
         @SuppressWarnings("unchecked")
         List<String> odetailIds = (List<String>) body.get("odetailIds");
-        int cnt = service.rejectDetails(odetailIds);
+        int cnt = service.approveOrderWithProc(odetailIds, "반려");
         return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
     }
+
+
+  
+
+
+
 
     /* ===================== 반품승인 ===================== */
 
@@ -181,7 +197,15 @@ public class DwController {
     }
 
 
-    //
+    // 대시보드
+    @GetMapping("/dashboard")
+    public ResponseEntity<Map<String, Object>> getDashboard() {
+    Map<String, Object> result = new HashMap<>();
+    result.put("summary", service.getDashboardSummary());
+    result.put("items", service.getDashboardList());
+    return ResponseEntity.ok(result);
+}
+
 
 
 
