@@ -29,7 +29,7 @@ const dw = {
     },
     {
       path: '/order-inquiry',
-      name: '판매처 주문 내역 조회',
+      name: '본사 판매처 주문 내역 조회',
       component: () => import('@/views/pages/dw/OrderInquiry.vue'),
       meta: {
         breadcrumb: {
