@@ -41,7 +41,7 @@ public interface PayMapper {
     // 5. 결제 대기중인 주문 목록 조회
     // - 결제 가능 상태의 주문만 가져오기
     // =============================================================
-    List<SalesOrderVO> selectPendingOrders();
+    List<SalesOrderVO> selectPendingOrders(@Param("vendorId") String vendorId);
 
     // =============================================================
     // 6. 상태 업데이트

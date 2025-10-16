@@ -69,12 +69,15 @@ public class OrderServiceImpl implements OrderService {
     // 조건별 주문 목록 조회
     // =============================================================
     @Override
-    public List<SalesOrderVO> getOrderListForView(String startDate,
-                                                  String endDate,
-                                                  String prodName,
-                                                  String status,
-                                                  String orderId) {
-        return orderMapper.getOrderListForView(startDate, endDate, prodName, status, orderId);
+    public List<SalesOrderVO> getOrderListForView(
+        String vendorId,
+        String startDate,
+        String endDate,
+        String prodName,
+        String status,
+        String orderId
+    ) {
+        return orderMapper.getOrderListForView(vendorId, startDate, endDate, prodName, status, orderId);
     }
 
     // =============================================================

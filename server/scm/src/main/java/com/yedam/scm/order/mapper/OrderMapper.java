@@ -26,6 +26,7 @@ public interface OrderMapper {
     // 주문 목록 조회 (검색조건 포함)
     // =============================================================
     List<SalesOrderVO> getOrderListForView(
+        @Param("vendorId") String vendorId,
         @Param("startDate") String startDate,
         @Param("endDate") String endDate,
         @Param("prodName") String prodName,

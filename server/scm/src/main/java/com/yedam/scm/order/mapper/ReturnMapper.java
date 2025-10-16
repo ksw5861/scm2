@@ -18,10 +18,13 @@ public interface ReturnMapper {
     // =============================================================
     // 반품 목록 조회
     // =============================================================
-    List<ReturnVO> getReturnList(@Param("startDate") String startDate,
-                                 @Param("endDate") String endDate,
-                                 @Param("returnStatus") String returnStatus,
-                                 @Param("returnId") String returnId);
+    List<ReturnVO> getReturnList(
+        @Param("vendorId") String vendorId,
+        @Param("startDate") String startDate,
+        @Param("endDate") String endDate,
+        @Param("returnStatus") String returnStatus,
+        @Param("returnId") String returnId
+    );
 
     // =============================================================
     // 반품 단건 조회

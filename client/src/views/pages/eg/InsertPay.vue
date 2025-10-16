@@ -175,7 +175,7 @@ const toast = useToast()
 // -----------------------------
 // 상태 관리
 // -----------------------------
-const vendorId = ref(null)
+const vendorId = ref(userStore.code)
 const today = new Date().toLocaleDateString('ko-KR')
 const activeTab = ref('pending')
 const orders = ref([])
@@ -233,7 +233,9 @@ const summaryComputed = computed(() => {
 // -----------------------------
 const fetchOrders = async () => {
   try {
-    const res = await axios.get('/api/pendingorders')
+    const res = await axios.get('/api/pendingorders', {
+      params: { vendorId: vendorId.value }
+    })
     orders.value = res.data || []
   } catch (error) {
     console.error('미결제 목록 불러오기 실패:', error)

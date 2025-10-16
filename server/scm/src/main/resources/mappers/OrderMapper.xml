@@ -82,7 +82,7 @@
         FROM sales_order so
         LEFT JOIN sales_order_detail d 
             ON so.order_id = d.order_id
-        WHERE 1=1
+        WHERE so.vendor_id = #{vendorId}
           <if test="startDate != null and startDate != ''">
             AND so.order_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
           </if>

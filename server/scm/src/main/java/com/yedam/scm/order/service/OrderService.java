@@ -19,11 +19,14 @@ public interface OrderService {
     boolean insertOrderDetail(SalesOrderDetailVO detailVO);
 
     // --- 조건별 주문 목록 조회 ---
-    List<SalesOrderVO> getOrderListForView(String startDate,
-                                           String endDate,
-                                           String prodName,
-                                           String status,
-                                           String orderId);
+    List<SalesOrderVO> getOrderListForView(
+        String vendorId,
+        String startDate,
+        String endDate,
+        String prodName,
+        String status,
+        String orderId
+    );
 
     // --- 특정 주문의 상세 내역 조회 ---
     List<SalesOrderDetailVO> getOrderDetailList(String orderId);
