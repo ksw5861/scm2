@@ -1,6 +1,8 @@
+import { useIcon } from '@/composables/useIcon';
+
 const accountLedger = {
-  label: '거래처원장',
-  icon: 'pi pi-fw pi-check-square',
+  label: '거래처 원장',
+  icon: useIcon('openfolder'),
   to: '/account-ledger',
   roles: ['admin', 'employee']
 };

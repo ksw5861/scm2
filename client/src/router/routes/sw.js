@@ -5,7 +5,7 @@ const sw = {
   children: [
     {
       path: '/material',
-      name: '자재관리',
+      name: '자재 관리',
       component: () => import('@/views/pages/sw/Material.vue'),
       meta: {
         requiresAuth: true,
@@ -14,7 +14,7 @@ const sw = {
     },
     {
       path: '/product',
-      name: '제품관리',
+      name: '제품 관리',
       component: () => import('@/views/pages/sw/Product.vue'),
       meta: {
         requiresAuth: true,
@@ -23,7 +23,7 @@ const sw = {
     },
     {
       path: '/warehouse',
-      name: '창고관리',
+      name: '창고 관리',
       component: () => import('@/views/pages/sw/WareHouse.vue'),
       meta: {
         requiresAuth: true,
@@ -32,7 +32,7 @@ const sw = {
     },
     {
       path: '/bom',
-      name: 'bom 관리',
+      name: 'BOM 관리',
       component: () => import('@/views/pages/sw/Bom.vue'),
       meta: {
         requiresAuth: true,

@@ -1,0 +1,14 @@
+import accountLedger from "./dw/accountLedger";
+import orderApproval from "./dw/orderApproval";
+import orderInquiry from "./dw/orderInquiry";
+import returnHistory from "./dw/returnHistory";
+import returnProcess from "./dw/returnProcess";
+import purchase from "./ms/purchase";
+import purchaseList from "./ms/purchaseList";
+
+const customerOrder = {
+  label: '주문 관리',
+  items: [purchase, purchaseList, orderApproval, orderInquiry, returnProcess, returnHistory, accountLedger]
+};
+
+export default customerOrder;

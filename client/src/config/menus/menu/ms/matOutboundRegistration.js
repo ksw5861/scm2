@@ -1,7 +1,9 @@
+import { useIcon } from "@/composables/useIcon";
+
 //ms/material.js -> master.js -> sidebar.vue 순서로 구조화.
 const matOutboundRegistration = {
   label: '자재 출고 등록',
-  icon: 'pi pi-microchip',
+  icon: useIcon('truck'),
   to: '/matoutboundregistration',
   roles: ['admin', 'employee']
 };

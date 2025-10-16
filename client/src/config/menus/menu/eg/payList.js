@@ -1,10 +1,12 @@
+import { useIcon } from "@/composables/useIcon";
+
 const payList =
 
-      {
-        label: '납부 조회',
-        icon: 'pi pi-fw pi-home',
+    {
+        label: '납부 내역 조회',
+        icon: useIcon('dollar'),
         to: '/paylist',
-        roles: ['admin', 'employee']
-      };
+        roles: ['customer']
+    };
 
 export default payList;

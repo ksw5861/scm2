@@ -1,6 +1,8 @@
+import { useIcon } from "@/composables/useIcon";
+
 const returnProcess = {
-  label: '반품승인처리',
-  icon: 'pi pi-fw pi-undo', // 적절한 아이콘 선택
+  label: '제품 반품 승인',
+  icon: useIcon('checksquere'),
   to: '/return-process',
   roles: ['admin', 'employee']
 };

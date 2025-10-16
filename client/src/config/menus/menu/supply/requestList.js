@@ -1,8 +1,10 @@
+import { useIcon } from "@/composables/useIcon";
+
 const requestList = {
-  label: '공급승인',
-  icon: 'pi pi-fw pi-list',
+  label: '주문 조회',
+  icon: useIcon('list'),
   to: '/requstList',
-  roles: ['admin', 'employee']
+  roles: ['supplier']
 };
 
 export default requestList;

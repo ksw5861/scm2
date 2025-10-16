@@ -1,8 +1,10 @@
-const MaterialReceip = {
-  label: '자재입고',
-  icon: 'pi pi-microchip',
+import { useIcon } from "@/composables/useIcon";
+
+const materialReceip = {
+  label: '자재 입고 등록',
+  icon: useIcon('add'),
   to: '/MaterialReceip',
   roles: ['admin', 'employee']
 };
 
-export default MaterialReceip;
+export default materialReceip;

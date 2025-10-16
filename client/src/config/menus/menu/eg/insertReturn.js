@@ -1,10 +1,11 @@
-const insertReturn =
+import { useIcon } from "@/composables/useIcon";
 
-      {
+const insertReturn =
+    {
         label: '반품 등록',
-        icon: 'pi pi-fw pi-home',
+        icon: useIcon('undo'),
         to: '/insertreturn',
-        roles: ['admin', 'employee']
-      };
+        roles: ['customer']
+    };
 
 export default insertReturn;

@@ -1,8 +1,10 @@
+import { useIcon } from "@/composables/useIcon";
+
 const matSupply = {
-  label: '출고지시',
-  icon: 'pi pi-fw pi-list',
+  label: '출고 승인',
+  icon: useIcon('checksquere'),
   to: '/matSupply',
-  roles: ['admin', 'employee']
+  roles: ['supplier']
 };
 
 export default matSupply;

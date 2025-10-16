@@ -1,8 +1,10 @@
+import { useIcon } from "@/composables/useIcon";
+
 const matShipment = {
-  label: '출고등록',
-  icon: 'pi pi-fw pi-list',
+  label: '출고 등록',
+  icon: useIcon('truck'),
   to: '/matShipment',
-  roles: ['admin', 'employee']
+  roles: ['supplier']
 };
 
 export default matShipment;

@@ -1,10 +1,11 @@
-const branchPos =
+import { useIcon } from "@/composables/useIcon";
 
-      {
+const branchPos =
+    {
         label: 'POS',
-        icon: 'pi pi-fw pi-home',
+        icon: useIcon('pos'),
         to: '/branchpos',
-        roles: ['admin', 'employee']
-      };
+        roles: ['customer']
+    };
 
 export default branchPos;
