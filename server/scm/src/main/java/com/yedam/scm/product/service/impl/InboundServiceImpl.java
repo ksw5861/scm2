@@ -90,34 +90,30 @@ public class InboundServiceImpl implements InboundService {
         return inboundMapper.rejectDetails(odetailIds);
     }
 
-
     // 주문승인 프로시저 다시
     // @Override
     // @Transactional
     // public int approveOrderWithProc(List<String> odetailIds, String status) {
-    //     if (odetailIds == null || odetailIds.isEmpty()) return 0;
+    // if (odetailIds == null || odetailIds.isEmpty()) return 0;
 
-    //     // 콤마로 이어붙인 문자열로 변환
-    //     String joinedIds = String.join(",", odetailIds);
+    // // 콤마로 이어붙인 문자열로 변환
+    // String joinedIds = String.join(",", odetailIds);
 
-    //     Map<String, Object> param = new HashMap<>();
-    //     param.put("orderDetailIds", joinedIds); // 문자열로 전달
-    //     param.put("status", status);
-    //     param.put("rowCount", 0);
+    // Map<String, Object> param = new HashMap<>();
+    // param.put("orderDetailIds", joinedIds); // 문자열로 전달
+    // param.put("status", status);
+    // param.put("rowCount", 0);
 
-    //     inboundMapper.callProcApproveOrder(param);
+    // inboundMapper.callProcApproveOrder(param);
 
-    //     return (int) param.get("rowCount");
+    // return (int) param.get("rowCount");
     // }
 
-       @Override
-       @Transactional
-       public void callProcApproveOrder(Map<String, Object> param) {
-           inboundMapper.callProcApproveOrder(param);
-       }
-
-
-
+    @Override
+    @Transactional
+    public void callProcApproveOrder(Map<String, Object> param) {
+        inboundMapper.callProcApproveOrder(param);
+    }
 
     /* ===================== 반품승인 ===================== */
     @Override
@@ -180,39 +176,47 @@ public class InboundServiceImpl implements InboundService {
         return result;
     }
 
-    
-    @Override
-    public Map<String, Object> getDashboardSummary() {
-        
-        return inboundMapper.selectDashboardSummary();
-    }
+    // @Override
+    // public Map<String, Object> getDashboardSummary() {
+
+    // // return inboundMapper.selectDashboardSummary();
+    // }
 
     @Override
     public List<SalesOrderVO> getDashboardList() {
-        
+
         return inboundMapper.selectDashboardList();
     }
 
     @Override
     @Transactional
     public int approveOrderWithProc(List<String> odetailIds, String status) {
-    if (odetailIds == null || odetailIds.isEmpty()) return 0;
+        if (odetailIds == null || odetailIds.isEmpty())
+            return 0;
 
-    // 콤마로 이어붙인 문자열로 변환
-    String joinedIds = String.join(",", odetailIds);
+        // 콤마로 이어붙인 문자열로 변환
+        String joinedIds = String.join(",", odetailIds);
 
-    Map<String, Object> param = new HashMap<>();
-    param.put("orderDetailIds", joinedIds); // 문자열로 전달
-    param.put("status", status);
-    param.put("rowCount", 0);
+        Map<String, Object> param = new HashMap<>();
+        param.put("orderDetailIds", joinedIds); // 문자열로 전달
+        param.put("status", status);
+        param.put("rowCount", 0);
 
-    inboundMapper.callProcApproveOrder(param);
+        inboundMapper.callProcApproveOrder(param);
 
-    return (int) param.get("rowCount");
-}   
+        return (int) param.get("rowCount");
+    }
 
+    @Override
+    public Map<String, Object> getDashboardSummary() {
+        SalesOrderVO vo = inboundMapper.selectDashboardSummary();
 
+        Map<String, Object> map = new HashMap<>();
+        map.put("totalPrice", vo.getTotalPrice());
+        map.put("returnPrice", vo.getReturnPrice());
+        map.put("totalPayment", vo.getTotalPayment());
+        map.put("totalAr", vo.getTotalAr());
+        return map;
+    }
 
-
-    
 } // end
