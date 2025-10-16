@@ -12,6 +12,40 @@
     CREATE_DT, UPDATE_DT
   </sql>
 
+
+<insert id="insertSalesMargin" parameterType="com.yedam.scm.vo.SalesMarginVO">
+  INSERT INTO SALES_MARGIN (
+    SALE_PROD_ID, SALE_PROD_NAME, SALE_PROD_PRICE,
+    PROD_UNIT_PRICE, SALE_MARGIN, SORT_NO, POS_SHOW_YN,
+    CREATE_DT, UPDATE_DT
+  )
+  VALUES (
+    #{saleProdId},
+    #{saleProdName},
+    #{saleProdPrice},
+    #{prodUnitPrice},
+    #{saleMargin},
+    #{sortNo},    
+    #{posShowYn},
+    SYSDATE, SYSDATE
+  )
+</insert>
+
+
+<update id="updateSalesMargin" parameterType="com.yedam.scm.vo.SalesMarginVO">
+  UPDATE SALES_MARGIN
+  SET
+    SALE_PROD_NAME  = #{saleProdName},
+    SALE_PROD_PRICE = #{saleProdPrice},
+    PROD_UNIT_PRICE = #{prodUnitPrice},
+    SALE_MARGIN     = #{saleMargin},
+    SORT_NO         = #{sortNo},  
+    POS_SHOW_YN     = #{posShowYn},
+    UPDATE_DT       = SYSDATE
+  WHERE SALE_PROD_ID = #{saleProdId}
+</update>
+
+
   <!-- 목록 (POS 순서대로) -->
   <select id="selectSalesMarginList" resultType="com.yedam.scm.vo.SalesMarginVO">
     SELECT <include refid="Cols"/>
@@ -26,36 +60,7 @@
      WHERE SALE_PROD_ID = #{saleProdId}
   </select>
 
-  <!-- 단건 UPSERT (MERGE) -->
-  <insert id="updateSalesMargin" parameterType="com.yedam.scm.vo.SalesMarginVO">
-    MERGE INTO SALES_MARGIN T
-    USING (
-      SELECT
-        #{saleProdId}    AS SALE_PROD_ID,
-        #{saleProdName}  AS SALE_PROD_NAME,
-        #{saleProdPrice} AS SALE_PROD_PRICE,
-        #{prodUnitPrice} AS PROD_UNIT_PRICE,
-        #{saleMargin}    AS SALE_MARGIN,
-        #{sortNo}        AS SORT_NO,
-        #{posShowYn}     AS POS_SHOW_YN
-      FROM dual
-    ) S
-    ON (T.SALE_PROD_ID = S.SALE_PROD_ID)
-    WHEN MATCHED THEN
-      UPDATE SET
-        T.SALE_PROD_NAME  = S.SALE_PROD_NAME,
-        T.SALE_PROD_PRICE = S.SALE_PROD_PRICE,
-        T.PROD_UNIT_PRICE = S.PROD_UNIT_PRICE,
-        T.SALE_MARGIN     = S.SALE_MARGIN,
-        T.SORT_NO         = S.SORT_NO,
-        T.POS_SHOW_YN     = S.POS_SHOW_YN,
-        T.UPDATE_DT       = SYSDATE
-    WHEN NOT MATCHED THEN
-      INSERT (<include refid="Cols"/>)
-      VALUES (S.SALE_PROD_ID, S.SALE_PROD_NAME, S.SALE_PROD_PRICE,
-              S.PROD_UNIT_PRICE, S.SALE_MARGIN, S.SORT_NO, S.POS_SHOW_YN,
-              SYSDATE, SYSDATE)
-  </insert>
+  
 
   <!-- 삭제 -->
   <delete id="deleteSalesMargin" parameterType="string">
