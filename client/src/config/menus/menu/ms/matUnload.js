@@ -1,10 +1,10 @@
 import { useIcon } from "@/composables/useIcon";
 
-const shipRegister = {
-  label: '출하 등록',
+const matUnload = {
+  label: '자재 하차 등록',
   icon: useIcon('send'),
-  to: '/ship-register',
+  to: '/MatUnload',
   roles: ['admin', 'employee']
 };
 
-export default shipRegister;
+export default matUnload;

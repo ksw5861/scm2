@@ -58,6 +58,11 @@ public interface InboundMapper {
 
         int rejectDetails(@Param("odetailIds") List<String> odetailIds);
 
+                
+        // 주문승인 프로시저 실행 (상세 상태 변경 + 부모 합산/상태 반영)
+        void callProcApproveOrder(Map<String, Object> param);
+
+
         /* ===================== 반품승인 ===================== */
 
         // 반품 목록
@@ -87,5 +92,12 @@ public interface InboundMapper {
 
         // 요약 합계(총매출/총반품/총입금/총미수금/총미지급)
         SalesOrderVO selectAccountLedgerSummary(Map<String, Object> params);
+
+        // 대시보드
+        // Map<String, Object> selectDashboardSummary();
+        SalesOrderVO selectDashboardSummary();
+        List<SalesOrderVO> selectDashboardList();
+
+
 
 }

@@ -1,10 +1,11 @@
-const insertPay =
+import { useIcon } from "@/composables/useIcon";
 
-      {
-        label: '납부 등록',
-        icon: 'pi pi-fw pi-home',
+const insertPay =
+    {
+        label: '대금 납부',
+        icon: useIcon('pay'),
         to: '/insertpay',
-        roles: ['admin', 'employee']
-      };
+        roles: ['customer']
+    };
 
 export default insertPay;

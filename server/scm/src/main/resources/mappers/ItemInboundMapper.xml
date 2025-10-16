@@ -158,12 +158,24 @@
 
   <update id="rejectDetails">
     UPDATE sales_order_detail
-       SET prod_status = '반려'
+       SET prod_status = '반려',
+       ORDER_QTY = 0
+
      WHERE odetail_id IN
      <foreach collection="odetailIds" item="id" open="(" separator="," close=")">
        #{id}
      </foreach>
   </update>
+
+  
+<!-- 주문승인 프로시저 호출 -->
+<select id="callProcApproveOrder" parameterType="map" statementType="CALLABLE">
+  { call PROC_APPROVE_ORDER(
+      #{orderDetailIds, mode=IN, jdbcType=VARCHAR},
+      #{status, mode=IN, jdbcType=VARCHAR},
+      #{rowCount, mode=OUT, jdbcType=NUMERIC, javaType=java.lang.Integer}
+  ) }
+</select>
 
 
   <!-- ===================== 반품승인 ===================== -->
@@ -343,7 +355,9 @@
       GROUP BY vendor_id
   ) MAX_SO ON v.vendor_id = MAX_SO.vendor_id
 
-  <where>
+  <where> 
+      v.type IN (0,2)
+
       <if test="vendorId != null and vendorId != ''">
           v.vendor_id = #{vendorId}
       </if>
@@ -352,7 +366,7 @@
 
 
   <!-- ===================== 거래처원장 상단 요약 ===================== -->
-<select id="selectAccountLedgerSummary" parameterType="map" resultType="SalesOrderVO">
+<select id="selectDashboardSummary" parameterType="map" resultType="SalesOrderVO">
   SELECT
       NVL(s.total_price, 0) AS totalPrice,
       NVL(r.return_price, 0) AS returnPrice,
@@ -367,6 +381,19 @@
       WHERE rd.rdetail_status = '승인') r,
       (SELECT SUM(pay_amount) AS pay_amount FROM payment) p,
       (SELECT MAX(order_date) AS last_order_date FROM sales_order) MAX_SO
+</select>
+
+
+<!-- 거래처별 상세 리스트 -->
+<select id="selectDashboardList" resultType="SalesOrderVO">
+  SELECT v.vendor_id AS vendorId, v.company_name AS companyName,
+         NVL(SUM(s.total_price),0) AS totalPrice,
+         NVL(SUM(p.pay_amount),0) AS totalPayment,
+         (NVL(SUM(s.total_price),0) - NVL(SUM(p.pay_amount),0)) AS totalAr
+  FROM vendor v
+  LEFT JOIN sales_order s ON v.vendor_id = s.vendor_id
+  LEFT JOIN payment p ON v.vendor_id = p.vendor_id
+  GROUP BY v.vendor_id, v.company_name
 </select>
 
 

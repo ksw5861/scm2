@@ -1,10 +1,11 @@
-const insertOrder =
+import { useIcon } from "@/composables/useIcon";
 
-      {
+const insertOrder =
+    {
         label: '주문 등록',
-        icon: 'pi pi-fw pi-home',
+        icon: useIcon('cart'),
         to: '/insertorder',
-        roles: ['admin', 'employee']
-      };
+        roles: ['customer']
+    };
 
 export default insertOrder;

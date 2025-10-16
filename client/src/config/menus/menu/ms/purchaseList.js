@@ -1,6 +1,8 @@
+import { useIcon } from "@/composables/useIcon";
+
 const purchaseList = {
-  label: '발주현황',
-  icon: 'pi pi-microchip',
+  label: '자재 발주 내역 조회',
+  icon: useIcon('list'),
   to: '/purchaseList',
   roles: ['admin', 'employee']
 };

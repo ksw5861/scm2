@@ -1,9 +1,19 @@
 import master from './menu/master';
 import order from './menu/order';
-import materialMenu from './menu/materialMenu';
 import supplier from './menu/supplier';
-import product from './menu/product';
+import customerOrder from './menu/customerOrder';
+import production from './menu/production';
+import logistics from './menu/logistics';
+import stock from './menu/stock';
 
-const sideBar = [master, order, materialMenu, supplier, product];
+const sideBar = [
+    master,
+    logistics,
+    customerOrder,
+    production,
+    stock,
+    order,
+    supplier
+];
 
 export default sideBar;

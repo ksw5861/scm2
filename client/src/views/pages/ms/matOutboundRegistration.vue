@@ -131,7 +131,7 @@ const fmtDate = (d) => (d ? useDateFormat(d).value : null);
 ========================= */
 /**
  * 좌측 목록: PRODUCT_PLAN_DETAIL 기준 조회 (페이지네이션)
- * GET  http://localhost:8080/api/mat/issue/planDetails
+ * GET  /api/mat/issue/planDetails
  * q   plId, prodNo, dateFrom, dateTo, page, size
  * res { items: [...], total: number }  또는  [...array]
  */
@@ -147,7 +147,7 @@ const loadRequestList = async () => {
       size: pageSize
     };
 
-    const { data } = await axios.get('http://localhost:8080/api/mat/issue/planDetails', { params });
+    const { data } = await axios.get('/api/mat/issue/planDetails', { params });
 
     // 백엔드가 {items,total} 주는 경우
     const items = Array.isArray(data) ? data : (data?.items ?? []);
@@ -189,12 +189,12 @@ const clearDetail = () => {
 
 /**
  * 우측 상세: REQ_MAT 조회
- * GET  http://localhost:8080/api/mat/issue/reqMat?plDetId=..  (조인: MATERIAL로 자재명 포함)
+ * GET  /api/mat/issue/reqMat?plDetId=..  (조인: MATERIAL로 자재명 포함)
  * res  REQ_ID, MAT_ID, PL_DET_ID, REQ_WEIGHT, matName?, unit?
  */
 const loadReqMatByPlDetId = async (row) => {
   try {
-    const { data } = await axios.get('http://localhost:8080/api/mat/issue/reqMat', {
+    const { data } = await axios.get('/api/mat/issue/reqMat', {
       params: { plDetId: row.plDetId }
     });
 
@@ -256,24 +256,12 @@ const submitIssue = async () => {
   };
 
   try {
-    await axios.post('http://localhost:8080/api/mat/issue/register', payload);
+    await axios.post('/api/mat/issue/register', payload);
     toast('info', '출고등록 완료', '자재 출고가 등록되었습니다.', '4000');
     await loadRequestList();
   } catch (e) {
     console.error(e);
     toast('error', '출고등록 실패', '저장 중 오류가 발생했습니다.', '4000');
-  }
-};
-
-// “생산계획 반영” (옵션)
-const pullPlan = async () => {
-  try {
-    await axios.post('http://localhost:8080/api/mat/issue/pullPlan');
-    toast('info', '생산계획 반영', '생산계획 기준 자재요청이 갱신되었습니다.', '3500');
-    loadRequestList();
-  } catch (e) {
-    console.error(e);
-    toast('error', '실패', '생산계획 불러오기에 실패했습니다.', '3000');
   }
 };
 
@@ -316,6 +304,69 @@ onMounted(() => {
   console.log('[user]', userStore?.name);
   loadRequestList();
 });
+
+const issuing = ref(false); // 출고 처리 중 버튼 비활성화용
+
+// 프로시저 호출로 출고 처리 (각 자재 라인별로 호출)
+const submitIssueViaProc = async () => {
+  if (!detailHead.value.plDetId) {
+    toast('warn', '선택 필요', '좌측 목록에서 출고할 상세를 선택하세요.', '3000');
+    return;
+  }
+
+  // 출고수량이 0이하인 라인은 스킵
+  const param = detailRows.value
+    .filter((r) => Number(r.issueQty) > 0)
+    .map((r) => ({
+      plDetId: Number(detailHead.value.plDetId),
+      matId: r.matId,
+      reqQty: Number(r.issueQty),
+      managerId: userStore?.name || 'SYSTEM'
+    }));
+  console.log(param);
+  if (!param.length) {
+    toast('warn', '출고수량 없음', '출고수량을 입력한 자재가 없습니다.', '3000');
+    return;
+  }
+
+  if (!confirm(`총 ${param.length}건 출고?`)) return;
+
+  issuing.value = true;
+  try {
+    // POST /api/mat/issue/issue-by-proc  (배열로 받아서 서버에서 순차 실행)
+    // 또는 단건: POST /api/mat/issue/issue-one-by-proc (프론트에서 for...of로 순차 호출)
+    await axios.post('/api/mat/issue/issue-by-proc', param);
+
+    toast('success', '출고등록 완료', '출고가 처리되었습니다.', '3500');
+    await loadRequestList(); // 목록 새로고침
+  } catch (e) {
+    try {
+      console.error(e);
+      let msg = '';
+
+      if (typeof e?.response?.data === 'string') {
+        msg = e.response.data;
+      } else if (e?.response?.data?.message) {
+        msg = e.response.data.message;
+      } else {
+        msg = e?.message || '출고 처리 중 오류가 발생했습니다.';
+      }
+
+      if (msg.includes('출고 가능 LOT')) {
+        toast('warn', '출고불가', '출고 가능한 LOT이 없습니다.', '4000');
+      } else if (msg.includes('재고 부족')) {
+        toast('warn', '출고불가', msg, '4000');
+      } else {
+        toast('error', '출고등록 실패', msg, '4000');
+      }
+    } catch (innerErr) {
+      console.error('catch 내부에서 또 오류 발생:', innerErr);
+      toast('error', '예외 처리 중 오류', String(innerErr), '4000');
+    }
+  } finally {
+    issuing.value = false; // 무조건 로딩 해제
+  }
+};
 </script>
 
 <template>
@@ -328,13 +379,8 @@ onMounted(() => {
       <!-- 상단 검색 영역 -->
       <div class="card flex flex-col gap-4">
         <div class="font-semibold text-m">자재출고등록</div>
-        <div class="text-sm text-gray-500 -mt-2">생산계획 상세(DETAIL) 기준으로 출고 처리합니다.</div>
         <Divider />
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div>
-            <label class="text-sm block mb-2">계획ID</label>
-            <InputText v-model="search.plId" placeholder="PL_ID" class="w-full" />
-          </div>
           <div>
             <label class="text-sm block mb-2">생산번호</label>
             <InputText v-model="search.prodNo" placeholder="PROD_NO" class="w-full" />
@@ -357,7 +403,6 @@ onMounted(() => {
           <div class="card flex flex-col gap-4 h-full">
             <div class="flex items-center justify-between">
               <div class="font-semibold text-m">① 생산계획 상세 목록</div>
-              <btn icon="pi pi-database" color="secondary" label="생산계획반영" @click="pullPlan" />
             </div>
             <Divider />
             <!-- 좌측: 단일 선택 유지 -->
@@ -378,7 +423,7 @@ onMounted(() => {
           <div class="card flex flex-col gap-4 h-full">
             <div class="flex items-center justify-between">
               <div class="font-semibold text-m">② 요청 상세 정보</div>
-              <btn icon="pi pi-plus" label="출고등록" @click="submitIssue" />
+              <btn icon="pi pi-plus" :loading="issuing" :disabled="issuing || !detailHead.plDetId" label="출고등록" @click="submitIssueViaProc" />
             </div>
             <Divider />
             <!-- 상세 헤더 필드 -->

@@ -1,5 +1,12 @@
 package com.yedam.scm.outboundMat.mapper;
 
-public class MatIssueMapper {
-  
+import org.apache.ibatis.annotations.Mapper;
+
+import com.yedam.scm.dto.MatIssueLineResult;
+
+
+@Mapper
+public interface MatIssueMapper {
+
+    void callProcMatLotIssueSimple(MatIssueLineResult request);
 }

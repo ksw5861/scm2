@@ -32,6 +32,20 @@ const iconMap = {
   address: 'pi pi-map-marker',
   account: 'pi pi-shield',
   clip: 'pi pi-paperclip'
+  openfolder: 'pi pi-folder-open',
+  checksquere: 'pi pi-check-square',
+  history: 'pi pi-history',
+  undo: 'pi pi-undo',
+  truck: 'pi pi-truck',
+  send: 'pi pi-send',
+  file: 'pi pi-file',
+  pay: 'pi pi-credit-card',
+  setting: 'pi pi-cog',
+  pos: 'pi pi-desktop',
+  dollar: 'pi pi-dollar',
+  cart: 'pi pi-shopping-cart',
+  chart: 'pi pi-chart-bar',
+  wrench: 'pi pi-wrench'
 };
 
 export const useIcon = (name) => {

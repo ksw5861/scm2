@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yedam.scm.outboundMat.mapper.MatIssueMapper">
+
+  <!-- 프로시저 호출 -->
+  <select id="callProcMatLotIssueSimple" statementType="CALLABLE" parameterType="MatIssueLineResult">
+    { call PROC_MAT_LOT_ISSUE_SIMPLE(
+        #{plDetId, jdbcType=NUMERIC, mode=IN},
+        #{matId, jdbcType=VARCHAR, mode=IN},
+        #{reqQty, jdbcType=NUMERIC, mode=IN},
+        #{managerId, jdbcType=VARCHAR, mode=IN}
+      )
+    }
+  </select>
+
+</mapper>

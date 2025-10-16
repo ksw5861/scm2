@@ -1,6 +1,8 @@
+import { useIcon } from "@/composables/useIcon";
+
 const orderInquiry = {
-  label: '주문조회',
-  icon: 'pi pi-fw pi-table',
+  label: '제품 주문 내역 조회',
+  icon: useIcon('list'),
   to: '/order-inquiry',
   roles: ['admin', 'employee']
 };
