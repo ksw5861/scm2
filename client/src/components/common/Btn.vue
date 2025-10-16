@@ -5,19 +5,15 @@ import { useIcon } from '@/composables/useIcon';
 const props = defineProps({
   color: { type: String, default: 'primary' },
   icon: { type: String, default: null },
-  label: { type: String, default: null }
+  label: { type: String, default: null },
+  size: { type: String, default: null }
 });
 
 const icon = computed(() => (props.icon ? useIcon(props.icon) : null));
 </script>
 
 <template>
-  <Button
-    :label="label"
-    :severity="color"
-    :icon="icon"
-    class="mobile-responsive-btn"
-  />
+  <Button :label="label" :severity="color" :icon="icon" :size="size" class="mobile-responsive-btn" />
 </template>
 
 <style scoped>

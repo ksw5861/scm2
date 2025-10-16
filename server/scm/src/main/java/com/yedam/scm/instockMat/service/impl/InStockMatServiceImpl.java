@@ -34,8 +34,18 @@ public class InStockMatServiceImpl implements InStockMatService {
     final FileUploadProperties fileUploadProperties;   //환경설정으로 지정한 첨부파일저장경로 주입 [application.yml에 경로지정됨.]
 
     @Override
-    public List<InboundVO> getVenShipList() {
-        return mapper.getVenShipList();
+    public Map<String, Object> getVenShipList(PageDTO pageDTO) {
+
+       List<InboundVO> list = mapper.getVenShipList(pageDTO.getStartRow(), pageDTO.getEndRow());
+       Long total = mapper.getVenShipListCount();
+
+       pageDTO.updatePageInfo(total);
+
+       Map<String, Object> result = new HashMap<>();
+       result.put("list", list);
+       result.put("page", pageDTO);
+       return result;
+
     }
 
     @Override
@@ -54,8 +64,17 @@ public class InStockMatServiceImpl implements InStockMatService {
     }
 
     @Override
-    public List<InboundVO> getApproveUnload() {
-        return mapper.getApproveUnload();
+    public Map<String, Object> getApproveUnload(PageDTO pageDTO) {
+       List<InboundVO> list = mapper.getApproveUnload(pageDTO.getStartRow(), pageDTO.getEndRow());
+       Long total = mapper.getApproveUnloadListCount();
+
+       pageDTO.updatePageInfo(total);
+
+       Map<String, Object> result = new HashMap<>();
+       result.put("list", list);
+       result.put("page", pageDTO);
+
+       return result;
     }
 
      @Override

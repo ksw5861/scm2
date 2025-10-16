@@ -30,7 +30,8 @@ const iconMap = {
   bom: 'pi pi-sitemap',
   inventory: 'pi pi-th-large',
   address: 'pi pi-map-marker',
-  account: 'pi pi-shield'
+  account: 'pi pi-shield',
+  clip: 'pi pi-paperclip'
 };
 
 export const useIcon = (name) => {

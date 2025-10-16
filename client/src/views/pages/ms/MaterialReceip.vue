@@ -45,6 +45,9 @@ const codeMap = ref({});
 const defectModal = ref(false);
 const previewUrl = ref(null);
 const selectedFile = ref(null);
+// pagination
+const page = ref({ page: 1, size: 10, totalElements: 0 });
+
 //불량정보를 백단에서 받을 inboundLogVO랑 바로 매핑가능하도록 사용!
 const defectForm = ref({
   matName: '',
@@ -55,9 +58,12 @@ const defectForm = ref({
 });
 
 const pageLoad = async () => {
+  const pageParam = { page: page.value.page, size: page.value.size };
+
   try {
-    const list = await axios.get('/api/mat/unloadList');
-    approveUnloadList.value = list.data.map((item) => ({
+    const res = await axios.get('/api/mat/unloadList', { params: pageParam });
+    const { list, page: pageInfo } = res.data;
+    approveUnloadList.value = list.map((item) => ({
       id: item.inboundId,
       unloadDate: useDateFormat(item.unloadDate).value,
       inboundNo: item.inboundNo,
@@ -65,6 +71,7 @@ const pageLoad = async () => {
       inboundStatus: codeMap.value[item.inboundStatus] || item.inboundStatus,
       unloadEmp: item.unloadEmp
     }));
+    page.value.totalElements = pageInfo.totalElements;
     console.log(list);
   } catch (error) {
     toast('error', '리스트 로드 실패', '입고대기 리스트 불러오기 실패:', '3000');
@@ -223,6 +230,13 @@ const loadStatusCodes = async () => {
   }
 };
 
+const onPage = (event) => {
+  const startRow = event.page * event.rows + 1;
+  const endRow = (event.page + 1) * event.rows;
+
+  pageLoad({ startRow, endRow }); // 여기서 axios 호출
+};
+
 onMounted(() => {
   pageLoad();
   loadStatusCodes();
@@ -285,7 +299,7 @@ const approveUnloadDetaiColumn = [
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">입고대기 목록</div>
             <Divider />
-            <selectTable v-model:selection="selectedMaster" :selectionMode="'single'" :columns="approveUnloadColumn" :data="approveUnloadList" :paginator="false" :showCheckbox="false" @row-select="detailInfo" />
+            <selectTable v-model:selection="selectedMaster" :selectionMode="'single'" :columns="approveUnloadColumn" :data="approveUnloadList" :paginator="true" :showCheckbox="false" :page="page" @row-select="detailInfo" @page-change="onPage" />
           </div>
         </div>
       </div>

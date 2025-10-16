@@ -69,17 +69,30 @@
 
 <!--입고마스터T 출력-->
 <select id ="getVenShipList" resultMap="inboundResultMap">
-SELECT i.inbound_id,
-       i.ven_name,
-       i.vendor_out_date,
-       v.company_name,
-       i.ven_out_no,
-       i.inbound_status
-FROM inbound i
-JOIN vendor v
-ON i.vendor_id = v.vendor_id
-WHERE i.inbound_status = 'm1'
-ORDER BY i.vendor_out_date DESC
+SELECT * FROM (
+    SELECT a.*, ROWNUM rnum
+    FROM (
+            SELECT i.inbound_id,
+                i.ven_name,
+                i.vendor_out_date,
+                v.company_name,
+                i.ven_out_no,
+                i.inbound_status
+            FROM inbound i
+            JOIN vendor v
+            ON i.vendor_id = v.vendor_id
+            WHERE i.inbound_status = 'm1'
+            ORDER BY i.vendor_out_date DESC
+        ) a
+    WHERE ROWNUM &lt;= #{endRow}
+)
+WHERE rnum &gt;= #{startRow}
+</select>
+<!--입고마스터T 데이터 count-->
+<select id="getVenShipListCount" resultType="long">
+SELECT count(DISTINCT inbound_id)
+FROM inbound 
+WHERE inbound_status = 'm1'
 </select>
 
 <!--입고상세T 출력-->
@@ -116,15 +129,28 @@ WHERE id.inbound_id = #{inboundId}
 
 <!--입고대기목록-->
 <select id = "getApproveUnload" resultMap="inboundResultMap">
-SELECT i.inbound_id,
-       i.inbound_no,
-       i.unload_date,
-       i.unload_emp,
-       i.inbound_status,
-       v.company_name
-FROM inbound i
-JOIN vendor v
-ON i.vendor_id = v.vendor_id
+SELECT * FROM (
+    SELECT a.*, ROWNUM rnum
+    FROM (
+            SELECT i.inbound_id,
+                i.inbound_no,
+                i.unload_date,
+                i.unload_emp,
+                i.inbound_status,
+                v.company_name
+            FROM inbound i
+            JOIN vendor v
+            ON i.vendor_id = v.vendor_id
+            WHERE inbound_status in ('app', 'm2')
+    ) a
+    WHERE ROWNUM &lt;= #{endRow}
+)
+WHERE rnum &gt;= #{startRow}
+</select>
+<!--입고대기목록데이터 수-->
+<select id="getApproveUnloadListCount" resultType="long">
+SELECT count(DISTINCT inbound_id)
+FROM inbound
 WHERE inbound_status in ('app', 'm2')
 </select>
 

@@ -74,102 +74,102 @@
     <association property="vendorVO" resultMap="com.yedam.scm.common.CommonMapper.VendorMap"/>
 </resultMap>
 
-    <!-- ##생산계획 등록 -->
-    <!-- 1. 생산계획 마스터 등록 -->
-    <insert id="insertProductionPlan" parameterType="ProductionPlanVO">
-        <!-- 시퀀스 먼저 뽑아서 VO.planId 에 세팅 -->
-        <selectKey keyProperty="plId" resultType="long" order="BEFORE">
-            SELECT seq_product_plan.NEXTVAL FROM dual
-        </selectKey>
-        INSERT INTO product_plan (
-            pl_id,
-            start_date,
-            end_date,
-            plan_no,
-            emp_name,
-            plan_type,
-            memo
-        )
-        VALUES (
-            #{plId},               <!-- selectKey로 얻은 값 -->
-            #{startDate},
-            #{endDate},
-            NEXT_DATE_CODE('PP'),    <!-- 커스텀 코드 함수 (있다면) -->
-            #{empName},
-            #{planType},
-            #{memo}
-        )
-    </insert>
+<!-- ##생산계획 등록 -->
+<!-- 1. 생산계획 마스터 등록 -->
+<insert id="insertProductionPlan" parameterType="ProductionPlanVO">
+    <!-- 시퀀스 먼저 뽑아서 VO.planId 에 세팅 -->
+    <selectKey keyProperty="plId" resultType="long" order="BEFORE">
+        SELECT seq_product_plan.NEXTVAL FROM dual
+    </selectKey>
+    INSERT INTO product_plan (
+        pl_id,
+        start_date,
+        end_date,
+        plan_no,
+        emp_name,
+        plan_type,
+        memo
+    )
+    VALUES (
+        #{plId},               <!-- selectKey로 얻은 값 -->
+        #{startDate},
+        #{endDate},
+        NEXT_DATE_CODE('PP'),    <!-- 커스텀 코드 함수 (있다면) -->
+        #{empName},
+        #{planType},
+        #{memo}
+    )
+</insert>
 
-    <!-- 2. 생산계획 디테일 등록 -->
-    <insert id="insertProductionPlanDetail" parameterType="PrdPlanDetailVO">
-        <selectKey keyProperty="plDetId" resultType="long" order="BEFORE">
-            SELECT seq_product_plan_detail.NEXTVAL FROM dual
-        </selectKey>
-        INSERT INTO product_plan_detail (
-           pl_det_id,
-           prod_id,
-           pro_qty, 
-           pro_date,  
-           pl_id,  
-           prod_no 
-        )
-        VALUES (
-            #{plDetId},
-            #{prodId},         
-            #{proQty},
-            #{proDate},
-            #{plId},
-             NEXT_DATE_CODE('PNO') <!--제품LOT번호-->
-        )
-    </insert>
+<!-- 2. 생산계획 디테일 등록 -->
+<insert id="insertProductionPlanDetail" parameterType="PrdPlanDetailVO">
+    <selectKey keyProperty="plDetId" resultType="long" order="BEFORE">
+        SELECT seq_product_plan_detail.NEXTVAL FROM dual
+    </selectKey>
+    INSERT INTO product_plan_detail (
+        pl_det_id,
+        prod_id,
+        pro_qty, 
+        pro_date,  
+        pl_id,  
+        prod_no 
+    )
+    VALUES (
+        #{plDetId},
+        #{prodId},         
+        #{proQty},
+        #{proDate},
+        #{plId},
+            NEXT_DATE_CODE('PNO') <!--제품LOT번호-->
+    )
+</insert>
 
-    <!--3. 생산시 내부 자재요청insert프로시저-->
-    <select id="callInsertReqMatProc" statementType="CALLABLE">
-    { call PROC_INSERT_REQ_MAT( #{plDetId, mode=IN, jdbcType=NUMERIC} ) }
-    </select>
+<!--3. 생산시 내부 자재요청insert프로시저-->
+<select id="callInsertReqMatProc" statementType="CALLABLE">
+{ call PROC_INSERT_REQ_MAT( #{plDetId, mode=IN, jdbcType=NUMERIC} ) }
+</select>
 
-    <!--#자재요청-->
-    <!--생산계획마스터-->
-    <select id="getPlanMasterList" resultType="ProductionPlanVO">
-    SELECT pl_id, 
-           start_date,
-           end_date,
-           plan_no,
-           plan_type,
-           memo,
-           emp_name,
-           re_date
-    FROM product_plan
-    WHERE mrp_status = 'pp0'
-    </select>
+<!--#자재요청-->
+<!--생산계획마스터-->
+<select id="getPlanMasterList" resultType="ProductionPlanVO">
+SELECT pl_id, 
+        start_date,
+        end_date,
+        plan_no,
+        plan_type,
+        memo,
+        emp_name,
+        re_date
+FROM product_plan
+WHERE mrp_status = 'pp0'
+</select>
 
-  <!-- 생산계획 상세조회 -->
-    <select id="selectPlanDetailList" parameterType="long" resultMap="PrdPlanDetailMap">
-        SELECT 
-            pd.pl_det_id,
-            pd.prod_id,
-            p.prod_name,
-            pd.pro_qty,
-            pd.pro_date,
-            p.unit,
-            p.spec,
-            p.status,
-            p.bom_version
-        FROM product_plan_detail pd
-        JOIN product p
-          ON pd.prod_id = p.prod_id
-        WHERE pd.pl_id = #{plId}
-        ORDER BY pd.pro_date
-    </select>
+<!-- 생산계획 상세조회 -->
+<select id="selectPlanDetailList" parameterType="long" resultMap="PrdPlanDetailMap">
+    SELECT 
+        pd.pl_det_id,
+        pd.prod_id,
+        p.prod_name,
+        pd.pro_qty,
+        pd.pro_date,
+        p.unit,
+        p.spec,
+        p.status,
+        p.bom_version
+    FROM product_plan_detail pd
+    JOIN product p
+        ON pd.prod_id = p.prod_id
+    WHERE pd.pl_id = #{plId}
+    ORDER BY pd.pro_date
+</select>
 
-    <!--mrp산출-->
-    <select id="callCalcMrpProc" statementType="CALLABLE">
-        { call PROC_CALC_MRP(
-            #{plId, mode=IN, jdbcType=NUMERIC},
-            #{empName, mode=IN, jdbcType=VARCHAR}
-        )}
-    </select>
+<!--mrp산출-->
+<select id="callCalcMrpProc" statementType="CALLABLE">
+    { call PROC_CALC_MRP(
+        #{plId, mode=IN, jdbcType=NUMERIC},
+        #{empName, mode=IN, jdbcType=VARCHAR}
+    )}
+</select>
 
     <!--mrp목록-->
     <select id="getMrpList" resultMap="MrpDetailMap">
@@ -189,22 +189,22 @@ ORDER BY md.mrp_det_id DESC
 
     </select>
 
-    <!--자재주문프로시저-->
-       <select id="callReqestMatProc" parameterType="PurchaseMatVO" statementType="CALLABLE">
-        { call PROC_REQ_MATERIAL(
-            #{matId,    mode=IN, jdbcType=VARCHAR},  
-            #{reqQty,   mode=IN, jdbcType=NUMERIC},  
-            #{vendorId, mode=IN, jdbcType=VARCHAR}, 
-            #{total,    mode=IN, jdbcType=NUMERIC},  
-            #{dueDate,  mode=IN, jdbcType=DATE},     
-            #{mrpDetId, mode=IN, jdbcType=NUMERIC}, 
-            #{toWarehouse,  mode=IN, jdbcType=VARCHAR}, 
-            #{empName,  mode=IN, jdbcType=VARCHAR}   
-        )}
-    </select>
+<!--자재주문프로시저-->
+    <select id="callReqestMatProc" parameterType="PurchaseMatVO" statementType="CALLABLE">
+    { call PROC_REQ_MATERIAL(
+        #{matId,    mode=IN, jdbcType=VARCHAR},  
+        #{reqQty,   mode=IN, jdbcType=NUMERIC},  
+        #{vendorId, mode=IN, jdbcType=VARCHAR}, 
+        #{total,    mode=IN, jdbcType=NUMERIC},  
+        #{dueDate,  mode=IN, jdbcType=DATE},     
+        #{mrpDetId, mode=IN, jdbcType=NUMERIC}, 
+        #{toWarehouse,  mode=IN, jdbcType=VARCHAR}, 
+        #{empName,  mode=IN, jdbcType=VARCHAR}   
+    )}
+</select>
 
-    <!--자재주문목록-->
-    <select id = "getPurchaseList" resultMap="PurchaseMatMap">
+<!--자재주문목록-->
+<select id = "getPurchaseList" resultMap="PurchaseMatMap">
 SELECT * FROM (
  SELECT a.*, ROWNUM rnum
   FROM (
@@ -228,24 +228,26 @@ SELECT * FROM (
 )
 WHERE rnum &gt;= #{startRow}
     </select>
-    <!--자재주문마스터 수량 for pagenation-->
-    <select id="getPurchaseMasterCount" resultType="long">
-    SELECT count (pur_id)
-    FROM purchase_mat
-    </select>
-    <!--자재주문상세이력-->
-    <select id ="getPurchaseStatus" parameterType="long" resultType = "PurStatusLogVO">
-    SELECT psl.PUR_STATUS_ID,
-           psl.re_date,
-           psl.log_name,
-           psl.log_pur_mat_status,
-           NVL(psl.log_sup_out_qty,0) as log_sup_out_qty,
-           psl.log_expect_date,
-           psl.log_reson_comm
-    FROM purchase_status_log psl
-    WHERE log_pur_id = #{purId}
-    ORDER BY re_date DESC
-    </select>
+    
+<!--자재주문마스터 수량 for pagenation-->
+<select id="getPurchaseMasterCount" resultType="long">
+SELECT count (pur_id)
+FROM purchase_mat
+</select>
+
+<!--자재주문상세이력-->
+<select id ="getPurchaseStatus" parameterType="long" resultType = "PurStatusLogVO">
+SELECT psl.PUR_STATUS_ID,
+        psl.re_date,
+        psl.log_name,
+        psl.log_pur_mat_status,
+        NVL(psl.log_sup_out_qty,0) as log_sup_out_qty,
+        psl.log_expect_date,
+        psl.log_reson_comm
+FROM purchase_status_log psl
+WHERE log_pur_id = #{purId}
+ORDER BY re_date DESC
+</select>
     
 <!--드롭다운/모달용===============================================================================-->
 <!--제품목록-->

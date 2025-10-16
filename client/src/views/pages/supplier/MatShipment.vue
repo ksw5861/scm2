@@ -164,9 +164,9 @@ const warehouseList = async () => {
 };
 
 const onPage = (event) => {
-  page.value.page = event.page + 1;
-  page.value.size = event.rows;
-  pageLoad();
+  const startRow = event.page * event.rows + 1;
+  const endRow = (event.page + 1) * event.rows;
+  pageLoad({startRow, endRow});
 };
 
 onMounted(() => {

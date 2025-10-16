@@ -57,7 +57,7 @@ const fetchMatList = async () => {
   try {
     const res = await axios.get('/api/mat/matStockList', { params: pageParam });
     const { list, page: pageInfo } = res.data;
-    console.log(res.data);
+
     matStockList.value = list.map((item) => ({
       id: item.matId,
       matId: item.matId,
@@ -69,7 +69,6 @@ const fetchMatList = async () => {
     }));
 
     page.value.totalElements = pageInfo.totalElements;
-    console.log(pageInfo);
   } catch (error) {
     toast('error', '자재 재고 현황', '재고 리스트 불러오기 실패:', '3000');
   }
@@ -113,10 +112,9 @@ const loadStatusCodes = async () => {
 };
 
 const onPage = (event) => {
-  page.value.page = event.page + 1; // PrimeVue는 0-based
-  page.value.size = event.rows;
-
-  fetchMatList(); // 여기서 axios 호출
+  const startRow = event.page * event.rows + 1;
+  const endRow = (event.page + 1) * event.rows;
+  fetchMatList({ startRow, endRow });
 };
 
 onMounted(() => {

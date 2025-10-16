@@ -95,8 +95,8 @@ public class MsController {
     //============================================================================ 입고Part
     //하차대기목록(마스터)
     @GetMapping("/shipedList")
-    public List<InboundVO> getVenShipList() {
-        return inStockMatService.getVenShipList();
+    public Map<String, Object> getVenShipList(PageDTO pageDTO) {
+        return inStockMatService.getVenShipList(pageDTO);
     }
     //하차대기목록(상세)
     @GetMapping("/shipedDetailList")
@@ -115,8 +115,8 @@ public class MsController {
     }
     //입고대기목록
     @GetMapping("/unloadList")
-    public List<InboundVO> getApproveUnload() {
-        return inStockMatService.getApproveUnload();
+    public Map<String, Object> getApproveUnload(PageDTO pageDTO) {
+        return inStockMatService.getApproveUnload(pageDTO);
     }
     //입고대기목록(상세)
     @GetMapping("/unloadDetailList")
