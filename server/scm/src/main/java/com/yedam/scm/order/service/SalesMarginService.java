@@ -15,7 +15,7 @@ public interface SalesMarginService {
 
     int saveAll(List<SalesMarginVO> list);
 
-    
+
     List<SalesMarginVO> getList();
 
     SalesMarginVO getById(String saleProdId);
@@ -23,6 +23,7 @@ public interface SalesMarginService {
     
 
     int delete(String saleProdId);
+
 
 
 }

@@ -134,6 +134,7 @@ public class EgController {
     // =================================================================
     @GetMapping("/orderlist")
     public ResponseEntity<Map<String, Object>> getOrderListForView(
+            @RequestParam String vendorId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String prodName,
@@ -142,7 +143,7 @@ public class EgController {
 
         Map<String, Object> response = new HashMap<>();
         try {
-            List<SalesOrderVO> orders = orderSvc.getOrderListForView(startDate, endDate, prodName, status, orderId);
+            List<SalesOrderVO> orders = orderSvc.getOrderListForView(vendorId, startDate, endDate, prodName, status, orderId);
 
             response.put("status", "success");
             response.put("count", orders.size());
@@ -247,6 +248,7 @@ public class EgController {
     // =================================================================
     @GetMapping("/returnlist")
     public ResponseEntity<Map<String, Object>> getReturnList(
+            @RequestParam String vendorId,
             @RequestParam(required = false) String startDate,
             @RequestParam(required = false) String endDate,
             @RequestParam(required = false) String returnStatus,
@@ -255,7 +257,7 @@ public class EgController {
 
         Map<String, Object> response = new HashMap<>();
         try {
-            List<ReturnVO> list = returnSvc.getReturnList(startDate, endDate, returnStatus, returnId);
+            List<ReturnVO> list = returnSvc.getReturnList(vendorId, startDate, endDate, returnStatus, returnId);
 
             response.put("status", "success");
             response.put("count", list.size());
@@ -347,9 +349,11 @@ public class EgController {
     // 8. 결제 대기중 주문건 목록
     // =================================================================
     @GetMapping("/pendingorders")
-    public ResponseEntity<List<SalesOrderVO>> selectPendingOrders() {
+    public ResponseEntity<List<SalesOrderVO>> selectPendingOrders(
+        @RequestParam String vendorId
+    ) {
         try {
-            List<SalesOrderVO> list = paymentSvc.selectPendingOrders();
+            List<SalesOrderVO> list = paymentSvc.selectPendingOrders(vendorId);
             return ResponseEntity.ok(list); // 배열 그대로 리턴
         } catch (Exception e) {
             e.printStackTrace();

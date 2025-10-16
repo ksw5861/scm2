@@ -76,7 +76,7 @@
         FROM RETURN r
         LEFT JOIN RETURN_DETAIL rd ON r.return_id = rd.return_id
         LEFT JOIN PRODUCT p ON rd.prod_id = p.prod_id
-        WHERE 1=1
+        WHERE r.vendor_id = #{vendorId}
           <if test="startDate != null and startDate != ''">
               AND r.return_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
           </if>

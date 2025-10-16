@@ -149,7 +149,9 @@ import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
 import { useAppToast } from '@/composables/useAppToast'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const { toast } = useAppToast()
 
 // -----------------------------
@@ -209,6 +211,7 @@ const fetchReturns = async () => {
   try {
     const { data } = await axios.get('/api/returnlist', {
       params: {
+        vendorId: userStore.code,
         startDate: formatDateForAPI(filters.value.startDate),
         endDate: formatDateForAPI(filters.value.endDate),
         returnStatus: filters.value.status,

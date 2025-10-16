@@ -208,6 +208,7 @@ const fetchOrders = async () => {
   try {
     const params = {
       ...filters.value,
+      vendorId: userStore.code,
       startDate: formatDateForAPI(filters.value.startDate),
       endDate: formatDateForAPI(filters.value.endDate)
     }

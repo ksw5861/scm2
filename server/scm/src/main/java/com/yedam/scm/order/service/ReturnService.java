@@ -14,10 +14,13 @@ public interface ReturnService {
     // =============================================================
     // 반품 목록 조회
     // =============================================================
-    List<ReturnVO> getReturnList(String startDate,
-                                 String endDate,
-                                 String returnStatus,
-                                 String returnId);
+    List<ReturnVO> getReturnList(
+        String vendorId,
+        String startDate,
+        String endDate,
+        String returnStatus,
+        String returnId
+    );
 
     // =============================================================
     // 반품 단건 조회
