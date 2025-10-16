@@ -31,7 +31,7 @@ const iconMap = {
   inventory: 'pi pi-th-large',
   address: 'pi pi-map-marker',
   account: 'pi pi-shield',
-  clip: 'pi pi-paperclip'
+  clip: 'pi pi-paperclip',
   openfolder: 'pi pi-folder-open',
   checksquere: 'pi pi-check-square',
   history: 'pi pi-history',
