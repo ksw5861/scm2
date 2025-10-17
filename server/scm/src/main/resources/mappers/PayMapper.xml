@@ -82,7 +82,7 @@
     FROM sales_order so
     JOIN sales_order_detail sod ON so.order_id = sod.order_id
     WHERE so.pay_status <![CDATA[<>]]> '결제완료'
-      AND so.status = '처리완료'
+      AND so.status IN ('출고완료','배송완료')
       AND so.order_date BETWEEN TRUNC(ADD_MONTHS(SYSDATE, -1)) AND SYSDATE
       AND so.vendor_id = #{vendorId}
     GROUP BY 
