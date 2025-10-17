@@ -76,10 +76,10 @@ async function applySearch() {
   };
   const res = await axios.get('/api/return-list', { params });
   returnList.value = res.data?.data ?? res.data ?? [];
-  detailRows.value = [];
-  selectedReturns.value = [];
-  selectedDetailRows.value = [];
-  currentReturnId.value = null;
+  // detailRows.value = [];
+  // selectedReturns.value = [];
+  // selectedDetailRows.value = [];
+  // currentReturnId.value = null;
 }
 function resetSearch() {
   search.value = { prodId: '', prodName: '', vendorName: '', fromDate: null, toDate: null, returnId: '' };
