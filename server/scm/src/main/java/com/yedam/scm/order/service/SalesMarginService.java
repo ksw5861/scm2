@@ -1,9 +1,5 @@
 package com.yedam.scm.order.service;
 
-
-import org.springframework.stereotype.Service;
-
-
 import com.yedam.scm.vo.SalesMarginVO;
 import com.yedam.scm.vo.SalesMasterVO;
 
@@ -32,5 +28,11 @@ public interface SalesMarginService {
 
     // 매출이력조회
     List<SalesMasterVO> getSalesHistory(String vendorId);
+
+    // 📌 매출 요약 (오늘 vs 어제
+    Map<String, Object> getDailySummary(String vendorId);
+
+    // 월별 매출 요약
+    Map<String, Object> getMonthlySummary(String vendorId, int year, int month);
 
 }

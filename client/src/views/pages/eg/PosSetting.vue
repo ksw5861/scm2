@@ -60,7 +60,7 @@
     <Card class="shadow-sm">
       <template #content>
         <DataTable :value="rows" dataKey="id" responsiveLayout="scroll">
-          <Column header="No." style="width: 60px" bodyClass="text-center">
+          <Column header="노출 순서" style="width: 120px" bodyClass="text-center">
             <template #body="slotProps">{{ slotProps.index + 1 }}</template>
           </Column>
 
