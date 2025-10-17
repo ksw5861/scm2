@@ -8,6 +8,7 @@ import com.yedam.scm.vo.SalesMasterVO;
 import com.yedam.scm.vo.SalesDetailVO;
 
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface SalesMarginMapper {
@@ -34,4 +35,29 @@ public interface SalesMarginMapper {
 
     // 매출이력조회
     List<SalesMasterVO> getSalesHistory(String vendorId);
+
+    // 📌 매출 요약 (오늘 vs 어제
+    Map<String, Object> getDailySales(@Param("vendorId") String vendorId, @Param("dayOffset") int dayOffset);
+
+
+    // 월별 매출 요약
+    // 이번 달 총 매출
+    Integer getMonthlyTotal(@Param("vendorId") String vendorId,
+                            @Param("year") int year,
+                            @Param("month") int month);
+
+    // 일자별 매출
+    List<Map<String, Object>> getMonthlyDailySales(
+        @Param("vendorId") String vendorId,
+        @Param("year") int year,
+        @Param("month") int month
+    );
+
+    // 영업일 수 (매출 발생한 일자 수)
+    Integer getWorkingDays(@Param("vendorId") String vendorId,
+                           @Param("year") int year,
+                           @Param("month") int month);
+
+
+
 }

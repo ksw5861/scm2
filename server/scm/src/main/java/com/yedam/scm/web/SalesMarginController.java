@@ -65,4 +65,22 @@ public class SalesMarginController {
     public List<SalesMasterVO> getSalesHistory(@RequestParam String vendorId) {
        return service.getSalesHistory(vendorId);
     }
+
+    // 📌 매출 요약 (오늘 vs 어제) 매출내역탭에 어제날짜와 증감대비를 위한것
+    @GetMapping("/sales/daily-summary")
+    public ResponseEntity<Map<String, Object>> getDailySummary(@RequestParam String vendorId) {
+        Map<String, Object> result = service.getDailySummary(vendorId);
+        return ResponseEntity.ok(result);
+    }
+
+    // ✅ 월별 매출 탭에 요약칸
+    @GetMapping("/sales/monthly-summary")
+    public Map<String, Object> getMonthlySummary(
+            @RequestParam String vendorId,
+            @RequestParam int year,
+            @RequestParam int month
+    ) {
+        return service.getMonthlySummary(vendorId, year, month);
+    }
+
 }
