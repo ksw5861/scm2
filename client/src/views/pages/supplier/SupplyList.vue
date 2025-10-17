@@ -2,7 +2,6 @@
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import btn from '@/components/common/Btn.vue';
-import Button from 'primevue/button';
 import selectTable from '@/components/common/checkBoxTable.vue';
 import SearchField from '@/components/common/SearchBox.vue';
 import { useAppToast } from '@/composables/useAppToast';
@@ -19,7 +18,6 @@ const userStore = useUserStore();
 const vendorId = ref('V800');
 const vendorName = ref('홍길동'); //공급처담당자이름으로 로그찍히니 변경xxx
 
-
 const route = useRoute();
 const { toast } = useAppToast();
 
@@ -33,7 +31,6 @@ const breadcrumbItems = computed(() => {
   const currentLabel = current.name || '';
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
-
 
 const events = ref(); //타임라인용!
 const statusList = ref();
@@ -182,8 +179,8 @@ const statusColumn = [
         />
         <!-- 버튼 영역 -->
         <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화" />
-          <btn color="contrast" icon="pi pi-search" label="조회" />
+          <btn color="secondary" icon="refresh" class="whitespace-nowrap" outlined label="초기화" />
+          <btn color="contrast" icon="pi pi-search" label="조회" outlined />
         </div>
       </div>
     </div>

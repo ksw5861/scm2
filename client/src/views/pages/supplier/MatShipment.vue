@@ -227,8 +227,8 @@ const addShipColumns = [
         />
         <!-- 버튼 영역 -->
         <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화" />
-          <btn color="contrast" icon="pi pi-search" label="조회" />
+          <btn color="secondary" icon="refresh" class="whitespace-nowrap" outlined label="초기화" />
+          <btn color="contrast" icon="pi pi-search" label="조회" outlined />
         </div>
       </div>
     </div>

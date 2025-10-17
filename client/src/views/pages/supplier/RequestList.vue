@@ -32,7 +32,6 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-
 const dateRange = ref({ start: null, end: null });
 const materialName = ref();
 const statusList = ref([]);
@@ -87,7 +86,7 @@ const approve = async () => {
     await axios.post('/api/supplier/approve', { purId: idList, name: vendorId.value });
     toast('info', '승인 성공', '주문 승인 성공:', '3000');
 
-      fetchList();
+    fetchList();
   } catch (error) {
     toast('error', '승인 실패', '주문 승인 실패:', '3000');
   }
@@ -164,8 +163,8 @@ const matOrderColumns = [
 
         <!-- 버튼 영역 -->
         <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화" />
-          <btn color="contrast" icon="pi pi-search" label="조회" />
+          <btn color="secondary" icon="refresh" class="whitespace-nowrap" outlined label="초기화" />
+          <btn color="contrast" icon="pi pi-search" label="조회" outlined />
         </div>
       </div>
     </div>
@@ -174,9 +173,8 @@ const matOrderColumns = [
     <!--중간버튼영역-->
     <div class="card flex flex-col gap-4">
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="contrast" icon="pi pi-plus" label="Excel 다운로드" />
-        <btn color="warn" icon="pi pi-file-excel" label="반려" @click="oepnRejModal" />
-        <btn color="info" icon="pi pi-file-pdf" @click="approve" label="승인" />
+        <btn color="secondary" icon="cancel" label="취소" @click="oepnRejModal" outlined />
+        <btn color="info" icon="add" label="등록" class="whitespace-nowrap" outlined @click="approve" />
       </div>
       <div class="font-semibold text-xl mb-5">조회 내역</div>
       <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" @page-change="onPage" :page="page" />
