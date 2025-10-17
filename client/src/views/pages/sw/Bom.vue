@@ -57,7 +57,7 @@ const currentBom = ref({
   expireDate: new Date('9999-12-31'),
   prodId: '',
   matId: '',
-  qty: 0,
+  mixingRate: 0,
   material: { unit: '' },
   createdAt: new Date()
 });
@@ -66,9 +66,9 @@ const currentBom = ref({
 const materialList = ref([]);
 const materialDialogVisible = ref(false);
 
-// 단위 선택 모달
-const unitList = ref([]);
-const unitDialogVisible = ref(false);
+// // 단위 선택 모달
+// const unitList = ref([]);
+// const unitDialogVisible = ref(false);
 
 // 페이징
 const prodRows = 5;
@@ -149,7 +149,7 @@ const initNewBom = () => {
     expireDate: new Date('9999-12-31'),
     prodId: selectedProd.value ? selectedProd.value.prodId : '',
     matId: '',
-    qty: 0,
+    mixingRate: 0,
     material: { unit: '' },
     createdAt: ''
   };
@@ -243,29 +243,6 @@ const selectMaterial = (material) => {
   materialDialogVisible.value = false;
 };
 
-// // --- 단위 목록 fetch ---
-// const fetchUnitList = async () => {
-//   try {
-//     const res = await axios.get('/api/unit');
-//     unitList.value = Array.isArray(res.data) ? res.data : [];
-//   } catch (e) {
-//     toast('error', '조회 실패', '단위 정보를 가져오지 못했습니다.');
-//     unitList.value = [];
-//   }
-// };
-
-// // --- 단위 선택 모달 열기 ---
-// const openUnitDialog = async () => {
-//   await fetchUnitList();
-//   unitDialogVisible.value = true;
-// };
-
-// // --- 단위 선택 ---
-// const selectUnit = (unit) => {
-//   currentBom.value.material.unit = unit.unitName;
-//   unitDialogVisible.value = false;
-// };
-
 // 자동으로 신규탭(인덱스 2)에 진입하면 신규 BOM 초기화
 watch(activeTabIndex, (idx) => {
   if (idx === 2) {
@@ -334,10 +311,6 @@ onMounted(() => fetchProdList());
                           <label>등록날짜</label>
                           <InputText v-model="form.createdAt" class="w-full h-10" :disabled="!selectedProd" readonly />
                         </div>
-                        <div class="flex flex-column">
-                          <label>마지막 수정날짜</label>
-                          <InputText v-model="form.lastModifyAt" class="w-full h-10" :disabled="!selectedProd" readonly />
-                        </div>
                       </div>
                     </Fieldset>
                   </div>
@@ -349,6 +322,13 @@ onMounted(() => fetchProdList());
                     <Fieldset legend="BOM 상세정보" class="flex flex-column h-full">
                       <div class="flex-grow-1 overflow-auto">
                         <DataTable :value="bomList" paginator :rows="bomRows" dataKey="bomId" :loading="loading" class="h-full">
+                          <!-- bom코드 -->
+                          <Column header="BOM코드">
+                            <template #body="slotProps">
+                              {{ slotProps.data.bomId || '' }}
+                            </template>
+                          </Column>
+
                           <!-- 자재코드 -->
                           <Column header="자재코드">
                             <template #body="slotProps">
@@ -363,10 +343,10 @@ onMounted(() => fetchProdList());
                             </template>
                           </Column>
 
-                          <!-- 규격 -->
-                          <Column header="규격">
+                          <!-- 배합비율 -->
+                          <Column header="비율(%)">
                             <template #body="slotProps">
-                              {{ slotProps.data.material?.spec || '' }}
+                              {{ slotProps.data.bomDetail?.mixingRate || '' }}
                             </template>
                           </Column>
 
@@ -435,11 +415,6 @@ onMounted(() => fetchProdList());
                         </div>
 
                         <div>
-                          <label class="block text-sm mb-1">규격</label>
-                          <InputText v-model="currentBom.material.spec" class="w-full h-10" />
-                        </div>
-
-                        <div>
                           <label class="block text-sm mb-1">단위</label>
                           <div class="flex gap-2">
                             <InputText v-model="currentBom.material.unit" class="w-full h-10" readonly />
@@ -448,7 +423,7 @@ onMounted(() => fetchProdList());
 
                         <div>
                           <label class="block text-sm mb-1">비율(%)</label>
-                          <InputNumber v-model="currentBom.qty" class="w-full" mode="decimal" />
+                          <InputNumber v-model="currentBom.mixingRate" class="w-full" mode="decimal" />
                         </div>
 
                         <div>
@@ -495,10 +470,7 @@ onMounted(() => fetchProdList());
             <label>자재명</label>
             <InputText v-model="currentBom.material.matName" disabled />
           </div>
-          <div class="flex flex-column">
-            <label>규격</label>
-            <InputText v-model="currentBom.material.spec" disabled />
-          </div>
+
           <div class="flex flex-column">
             <label>단위</label>
             <div class="flex gap-2">
