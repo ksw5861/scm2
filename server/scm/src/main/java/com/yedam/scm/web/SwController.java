@@ -29,6 +29,9 @@ import com.yedam.scm.vo.ReqMatVO;
 import com.yedam.scm.vo.UnitVO;
 import com.yedam.scm.vo.VendorVO;
 import com.yedam.scm.vo.WareHouseVO;
+
+import lombok.Data;
+
 import com.yedam.scm.vo.BomVO;
 
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -224,44 +227,78 @@ public class SwController {
     }
 
     // =========================================================
-    // ================ BOM API ===============================
-    // =========================================================
-    // BOM 버전관리 버전변경유무 또는 정보UPDATE시 버전변경
-    @GetMapping("/bom/{prodId}")
-    public List<BomVO> getBomDetail(@PathVariable String prodId) {
-        return bomSvc.getBomDetailByProdId(prodId);
-    }
+// ================ BOM API ===============================
+// =========================================================
+@GetMapping("/bom/{prodId}")
+public List<BomVO> getBomDetail(@PathVariable String prodId) {
+    return bomSvc.getBomDetailByProdId(prodId);
+}
 
-    @GetMapping("/bom/detail/{bomId}")
-    public BomVO getBomDetailById(@PathVariable String bomId) {
-        return bomSvc.getBomDetail(bomId);
-    }
+@GetMapping("/bom/detail/{bomId}")
+public BomVO getBomDetailById(@PathVariable String bomId) {
+    return bomSvc.getBomDetail(bomId);
+}
 
-    @DeleteMapping("/bom/{bomId}")
-    public int deleteBom(@PathVariable String bomId) {
-        return bomSvc.deleteBom(bomId);
-    }
+@DeleteMapping("/bom/{bomId}")
+public int deleteBom(@PathVariable String bomId) {
+    return bomSvc.deleteBomWithDetails(bomId); }
 
-    @PostMapping("/bom")
-    public int insertBom(@RequestBody BomVO bomVO) {
-        return bomSvc.insertBom(bomVO);
-    }
+@PostMapping("/bom")
+public int insertBom(@RequestBody BomVO bomVO) {
+    return bomSvc.insertBom(bomVO);
+}
 
-    @PutMapping("/bom/{bomId}")
-    public int updateBom(@PathVariable String bomId, @RequestBody BomVO bomVO) {
-        bomVO.setBomId(bomId);
-        return bomSvc.updateBom(bomVO);
-    }
+@PutMapping("/bom/{bomId}")
+public int updateBom(@PathVariable String bomId, @RequestBody BomVO bomVO) {
+    bomVO.setBomId(bomId);
+    return bomSvc.updateBom(bomVO);
+}
 
-    // =========================================================
-    // ================ Unit API ==============================
-    // =========================================================
-    @GetMapping("/unit")
-    public List<UnitVO> getUnitList(
-            @RequestParam(required = false) String unitId,
-            @RequestParam(required = false) String unitName) {
-        return unitSvc.getUnitList();
+// =========================================================
+// === BOM + BOM_DETAIL 함께 등록/수정 ======================
+// =========================================================
+@Data
+public static class BomWithDetailReq {
+    private BomVO bom;
+    private List<com.yedam.scm.vo.BomDetailVO> details;
+}
+
+@PostMapping("/bom/with-detail")
+public ResponseEntity<Map<String, Object>> insertBomWithDetails(@RequestBody BomWithDetailReq req) {
+    Map<String, Object> result = new HashMap<>();
+    try {
+        bomSvc.insertBomWithDetails(req.getBom(), req.getDetails());
+        result.put("status", "success");
+        return ResponseEntity.ok(result);
+    } catch (Exception e) {
+        e.printStackTrace();
+        result.put("status", "error");
+        result.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
     }
+}
+
+@PutMapping("/bom/with-detail/{bomId}")
+public ResponseEntity<Map<String, Object>> updateBomWithDetails(
+        @PathVariable String bomId,
+        @RequestBody BomWithDetailReq req) {
+
+    Map<String, Object> result = new HashMap<>();
+    try {
+        req.getBom().setBomId(bomId);
+        bomSvc.updateBomWithDetails(req.getBom(), req.getDetails());
+        result.put("status", "success");
+        return ResponseEntity.ok(result);
+    } catch (Exception e) {
+        e.printStackTrace();
+        result.put("status", "error");
+        result.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+    }
+}
+
+
+    
 
     // =========================================================
     // ================ Vendor API ============================
@@ -399,25 +436,51 @@ public class SwController {
     }
     
     // 출고 프로시저
+@PostMapping("/mat/issue/issue-by-proc")
+public ResponseEntity<Map<String, Object>> executeIssue(@RequestBody List<MatIssueLineResult> requests) {
+    Map<String, Object> response = new HashMap<>();
 
-    @PostMapping("/mat/issue/issue-by-proc")
-    public ResponseEntity<String> executeIssue(@RequestBody List<MatIssueLineResult> requests) {
-        try {
-            for (MatIssueLineResult req : requests) {
-                System.out.println("출고 요청 plDetId=" + req.getPlDetId() +
-                                   ", matId=" + req.getMatId() +
-                                   ", reqQty=" + req.getReqQty() +
-                                   ", managerId=" + req.getManagerId());
-                issueService.executeMatLotIssue(req);
-            }
-            return ResponseEntity.ok("출고 완료");
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body("오류 발생: " + e.getMessage());
+    try {
+        for (MatIssueLineResult req : requests) {
+            System.out.println("출고 요청 plDetId=" + req.getPlDetId() +
+                               ", matId=" + req.getMatId() +
+                               ", reqQty=" + req.getReqQty() +
+                               ", managerId=" + req.getManagerId());
+            issueService.executeMatLotIssue(req);
         }
+
+        response.put("status", "success");
+        response.put("message", "출고가 완료되었습니다.");
+        return ResponseEntity.ok(response);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        String msg = e.getMessage();
+        String cleanMsg = "출고 처리 중 시스템 오류가 발생했습니다.";
+
+        if (msg != null) {
+            //ORA-20xxx 에러 메시지 중 첫 줄만 추출
+            java.util.regex.Matcher matcher = java.util.regex.Pattern
+                    .compile("ORA-20\\d{3}:\\s*(.*)")
+                    .matcher(msg);
+
+            if (matcher.find()) {
+                cleanMsg = matcher.group(1).trim();
+                // 여러 줄일 경우 첫 줄만 표시
+                int newLineIdx = cleanMsg.indexOf('\n');
+                if (newLineIdx > 0) {
+                    cleanMsg = cleanMsg.substring(0, newLineIdx).trim();
+                }
+            }
+        }
+
+        response.put("status", "error");
+        response.put("message", cleanMsg);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
+}
+
+
 
 }
 

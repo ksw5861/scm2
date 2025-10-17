@@ -96,13 +96,12 @@ public class DwController {
 
     // @PostMapping("/approval/approve")
     // public Map<String, Object> approve(@RequestBody Map<String, Object> body) {
-    //     @SuppressWarnings("unchecked")
-    //     List<String> odetailIds = (List<String>) body.get("odetailIds");
-    //     int cnt = service.approveDetails(odetailIds);
-    //     return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
+    // @SuppressWarnings("unchecked")
+    // List<String> odetailIds = (List<String>) body.get("odetailIds");
+    // int cnt = service.approveDetails(odetailIds);
+    // return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
     // }
 
-    
     @PostMapping("/approval/approve")
     public Map<String, Object> approve(@RequestBody Map<String, Object> body) {
         @SuppressWarnings("unchecked")
@@ -111,7 +110,7 @@ public class DwController {
         return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
     }
 
-        //기존 반려 프로시저 잠깐주석
+    // 기존 반려 프로시저 잠깐주석
     @PostMapping("/approval/reject")
     public Map<String, Object> reject(@RequestBody Map<String, Object> body) {
         @SuppressWarnings("unchecked")
@@ -119,12 +118,6 @@ public class DwController {
         int cnt = service.approveOrderWithProc(odetailIds, "반려");
         return Map.of("retCode", cnt > 0 ? "success" : "fail", "count", cnt);
     }
-
-
-  
-
-
-
 
     /* ===================== 반품승인 ===================== */
 
@@ -196,7 +189,6 @@ public class DwController {
         return ResponseEntity.ok(result);
     }
 
-
     // 대시보드
     @GetMapping("/account-dash")
     public ResponseEntity<Map<String, Object>> getDashboard() {
@@ -205,8 +197,5 @@ public class DwController {
         result.put("items", service.getDashboardList());
         return ResponseEntity.ok(result);
     }
-
-
-
 
 }// end

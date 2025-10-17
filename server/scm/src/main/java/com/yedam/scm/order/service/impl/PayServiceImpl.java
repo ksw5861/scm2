@@ -97,8 +97,8 @@ public class PayServiceImpl implements PayService {
     // 결제 대기중인 주문 조회
     // =============================================================
     @Override
-    public List<SalesOrderVO> selectPendingOrders() {
-        return payMapper.selectPendingOrders();
+    public List<SalesOrderVO> selectPendingOrders(String vendorId) {
+        return payMapper.selectPendingOrders(vendorId);
     }
 
     // =============================================================

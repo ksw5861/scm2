@@ -8,7 +8,7 @@ import matUnload from "./ms/matUnload";
 
 const logistics = {
   label: '물류 관리',
-  items: [materialReceip, matUnload, matOutboundRegistration, productInbound, shipPlan, shipRegister]
+  items: [matUnload, materialReceip, matOutboundRegistration, productInbound, shipPlan, shipRegister]
 };
 
 export default logistics;

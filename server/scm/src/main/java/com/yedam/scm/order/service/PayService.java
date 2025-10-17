@@ -31,7 +31,7 @@ public interface PayService {
     // =============================================================
     // 결제 대기중인 주문 목록 조회
     // =============================================================
-    List<SalesOrderVO> selectPendingOrders();
+    List<SalesOrderVO> selectPendingOrders(String vendorId);
 
     // =============================================================
     // 주문 상태 COMPLETE 업데이트

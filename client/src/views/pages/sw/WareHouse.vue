@@ -61,7 +61,7 @@ const mode = ref('create'); // create | view | edit
 const loading = ref(false);
 
 /* 페이징/컬럼 (간단 처리) */
-const page = ref({ page: 1, size: 10, totalElements: 0 });
+const page = ref({ page: 1, size: 6, totalElements: 0 });
 const columns = [
   { label: '창고코드', field: 'whId', sortable: true },
   { label: '창고명', field: 'whName', sortable: true },

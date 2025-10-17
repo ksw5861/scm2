@@ -3,12 +3,46 @@
 - 거래처원장 요약 및 그래프 페이지
 ====================================================== -->
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import Chart from 'chart.js/auto';
 import { useAppToast } from '@/composables/useAppToast';
+import { useRoute } from 'vue-router';
+import { useIcon } from '@/composables/useIcon';
 
 const { toast } = useAppToast();
+const route = useRoute();
+
+const icons = {
+  info: useIcon('info'),
+  add: useIcon('add'),
+  edit: useIcon('edit'),
+  list: useIcon('list'),
+  employee: useIcon('employee'),
+  phone: useIcon('phone'),
+  email: useIcon('email'),
+  calendar: useIcon('calendar'),
+  id: useIcon('id'),
+  home: useIcon('home'),
+  cancel: useIcon('cancel'),
+  delete: useIcon('delete'),
+  refresh: useIcon('refresh'),
+  save: useIcon('save'),
+  register: useIcon('register'),
+  address: useIcon('address'),
+};
+
+/* breadcrumbH */
+const breadcrumbHome = { icon: icons.home, to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter(r => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  return [
+    { label: '홈' },
+    { label: '대시보드' }
+  ];
+});
 
 /* 상태 */
 const summary = ref({ totalPrice: 0, returnPrice: 0, totalPayment: 0, totalAr: 0 });
@@ -44,8 +78,8 @@ function renderDonutChart() {
   donutChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['총매출', '총반품', '총입금', '총미수금'],
-      datasets: [{ data: [summary.value.totalPrice, summary.value.returnPrice, summary.value.totalPayment, summary.value.totalAr], backgroundColor: ['#1976d2', '#d32f2f', '#388e3c', '#ff9800'] }]
+      labels: ['총 입금', '총 미수금'],
+      datasets: [{ data: [summary.value.totalPayment, summary.value.totalAr], backgroundColor: ['#4BAF7D', '#D84C4C'] }]
     },
     options: { plugins: { legend: { position: 'bottom' } } }
   });
@@ -59,10 +93,10 @@ function renderBarChart() {
   barChart = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: top5.map(v => v.companyName),
+      labels: top5.map((v) => v.companyName),
       datasets: [
-        { label: '총매출', data: top5.map(v => v.totalPrice), backgroundColor: '#1976d2' },
-        { label: '미수금', data: top5.map(v => v.totalAr), backgroundColor: '#ff9800' }
+        { label: '매출', data: top5.map((v) => v.totalPrice), backgroundColor: '#1976d2' },
+        { label: '미수금', data: top5.map((v) => v.totalAr), backgroundColor: '#ff9800' }
       ]
     },
     options: { plugins: { legend: { position: 'bottom' } } }
@@ -74,20 +108,28 @@ onMounted(() => loadDashboard());
 
 <template>
   <Fluid>
-    <div class="flex gap-4">
-      <div class="card" v-for="(v, i) in [
-        {label:'총매출', val:summary.totalPrice},
-        {label:'총반품', val:summary.returnPrice},
-        {label:'총입금', val:summary.totalPayment},
-        {label:'총미수금', val:summary.totalAr}
-      ]" :key="i" style="width:25%;">
-        <p>{{ v.label }}</p><h4>{{ fmt(v.val) }}</h4>
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <div class="flex gap-4 mt-4">
+
+      <div
+        class="card"
+        v-for="(v, i) in [
+          { label: '총매출', val: summary.totalPrice },
+          { label: '총반품', val: summary.returnPrice },
+          { label: '총입금', val: summary.totalPayment },
+          { label: '총미수금', val: summary.totalAr }
+        ]"
+        :key="i"
+        style="width: 25%; height: 128px; margin-bottom: 0;"
+      >
+        <p>{{ v.label }}</p>
+        <h4>{{ fmt(v.val) }}</h4>
       </div>
     </div>
 
     <div class="flex gap-4 mt-4">
-      <div class="card w-1/3"><canvas ref="chartRefDonut"></canvas></div>
-      <div class="card w-2/3"><canvas ref="chartRefBar"></canvas></div>
+      <div class="card w-1/3" style="margin-bottom: 0;"><canvas ref="chartRefDonut"></canvas></div>
+      <div class="card w-2/3" style="margin-bottom: 0;"><canvas ref="chartRefBar"></canvas></div>
     </div>
   </Fluid>
 </template>

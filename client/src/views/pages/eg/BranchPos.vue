@@ -1,6 +1,6 @@
 <template>
   <div class="pos-dashboard">
-    <!-- 상단 탭 -->
+    <!-- 탭 -->
     <div class="tab-container">
       <Button
         v-for="tab in tabs"
@@ -12,22 +12,27 @@
       />
     </div>
 
-    <!-- ====================== 탭1 : 매출 발생 ====================== -->
+    <!-- ================== 탭1: 매출 발생 ================== -->
     <div v-if="activeTab === '매출 발생'" class="tab-content">
       <div class="pos-body">
         <!-- 상품 리스트 -->
-        <div class="product-section">
-          <div class="product-list">
-            <div
-              v-for="item in filteredProducts"
-              :key="item.id"
-              class="product-card"
-              @click="addToOrder(item)"
-            >
+        <div class="product-list">
+          <div
+            v-for="(item, index) in filteredProducts"
+            :key="item.id"
+            class="product-card"
+            :class="{ empty: item.posShowYn === 'N' }"
+            @click="addToOrder(item)"
+          >
+            <template v-if="item.posShowYn === 'Y'">
+              <div class="product-index">{{ index + 1 }}</div>
               <div class="product-name">{{ item.name }}</div>
               <div class="product-price">{{ item.price.toLocaleString() }}원</div>
               <div class="product-stock">재고: {{ item.stock }}</div>
-            </div>
+            </template>
+            <template v-else>
+              <div class="empty-cell">—</div>
+            </template>
           </div>
         </div>
 
@@ -93,19 +98,25 @@
       </div>
     </div>
 
-    <!-- ====================== 탭2 : 매출 내역 ====================== -->
+    <!-- ================== 탭2: 매출 내역 ================== -->
     <div v-else-if="activeTab === '매출 내역'" class="tab-content">
       <div class="sales-header">
         <div class="stat-card">
           <h3>오늘 총 매출</h3>
           <p class="value">{{ totalSales.toLocaleString() }}원</p>
-          <p class="diff">+12.5% vs 어제</p>
+          <p class="diff" :class="{ up: salesChange > 0, down: salesChange < 0 }">
+            {{ salesChange > 0 ? '+' : '' }}{{ salesChange }}% vs 어제
+          </p>
         </div>
+
         <div class="stat-card">
           <h3>주문 건수</h3>
-          <p class="value">{{ salesList.length }}건</p>
-          <p class="diff">+3건 vs 어제</p>
+          <p class="value">{{ todayCount }}건</p>
+          <p class="diff" :class="{ up: countChange > 0, down: countChange < 0 }">
+            {{ countChange > 0 ? '+' : '' }}{{ countChange }}건 vs 어제
+          </p>
         </div>
+
         <div class="stat-card">
           <h3>평균 주문금액</h3>
           <p class="value">{{ avgOrder.toLocaleString() }}원</p>
@@ -119,34 +130,32 @@
       </div>
 
       <DataTable :value="filteredSales" class="sales-table" responsiveLayout="scroll">
-        <Column field="orderNo" header="주문번호" />
-        <Column field="date" header="일시" />
-        <Column field="count" header="상품수" />
-        <Column field="amount" header="금액">
+        <Column field="saleId" header="주문번호" />
+        <Column field="saleDate" header="일시" />
+        <Column field="saleTotalAmount" header="금액">
           <template #body="{ data }">
-            <span class="price">{{ data.amount.toLocaleString() }}원</span>
+            <span class="price">{{ data.saleTotalAmount.toLocaleString() }}원</span>
           </template>
         </Column>
-        <Column field="method" header="결제방법">
+        <Column field="salePayType" header="결제방법">
           <template #body="{ data }">
-            <span class="method">{{ data.method }}</span>
-          </template>
-        </Column>
-        <Column field="status" header="상태">
-          <template #body>
-            <Tag severity="success" value="완료" />
+            <span class="method">
+              {{ data.salePayType === 'CARD' ? '카드' : '현금' }}
+            </span>
           </template>
         </Column>
       </DataTable>
     </div>
 
-    <!-- ====================== 탭3 : 월별 매출 ====================== -->
-    <div v-if="activeTab === '월별 매출'" class="tab-content">
+    <!-- ================== 탭3: 월별 매출 ================== -->
+    <div v-else-if="activeTab === '월별 매출'" class="tab-content">
       <div class="month-header">
         <div class="stat-card">
           <h3>월 총 매출</h3>
-          <p class="value">{{ monthlyTotal.toLocaleString() }}원</p>
-          <p class="diff">+12.5% vs 전월</p>
+          <p class="value">{{ monthlySummary.total.toLocaleString() }}원</p>
+          <p class="diff" :class="{ up: monthlyChange > 0, down: monthlyChange < 0 }">
+            {{ monthlyChange > 0 ? '+' : '' }}{{ monthlyChange }}% vs 전월
+          </p>
         </div>
         <div class="stat-card">
           <h3>일평균 매출</h3>
@@ -155,7 +164,7 @@
         </div>
         <div class="stat-card">
           <h3>영업일수</h3>
-          <p class="value">{{ workingDays }}일</p>
+          <p class="value">{{ monthlySummary.workingDays }}일</p>
           <p class="diff">이번 달</p>
         </div>
       </div>
@@ -187,11 +196,7 @@
                 {{ day.day }}
                 <span v-if="day.holiday" class="holiday-text">({{ day.holiday }})</span>
               </div>
-
-              <!-- 매출 표시 -->
-              <div class="day-sales">
-                {{ day.sales.toLocaleString() }}원
-              </div>
+              <div class="day-sales">{{ day.sales.toLocaleString() }}원</div>
             </template>
           </div>
         </div>
@@ -201,174 +206,283 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from "vue"
+import { ref, computed, watch, onMounted } from "vue"
+import axios from "axios"
 import Button from "primevue/button"
 import InputText from "primevue/inputtext"
 import DataTable from "primevue/datatable"
 import Column from "primevue/column"
-import Tag from "primevue/tag"
-import axios from "axios"
 import { useUserStore } from "@/stores/user"
 
+/* =============================
+ 🇰🇷 공휴일 자동 생성 (양력 + 명절 하드코딩)
+============================= */
+
+// ✅ 1. 고정 양력 공휴일
+function generateFixedHolidays(startYear = 2000, endYear = 2100) {
+  const fixedDays = [
+    { month: 1, day: 1, name: "신정" },
+    { month: 3, day: 1, name: "삼일절" },
+    { month: 5, day: 5, name: "어린이날" },
+    { month: 6, day: 6, name: "현충일" },
+    { month: 8, day: 15, name: "광복절" },
+    { month: 10, day: 3, name: "개천절" },
+    { month: 10, day: 9, name: "한글날" },
+    { month: 12, day: 25, name: "성탄절" },
+  ]
+
+  const holidays = []
+  for (let year = startYear; year <= endYear; year++) {
+    for (const f of fixedDays) {
+      holidays.push({
+        date: `${year}-${String(f.month).padStart(2, "0")}-${String(f.day).padStart(2, "0")}`,
+        name: f.name,
+      })
+    }
+  }
+  return holidays
+}
+
+// ✅ 2. 명절 하드코딩 (매년 변하는 음력 명절 → 양력 변환값 반영)
+const fixedLunarHolidays = [
+  // 🧧 2025년 기준 (참고: 천문연구원 공휴일 데이터)
+  { date: "2025-01-28", name: "설날 연휴" },
+  { date: "2025-01-29", name: "설날" },
+  { date: "2025-01-30", name: "설날 연휴" },
+  { date: "2025-05-05", name: "석가탄신일" }, // 어린이날과 동일날
+  { date: "2025-10-06", name: "추석" },
+  { date: "2025-10-07", name: "추석 연휴" },
+  { date: "2025-10-08", name: "추석 연휴" },
+
+  // 2026년
+  { date: "2026-02-16", name: "설날 연휴" },
+  { date: "2026-02-17", name: "설날" },
+  { date: "2026-02-18", name: "설날 연휴" },
+  { date: "2026-05-24", name: "석가탄신일" },
+  { date: "2026-09-24", name: "추석 연휴" },
+  { date: "2026-09-25", name: "추석" },
+  { date: "2026-09-26", name: "추석 연휴" },
+]
+
+// ✅ 3. 전체 병합
+const fixedHolidays = [...generateFixedHolidays(2000, 2100), ...fixedLunarHolidays]
+
+console.log("✅ 총 공휴일:", fixedHolidays.length)
+
+/* =============================
+  💳 매출 발생
+============================= */
 const tabs = ["매출 발생", "매출 내역", "월별 매출"]
 const activeTab = ref("매출 발생")
+const userStore = useUserStore()
+const vendorId = userStore.code
 
-// 매출 발생 탭 -----------------
-const filter = ref("전체")
-const productList = ref(
-  Array.from({ length: 24 }).map((_, i) => ({
-    id: i + 1,
-    name: `상품 ${i + 1}`,
-    category: i % 2 === 0 ? "원두" : "부자재",
-    price: 20000 + (i % 5) * 2000,
-    stock: 50 + i * 2
-  }))
-)
+const productList = ref([])
 const orderList = ref([])
 const paymentMethod = ref("")
 
-const filteredProducts = computed(() =>
-  filter.value === "전체" ? productList.value : productList.value.filter((p) => p.category === filter.value)
-)
-const addToOrder = (item) => {
-  const found = orderList.value.find((o) => o.id === item.id)
-  if (found) found.qty++
-  else orderList.value.push({ ...item, qty: 1 })
+const fetchPosProducts = async () => {
+  const { data } = await axios.get("/api/sales/margin/list")
+  productList.value = data.sort((a, b) => a.sortNo - b.sortNo).map((p) => ({
+    id: p.saleProdId,
+    name: p.saleProdName,
+    price: p.saleProdPrice,
+    stock: 999,
+    posShowYn: p.posShowYn,
+  }))
 }
-const increaseQty = (order) => order.qty++
-const decreaseQty = (order) => (order.qty > 1 ? order.qty-- : removeOrder(order.id))
+onMounted(fetchPosProducts)
+
+const filteredProducts = computed(() => productList.value)
+const addToOrder = (item) => {
+  if (item.posShowYn === "N") return
+  const found = orderList.value.find((o) => o.id === item.id)
+  found ? found.qty++ : orderList.value.push({ ...item, qty: 1 })
+}
+const increaseQty = (o) => o.qty++
+const decreaseQty = (o) => (o.qty > 1 ? o.qty-- : removeOrder(o.id))
 const removeOrder = (id) => (orderList.value = orderList.value.filter((o) => o.id !== id))
 const subTotal = computed(() => orderList.value.reduce((sum, o) => sum + o.price * o.qty, 0))
 const tax = computed(() => Math.round(subTotal.value * 0.1))
 const total = computed(() => subTotal.value + tax.value)
-
 const handlePayment = async () => {
-  if (!paymentMethod.value) return alert("결제 방식을 선택해주세요 💳💵")
-  if (orderList.value.length === 0) return alert("상품을 선택해주세요 🛍️")
-
-  try {
-    // 1️⃣ 마스터 데이터 구성
-    const masterData = {
-      sdetailId: null,
-      saleTotalPrice: total.value,
-      salePayType: paymentMethod.value === "card" ? "CARD" : "CASH",
-      vendorId: useUserStore.code // 매장 ID (로그인 정보 기반으로 대체 가능)
-    }
-
-    // 2️⃣ 상세 데이터 구성
-    const detailList = orderList.value.map((o) => ({
+  if (!paymentMethod.value) return alert("결제 방식을 선택해주세요")
+  const payload = {
+    salesDetails: orderList.value.map((o) => ({
       saleProdId: o.id,
       saleProdName: o.name,
-      saleProdPrice: o.price,
       saleQty: o.qty,
-      saleMargin: 0, // 필요시 계산
-      saleUnitPrice: o.price
-    }))
+      saleProdPrice: o.price,
+      prodUnitPrice: o.price,
+      saleMargin: 0,
+    })),
+    salePayType: paymentMethod.value === "card" ? "CARD" : "CASH",
+    saleTotalAmount: total.value,
+    vendorId,
+  }
+  await axios.post("/api/sales/register", payload)
+  alert("✅ 결제가 완료되었습니다!")
+  orderList.value = []
+  paymentMethod.value = ""
+}
 
-    // 3️⃣ 서버 전송 (MyBatis 매퍼 연결된 컨트롤러로)
-    const response = await axios.post("/sales/register", {
-      master: masterData,
-      details: detailList
-    })
+/* =============================
+  📊 매출 내역
+============================= */
+const salesList = ref([])
+const search = ref("")
+const dailySummary = ref({})
 
-    // 4️⃣ 성공 처리
-    if (response.data?.result === "success") {
-      alert(`✅ ${paymentMethod.value === "card" ? "카드" : "현금"} 결제가 완료되었습니다!\n총 금액: ${total.value.toLocaleString()}원`)
-      orderList.value = []
-      paymentMethod.value = ""
-    } else {
-      alert("❌ 결제 저장 중 오류가 발생했습니다.")
-    }
+const fetchDailySummary = async () => {
+  try {
+    const { data } = await axios.get("/api/sales/daily-summary", { params: { vendorId } })
+    dailySummary.value = data
   } catch (err) {
-    console.error(err)
-    alert("서버 통신 중 오류가 발생했습니다 ⚠️")
+    console.error("❌ 일별 요약 조회 실패:", err)
   }
 }
 
-// 매출 내역 탭 -----------------
-const salesList = ref([
-  { orderNo: "ORD-20231015-001", date: "2025-10-15 14:23", count: 5, amount: 125000, method: "카드" },
-  { orderNo: "ORD-20231015-002", date: "2025-10-15 15:45", count: 3, amount: 89000, method: "현금" },
-  { orderNo: "ORD-20231015-003", date: "2025-10-15 16:12", count: 8, amount: 234000, method: "카드" },
-  { orderNo: "ORD-20231014-045", date: "2025-10-14 18:30", count: 4, amount: 102000, method: "카드" }
-])
-const totalSales = computed(() => salesList.value.reduce((sum, s) => sum + s.amount, 0))
-const avgOrder = computed(() => Math.round(totalSales.value / salesList.value.length))
-const search = ref("")
-const filteredSales = computed(() =>
-  salesList.value.filter((s) => s.orderNo.toLowerCase().includes(search.value.toLowerCase()))
+const salesChange = computed(() => {
+  const today = Number(dailySummary.value.today || 0)
+  const yesterday = Number(dailySummary.value.yesterday || 0)
+  if (!yesterday) return 0
+  return (((today - yesterday) / yesterday) * 100).toFixed(1)
+})
+
+const countChange = computed(() => {
+  const todayCount = Number(dailySummary.value.todayCount || 0)
+  const yesterdayCount = Number(dailySummary.value.yesterdayCount || 0)
+  return todayCount - yesterdayCount
+})
+
+const todaySales = computed(() => Number(dailySummary.value.today || 0))
+const todayCount = computed(() => Number(dailySummary.value.todayCount || 0))
+
+const fetchSalesHistory = async () => {
+  try {
+    const { data } = await axios.get("/api/sales/history", { params: { vendorId } })
+    salesList.value = data
+  } catch (err) {
+    console.error("❌ 매출내역 조회 실패:", err)
+  }
+}
+
+const filteredSales = computed(() => {
+  if (!search.value) return salesList.value
+  return salesList.value.filter((s) =>
+    s.saleId?.toLowerCase().includes(search.value.toLowerCase())
+  )
+})
+
+const totalSales = computed(() =>
+  salesList.value.reduce((sum, s) => sum + (s.saleTotalAmount || 0), 0)
+)
+const avgOrder = computed(() =>
+  salesList.value.length ? Math.round(totalSales.value / salesList.value.length) : 0
 )
 
-// 월별 매출 탭 -----------------
+/* =============================
+  📅 월별 매출
+============================= */
+const monthlySummary = ref({
+  total: 0,
+  workingDays: 0,
+  lastMonthTotal: 0,
+  dailySales: [],
+})
+
+const monthlyChange = computed(() => {
+  const { total, lastMonthTotal } = monthlySummary.value
+  if (!lastMonthTotal || lastMonthTotal === 0) return 0
+  return (((total - lastMonthTotal) / lastMonthTotal) * 100).toFixed(1)
+})
+
+const dailyAvg = computed(() =>
+  monthlySummary.value.workingDays
+    ? Math.round(monthlySummary.value.total / monthlySummary.value.workingDays)
+    : 0
+)
+
 const today = new Date()
 const year = ref(today.getFullYear())
 const month = ref(today.getMonth())
-
-const holidays = [
-  { date: "2025-01-01", name: "신정" },
-  { date: "2025-01-28", name: "설날 연휴" },
-  { date: "2025-01-29", name: "설날" },
-  { date: "2025-01-30", name: "설날 연휴" },
-  { date: "2025-03-01", name: "삼일절" },
-  { date: "2025-05-05", name: "어린이날" },
-  { date: "2025-06-06", name: "현충일" },
-  { date: "2025-08-15", name: "광복절" },
-  { date: "2025-09-07", name: "추석 연휴" },
-  { date: "2025-09-08", name: "추석" },
-  { date: "2025-09-09", name: "추석 연휴" },
-  { date: "2025-10-03", name: "개천절" },
-  { date: "2025-12-25", name: "성탄절" }
-]
-
-
-const monthlyTotal = ref(7925000)
-const workingDays = ref(15)
-const dailyAvg = computed(() => Math.round(monthlyTotal.value / workingDays.value))
-
 const daysInMonth = ref([])
+
+const fetchMonthlySummary = async () => {
+  try {
+    const { data } = await axios.get("/api/sales/monthly-summary", {
+      params: { vendorId, year: year.value, month: month.value + 1 },
+    })
+    monthlySummary.value = data
+    generateCalendar()
+  } catch (err) {
+    console.error("❌ 월별 매출 요약 조회 실패:", err)
+  }
+}
 
 function generateCalendar() {
   const firstDay = new Date(year.value, month.value, 1).getDay()
   const lastDate = new Date(year.value, month.value + 1, 0).getDate()
-
+  const salesData = monthlySummary.value.dailySales || []
   const newDays = []
+
   for (let i = 0; i < firstDay; i++) newDays.push({ empty: true })
+
+  const normalizeDate = (str) => {
+    const [y, m, d] = str.split("-").map((v) => String(Number(v)))
+    return `${y}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`
+  }
 
   for (let d = 1; d <= lastDate; d++) {
     const dateObj = new Date(year.value, month.value, d)
-    const dateStr = dateObj.toISOString().split("T")[0]
+    const dateStr = `${year.value}-${String(month.value + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`
     const weekday = dateObj.getDay()
-    const holidayObj = holidays.find((h) => h.date === dateStr)
-    const sales = Math.floor(Math.random() * 400000) + 300000
+
+    const holidayObj = fixedHolidays.find(
+      (h) => normalizeDate(h.date) === normalizeDate(dateStr)
+    )
+    const found = salesData.find(
+      (s) => s.SALE_DATE_STR === dateStr || s.sale_date_str === dateStr
+    )
+    const sales = found ? found.AMOUNT || found.amount || 0 : 0
 
     newDays.push({
       day: d,
       weekday,
       date: dateStr,
       sales,
-      holiday: holidayObj ? holidayObj.name : null
+      holiday: holidayObj ? holidayObj.name : null,
     })
   }
-
   daysInMonth.value = newDays
 }
-
-watch([year, month], generateCalendar, { immediate: true })
 
 const prevMonth = () => {
   if (month.value === 0) {
     month.value = 11
     year.value--
   } else month.value--
+  fetchMonthlySummary()
 }
+
 const nextMonth = () => {
   if (month.value === 11) {
     month.value = 0
     year.value++
   } else month.value++
+  fetchMonthlySummary()
 }
-</script>
 
+watch(activeTab, (tab) => {
+  if (tab === "매출 내역") {
+    fetchSalesHistory()
+    fetchDailySummary()
+  }
+  if (tab === "월별 매출") {
+    fetchMonthlySummary()
+  }
+})
+</script>
 
 <style scoped>
 .pos-dashboard {
@@ -418,6 +532,20 @@ const nextMonth = () => {
 .product-card:hover {
   border-color: #007ad9;
 }
+.product-card.empty {
+  background-color: #f8f8f8;
+  border: 1px dashed #ccc;
+  cursor: default;
+}
+.product-card.empty:hover {
+  border-color: #ccc;
+}
+.empty-cell {
+  text-align: center;
+  color: #bbb;
+  font-size: 1.2rem;
+  margin-top: 1.8rem;
+}
 .order-panel {
   border: 1px solid #eee;
   border-radius: 12px;
@@ -463,6 +591,12 @@ const nextMonth = () => {
 }
 
 /* 매출 내역 (탭2) */
+.diff.up {
+  color: #2ecc71; /* 상승: 초록색 */
+}
+.diff.down {
+  color: #e74c3c; /* 하락: 빨간색 */
+}
 .sales-header {
   display: flex;
   gap: 1rem;

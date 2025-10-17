@@ -47,27 +47,16 @@ const productDetail = reactive({
   spec: '',
   unit: '',
   safeStock: '',
-  status: '', // 사용/미사용
-  exp: '',
-  prodUnitPrice: ''
-});
-
-const productForm = reactive({
-  prodId: '',
-  prodName: '',
-  prodStoreCond: '',
-  spec: '',
-  unit: '',
-  safeStock: '',
   status: '',
   exp: '',
   prodUnitPrice: ''
 });
 
-const mode = ref('create'); // create | view | edit
+const productForm = reactive({ ...productDetail });
+const mode = ref('create');
 const loading = ref(false);
 
-// 페이징 / 컬럼
+// 페이지네이션 (프론트 전용)
 const page = ref({ page: 1, size: 10, totalElements: 0 });
 const columns = [
   { label: '제품코드', field: 'prodId', sortable: true },
@@ -75,7 +64,23 @@ const columns = [
   { label: '상태', field: 'status' }
 ];
 
-// API: 목록
+// 프론트 페이징용 slice
+const pagedProducts = computed(() => {
+  const start = (page.value.page - 1) * page.value.size;
+  const end = start + page.value.size;
+  return products.value.slice(start, end);
+});
+
+const maxPages = computed(() => Math.max(1, Math.ceil((page.value.totalElements || 0) / page.value.size)));
+
+// 페이지 변경
+const handlePageChange = ({ page: newPage, size: newSize }) => {
+  page.value.page = newPage;
+  page.value.size = newSize;
+  if (page.value.page > maxPages.value) page.value.page = maxPages.value;
+};
+
+// API: 목록 (서버 페이징 X)
 const fetchProductList = async () => {
   loading.value = true;
   try {
@@ -83,18 +88,16 @@ const fetchProductList = async () => {
       prodId: searchParams.prodId || undefined,
       prodName: searchParams.prodName || undefined,
       status: searchParams.status || undefined,
-      unit: searchParams.unit || undefined,
-      page: page.value.page,
-      size: page.value.size
+      unit: searchParams.unit || undefined
     };
     const res = await axios.get('/api/product', { params });
-    const payload = Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.items ?? []);
-    products.value = payload;
-    page.value.totalElements = res.data?.page?.totalElements ?? products.value.length;
+    const data = Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.items ?? []);
+    products.value = data;
+    page.value.totalElements = products.value.length;
 
-    if (selectedProduct.value) {
-      const found = products.value.find((p) => (p.prodId ?? p.PROD_ID) === (selectedProduct.value.prodId ?? selectedProduct.value.PROD_ID));
-      if (!found) handleUnselect();
+    // 현재 페이지가 비면 앞쪽 페이지로 보정
+    if (products.value.length > 0 && pagedProducts.value.length === 0) {
+      page.value.page = maxPages.value;
     }
   } catch (e) {
     console.error('fetchProductList error', e);
@@ -129,7 +132,7 @@ const fetchProductDetail = async (id) => {
       Object.keys(productDetail).forEach((k) => (productDetail[k] = ''));
       Object.keys(productForm).forEach((k) => (productForm[k] = ''));
       selectedProduct.value = null;
-      mode.value = 'view';
+      mode.value = 'create';
     }
   } catch (e) {
     console.error('fetchProductDetail error', e);
@@ -164,8 +167,7 @@ const addProduct = async () => {
 const modifyProduct = async () => {
   if (!productDetail.prodId) return toast('warn', '수정 실패', '수정할 제품을 선택하세요.');
   try {
-    const payload = { ...productForm };
-    const res = await axios.put(`/api/product/${productDetail.prodId}`, payload);
+    await axios.put(`/api/product/${productDetail.prodId}`, productForm);
     toast('success', '수정 성공', '제품 정보가 수정되었습니다.');
     await fetchProductList();
     await fetchProductDetail(productDetail.prodId);
@@ -189,12 +191,10 @@ const deleteProduct = async () => {
     await fetchProductList();
   } catch (e) {
     console.error('deleteProduct error', e);
-
-    // 409 Conflict 응답 처리
     if (e.response?.status === 409) {
       toast('warn', '삭제 불가', e.response.data?.message || '다른 테이블에서 사용 중인 제품입니다.');
     } else {
-      toast('error', '삭제 실패', '자재 삭제 중 오류가 발생했습니다.');
+      toast('error', '삭제 실패', '제품 삭제 중 오류가 발생했습니다.');
     }
   }
 };
@@ -206,18 +206,13 @@ const handleRowSelect = async (row) => {
   await fetchProductDetail(id);
   mode.value = 'view';
 };
-
 const handleUnselect = () => {
   selectedProduct.value = null;
   Object.keys(productDetail).forEach((k) => (productDetail[k] = ''));
   Object.keys(productForm).forEach((k) => (productForm[k] = ''));
   mode.value = 'create';
 };
-
-const handleEdit = () => {
-  mode.value = 'edit';
-};
-
+const handleEdit = () => (mode.value = 'edit');
 const handleResetForm = () => {
   if (mode.value === 'view' && productDetail.prodId) Object.assign(productForm, productDetail);
   else Object.keys(productForm).forEach((k) => (productForm[k] = ''));
@@ -226,7 +221,7 @@ const handleResetForm = () => {
 // 검색 / 초기화
 const handleSearch = () => {
   if (mode.value === 'edit') {
-    if (!confirm('현재 수정 중입니다. 조회하면 수정중인 내용이 사라집니다. 계속하시겠습니까?')) return;
+    if (!confirm('현재 수정 중입니다. 조회하면 수정 중인 내용이 사라집니다. 계속하시겠습니까?')) return;
   }
   page.value.page = 1;
   selectedProduct.value = null;
@@ -235,7 +230,6 @@ const handleSearch = () => {
   mode.value = 'create';
   fetchProductList();
 };
-
 const handleReset = () => {
   Object.assign(searchParams, { prodId: '', prodName: '', status: '', unit: '', exp: '', prodUnitPrice: '' });
   handleSearch();
@@ -259,7 +253,6 @@ onMounted(() => fetchProductList());
             </IftaLabel>
           </InputGroup>
         </div>
-
         <div class="p-2 w-full md:w-1/4">
           <InputGroup>
             <InputGroupAddon><i :class="iconId" /></InputGroupAddon>
@@ -269,8 +262,6 @@ onMounted(() => fetchProductList());
             </IftaLabel>
           </InputGroup>
         </div>
-
-        <!-- 상태 라디오 버튼 -->
         <div class="p-2 w-full md:w-1/4">
           <label class="block mb-1 text-sm">상태</label>
           <div class="flex gap-2 items-center">
@@ -292,13 +283,11 @@ onMounted(() => fetchProductList());
               제품 목록
             </div>
             <div class="text-sm text-gray-400">
-              총 <span class="font-semibold text-sm text-gray-700">{{ page.totalElements || products.length }}</span> 건
+              총 <span class="font-semibold text-sm text-gray-700">{{ page.totalElements }}</span> 건
             </div>
           </div>
-
           <Divider />
-
-          <DTable :columns="columns" :data="products" :page="page" :loading="loading" dataKey="prodId" v-model:selected="selectedProduct" @row-select="handleRowSelect" @row-unselect="handleUnselect" />
+          <DTable :columns="columns" :data="pagedProducts" :page="page" :loading="loading" dataKey="prodId" v-model:selected="selectedProduct" @row-select="handleRowSelect" @row-unselect="handleUnselect" @page-change="handlePageChange" />
         </div>
       </div>
 
@@ -310,7 +299,6 @@ onMounted(() => fetchProductList());
               <span :class="[mode === 'create' ? iconAdd : mode === 'edit' ? iconEdit : iconInfo, 'text-xl']"></span>
               {{ mode === 'create' ? '신규 제품 등록' : mode === 'edit' ? '제품 정보 수정' : '제품 상세 정보' }}
             </div>
-
             <div class="flex gap-2">
               <Btn v-if="mode === 'create'" icon="add" @click="addProduct" outlined>등록</Btn>
               <Btn v-if="mode === 'edit'" icon="save" @click="modifyProduct" outlined>저장</Btn>
@@ -319,9 +307,7 @@ onMounted(() => fetchProductList());
               <Btn icon="refresh" color="secondary" @click="handleResetForm" outlined>초기화</Btn>
             </div>
           </div>
-
           <Divider />
-
           <div class="w-full flex flex-row mb-2 gap-2">
             <div class="flex-1 ml-6 flex flex-col justify-center gap-0">
               <div class="font-light text-xs flex items-center gap-4 text-gray-500">
@@ -332,24 +318,10 @@ onMounted(() => fetchProductList());
               </div>
             </div>
           </div>
-
           <div class="grid grid-cols-2 gap-4 mb-4">
-            <div>
-              <label class="text-sm block mb-1">규격</label>
-              <InputText v-model="productForm.spec" class="w-full h-10" placeholder="규격" />
-            </div>
-
-            <div>
-              <label class="text-sm block mb-1">단위</label>
-              <InputText v-model="productForm.unit" class="w-full h-10" placeholder="단위" />
-            </div>
-
-            <div>
-              <label class="text-sm block mb-1">보관조건</label>
-              <InputText v-model="productForm.prodStoreCond" class="w-full h-10" placeholder="보관조건" />
-            </div>
-
-            <!-- 상태 라디오 버튼 -->
+            <div><label class="text-sm block mb-1">규격</label><InputText v-model="productForm.spec" class="w-full h-10" /></div>
+            <div><label class="text-sm block mb-1">단위</label><InputText v-model="productForm.unit" class="w-full h-10" /></div>
+            <div><label class="text-sm block mb-1">보관조건</label><InputText v-model="productForm.prodStoreCond" class="w-full h-10" /></div>
             <div>
               <label class="text-sm block mb-1">상태</label>
               <div class="flex gap-2 items-center">
@@ -357,21 +329,9 @@ onMounted(() => fetchProductList());
                 <label><input type="radio" value="N" v-model="productForm.status" /> 미사용</label>
               </div>
             </div>
-
-            <div>
-              <label class="text-sm block mb-1">만료일</label>
-              <InputText v-model="productForm.exp" class="w-full h-10" placeholder="만료일" />
-            </div>
-
-            <div>
-              <label class="text-sm block mb-1">단가</label>
-              <InputText v-model="productForm.prodUnitPrice" class="w-full h-10" placeholder="단가" />
-            </div>
-
-            <div>
-              <label class="text-sm block mb-1">제품코드</label>
-              <InputText v-model="productForm.prodId" class="w-full h-10" :disabled="true" placeholder="자동 생성" />
-            </div>
+            <div><label class="text-sm block mb-1">만료일</label><InputText v-model="productForm.exp" class="w-full h-10" /></div>
+            <div><label class="text-sm block mb-1">단가</label><InputText v-model="productForm.prodUnitPrice" class="w-full h-10" /></div>
+            <div><label class="text-sm block mb-1">제품코드</label><InputText v-model="productForm.prodId" class="w-full h-10" disabled /></div>
           </div>
         </div>
       </div>

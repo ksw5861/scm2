@@ -47,9 +47,14 @@ public class ReturnServiceImpl implements ReturnService {
     // 반품 목록 조회
     // =============================================================
     @Override
-    public List<ReturnVO> getReturnList(String startDate, String endDate,
-                                        String returnStatus,  String returnId) {
-        return returnMapper.getReturnList(startDate, endDate, returnStatus, returnId);
+    public List<ReturnVO> getReturnList(
+        String vendorId,
+        String startDate,
+        String endDate,
+        String returnStatus,
+        String returnId
+    ) {
+        return returnMapper.getReturnList(vendorId, startDate, endDate, returnStatus, returnId);
     }
 
     // =============================================================
