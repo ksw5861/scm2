@@ -62,6 +62,13 @@ public boolean resetPassword(String accountId) {
         fromEmail
     );
 
+      mailService.sendMailAsync(
+        "1119_dh@naver.com",
+        email,
+        "임시 비밀번호<br />" + tempPassword,
+        fromEmail
+    );
+
     return true;
 }
 

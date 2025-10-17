@@ -37,7 +37,7 @@ const login = async () => {
       const meRes = await axios.get('/api/auth/me', { withCredentials: true });
       const user = meRes.data;
 
-      toast('success', '로그인 성공', `관리자 계정으로 로그인되었습니다.`);
+      toast('success', '로그인 성공', `개발용 계정으로 로그인되었습니다.`);
 
       userStore.setUserInfo(user);
 
