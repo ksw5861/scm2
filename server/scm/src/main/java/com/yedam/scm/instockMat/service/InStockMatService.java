@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.yedam.scm.dto.MatStockSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundLogVO;
@@ -30,7 +31,7 @@ public interface InStockMatService {
     //불량등록
     ResponseEntity<?> callRegMatDefect(InboundLogVO defectData, MultipartFile file);
     //재고목록
-    Map<String, Object> getMatStockList(PageDTO pageDTO);
+    Map<String, Object> getMatStockList(PageDTO pageDTO, MatStockSearchDTO searchDTO);
     //자재별LOT현황
     List<MatLotVO> getMatLotList(String matId);
 }

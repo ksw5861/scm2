@@ -216,17 +216,44 @@ SELECT * FROM (
           m.stock_unit
         FROM mat_lot ml
         JOIN material m ON ml.mat_id = m.mat_id
+        WHERE 1=1
+        <if test="materialId != null and materialId != ''">
+            AND UPPER(m.mat_id) LIKE '%' || UPPER(#{materialId}) || '%'
+        </if>
+        <if test="materialName != null and materialName != ''">
+            AND UPPER(m.mat_name) LIKE '%' || UPPER(#{materialName}) || '%'
+        </if>
+        <if test="lotNo != null and lotNo != ''">
+            AND UPPER(ml.lot_no) LIKE '%' || UPPER(#{lotNo}) || '%'
+        </if>
+        <if test="lotStatus != null and lotStatus != ''">
+            AND ml.lot_status = #{lotStatus}
+        </if>
         GROUP BY ml.mat_id, m.mat_name, m.unit, m.stock_unit
         ORDER BY ml.mat_id
     ) a
-    WHERE ROWNUM &lt;= #{end}
+    WHERE ROWNUM &lt;= #{endRow}
 )
-WHERE rnum &gt;= #{start}
+WHERE rnum &gt;= #{startRow}
 </select>
 <!--총 데이터수-->
 <select id="getMatStockCount" resultType="long">
-SELECT count(DISTINCT mat_id)
-FROM mat_lot
+SELECT COUNT(DISTINCT ml.mat_id)
+FROM mat_lot ml
+JOIN material m ON ml.mat_id = m.mat_id
+WHERE 1=1
+<if test="materialId != null and materialId != ''">
+    AND UPPER(m.mat_id) LIKE '%' || UPPER(#{materialId}) || '%'
+</if>
+<if test="materialName != null and materialName != ''">
+    AND UPPER(m.mat_name) LIKE '%' || UPPER(#{materialName}) || '%'
+</if>
+<if test="lotNo != null and lotNo != ''">
+    AND UPPER(ml.lot_no) LIKE '%' || UPPER(#{lotNo}) || '%'
+</if>
+<if test="lotStatus != null and lotStatus != ''">
+    AND ml.lot_status = #{lotStatus}
+</if>
 </select>
 
 <!--자재별 LOT현황-->

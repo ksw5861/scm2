@@ -3,12 +3,12 @@ package com.yedam.scm.web;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.yedam.scm.dto.MatStockSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundLogVO;
-import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatLotVO;
 import com.yedam.scm.vo.MatStatusVO;
 import com.yedam.scm.vo.MatVendorVO;
@@ -149,8 +149,9 @@ public class MsController {
     //=============================================================================================재고part
     //자재재고현황
     @GetMapping("/matStockList")
-    public Map<String, Object> getMatStockList(PageDTO pageDTO) {
-        return inStockMatService.getMatStockList(pageDTO);
+    public ResponseEntity<Map<String, Object>> getMatStockList(MatStockSearchDTO searchDTO, PageDTO pageDTO) {
+        Map<String, Object> result = inStockMatService.getMatStockList(pageDTO, searchDTO);
+        return ResponseEntity.ok(result);
     }
     //자재별LOT현황
     @GetMapping("/matLotList")

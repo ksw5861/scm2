@@ -10,8 +10,13 @@ import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
+import { useUserStore } from '@/stores/user';
 
-// 반려처리방식!
+// Pinia Store
+const userStore = useUserStore();
+// const vendorId = userStore.code;
+const vendorId = ref('V800');
+const vendorName = ref('공급처담당자이름'); //공급처담당자이름으로 로그찍히니 변경xxx
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -27,8 +32,7 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const vendorName = ref('공급처담당자이름'); //공급처담당자이름으로 로그찍히니 변경xxx
-const vendorId = ref('V800'); //공급처코드
+
 const dateRange = ref({ start: null, end: null });
 const materialName = ref();
 const statusList = ref([]);
@@ -83,7 +87,7 @@ const approve = async () => {
     await axios.post('/api/supplier/approve', { purId: idList, name: vendorId.value });
     toast('info', '승인 성공', '주문 승인 성공:', '3000');
 
-    pageLoad();
+      fetchList();
   } catch (error) {
     toast('error', '승인 실패', '주문 승인 실패:', '3000');
   }

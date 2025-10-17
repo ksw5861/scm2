@@ -8,6 +8,12 @@ import { useIcon } from '@/composables/useIcon';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import CommonModal from '@/components/common/Modal.vue';
+import { useUserStore } from '@/stores/user';
+
+// Pinia Store
+const userStore = useUserStore();
+const empName = ref(userStore.name);
+const empId = ref(userStore.code);
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -32,7 +38,7 @@ const purchaseList = ref([
   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
 ]);
-const empName = ref('로그인');
+
 const warehouseOptions = ref([]);
 const codeMap = ref({}) //공통코드용
 

@@ -2,8 +2,6 @@ package com.yedam.scm.instockMat.service.impl;
 
 import java.io.File;
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.yedam.scm.config.FileUploadProperties;
+import com.yedam.scm.dto.MatStockSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.instockMat.mapper.InStockMatMapper;
 import com.yedam.scm.instockMat.service.InStockMatService;
@@ -88,18 +87,31 @@ public class InStockMatServiceImpl implements InStockMatService {
     }
 
     @Override
-    public Map<String, Object> getMatStockList(PageDTO pageDTO) {
-       
-       List<MatLotVO> list = mapper.getMatStockList(pageDTO.getStartRow(), pageDTO.getEndRow());
-       Long total = mapper.getMatStockCount();
+public Map<String, Object> getMatStockList(PageDTO pageDTO, MatStockSearchDTO searchDTO) {
 
-       pageDTO.updatePageInfo(total);
+    List<MatLotVO> list = mapper.getMatStockList(
+        pageDTO.getStartRow(),
+        pageDTO.getEndRow(),
+        searchDTO.getMaterialId(),
+        searchDTO.getMaterialName(),
+        searchDTO.getLotNo(),
+        searchDTO.getLotStatus()
+    );
 
-       Map<String, Object> result = new HashMap<>();
-       result.put("list", list);
-       result.put("page", pageDTO);
-       return result;
-    }
+    Long total = mapper.getMatStockCount(
+        searchDTO.getMaterialId(),
+        searchDTO.getMaterialName(),
+        searchDTO.getLotNo(),
+        searchDTO.getLotStatus()
+    );
+
+    pageDTO.updatePageInfo(total);
+
+    Map<String, Object> result = new HashMap<>();
+    result.put("list", list);
+    result.put("page", pageDTO);
+    return result;
+}
 
     @Override
     public List<MatLotVO> getMatLotList(String matId) {

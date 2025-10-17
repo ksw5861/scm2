@@ -1,5 +1,8 @@
 package com.yedam.scm.dto;
 
+import lombok.Data;
+
+@Data
 public class MatStockSearchDTO {
 
   //검색조건
@@ -7,6 +10,4 @@ public class MatStockSearchDTO {
   private String materialName;
   private String lotNo;
   private String lotStatus;
-
-  private PageDTO page;         // 페이징 정보
 }

@@ -30,10 +30,17 @@ public interface InStockMatMapper {
     void callRegMatDefect(InboundLogVO defectData);
     Long selectRecentSeq();
     void updateDefectImagePath(InboundLogVO defectData);
-    //재고목록
-    List<MatLotVO> getMatStockList(@Param("start")int start, @Param("end")int end);
-    //품목수량 for Pagenation
-    Long getMatStockCount();
+    List<MatLotVO> getMatStockList(@Param("startRow") int startRow,
+                                   @Param("endRow") int endRow,
+                                   @Param("materialId") String materialId,
+                                   @Param("materialName") String materialName,
+                                   @Param("lotNo") String lotNo,
+                                   @Param("lotStatus") String lotStatus);
+
+Long getMatStockCount(@Param("materialId") String materialId,
+                      @Param("materialName") String materialName,
+                      @Param("lotNo") String lotNo,
+                      @Param("lotStatus") String lotStatus);
     //자재별LOT목록
     List<MatLotVO> getMatLotList(@Param("matId") String matId);
 }

@@ -11,9 +11,13 @@ import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import FileUpload from 'primevue/fileupload';
 import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
+import { useUserStore } from '@/stores/user';
 
+// Pinia Store
+const userStore = useUserStore();
 const route = useRoute();
 const { toast } = useAppToast();
+console.log(userStore.name);
 
 // breadcrumb
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
@@ -26,7 +30,7 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const empName = ref('박길동');
+const empName = ref(userStore.name);
 //테이블 데이터
 const approveUnloadList = ref();
 const approveUnloadDetailList = ref([]);

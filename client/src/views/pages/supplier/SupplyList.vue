@@ -11,6 +11,14 @@ import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import Timeline from 'primevue/timeline';
 import Dialog from 'primevue/dialog';
+import { useUserStore } from '@/stores/user';
+
+// Pinia Store
+const userStore = useUserStore();
+// const vendorId = userStore.code;
+const vendorId = ref('V800');
+const vendorName = ref('홍길동'); //공급처담당자이름으로 로그찍히니 변경xxx
+
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -26,8 +34,6 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const vendorId = ref('V800');
-const vanEmpName = ref('홍길동');
 
 const events = ref(); //타임라인용!
 const statusList = ref();
