@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import InputText from 'primevue/inputtext';
@@ -56,7 +56,7 @@ const searchParams = reactive({
 });
 
 // 목록 / 선택 / 상세 / 폼 상태
-const materials = ref([]);
+const materials = ref([]); // 전체 데이터 (서버 페이징 X)
 const selectedMaterial = ref(null);
 const detail = reactive({
   matId: '',
@@ -76,28 +76,41 @@ const form = reactive({ ...detail });
 const mode = ref('create'); // create | view | edit
 const loading = ref(false);
 
-// pagination
-const page = ref({ page: 1, size: 10, totalElements: 0 });
+// pagination (프론트 전용)
+const page = ref({ page: 1, size: 6, totalElements: 0 });
 
-// DTable columns
+// 테이블 컬럼
 const columns = [
   { label: '자재ID', field: 'matId', sortable: true },
   { label: '자재명', field: 'matName', sortable: true },
   { label: '상태', field: 'status' }
 ];
 
+// ====== 프론트 페이징용 slice ======
+const pagedMaterials = computed(() => {
+  const start = (page.value.page - 1) * page.value.size;
+  const end = start + page.value.size;
+  return materials.value.slice(start, end);
+});
+
+// 현재 페이지가 최대 페이지를 넘어가면 보정
+const maxPages = computed(() => Math.max(1, Math.ceil((page.value.totalElements || 0) / page.value.size)));
+watch([() => page.value.page, () => page.value.size, () => page.value.totalElements], () => {
+  if (page.value.page > maxPages.value) page.value.page = maxPages.value;
+});
+
 // 중복 체크
 const isDuplicateName = (name) => {
   if (!name) return false;
   const normalize = (str) => str.replace(/\s+/g, '').toLowerCase();
   const inputName = normalize(name);
-  return materials.value.some((m) => normalize(m.matName) === inputName && (m.matId ?? m.MAT_ID) !== (detail.matId ?? detail.MAT_ID));
+  return materials.value.some((m) => normalize(m.matName ?? m.MAT_NAME) === inputName && (m.matId ?? m.MAT_ID) !== (detail.matId ?? detail.MAT_ID));
 };
 
 // 숫자만
 const sanitizeNumber = (val) => (val == null ? '' : String(val).replace(/[^0-9.]/g, ''));
 
-// API: 목록
+// API: 목록 (서버 페이징 X)
 const fetchList = async () => {
   loading.value = true;
   try {
@@ -106,18 +119,27 @@ const fetchList = async () => {
       matName: searchParams.matName || undefined,
       matType: searchParams.matType || undefined,
       matStoreCond: searchParams.matStoreCond || undefined,
-      status: searchParams.status || undefined,
-      page: page.value.page,
-      size: page.value.size
+      status: searchParams.status || undefined
+      // page, size 절대 안보냄 (프론트 페이징이므로)
     };
     const res = await axios.get('/api/material', { params });
-    const data = Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.items ?? []);
-    materials.value = data;
-    page.value.totalElements = res.data?.page?.totalElements ?? materials.value.length;
 
+    // 다양한 응답 형태 대응
+    const data = Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.items ?? []);
+
+    materials.value = data;
+    // 총 건수는 '실제 배열 길이'
+    page.value.totalElements = materials.value.length;
+
+    // 선택행이 목록에 없으면 해제
     if (selectedMaterial.value) {
       const found = materials.value.find((m) => (m.matId ?? m.MAT_ID) === (selectedMaterial.value.matId ?? selectedMaterial.value.MAT_ID));
       if (!found) handleUnselect();
+    }
+
+    // 현재 페이지가 비면 앞쪽 페이지로 보정 (예: 삭제 후 마지막 페이지 비는 경우)
+    if (materials.value.length > 0 && pagedMaterials.value.length === 0) {
+      page.value.page = maxPages.value;
     }
   } catch (e) {
     console.error('fetchList error', e);
@@ -125,6 +147,11 @@ const fetchList = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const handlePageChange = ({ page: newPage, size: newSize }) => {
+  page.value.page = newPage;
+  page.value.size = newSize;
 };
 
 // API: 상세
@@ -317,11 +344,7 @@ const saveVendor = async () => {
   try {
     const matId = selectedMaterial.value.matId ?? selectedMaterial.value.MAT_ID;
     if (vendorMode.value === 'create') {
-      // 등록
-      const payload = {
-        ...vendorForm,
-        matId
-      };
+      const payload = { ...vendorForm, matId };
       const { data } = await axios.post('/api/material/vendor', payload);
       if (data > 0 || data.status === 'success') {
         toast('success', '등록 성공', '거래처가 등록되었습니다.');
@@ -331,7 +354,6 @@ const saveVendor = async () => {
         toast('error', '등록 실패', '거래처 등록에 실패했습니다.');
       }
     } else {
-      // 수정
       if (!vendorForm.matVendorId) return toast('warn', '수정 실패', '수정할 거래처를 선택하세요.');
       await axios.put(`/api/material/vendor/${vendorForm.matVendorId}`, vendorForm);
       toast('success', '수정 성공', '거래처 정보가 수정되었습니다.');
@@ -363,7 +385,6 @@ const fetchVendorsByMaterial = async (matId) => {
   if (!matId) return;
   vendorLoading.value = true;
   try {
-    // MaterialVendorMapper.xml의 getMaterialVendorList와 연결됨
     const res = await axios.get(`/api/material/${matId}/vendor`);
     vendors.value = Array.isArray(res.data) ? res.data : [];
   } catch (e) {
@@ -408,7 +429,7 @@ const openVendorModal = () => {
 // 거래처 모달에서 선택
 const selectVendorFromModal = (vendor) => {
   vendorForm.vendorId = vendor.vendorId;
-  vendorForm.companyName = vendor.companyName; // 거래처명 자동기입
+  vendorForm.companyName = vendor.companyName;
   showVendorSelectModal.value = false;
 };
 
@@ -419,7 +440,6 @@ const displayPrice = computed({
     return form.matUnitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   },
   set: (val) => {
-    // 콤마 제거 후 숫자만 form에 저장
     form.matUnitPrice = val.replace(/,/g, '');
   }
 });
@@ -473,11 +493,12 @@ onMounted(() => fetchList());
               자재 목록
             </div>
             <div class="text-sm text-gray-400">
-              총 <span class="font-semibold text-sm text-gray-700">{{ page.totalElements || materials.length }}</span> 건
+              총 <span class="font-semibold text-sm text-gray-700">{{ page.totalElements }}</span> 건
             </div>
           </div>
           <Divider />
-          <DTable :columns="columns" :data="materials" :page="page" :loading="loading" dataKey="matId" v-model:selected="selectedMaterial" @row-select="handleRowSelect" @row-unselect="handleUnselect" />
+          <!-- 프론트 페이징: pagedMaterials 를 바인딩 -->
+          <DTable :columns="columns" :data="pagedMaterials" :page="page" :loading="loading" dataKey="matId" v-model:selected="selectedMaterial" @row-select="handleRowSelect" @row-unselect="handleUnselect" @page-change="handlePageChange" />
         </div>
       </div>
 
@@ -552,7 +573,7 @@ onMounted(() => fetchList());
               </div>
             </TabPanel>
 
-            <!-- 거래처 정보: 왼쪽 목록 / 오른쪽 폼 -->
+            <!-- 거래처 정보 -->
             <TabPanel header="거래처 정보">
               <div v-if="!selectedMaterial">자재를 선택해야 거래처 정보를 볼 수 있습니다.</div>
 

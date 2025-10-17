@@ -57,6 +57,7 @@ const currentBom = ref({
   expireDate: new Date('9999-12-31'),
   prodId: '',
   matId: '',
+  qty: 0,
   mixingRate: 0,
   material: { unit: '' },
   createdAt: new Date()
@@ -177,26 +178,42 @@ const saveBom = async () => {
       toast('warn', '저장 실패', '제품이 선택되어야 합니다.');
       return;
     }
-    const payload = {
-      ...currentBom.value,
-      effectiveDate: formatDate(currentBom.value.effectiveDate),
-      expireDate: formatDate(currentBom.value.expireDate),
-      createdAt: formatDate(new Date())
-    };
-    // ensure prodId present for creation
-    payload.prodId = payload.prodId || selectedProd.value.prodId;
 
-    const url = isEditing.value ? `/api/bom/${payload.bomId}` : '/api/bom';
+    // 1) 요청 바디를 bom + details 로 구성
+    const req = {
+      bom: {
+        bomId: currentBom.value.bomId || null, // 신규면 null/blank
+        bomVersion: currentBom.value.bomVersion || 'V1',
+        effectiveDate: formatDate(currentBom.value.effectiveDate),
+        expireDate: formatDate(currentBom.value.expireDate),
+        prodId: selectedProd.value.prodId,
+        matId: currentBom.value.matId,
+        qty: currentBom.value.qty ?? 0,
+        lossRate: currentBom.value.lossRate ?? 0
+      },
+      details: [
+        {
+          bomDeId: currentBom.value.bomDetail?.bomDeId ?? null, // 수정시 채워짐, 신규면 null
+          bomId: currentBom.value.bomId || null, // 서버에서 selectKey로 채움
+          matId: currentBom.value.matId,
+          mixingRate: currentBom.value.mixingRate ?? 0,
+          baseUnit: currentBom.value.material?.unit || 'EA'
+        }
+      ]
+    };
+
+    // 2) 신규/수정 분기 — with-detail 엔드포인트로 호출
+    const url = isEditing.value ? `/api/bom/with-detail/${req.bom.bomId}` : '/api/bom/with-detail';
     const method = isEditing.value ? 'put' : 'post';
 
-    await axios({ url, method, data: payload });
-    toast('success', '저장 완료', isEditing.value ? 'BOM이 수정되었습니다.' : 'BOM이 등록되었습니다.');
+    await axios({ url, method, data: req });
+
+    toast('success', isEditing.value ? 'BOM 수정 완료' : 'BOM 등록 완료', '');
     bomDialogVisible.value = false;
-    // refresh list after save
     await fetchBomList(selectedProd.value.prodId);
-    // if saved from 신규탭, switch to BOM 관리 tab (index 1)
     activeTabIndex.value = 1;
   } catch (e) {
+    console.error(e);
     toast('error', '저장 실패', 'BOM 저장 중 오류가 발생했습니다.');
   }
 };
@@ -285,7 +302,7 @@ onMounted(() => fetchProdList());
           </Card>
         </div>
 
-        <!-- 우측 상세정보 (비율 2) -->
+        <!-- 우측 상세정보 -->
         <div class="panel right-panel">
           <Card class="flex-column">
             <template #content>
@@ -316,7 +333,7 @@ onMounted(() => fetchProdList());
                   </div>
                 </TabPanel>
 
-                <!-- BOM 관리: 수정/삭제만 (신규 버튼 제거) -->
+                <!-- BOM 관리: 수정/삭제 -->
                 <TabPanel header="BOM 관리" class="flex flex-column h-full">
                   <div v-if="selectedProd" class="flex flex-column h-full">
                     <Fieldset legend="BOM 상세정보" class="flex flex-column h-full">
@@ -346,7 +363,7 @@ onMounted(() => fetchProdList());
                           <!-- 배합비율 -->
                           <Column header="비율(%)">
                             <template #body="slotProps">
-                              {{ slotProps.data.bomDetail?.mixingRate || '' }}
+                              {{ slotProps.data.bomDetail?.mixingRate || '-' }}
                             </template>
                           </Column>
 
@@ -427,6 +444,11 @@ onMounted(() => fetchProdList());
                         </div>
 
                         <div>
+                          <label class="block text-sm mb-1">수량</label>
+                          <InputNumber v-model="currentBom.qty" class="w-full" mode="decimal" />
+                        </div>
+
+                        <div>
                           <label class="block text-sm mb-1">BOM 버전</label>
                           <InputText v-model="currentBom.bomVersion" class="w-full h-10" />
                         </div>
@@ -456,7 +478,7 @@ onMounted(() => fetchProdList());
         </div>
       </div>
 
-      <!-- BOM 등록/수정 Dialog (기존대로 유지, 수정/등록 공용) -->
+      <!-- BOM 등록/수정 (수정/등록 공용) -->
       <Dialog v-model:visible="bomDialogVisible" :header="isEditing ? 'BOM 수정' : 'BOM 등록'" modal>
         <div class="p-fluid grid gap-2">
           <div class="flex flex-column">
@@ -499,7 +521,7 @@ onMounted(() => fetchProdList());
         </template>
       </Dialog>
 
-      <!-- 자재 선택 Dialog -->
+      <!-- 자재 선택 -->
       <Dialog v-model:visible="materialDialogVisible" header="자재 선택" modal>
         <DataTable :value="materialList" selectionMode="single" dataKey="matId" @row-click="selectMaterial($event.data)" paginator :rows="8">
           <Column field="matId" header="자재코드" />

@@ -7,116 +7,172 @@
 
     <!-- ResultMap 정의 -->
     <resultMap id="BomResultMap" type="com.yedam.scm.vo.BomVO">
-    <id property="bomId" column="BOM_ID"/>
-    <result property="bomVersion" column="BOM_VERSION"/>
-    <result property="prodId" column="PROD_ID"/>
-    <result property="matId" column="MAT_ID"/>
-    <result property="qty" column="QTY"/>
-    <result property="createdAt" column="CREATED_AT"/>
-    <result property="effectiveDate" column="EFFECTIVE_DATE"/>
-    <result property="expireDate" column="EXPIRE_DATE"/>
+        <id property="bomId" column="BOM_ID"/>
+        <result property="bomVersion" column="BOM_VERSION"/>
+        <result property="prodId" column="PROD_ID"/>
+        <result property="matId" column="MAT_ID"/>
+        <result property="qty" column="QTY"/>
+        <result property="lossRate" column="LOSS_RATE"/>   <!-- ✅ 추가 -->
+        <result property="createdAt" column="CREATED_AT"/>
+        <result property="effectiveDate" column="EFFECTIVE_DATE"/>
+        <result property="expireDate" column="EXPIRE_DATE"/>
 
-    <!-- BOM_DETAIL -->
-    <association property="bomDetail" javaType="com.yedam.scm.vo.BomDetailVO">
-        <id property="bomDeId" column="BOM_DE_ID"/>
-        <result property="mixingRate" column="MIXING_RATE"/>
-        <result property="baseUnit" column="BASE_UNIT"/>
-    </association>
+        <!-- BOM_DETAIL (옵션 매핑) -->
+        <association property="bomDetail" javaType="com.yedam.scm.vo.BomDetailVO">
+            <id property="bomDeId" column="BOM_DE_ID"/>
+            <result property="mixingRate" column="MIXING_RATE"/>
+            <result property="baseUnit" column="BASE_UNIT"/>
+            <result property="matId" column="BD_MAT_ID"/>
+        </association>
 
-    <!-- PRODUCT -->
-    <association property="product" javaType="com.yedam.scm.vo.ProductVO">
-        <id property="prodId" column="P_PROD_ID"/>
-        <result property="prodName" column="P_PROD_NAME"/>
-        <result property="spec" column="P_SPEC"/>
-        <result property="unit" column="P_UNIT"/>
-        <result property="createdAt" column="P_CREATED_AT"/>
-    </association>
+        <!-- PRODUCT -->
+        <association property="product" javaType="com.yedam.scm.vo.ProductVO">
+            <id property="prodId" column="P_PROD_ID"/>
+            <result property="prodName" column="P_PROD_NAME"/>
+            <result property="spec" column="P_SPEC"/>
+            <result property="unit" column="P_UNIT"/>
+            <result property="createdAt" column="P_CREATED_AT"/>
+        </association>
 
-    <!-- MATERIAL -->
-    <association property="material" javaType="com.yedam.scm.vo.MaterialVO">
-        <id property="matId" column="M_MAT_ID"/>
-        <result property="matName" column="M_MAT_NAME"/>
-        <result property="matType" column="M_MAT_TYPE"/>
-        <result property="matStoreCond" column="M_MAT_STORE_COND"/>
-        <result property="matUnitConv" column="M_MAT_UNIT_CONV"/>
-        <result property="matUnitPrice" column="M_MAT_UNIT_PRICE"/>
-        <result property="leadTime" column="M_LEAD_TIME"/>
-        <result property="safeStock" column="M_SAFE_STOCK"/>
-        <result property="status" column="M_STATUS"/>
-        <result property="spec" column="M_SPEC"/>
-        <result property="unit" column="M_UNIT"/>
-    </association>
-</resultMap>
-
+        <!-- MATERIAL -->
+        <association property="material" javaType="com.yedam.scm.vo.MaterialVO">
+            <id property="matId" column="M_MAT_ID"/>
+            <result property="matName" column="M_MAT_NAME"/>
+            <result property="matType" column="M_MAT_TYPE"/>
+            <result property="matStoreCond" column="M_MAT_STORE_COND"/>
+            <result property="matUnitConv" column="M_MAT_UNIT_CONV"/>
+            <result property="matUnitPrice" column="M_MAT_UNIT_PRICE"/>
+            <result property="leadTime" column="M_LEAD_TIME"/>
+            <result property="safeStock" column="M_SAFE_STOCK"/>
+            <result property="status" column="M_STATUS"/>
+            <result property="spec" column="M_SPEC"/>
+            <result property="unit" column="M_UNIT"/>
+        </association>
+    </resultMap>
 
     <!-- BOM 조회 (BOM + PRODUCT + MATERIAL + BOM_DETAIL) -->
-<select id="getBomByProdId" resultMap="BomResultMap" parameterType="string">
-    SELECT 
-        b.BOM_ID, 
-        b.BOM_VERSION, 
-        b.EFFECTIVE_DATE, 
-        b.EXPIRE_DATE,
-        b.PROD_ID, 
-        b.MAT_ID, 
-        b.CREATED_AT, 
-        b.QTY,
+    <select id="getBomByProdId" resultMap="BomResultMap" parameterType="string">
+        SELECT 
+            b.BOM_ID, 
+            b.BOM_VERSION, 
+            b.EFFECTIVE_DATE, 
+            b.EXPIRE_DATE,
+            b.PROD_ID, 
+            b.MAT_ID, 
+            b.CREATED_AT, 
+            b.QTY,
+            b.LOSS_RATE,
 
-        --  BOM_DETAIL
-        bd.BOM_DE_ID ,
-        bd.MIXING_RATE ,
-        bd.BASE_UNIT ,
+            --  BOM_DETAIL
+            bd.BOM_DE_ID,
+            bd.MIXING_RATE,
+            bd.BASE_UNIT,
+            bd.MAT_ID AS BD_MAT_ID,
 
-        --  PRODUCT
-        p.PROD_ID   AS P_PROD_ID,
-        p.PROD_NAME AS P_PROD_NAME,
-        p.SPEC      AS P_SPEC,
-        p.UNIT      AS P_UNIT,
-        p.CREATED_AT AS P_CREATED_AT,
+            --  PRODUCT
+            p.PROD_ID   AS P_PROD_ID,
+            p.PROD_NAME AS P_PROD_NAME,
+            p.SPEC      AS P_SPEC,
+            p.UNIT      AS P_UNIT,
+            p.CREATED_AT AS P_CREATED_AT,
 
-        --  MATERIAL
-        m.MAT_ID    AS M_MAT_ID,
-        m.MAT_NAME  AS M_MAT_NAME,
-        m.MAT_TYPE  AS M_MAT_TYPE,
-        m.MAT_STORE_COND AS M_MAT_STORE_COND,
-        m.MAT_UNIT_CONV  AS M_MAT_UNIT_CONV,
-        m.MAT_UNIT_PRICE AS M_MAT_UNIT_PRICE,
-        m.LEAD_TIME      AS M_LEAD_TIME,
-        m.SAFE_STOCK     AS M_SAFE_STOCK,
-        m.STATUS         AS M_STATUS,
-        m.SPEC           AS M_SPEC,
-        m.UNIT           AS M_UNIT
+            --  MATERIAL
+            m.MAT_ID    AS M_MAT_ID,
+            m.MAT_NAME  AS M_MAT_NAME,
+            m.MAT_TYPE  AS M_MAT_TYPE,
+            m.MAT_STORE_COND AS M_MAT_STORE_COND,
+            m.MAT_UNIT_CONV  AS M_MAT_UNIT_CONV,
+            m.MAT_UNIT_PRICE AS M_MAT_UNIT_PRICE,
+            m.LEAD_TIME      AS M_LEAD_TIME,
+            m.SAFE_STOCK     AS M_SAFE_STOCK,
+            m.STATUS         AS M_STATUS,
+            m.SPEC           AS M_SPEC,
+            m.UNIT           AS M_UNIT
 
-    FROM BOM b
-    JOIN BOM_DETAIL bd 
-        ON b.BOM_ID = bd.BOM_ID        --  BOM_DETAIL 조인
-    LEFT JOIN MATERIAL m 
-        ON bd.MAT_ID = m.MAT_ID        --  자재는 DETAIL의 MAT_ID 기준
-    LEFT JOIN PRODUCT p 
-        ON b.PROD_ID = p.PROD_ID
+        FROM BOM b
+        LEFT JOIN BOM_DETAIL bd 
+            ON b.BOM_ID = bd.BOM_ID
+        LEFT JOIN MATERIAL m 
+            ON bd.MAT_ID = m.MAT_ID
+        LEFT JOIN PRODUCT p 
+            ON b.PROD_ID = p.PROD_ID
 
-    WHERE b.PROD_ID = #{prodId}
-    ORDER BY b.BOM_VERSION, bd.BOM_DE_ID
-</select>
-<!-- BOM 등록 -->
+        WHERE b.PROD_ID = #{prodId}
+        ORDER BY b.BOM_VERSION, bd.BOM_DE_ID
+    </select>
+
+    <!-- BOM 단건 조회 (필요 시) -->
+    <select id="getBomDetail" resultMap="BomResultMap" parameterType="string">
+        SELECT 
+            b.BOM_ID, 
+            b.BOM_VERSION, 
+            b.EFFECTIVE_DATE, 
+            b.EXPIRE_DATE,
+            b.PROD_ID, 
+            b.MAT_ID, 
+            b.CREATED_AT, 
+            b.QTY,
+            b.LOSS_RATE
+        FROM BOM b
+        WHERE b.BOM_ID = #{bomId}
+    </select>
+
+    <!-- BOM 등록: bomId를 VO에 세팅하기 위해 selectKey 사용 -->
     <insert id="insertBom" parameterType="com.yedam.scm.vo.BomVO">
-        INSERT INTO BOM (BOM_ID, BOM_VERSION, EFFECTIVE_DATE, EXPIRE_DATE, PROD_ID, MAT_ID, CREATED_AT, MIXING_RATE)
-        VALUES (next_code('BOM'), #{bomVersion}, #{effectiveDate}, #{expireDate}, #{prodId}, #{matId}, #{createdAt}, #{mixingRate})
+        <selectKey keyProperty="bomId" resultType="string" order="BEFORE">
+            SELECT next_code('BOM') FROM dual
+        </selectKey>
+        INSERT INTO BOM (
+            BOM_ID, BOM_VERSION, EFFECTIVE_DATE, EXPIRE_DATE, 
+            PROD_ID, MAT_ID, CREATED_AT, QTY, LOSS_RATE
+        )
+        VALUES (
+            #{bomId}, #{bomVersion}, #{effectiveDate}, #{expireDate},
+            #{prodId}, #{matId}, SYSDATE, #{qty}, #{lossRate}
+        )
     </insert>
 
-    <!-- BOM 수정 -->
+    <!-- BOM_DETAIL 등록 -->
+    <insert id="insertBomDetail" parameterType="com.yedam.scm.vo.BomDetailVO">
+        INSERT INTO BOM_DETAIL (
+            BOM_DE_ID, BOM_ID, MAT_ID, MIXING_RATE, BASE_UNIT
+        )
+        VALUES (
+            SEQ_BOM_DETAIL.NEXTVAL,
+            #{bomId}, #{matId}, #{mixingRate}, #{baseUnit}
+        )
+    </insert>
+
+    <!-- BOM 수정 (BOM 컬럼만) -->
     <update id="updateBom" parameterType="com.yedam.scm.vo.BomVO">
         UPDATE BOM
-        SET MAT_ID = #{matId},
-            MIXING_RATE = #{mixingRate},
-            EFFECTIVE_DATE = #{effectiveDate},
-            EXPIRE_DATE = #{expireDate}
-        WHERE BOM_ID = #{bomId}
+           SET BOM_VERSION    = #{bomVersion},
+               EFFECTIVE_DATE = #{effectiveDate},
+               EXPIRE_DATE    = #{expireDate},
+               PROD_ID        = #{prodId},
+               MAT_ID         = #{matId},
+               QTY            = #{qty},
+               LOSS_RATE      = #{lossRate}
+         WHERE BOM_ID = #{bomId}
     </update>
 
-    <!-- BOM 삭제 -->
+    <!-- BOM_DETAIL 수정 -->
+    <update id="updateBomDetail" parameterType="com.yedam.scm.vo.BomDetailVO">
+        UPDATE BOM_DETAIL
+           SET MIXING_RATE = #{mixingRate},
+               BASE_UNIT   = #{baseUnit},
+               MAT_ID      = #{matId}
+         WHERE BOM_DE_ID   = #{bomDeId}
+    </update>
+
+    <!-- BOM 삭제 (부모) -->
     <delete id="deleteBom" parameterType="string">
         DELETE FROM BOM WHERE BOM_ID = #{bomId}
     </delete>
 
+    <!-- BOM_DETAIL 삭제 (자식) -->
+    <delete id="deleteBomDetailsByBomId" parameterType="string">
+        DELETE FROM BOM_DETAIL WHERE BOM_ID = #{bomId}
+    </delete>
 
 </mapper>
