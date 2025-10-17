@@ -92,7 +92,6 @@
             <template #body="{ data }">{{ fmt(priceOf(data)) }}</template>
           </Column>
 
-          <!-- ✅ ToggleSwitch 적용 -->
           <Column header="POS 노출" style="width: 110px" bodyClass="text-center">
             <template #body="{ data, index }">
               <ToggleSwitch
@@ -168,7 +167,7 @@ import InputText from 'primevue/inputtext'
 import Toast from 'primevue/toast'
 
 interface Row {
-  id: number
+  id: string
   name: string
   origin: string
   cost: number
@@ -192,11 +191,10 @@ const fetchProducts = async () => {
 }
 
 onMounted(async () => {
-  await fetchProducts()
   try {
     const { data } = await axios.get('/api/sales/margin/list')
     rows.value = data.map((r: any) => ({
-      id: Number(r.saleProdId),
+      id: String(r.saleProdId),
       name: r.saleProdName,
       origin: '-',
       cost: r.prodUnitPrice,
@@ -204,8 +202,15 @@ onMounted(async () => {
       pos: r.posShowYn === 'Y'
     }))
   } catch (err) {
-    toast.add({ severity: 'error', summary: '로드 실패', detail: '데이터를 불러오지 못했습니다.', life: 3000 })
+    toast.add({
+      severity: 'error',
+      summary: '로드 실패',
+      detail: '데이터를 불러오지 못했습니다.',
+      life: 3000
+    })
   }
+
+  await fetchProducts()
 })
 
 const fmt = (n: number) =>
@@ -231,7 +236,10 @@ const updatePos = (index: number, val: boolean) => {
   rows.value = copy
 }
 
-const openModal = () => (isShowModal.value = true)
+const openModal = async () => {
+  await fetchProducts()
+  isShowModal.value = true
+}
 
 const filteredProducts = computed(() =>
   search.value
@@ -241,27 +249,39 @@ const filteredProducts = computed(() =>
     : productList.value
 )
 
-// ✅ 클릭 시 자동 추가 (중복 방지 포함)
+// ✅ 클릭 시: 기존 제품이면 갱신, 아니면 추가
 const handleSelect = (event: any) => {
   const p = event.data
   if (!p) return
 
-  if (rows.value.some((r) => r.id === p.prodId)) {
-    toast.add({ severity: 'warn', summary: '중복 항목', detail: '이미 추가된 제품입니다.', life: 2000 })
-    return
+  const existing = rows.value.find((r) => r.id === String(p.prodId))
+
+  if (existing) {
+    existing.cost = p.prodUnitPrice
+    toast.add({
+      severity: 'info',
+      summary: '가격 갱신',
+      detail: `"${p.prodName}"의 본사 가격이 갱신되었습니다.`,
+      life: 2000
+    })
+  } else {
+    rows.value.push({
+      id: String(p.prodId),
+      name: p.prodName,
+      origin: p.origin || '-',
+      cost: p.prodUnitPrice,
+      margin: 30,
+      pos: false
+    })
+    toast.add({
+      severity: 'success',
+      summary: '추가 완료',
+      detail: `"${p.prodName}" 추가됨`,
+      life: 2000
+    })
   }
 
-  rows.value.push({
-    id: p.prodId,
-    name: p.prodName,
-    origin: p.origin || '-',
-    cost: p.prodUnitPrice,
-    margin: 30,
-    pos: false
-  })
-
   isShowModal.value = false
-  toast.add({ severity: 'success', summary: '추가 완료', detail: `"${p.prodName}" 추가됨`, life: 2000 })
 }
 
 const applyBulkMargin = (rate: number) => {
@@ -285,14 +305,15 @@ const moveDown = (i: number) => {
 
 const onDelete = async (row: Row) => {
   if (!confirm(`"${row.name}" 삭제하시겠습니까?`)) return
-  await axios.delete(`/sales/margin/${row.id}`)
+  await axios.delete(`/api/sales/margin/${row.id}`) // ← /api 붙임
   rows.value = rows.value.filter((r) => r.id !== row.id)
   toast.add({ severity: 'warn', summary: '삭제됨', detail: `"${row.name}"가 삭제되었습니다.`, life: 2000 })
 }
 
+
 const onSave = async () => {
   const payload = rows.value.map((r, i) => ({
-    saleProdId: String(r.id),
+    saleProdId: r.id,
     saleProdName: r.name,
     prodUnitPrice: r.cost,
     saleMargin: r.margin,
