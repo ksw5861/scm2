@@ -12,38 +12,31 @@
     CREATE_DT, UPDATE_DT
   </sql>
 
+    <!-- POS설정 - 기존데이터 삭제 -->
+    <delete id="deleteAll">
+        DELETE FROM SALES_MARGIN
+    </delete>
 
-<insert id="insertSalesMargin" parameterType="com.yedam.scm.vo.SalesMarginVO">
-  INSERT INTO SALES_MARGIN (
-    SALE_PROD_ID, SALE_PROD_NAME, SALE_PROD_PRICE,
-    PROD_UNIT_PRICE, SALE_MARGIN, SORT_NO, POS_SHOW_YN,
-    CREATE_DT, UPDATE_DT
-  )
-  VALUES (
-    #{saleProdId},
-    #{saleProdName},
-    #{saleProdPrice},
-    #{prodUnitPrice},
-    #{saleMargin},
-    #{sortNo},    
-    #{posShowYn},
-    SYSDATE, SYSDATE
-  )
-</insert>
-
-
-<update id="updateSalesMargin" parameterType="com.yedam.scm.vo.SalesMarginVO">
-  UPDATE SALES_MARGIN
-  SET
-    SALE_PROD_NAME  = #{saleProdName},
-    SALE_PROD_PRICE = #{saleProdPrice},
-    PROD_UNIT_PRICE = #{prodUnitPrice},
-    SALE_MARGIN     = #{saleMargin},
-    SORT_NO         = #{sortNo},  
-    POS_SHOW_YN     = #{posShowYn},
-    UPDATE_DT       = SYSDATE
-  WHERE SALE_PROD_ID = #{saleProdId}
-</update>
+    <!-- POS설정 - 새 데이터 삽입 -->
+    <insert id="insert" parameterType="SalesMarginVO">
+        INSERT INTO SALES_MARGIN (
+            SALE_PROD_ID,
+            SALE_PROD_NAME,
+            PROD_UNIT_PRICE,
+            SALE_MARGIN,
+            POS_SHOW_YN,
+            SORT_NO,
+            SALE_PROD_PRICE
+        ) VALUES (
+            #{saleProdId},
+            #{saleProdName},
+            #{prodUnitPrice},
+            #{saleMargin},
+            #{posShowYn},
+            #{sortNo},
+            #{saleProdPrice}
+        )
+    </insert>
 
 
   <!-- 목록 (POS 순서대로) -->
@@ -69,6 +62,65 @@
 
 
 
+
+
+<!-- ✅ POS 결제 등록 -->
+
+<!-- 판매 마스터 등록 -->
+<insert id="insertSaleMaster" parameterType="com.yedam.scm.vo.SalesMasterVO">
+  <selectKey keyProperty="saleId" resultType="string" order="BEFORE">
+    SELECT 'SI' || TO_CHAR(SYSDATE, 'YYYYMMDD') || '-' ||
+           LPAD(NVL(MAX(SUBSTR(sale_id, 12, 3)), 0) + 1, 3, '0')
+    FROM sales_master
+    WHERE sale_id LIKE 'SI' || TO_CHAR(SYSDATE, 'YYYYMMDD') || '-%'
+  </selectKey>
+
+  INSERT INTO sales_master (sale_id, sale_total_price, sale_date, sale_pay_type, vendor_id)
+  VALUES (#{saleId}, #{saleTotalPrice}, SYSDATE, #{salePayType}, #{vendorId})
+</insert>
+
+<!-- 판매 상세 등록 -->
+<insert id="insertSaleDetail" parameterType="com.yedam.scm.vo.SalesDetailVO">
+  <selectKey keyProperty="sdetailId" resultType="string" order="BEFORE">
+    SELECT 'SDI' || TO_CHAR(SYSDATE, 'YYYYMMDD') || '-' ||
+           LPAD(NVL(MAX(SUBSTR(sdetail_id, 13, 3)), 0) + 1, 3, '0')
+    FROM sales_detail
+    WHERE sdetail_id LIKE 'SDI' || TO_CHAR(SYSDATE, 'YYYYMMDD') || '-%'
+  </selectKey>
+
+  INSERT INTO sales_detail (
+      sdetail_id,
+      sale_id,
+      sale_prod_id,
+      sale_prod_name,
+      sale_qty,
+      sale_prod_price
+  ) VALUES (
+      #{sdetailId},
+      #{saleId},
+      #{saleProdId},
+      #{saleProdName},
+      #{saleQty},
+      #{saleProdPrice}
+  )
+</insert>
+
+<!-- 매출 이력 조회 -->
+<select id="getSalesHistory" parameterType="string" resultType="com.yedam.scm.vo.SalesMasterVO">
+  SELECT
+    sale_id       AS saleId,
+    sale_total_price AS saleTotalPrice,
+    TO_CHAR(sale_date, 'YYYY-MM-DD HH24:MI') AS saleDate,
+    sale_pay_type AS salePayType,
+    vendor_id     AS vendorId
+  FROM sales_master
+  <where>
+    <if test="vendorId != null and vendorId != ''">
+      vendor_id = #{vendorId}
+    </if>
+  </where>
+  ORDER BY sale_date DESC
+</select>
 
   
 </mapper>

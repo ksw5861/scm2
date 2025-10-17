@@ -16,20 +16,25 @@
     <div v-if="activeTab === '매출 발생'" class="tab-content">
       <div class="pos-body">
         <!-- 상품 리스트 -->
-        <div class="product-section">
-          <div class="product-list">
-            <div
-              v-for="item in filteredProducts"
-              :key="item.id"
-              class="product-card"
-              @click="addToOrder(item)"
-            >
+        <div class="product-list">
+          <div
+            v-for="item in filteredProducts"
+            :key="item.id"
+            class="product-card"
+            :class="{ empty: item.posShowYn === 'N' }"
+            @click="addToOrder(item)"
+          >
+            <template v-if="item.posShowYn === 'Y'">
               <div class="product-name">{{ item.name }}</div>
               <div class="product-price">{{ item.price.toLocaleString() }}원</div>
               <div class="product-stock">재고: {{ item.stock }}</div>
-            </div>
+            </template>
+            <template v-else>
+              <div class="empty-cell">—</div>
+            </template>
           </div>
         </div>
+
 
         <!-- 주문내역 -->
         <div class="order-panel">
@@ -96,11 +101,11 @@
     <!-- ====================== 탭2 : 매출 내역 ====================== -->
     <div v-else-if="activeTab === '매출 내역'" class="tab-content">
       <div class="sales-header">
-        <div class="stat-card">
+         <div class="stat-card">
           <h3>오늘 총 매출</h3>
           <p class="value">{{ totalSales.toLocaleString() }}원</p>
           <p class="diff">+12.5% vs 어제</p>
-        </div>
+        </div> 
         <div class="stat-card">
           <h3>주문 건수</h3>
           <p class="value">{{ salesList.length }}건</p>
@@ -117,24 +122,20 @@
         <InputText v-model="search" placeholder="주문번호 검색" class="search-input" />
         <Button label="엑셀 다운로드" icon="pi pi-download" outlined />
       </div>
-
-      <DataTable :value="filteredSales" class="sales-table" responsiveLayout="scroll">
-        <Column field="orderNo" header="주문번호" />
-        <Column field="date" header="일시" />
-        <Column field="count" header="상품수" />
-        <Column field="amount" header="금액">
+<!-- <DataTable :value="filteredSales" class="sales-table" responsiveLayout="scroll"></DataTable> -->
+      <DataTable :value="salesList" class="sales-table" responsiveLayout="scroll">
+        <Column field="saleId" header="주문번호" />
+        <Column field="saleDate" header="일시" />
+        <Column field="saleTotalPrice" header="금액">
           <template #body="{ data }">
-            <span class="price">{{ data.amount.toLocaleString() }}원</span>
+            <span class="price">{{ data.saleTotalPrice.toLocaleString() }}원</span>
           </template>
         </Column>
-        <Column field="method" header="결제방법">
+        <Column field="salePayType" header="결제방법">
           <template #body="{ data }">
-            <span class="method">{{ data.method }}</span>
-          </template>
-        </Column>
-        <Column field="status" header="상태">
-          <template #body>
-            <Tag severity="success" value="완료" />
+            <span class="method">
+              {{ data.salePayType === 'CARD' ? '카드' : '현금' }}
+            </span>
           </template>
         </Column>
       </DataTable>
@@ -202,6 +203,7 @@
 
 <script setup>
 import { ref, watch, computed } from "vue"
+import { onMounted } from "vue"
 import Button from "primevue/button"
 import InputText from "primevue/inputtext"
 import DataTable from "primevue/datatable"
@@ -209,28 +211,50 @@ import Column from "primevue/column"
 import Tag from "primevue/tag"
 import axios from "axios"
 import { useUserStore } from "@/stores/user"
+import { useToast } from 'primevue/usetoast'
 
+const toast = useToast()
 const tabs = ["매출 발생", "매출 내역", "월별 매출"]
 const activeTab = ref("매출 발생")
-
-// 매출 발생 탭 -----------------
+const userStore = useUserStore()
+const vendorId = userStore.code
+// ==========================================
+// ✅ 매출 발생 탭
+// ==========================================
 const filter = ref("전체")
-const productList = ref(
-  Array.from({ length: 24 }).map((_, i) => ({
-    id: i + 1,
-    name: `상품 ${i + 1}`,
-    category: i % 2 === 0 ? "원두" : "부자재",
-    price: 20000 + (i % 5) * 2000,
-    stock: 50 + i * 2
-  }))
-)
+const productList = ref([])
 const orderList = ref([])
 const paymentMethod = ref("")
 
-const filteredProducts = computed(() =>
-  filter.value === "전체" ? productList.value : productList.value.filter((p) => p.category === filter.value)
-)
+// ✅ POS 상품 불러오기
+const fetchPosProducts = async () => {
+  try {
+    const { data } = await axios.get("/api/sales/margin/list")
+
+    // sort_no 순 정렬
+    productList.value = data.sort((a, b) => a.sortNo - b.sortNo).map((p) => ({
+      id: p.saleProdId,
+      name: p.saleProdName,
+      price: p.saleProdPrice,
+      stock: 999,
+      posShowYn: p.posShowYn,
+    }))
+  } catch (err) {
+    console.error("❌ POS 상품 불러오기 실패:", err)
+    alert("상품 정보를 불러오지 못했습니다.")
+  }
+}
+
+onMounted(fetchPosProducts)
+
+// ✅ 필터링 (지금은 전체 유지)
+const filteredProducts = computed(() => productList.value)
+
+// ========================
+// 🧾 주문 로직
+// ========================
 const addToOrder = (item) => {
+  if (item.posShowYn === "N") return // 빈칸 클릭 무시
   const found = orderList.value.find((o) => o.id === item.id)
   if (found) found.qty++
   else orderList.value.push({ ...item, qty: 1 })
@@ -242,62 +266,87 @@ const subTotal = computed(() => orderList.value.reduce((sum, o) => sum + o.price
 const tax = computed(() => Math.round(subTotal.value * 0.1))
 const total = computed(() => subTotal.value + tax.value)
 
+// ========================
+// 💳 결제 로직
+// ========================
 const handlePayment = async () => {
   if (!paymentMethod.value) return alert("결제 방식을 선택해주세요 💳💵")
   if (orderList.value.length === 0) return alert("상품을 선택해주세요 🛍️")
 
   try {
-    // 1️⃣ 마스터 데이터 구성
-    const masterData = {
-      sdetailId: null,
-      saleTotalPrice: total.value,
+    const payload = {
+      salesDetails: orderList.value.map((o) => ({
+        saleProdId: o.id,
+        saleProdName: o.name,
+        saleQty: o.qty,
+        saleProdPrice: o.price,
+        saleMargin: 0,
+        saleUnitPrice: o.price,
+      })),
       salePayType: paymentMethod.value === "card" ? "CARD" : "CASH",
-      vendorId: useUserStore.code // 매장 ID (로그인 정보 기반으로 대체 가능)
+      saleTotalPrice: total.value,
+      vendorId: vendorId,
     }
 
-    // 2️⃣ 상세 데이터 구성
-    const detailList = orderList.value.map((o) => ({
-      saleProdId: o.id,
-      saleProdName: o.name,
-      saleProdPrice: o.price,
-      saleQty: o.qty,
-      saleMargin: 0, // 필요시 계산
-      saleUnitPrice: o.price
-    }))
+    console.log("📦 전송 payload:", JSON.stringify(payload, null, 2)) // 확인용
 
-    // 3️⃣ 서버 전송 (MyBatis 매퍼 연결된 컨트롤러로)
-    const response = await axios.post("/sales/register", {
-      master: masterData,
-      details: detailList
-    })
+    const { data } = await axios.post("/api/sales/register", payload)
 
-    // 4️⃣ 성공 처리
-    if (response.data?.result === "success") {
-      alert(`✅ ${paymentMethod.value === "card" ? "카드" : "현금"} 결제가 완료되었습니다!\n총 금액: ${total.value.toLocaleString()}원`)
+    if (data === "Sale registered successfully") {
+      alert(`✅ 결제가 완료되었습니다! 총 금액: ${total.value.toLocaleString()}원`)
       orderList.value = []
       paymentMethod.value = ""
     } else {
-      alert("❌ 결제 저장 중 오류가 발생했습니다.")
+      alert("❌ 결제 처리 중 오류가 발생했습니다.")
     }
   } catch (err) {
     console.error(err)
-    alert("서버 통신 중 오류가 발생했습니다 ⚠️")
+    alert("서버 통신 오류 ⚠️")
   }
 }
 
-// 매출 내역 탭 -----------------
-const salesList = ref([
-  { orderNo: "ORD-20231015-001", date: "2025-10-15 14:23", count: 5, amount: 125000, method: "카드" },
-  { orderNo: "ORD-20231015-002", date: "2025-10-15 15:45", count: 3, amount: 89000, method: "현금" },
-  { orderNo: "ORD-20231015-003", date: "2025-10-15 16:12", count: 8, amount: 234000, method: "카드" },
-  { orderNo: "ORD-20231014-045", date: "2025-10-14 18:30", count: 4, amount: 102000, method: "카드" }
-])
-const totalSales = computed(() => salesList.value.reduce((sum, s) => sum + s.amount, 0))
-const avgOrder = computed(() => Math.round(totalSales.value / salesList.value.length))
-const search = ref("")
-const filteredSales = computed(() =>
-  salesList.value.filter((s) => s.orderNo.toLowerCase().includes(search.value.toLowerCase()))
-)
+
+
+
+// 매출 내역 탭 ----------------------------------------------------------------------------------
+const salesList = ref([])
+
+// ✅ 매출 내역 불러오기
+const fetchSalesHistory = async () => {
+  try {
+    const { data } = await axios.get("/api/sales/history", { params: { vendorId } })
+    console.log("📦 매출내역:", data)
+    salesList.value = data 
+  } catch (err) {
+    console.error("❌ 매출내역 조회 실패:", err)
+  }
+}
+
+const filteredSales = computed(() => {
+  if (!search.value) return salesList.value
+  const keyword = search.value.toLowerCase()
+  return salesList.value.filter(
+    s => s.saleId?.toLowerCase().includes(keyword)
+  )
+})
+
+// ========================
+// 📊 매출 내역 통계 계산
+// ========================
+const totalSales = computed(() => {
+  return salesList.value.reduce((sum, s) => sum + (s.saleTotalPrice || 0), 0)
+})
+
+const avgOrder = computed(() => {
+  if (salesList.value.length === 0) return 0
+  return Math.round(totalSales.value / salesList.value.length)
+})
+
+
+// 탭 전환 시 불러오기
+watch(activeTab, (tab) => {
+  if (tab === "매출 내역") fetchSalesHistory()
+})
 
 // 월별 매출 탭 -----------------
 const today = new Date()
@@ -417,6 +466,20 @@ const nextMonth = () => {
 }
 .product-card:hover {
   border-color: #007ad9;
+}
+.product-card.empty {
+  background-color: #f8f8f8;
+  border: 1px dashed #ccc;
+  cursor: default;
+}
+.product-card.empty:hover {
+  border-color: #ccc;
+}
+.empty-cell {
+  text-align: center;
+  color: #bbb;
+  font-size: 1.2rem;
+  margin-top: 1.8rem;
 }
 .order-panel {
   border: 1px solid #eee;
