@@ -69,7 +69,8 @@ public class LoginServiceImpl implements LoginService {
     @Override
     public LoginRes loginAdminByEmailAndPassword(LoginDTO login) {
 
-        LoginRes dbUser = mapper.selectAdminAccountByEmailAndPassword(login);
+        // LoginRes dbUser = mapper.selectAdminAccountByEmailAndPassword(login);
+        LoginRes dbUser = mapper.selectAccountByEmailAndPassword(login);
 
         if (dbUser == null) {
             return null;
