@@ -1,6 +1,6 @@
 <template>
   <div class="return-register">
-     
+
     <!-- 공지사항 -->
     <div class="notice">
       <p>
@@ -9,7 +9,7 @@
         또한, 각 주문건은 <span class="highlight">한 번만 반품 신청</span>이 가능하오니, 신중하게 신청해 주시기 바랍니다.
       </p>
     </div>
-    
+
     <!-- 헤더 -->
     <div class="header">
       <h2>반품 등록 (판매처)</h2>
@@ -219,7 +219,7 @@ const saveReturn = async () => {
     (it) => it.returnQty > 0 && it.returnWhy.trim() !== ''
   )
   if (validItems.length === 0) {
-    toast('warn', '반품 등록', '반품할 항목을 선택하세요.')
+    toast('warn', '반품 등록', '반품 사유를 입력하세요.')
     return
   }
 

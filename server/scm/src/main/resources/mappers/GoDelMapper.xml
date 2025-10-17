@@ -46,6 +46,7 @@
             so.status       AS status
         FROM SALES_ORDER so
         WHERE so.status = '처리완료'
+        AND so.total_price <![CDATA[<>]]> 0
         ORDER BY so.order_id DESC
     </select>
 
