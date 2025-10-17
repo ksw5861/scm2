@@ -27,8 +27,6 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-
-
 //테이블
 const matStockList = ref();
 const selectedRows = ref();
@@ -56,13 +54,12 @@ const closePlanModal = () => {
 };
 
 const fetchMatList = async () => {
-
-    const params = {
+  const params = {
     page: page.value.page,
     size: page.value.size,
     ...searchFilter.value
   };
-console.log('요청 params:', params);
+  console.log('요청 params:', params);
   try {
     const res = await axios.get('/api/mat/matStockList', { params });
     const { list, page: pageInfo } = res.data;
@@ -130,7 +127,6 @@ const resetSearch = () => {
   fetchMatList();
 };
 
-
 const onPage = (event) => {
   const startRow = event.page * event.rows + 1;
   const endRow = (event.page + 1) * event.rows;
@@ -182,7 +178,7 @@ const matLotColumns = [
         <!-- 버튼 영역 -->
         <div class="flex flex-wrap items-center gap-2">
           <btn color="secondary" icon="pi pi-undo" label="초기화" @click="resetSearch" />
-          <btn color="contrast" icon="pi pi-search" label="조회" @click="fetchMatList"/>
+          <btn color="contrast" icon="pi pi-search" label="조회" @click="fetchMatList" />
         </div>
       </div>
     </div>
@@ -193,7 +189,7 @@ const matLotColumns = [
         <div class="card flex flex-col gap-4 h-full">
           <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">자재별 재고 목록</div>
+            <div class="font-semibold text-m">목록</div>
             <Divider />
             <selectTable v-model:selection="selectedRows" selectionMode="single" :columns="matStock" :data="matStockList" :paginator="true" :page="page" :showCheckbox="false" @page-change="onPage" @row-select="detailInfo" />
           </div>
