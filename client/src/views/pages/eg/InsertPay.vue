@@ -1,160 +1,177 @@
 <template>
-  <div class="payment-dashboard">
-    <!-- ===== 헤더 ===== -->
-    <header class="header">
-      <div>
-        <h1 class="title">본사 거래 관리</h1>
-        <p class="subtitle">주문, 반품 및 납부 현황 관리</p>
-      </div>
-      <Badge class="date-badge">{{ today }}</Badge>
-    </header>
+    <Fluid>
 
-    <!-- ===== 상단 카드 4개 ===== -->
-    <section class="summary-cards-formula">
-      <div class="card red">
-        <p class="label">총 미결제 금액</p>
-        <p class="amount">₩{{ formatCurrency(summaryComputed.totalUnpaid) }}</p>
-      </div>
+        <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
 
-      <div class="formula-icon">➖</div>
-
-      <div class="card green">
-        <p class="label">승인된 반품 총액</p>
-        <p class="amount">₩{{ formatCurrency(summaryComputed.thisMonthReturnAmount) }}</p>
-      </div>
-
-      <div class="formula-icon">=</div>
-
-      <div class="card blue">
-        <p class="label">이번 납부 예정 금액</p>
-        <p class="amount">₩{{ formatCurrency(summaryComputed.currentPayable) }}</p>
-      </div>
-
-      <div class="card orange">
-        <p class="label">다음 납부 예정 금액</p>
-        <p class="amount">₩{{ formatCurrency(summaryComputed.upcomingAmount) }}</p>
-      </div>
-    </section>
-
-    <!-- ===== 탭 ===== -->
-    <div class="tabs">
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'pending' }"
-        @click="activeTab = 'pending'"
-      >
-        미결제 내역
-      </button>
-      <button
-        class="tab-btn"
-        :class="{ active: activeTab === 'pay' }"
-        @click="activeTab = 'pay'"
-      >
-        납부 처리
-      </button>
-    </div>
-
-    <!-- ===== [탭] 미결제 내역 ===== -->
-    <div v-if="activeTab === 'pending'" class="tab-content">
-      <h4 class="section-title">미결제 주문 내역</h4>
-
-      <div class="table-toolbar">
-        <div class="search-container">
-          <i class="pi pi-search search-icon"></i>
-          <InputText
-            v-model="searchQuery"
-            placeholder="주문번호 또는 제품명 검색..."
-            class="search-input"
-          />
+        <div class="grid grid-cols-2 2xl:grid-cols-4 gap-4 mt-4">
+            <div class="card h-30" style="margin-bottom: 0;">
+                <div class="flex justify-between mb-4">
+                    <div>
+                        <span class="block text-muted-color font-medium mb-4">총 미결제 금액</span>
+                        <div class="dark:text-surface-0 font-bold text-xl text-red-500">{{ formatCurrency(summaryComputed.totalUnpaid) }}<span class="font-medium text-gray-700">원</span></div>
+                    </div>
+                    <div
+                        class="flex items-center justify-center bg-red-100 dark:bg-red-100/10 rounded-border"
+                        style="width:2.5rem;height:2.5rem;"
+                    >
+                        <i class="text-red-500 ,!text-xl" :class="icons.bill "></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card h-30" style="margin-bottom: 0;">
+                <div class="flex justify-between mb-4">
+                    <div>
+                        <span class="block text-muted-color font-medium mb-4">승인된 반품 총액</span>
+                        <div class="dark:text-surface-0 font-bold text-xl text-green-500">{{ formatCurrency(summaryComputed.thisMonthReturnAmount) }}<span class="font-medium text-gray-700">원</span></div>
+                    </div>
+                    <div
+                        class="flex items-center justify-center bg-green-100 dark:bg-green-100/10 rounded-border"
+                        style="width:2.5rem;height:2.5rem;"
+                    >
+                        <i class="text-green-500 ,!text-xl" :class="icons.undo "></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card h-30" style="margin-bottom: 0;">
+                <div class="flex justify-between mb-4">
+                    <div>
+                        <span class="block text-muted-color font-medium mb-4">이번 납부 예정 금액</span>
+                        <div class="dark:text-surface-0 font-bold text-xl text-blue-500">{{ formatCurrency(summaryComputed.currentPayable) }}<span class="font-medium text-gray-700">원</span></div>
+                    </div>
+                    <div
+                        class="flex items-center justify-center bg-blue-100 dark:bg-blue-100/10 rounded-border"
+                        style="width:2.5rem;height:2.5rem;"
+                    >
+                        <i class="text-blue-500 ,!text-xl" :class="icons.pay "></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card h-30" style="margin-bottom: 0;">
+                <div class="flex justify-between mb-4">
+                    <div>
+                        <span class="block text-muted-color font-medium mb-4">다음 납부 예정 금액</span>
+                        <div class="dark:text-surface-0 font-bold text-xl text-yellow-500">{{ formatCurrency(summaryComputed.upcomingAmount) }}<span class="font-medium text-gray-700">원</span></div>
+                    </div>
+                    <div
+                        class="flex items-center justify-center bg-yellow-100 dark:bg-yellow-100/10 rounded-border"
+                        style="width:2.5rem;height:2.5rem;"
+                    >
+                        <i class="text-yellow-500 ,!text-xl" :class="icons.calendar "></i>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
 
-      <DataTable
-        :value="filteredOrders"
-        selectionMode="checkbox"
-        dataKey="orderId"
-        v-model:selection="selectedOrders"
-        paginator
-        :rows="20"
-        class="custom-table"
-      >
-        <template #header>
-          <div v-if="selectedOrders.length > 0" class="selected-summary">
-            <span>{{ selectedOrders.length }}개 항목 선택됨</span>
-            <span>
-              총 선택 금액:
-              <strong>₩{{ formatCurrency(selectedTotal) }}</strong>
-            </span>
-          </div>
-        </template>
+        <div class="w-full xl:w-3/4">
 
-        <Column selectionMode="multiple" headerStyle="width:50px" />
-        <Column field="orderId" header="주문번호" style="width:140px;" />
-        <Column field="prodName" header="제품명" style="width:240px;" />
-
-        <Column field="totalPrice" header="총 주문금액" style="width:150px; text-align:right;">
-          <template #body="{ data }">
-            ₩{{ formatCurrency(data.totalPrice) }}
-          </template>
-        </Column>
-
-        <Column field="returnPrice" header="반품금액" style="width:150px; text-align:right;">
-          <template #body="{ data }">
-            ₩{{ formatCurrency(data.returnPrice) }}
-          </template>
-        </Column>
-
-        <Column field="finalAmount" header="실결제금액" style="width:150px; text-align:right;">
-          <template #body="{ data }">
-            ₩{{ formatCurrency(data.finalAmount) }}
-          </template>
-        </Column>
-
-        <Column field="sendDate" header="출고일자" style="width:140px;">
-          <template #body="{ data }">
-            {{ formatDate(data.sendDate) }}
-          </template>
-        </Column>
-
-        <Column field="status" header="주문상태" style="width:140px;" />
-        <Column field="paydueDate" header="결제기한" style="width:140px;">
-          <template #body="{ data }">
-            {{ formatDate(data.paydueDate) }}
-          </template>
-        </Column>
-      </DataTable>
-    </div>
-
-    <!-- ===== [탭] 납부 처리 ===== -->
-    <div v-else-if="activeTab === 'pay'" class="tab-content pay-section">
-      <div class="pay-summary">
-        <h3 class="section-title"><i class="pi pi-check-circle"></i> 납부 요약</h3>
-        <div class="summary-list">
-          <div v-for="order in selectedOrders" :key="order.orderId" class="summary-item">
-            <span>{{ order.prodName }}</span>
-            <span>₩{{ formatCurrency(order.finalAmount) }}</span>
-          </div>
         </div>
-        <div class="summary-total">
-          <div class="row">
-            <span>총 납부금액</span>
-            <span>₩{{ formatCurrency(selectedTotal) }}</span>
-          </div>
-        </div>
-      </div>
 
-      <div class="pay-form">
-        <h3 class="section-title"><i class="pi pi-wallet"></i> 카카오페이 결제</h3>
-        <Button
-          :label="'₩' + formatCurrency(selectedTotal) + ' 결제하기'"
-          class="w-full pay-btn"
-          @click="requestPay"
-        />
-      </div>
-    </div>
+        <Tabs class="card mt-4" value="0">
+            <TabList>
+                <Tab value="0" @click="activeTab = 'pending'">미결제 주문 내역</Tab>
+                <Tab value="1" @click="activeTab = 'pay'">납부 처리</Tab>
+            </TabList>
+            <TabPanels>
+                <TabPanel value="0">
+
+                    <div class="table-toolbar">
+                        <div class="search-container">
+                            <i class="pi pi-search search-icon"></i>
+                            <InputText
+                                v-model="searchQuery"
+                                placeholder="주문번호 또는 제품명 검색..."
+                                class="search-input"
+                            />
+                        </div>
+                    </div>
+
+                    <DataTable
+                        :value="filteredOrders"
+                        selectionMode="checkbox"
+                        dataKey="orderId"
+                        v-model:selection="selectedOrders"
+                        paginator
+                        :rows="20"
+                        class="custom-table"
+                    >
+                        <template #header>
+                        <div v-if="selectedOrders.length > 0" class="selected-summary">
+                            <span>{{ selectedOrders.length }}개 항목 선택됨</span>
+                            <span>
+                            총 선택 금액:
+                            <strong>₩{{ formatCurrency(selectedTotal) }}</strong>
+                            </span>
+                        </div>
+                        </template>
+
+                        <Column selectionMode="multiple" headerStyle="width:50px" />
+                        <Column field="orderId" header="주문번호" style="width:140px;" />
+                        <Column field="prodName" header="제품명" style="width:240px;" />
+
+                        <Column field="totalPrice" header="총 주문금액" style="width:150px; text-align:right;">
+                        <template #body="{ data }">
+                            ₩{{ formatCurrency(data.totalPrice) }}
+                        </template>
+                        </Column>
+
+                        <Column field="returnPrice" header="반품금액" style="width:150px; text-align:right;">
+                        <template #body="{ data }">
+                            ₩{{ formatCurrency(data.returnPrice) }}
+                        </template>
+                        </Column>
+
+                        <Column field="finalAmount" header="실결제금액" style="width:150px; text-align:right;">
+                        <template #body="{ data }">
+                            ₩{{ formatCurrency(data.finalAmount) }}
+                        </template>
+                        </Column>
+
+                        <Column field="sendDate" header="출고일자" style="width:140px;">
+                        <template #body="{ data }">
+                            {{ formatDate(data.sendDate) }}
+                        </template>
+                        </Column>
+
+                        <Column field="status" header="주문상태" style="width:140px;" />
+                        <Column field="paydueDate" header="결제기한" style="width:140px;">
+                        <template #body="{ data }">
+                            {{ formatDate(data.paydueDate) }}
+                        </template>
+                        </Column>
+                    </DataTable>
+                </TabPanel>
+                <TabPanel value="1">
+                    <div class="pay-summary">
+                        <h3 class="section-title"><i class="pi pi-check-circle"></i> 납부 요약</h3>
+                        <div class="summary-list">
+                            <div v-for="order in selectedOrders" :key="order.orderId" class="summary-item">
+                                <span>{{ order.prodName }}</span>
+                                <span>₩{{ formatCurrency(order.finalAmount) }}</span>
+                            </div>
+                        </div>
+                        <div class="summary-total">
+                            <div class="row">
+                                <span>총 납부금액</span>
+                                <span>₩{{ formatCurrency(selectedTotal) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pay-form">
+                        <h3 class="section-title"><i class="pi pi-wallet"></i> 카카오페이 결제</h3>
+                        <Button
+                            :label="'₩' + formatCurrency(selectedTotal) + ' 결제하기'"
+                            class="w-full pay-btn"
+                            @click="requestPay"
+                        />
+                    </div>
+                </TabPanel>
+            </TabPanels>
+        </Tabs>
+
+    </Fluid>
 
     <Toast />
-  </div>
 </template>
 
 <script setup>
@@ -168,7 +185,10 @@ import Column from 'primevue/column'
 import Button from 'primevue/button'
 import { useToast } from 'primevue/usetoast'
 import { useUserStore } from '@/stores/user'
+import { useIcon } from '@/composables/useIcon'
+import { useRoute } from 'vue-router'
 
+const route = useRoute();
 const userStore = useUserStore()
 const toast = useToast()
 
@@ -181,6 +201,32 @@ const activeTab = ref('pending')
 const orders = ref([])
 const selectedOrders = ref([])
 const searchQuery = ref('')
+
+/* ───────────────────────────────
+ *  아이콘 세트
+ * ─────────────────────────────── */
+const icons = {
+  home: useIcon('home'),
+  bill: useIcon('bill'),
+  undo: useIcon('undo'),
+  pay: useIcon('pay'),
+  calendar: useIcon('calendar')
+
+};
+
+/* ───────────────────────────────
+ *  Breadcrumb 구성
+ * ─────────────────────────────── */
+const breadcrumbHome = { icon: icons.home, to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter(r => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  return [
+    { label: current.meta.breadcrumb?.parent || '' },
+    { label: '대금 납부' }
+  ];
+});
 
 // -----------------------------
 // 계산 속성
