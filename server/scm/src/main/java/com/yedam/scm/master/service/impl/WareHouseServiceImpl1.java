@@ -37,4 +37,8 @@ public class WareHouseServiceImpl1 implements WareHouseService1 {
     public int updateWareHouse(WareHouseVO wareHouseVO) {
         return mapper.updateWareHouse(wareHouseVO);
     }
+    @Override
+    public List<String> autoCompleteWhName(String keyword) {
+    return mapper.autoCompleteWhName(keyword);
+}
 }

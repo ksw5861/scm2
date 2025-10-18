@@ -1,97 +1,105 @@
 <template>
-  <div class="order-register">
-    <!-- 헤더 -->
-    <div class="header">
-      <h2>주문 등록 (판매처)</h2>
-      <div class="header-actions">
-        <Button 
-          label="제품 조회" 
-          icon="pi pi-search" 
-          class="p-button-outlined" 
-          @click="isShowModal = true" 
-        />
-        <Button 
-          label="등록" 
-          icon="pi pi-plus" 
-          class="p-button-success" 
-          @click="saveOrder" 
-        />
-      </div>
-    </div>
+    <Fluid>
 
-    <!-- 요약 -->
-    <div class="summary">
-      <span class="total-amount">
-        총 주문합계: <strong>{{ formatCurrency(totalAmount) }}</strong>
-      </span>
-      <span class="due-date">
-        납기일자: <strong>{{ deliveryDate }}</strong>
-      </span>
-    </div>
+        <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
 
-    <!-- 주문 상세 테이블 -->
-    <DataTable
-      :value="orderDetailList"
-      paginator
-      :rows="10"
-      responsiveLayout="scroll"
-      resizableColumns
-      columnResizeMode="fit"
-      class="order-table"
-    >
-      <Column field="prodId" header="제품코드" />
-      <Column field="prodName" header="제품명" />
-      <Column field="spec" header="규격" />
-      <Column field="unit" header="단위" />
-      
-      <!-- 제품단가 -->
-      <Column field="prodUnitPrice" header="제품단가">
-        <template #body="{ data }">
-          <div class="text-right">{{ formatCurrency(data.prodUnitPrice) }}</div>
-        </template>
-      </Column>
+        <div class="w-full mt-4">
+            <div class="card flex flex-col">
+                <div class="flex items-center justify-between h-10">
+                    <div class="font-semibold text-lg sm:text-xl flex items-center gap-4 whitespace-nowrap">
+                        <span :class="icons.list"></span>
+                        주문 등록 예정 목록
+                        <div class="text-sm text-gray-400" style="align-self: flex-end;">
+                            총 주문 예정 금엑
+                            <span class="font-semibold text-sm text-gray-700 text-red-400">
+                                {{ formatCurrency(totalAmount) }}
+                            </span>
+                            원
+                        </div>
+                    </div>
 
-      <!-- 주문수량 -->
-      <Column header="주문수량" style="text-align: center;">
-        <template #body="{ data }">
-          <InputNumber
-            v-model="data.orderQty"
-            :min="0"
-            @input="data.orderQty = $event.value" 
-            showButtons
-            buttonLayout="horizontal"
-            decrementButtonClass="p-button-outlined p-button-sm"
-            incrementButtonClass="p-button-outlined p-button-sm"
-            :inputStyle="{ width: '20px', textAlign: 'center', padding: '4px' }"
-          />
-        </template>
-      </Column>
+                    <div class="flex gap-2 ">
+                        <Btn
+                            icon="search"
+                            color="primary"
+                            label="제품 조회"
+                            class="whitespace-nowrap"
+                            @click="isShowModal = true"
+                        />
+                        <Btn
+                            icon="add"
+                            color="primary"
+                            label="주문 등록"
+                            class="whitespace-nowrap"
+                            @click="saveOrder"
+                            outlined
+                        />
+                    </div>
+                </div>
 
-      <!-- 합계 -->
-      <Column header="합계">
-        <template #body="{ data }">
-          <div class="text-right">{{ formatCurrency(data.total) }}</div>
-        </template>
-      </Column>
-    </DataTable>
+                <Divider />
 
-    <!-- 제품 검색 모달 -->
+                <div class="w-full flex flex-row mb-2 gap-2">
+                    <DataTable
+                        :value="orderDetailList"
+                        paginator
+                        :rows="10"
+                        responsiveLayout="scroll"
+                        resizableColumns
+                        columnResizeMode="fit"
+                        class="w-full"
+                    >
+                        <Column field="prodId" header="제품코드" style="width: 72px;"/>
+                        <Column field="prodName" header="제품명" style="width: 280px;"/>
+                        <Column field="spec" header="규격" style="width: 124px;"/>
+                        <Column field="unit" header="단위" style="width: 60px;"/>
+
+                        <Column field="prodUnitPrice" header="제품단가" style="width: 360px;">
+                            <template #body="{ data }">
+                            <div class="text-right">{{ formatCurrency(data.prodUnitPrice) }} 원</div>
+                            </template>
+                        </Column>
+
+                        <Column header="주문수량" style="width: 240px;">
+                            <template #body="{ data }">
+                                <InputNumber
+                                    v-model="data.orderQty"
+                                    :min="0"
+                                    @input="data.orderQty = $event.value"
+                                    showButtons
+                                    buttonLayout="horizontal"
+                                    decrementButtonClass="p-button-outlined p-button-sm"
+                                    incrementButtonClass="p-button-outlined p-button-sm"
+                                    :inputStyle="{ width: '20px', textAlign: 'center', padding: '4px' }"
+                                />
+                            </template>
+                        </Column>
+
+                        <Column header="합계">
+                            <template #body="{ data }">
+                                <div class="text-right font-semibold"><span class="text-red-400">{{ formatCurrency(data.total) }}</span> 원</div>
+                            </template>
+                        </Column>
+                    </DataTable>
+                </div>
+            </div>
+        </div>
+    </Fluid>
+
     <Dialog
       v-model:visible="isShowModal"
       header="제품 검색"
       :style="{ width: '600px' }"
       modal
     >
-      <!-- 🔍 검색창 -->
       <div class="mb-3">
-        <InputText 
-          v-model="search" 
-          placeholder="제품명 검색" 
+        <InputText
+          v-model="search"
+          placeholder="제품명 검색"
           class="w-full"
         />
       </div>
 
-      <!-- 🔍 검색된 리스트 -->
       <DataTable
         :value="filteredProducts"
         paginator
@@ -99,7 +107,7 @@
         responsiveLayout="scroll"
         selectionMode="single"
         v-model:selection="selectedProduct"
-        @rowClick="handleSelect" 
+        @rowClick="handleSelect"
       >
         <Column field="prodId" header="제품번호" />
         <Column field="prodName" header="제품명" />
@@ -112,7 +120,7 @@
         </Column>
       </DataTable>
     </Dialog>
-  </div>
+
 </template>
 
 <script setup>
@@ -126,7 +134,10 @@ import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import { useAppToast } from '@/composables/useAppToast'
 import { useUserStore } from '@/stores/user'
+import { useIcon } from '@/composables/useIcon'
+import { useRoute } from 'vue-router'
 
+const route = useRoute();
 const userStore = useUserStore()
 const { toast } = useAppToast()
 
@@ -142,6 +153,28 @@ const returnPrice = ref(1)              // 반품 관련 가격
 const returnStatus = ref('대기')        // 반품 상태
 const search = ref('')                  // 검색어
 
+/* ───────────────────────────────
+ *  아이콘 세트
+ * ─────────────────────────────── */
+const icons = {
+  home: useIcon('home'),
+  list: useIcon('list')
+};
+
+/* ───────────────────────────────
+ *  Breadcrumb 구성
+ * ─────────────────────────────── */
+const breadcrumbHome = { icon: icons.home, to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter(r => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  return [
+    { label: current.meta.breadcrumb?.parent || '' },
+    { label: '주문 등록' }
+  ];
+});
+
 // -----------------------------
 // 계산 & 유틸
 // -----------------------------
@@ -150,7 +183,7 @@ const totalAmount = computed(() =>
 )
 
 const formatCurrency = (value) =>
-  (value || 0).toLocaleString('ko-KR') + ' 원'
+  (value || 0).toLocaleString('ko-KR')
 
 const calculateRowTotal = (row) => {
   row.total =
@@ -256,62 +289,3 @@ watch(
   { deep: true }
 )
 </script>
-
-<style scoped>
-.order-register {
-  padding: 20px;
-}
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-.summary {
-  display: flex;
-  justify-content: flex-end;
-  gap: 30px;
-  align-items: center;
-  margin-bottom: 15px;
-  padding: 10px;
-  border: 1px solid #dcdcdc;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-  font-size: 1.1rem;
-}
-.total-amount {
-  font-weight: bold;
-  color: #007ad9;
-}
-.total-amount strong {
-  font-size: 1.2rem;
-}
-.due-date {
-  font-weight: bold;
-  color: #444;
-}
-.p-button {
-  margin-left: 10px;
-}
-.order-table {
-  width: 100%;
-  font-size: 0.95rem;
-}
-.text-right {
-  text-align: right;
-  padding-right: 6px;
-}
-
-.p-inputnumber {
-  display: flex;
-  align-items: center;
-  max-width: 100%;
-}
-
-/* 버튼 크기 */
-.p-inputnumber-button {
-  width: 28px !important;
-  height: 28px !important;
-  padding: 0 !important;
-}
-</style>

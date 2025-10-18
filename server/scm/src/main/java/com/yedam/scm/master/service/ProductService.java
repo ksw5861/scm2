@@ -11,4 +11,6 @@ public interface ProductService {
   int deleteProduct(String prodId);
   int insertProduct(ProductVO productVO);
   int updateProduct(ProductVO productVO);
+  List<String> autoCompletePrdName(String keyword);
+
 }

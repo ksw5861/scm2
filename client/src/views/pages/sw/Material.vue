@@ -1,13 +1,18 @@
 <script setup>
-import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import InputText from 'primevue/inputtext';
 import { useIcon } from '@/composables/useIcon';
 import { useAppToast } from '@/composables/useAppToast';
+import AutoComplete from 'primevue/autocomplete';
 
 const route = useRoute();
 const { toast } = useAppToast();
+
+const onlyNumber = (e) => {
+  e.target.value = e.target.value.replace(/[^0-9.]/g, '');
+};
 
 // icons
 const iconList = useIcon('list');
@@ -27,6 +32,24 @@ const breadcrumbItems = computed(() => {
   const currentLabel = current.name || '';
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
+
+const suggestions = ref([]); // 자동완성 리스트
+
+// 입력할 때마다 서버에 검색 요청
+const searchMatSuggestions = async (event) => {
+  const keyword = (typeof event === 'string' ? event : event.query)?.trim();
+  if (!keyword) {
+    suggestions.value = [];
+    return;
+  }
+
+  try {
+    const { data } = await axios.get(`http://localhost:8080/api/material/autocomplete?keyword=${keyword}`);
+    suggestions.value = data;
+  } catch (e) {
+    suggestions.value = [];
+  }
+};
 
 // 모달 (더이상 거래처 모달은 사용하지 않지만 기존 변수 유지)
 const showVendorModal = ref(false);
@@ -458,7 +481,7 @@ onMounted(() => fetchList());
           <InputGroup>
             <InputGroupAddon><i :class="iconBox" /></InputGroupAddon>
             <IftaLabel>
-              <InputText v-model="searchParams.matName" inputId="matName" />
+              <AutoComplete v-model="searchParams.matName" inputId="matName" :suggestions="suggestions" @complete="searchMatSuggestions" placeholder="자재명 입력" />
               <label for="matName">자재명</label>
             </IftaLabel>
           </InputGroup>
@@ -545,7 +568,7 @@ onMounted(() => fetchList());
                 </div>
                 <div>
                   <label class="text-sm block mb-1">단위환산</label>
-                  <InputText v-model="form.matUnitConv" class="w-full h-10" @keypress="(e) => /[0-9.]/.test(e.key) || e.preventDefault()" />
+                  <InputText :value="form.matUnitConv" @input="(e) => (form.matUnitConv = e.target.value.replace(/[^0-9.]/g, ''))" placeholder="숫자만 입력" />
                 </div>
                 <div>
                   <label class="text-sm block mb-1">단위</label>
@@ -553,15 +576,15 @@ onMounted(() => fetchList());
                 </div>
                 <div>
                   <label class="text-sm block mb-1">안전재고(EA)</label>
-                  <InputText v-model="form.safeStock" class="w-full h-10" @keypress="(e) => /[0-9.]/.test(e.key) || e.preventDefault()" />
+                  <InputText :value="form.safeStock" @input="(e) => (form.safeStock = e.target.value.replace(/[^0-9.]/g, ''))" placeholder="숫자만 입력" />
                 </div>
                 <div>
                   <label class="text-sm block mb-1">리드타임(일)</label>
-                  <InputText v-model="form.leadTime" class="w-full h-10" @keypress="(e) => /[0-9.]/.test(e.key) || e.preventDefault()" />
+                  <InputText :value="form.leadTime" @input="(e) => (form.leadTime = e.target.value.replace(/[^0-9.]/g, ''))" placeholder="숫자만 입력" />
                 </div>
                 <div>
                   <label class="text-sm block mb-1">단가(원)</label>
-                  <InputText v-model="displayPrice" class="w-full h-10" />
+                  <InputText :value="form.matUnitPrice" @input="(e) => (form.matUnitPrice = e.target.value.replace(/[^0-9.]/g, ''))" placeholder="숫자만 입력" />
                 </div>
                 <div>
                   <label class="text-sm block mb-1">상태</label>

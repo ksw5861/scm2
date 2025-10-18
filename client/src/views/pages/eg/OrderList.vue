@@ -1,143 +1,179 @@
 <template>
-  <div class="order-list">
-    <!-- 헤더 -->
-    <div class="header">
-      <h2>주문 조회 (판매처)</h2>
-      <div class="header-actions">
-        <Button label="초기화" icon="pi pi-refresh" class="p-button-outlined" @click="resetFilters" />
-        <Button label="조회" icon="pi pi-search" class="p-button-primary" @click="fetchOrders" />
-        <Button label="엑셀 다운로드" icon="pi pi-file-excel" class="p-button-success" @click="exportExcel" />
-        <Button label="PDF 출력" icon="pi pi-file-pdf" class="p-button-danger" @click="exportPDF" />
-        <Button 
-          label="출고완료 처리" 
-          icon="pi pi-truck" 
-          class="p-button-info" 
-          :disabled="!selectedOrder || selectedOrder.status !== '처리완료'"
-          @click="markAsShipping"
-        />
 
-        <Button 
-          label="배송완료 처리" 
-          icon="pi pi-check" 
-          class="p-button-success" 
-          :disabled="!selectedOrder || selectedOrder.status !== '출고완료'"
-          @click="markAsDelivered"
-        />
-        <Button 
-          label="주문취소" 
-          icon="pi pi-times" 
-          class="p-button-danger" 
-          :disabled="!selectedOrder || selectedOrder.status !== '대기'"
-          @click="cancelOrder"
-        />
+    <Fluid>
 
-      </div>
-    </div>
+        <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
 
-    <!-- 검색 영역 -->
-    <div class="filter-section">
-      <!-- 주문일자 -->
-      <div class="filter-group">
-        <span class="filter-label">주문일자</span>
-        <DatePicker v-model="filters.startDate" placeholder="시작일" dateFormat="yy-mm-dd" showIcon />
-        <span>~</span>
-        <DatePicker v-model="filters.endDate" placeholder="종료일" dateFormat="yy-mm-dd" showIcon />
-      </div>
+        <SearchCard title="주문 내역 검색" @search="fetchOrders" @reset="resetFilters">
+            <div class="flex flex-wrap w-full">
 
-      <!-- 제품명 -->
-      <div class="filter-group">
-        <span class="filter-label">제품명</span>
-        <InputText v-model="filters.prodName" placeholder="제품명 검색" />
-      </div>
+                <!-- 주문일자 -->
+                <div class="flex flex-col gap-2 p-2 w-full xl:w-1/2">
+                    <label class="font-semibold mb-1">주문 일자</label>
+                    <div class="flex items-center gap-2">
+                        <DatePicker v-model="filters.startDate" placeholder="시작일" dateFormat="yy-mm-dd" showIcon />
+                        <span>~</span>
+                        <DatePicker v-model="filters.endDate" placeholder="종료일" dateFormat="yy-mm-dd" showIcon />
+                    </div>
+                </div>
 
-      <!-- 주문 상태 -->
-      <div class="filter-group">
-        <span class="filter-label">주문상태</span>
-        <div class="status-buttons">
-          <Button label="대기" :class="{ selected: filters.status === '대기' }" @click="selectStatus('대기')" />
-          <Button label="처리중" :class="{ selected: filters.status === '처리중' }" @click="selectStatus('처리중')" />
-          <Button label="처리완료" :class="{ selected: filters.status === '처리완료' }" @click="selectStatus('처리완료')" />
-          <Button label="배송준비중" :class="{ selected: filters.status === '배송준비중' }" @click="selectStatus('배송준비중')" />
-          <Button label="출고완료" :class="{ selected: filters.status === '출고완료' }" @click="selectStatus('출고완료')" />
-          <Button label="배송완료" :class="{ selected: filters.status === '배송완료' }" @click="selectStatus('배송완료')" />
+                <!-- 주문 상태 -->
+                <div class="flex flex-col gap-2 p-2 w-full xl:w-1/2">
+                    <label class="font-semibold mb-1">주문 상태</label>
+                    <div class="flex gap-2 flex-nowrap overflow-x-auto">
+                        <Button
+                            v-for="status in ORDER_STATUS_OPTIONS"
+                            :key="status"
+                            :label="status"
+                            :class="[
+                                'whitespace-nowrap',
+                                filters.status === status ? '' : 'p-button-outlined'
+                            ]"
+                            @click="selectStatus(status)"
+                        />
+                    </div>
+                </div>
+
+                <!-- 제품명 -->
+                <div class="flex flex-col gap-2 p-2 w-full xl:w-1/2">
+                    <InputGroup>
+                        <InputGroupAddon><i class="pi pi-box" /></InputGroupAddon>
+                        <IftaLabel>
+                            <InputText v-model="filters.prodName" inputId="filterProdName" />
+                            <label for="filterProdName">제품명</label>
+                        </IftaLabel>
+                    </InputGroup>
+                </div>
+
+                <!-- 주문번호 -->
+                <div class="flex flex-col gap-2 p-2 w-full xl:w-1/2">
+                    <InputGroup>
+                        <InputGroupAddon><i class="pi pi-tag" /></InputGroupAddon>
+                        <IftaLabel>
+                            <InputText v-model="filters.orderId" inputId="filterOrderId" />
+                            <label for="filterOrderId">주문 번호</label>
+                        </IftaLabel>
+                    </InputGroup>
+                </div>
+
+            </div>
+        </SearchCard>
+
+        <div class="flex flex-col 2xl:flex-row w-full gap-4 mt-4">
+
+            <div class="w-full xl:w-13/24">
+                <div class="card flex flex-col">
+                    <div class="font-semibold text-lg sm:text-xl flex items-center justify-between gap-4 h-10">
+                        <div class="flex items-center gap-4">
+                            <span :class="icons.list"></span>
+                            주문 내역
+                        </div>
+                    </div>
+
+                    <Divider />
+
+                    <DataTable
+                        :value="orders"
+                        selectionMode="single"
+                        v-model:selection="selectedOrder"
+                        dataKey="orderId"
+                        paginator
+                        :rows="10"
+                        responsiveLayout="scroll"
+                        resizableColumns
+                        columnResizeMode="fit"
+                        class="custom-table"
+                    >
+                        <Column field="orderId" header="주문 번호" style="font-size: 12px; width:140px; text-align:center;" />
+                        <Column field="orderDate" header="주문 일자" style="font-size: 12px; width:140px; text-align:center;" />
+                        <Column field="prodName" header="주문명" style="font-size: 12px; width:200px;" />
+
+                        <Column field="totalPrice" header="주문 총액" style="font-size: 12px; width:150px; text-align:right;">
+                            <template #body="slotProps">
+                            {{ formatCurrency(slotProps.data.totalPrice) }} 원
+                            </template>
+                        </Column>
+
+                        <Column field="status" header="주문 상태" style="font-size: 12px; width:120px; text-align:center;" />
+                        <Column field="payStatus" header="결제 상태" style="font-size: 12px; width:120px; text-align:center;" />
+
+                        <Column field="deliveryDate" header="배송예정일" style="font-size: 12px; width:140px; text-align:center;" />
+                    </DataTable>
+
+                </div>
+            </div>
+
+            <div class="w-full xl:w-11/24">
+                <div class="card flex flex-col">
+                    <div class="flex items-center justify-between h-10">
+                        <div class="font-semibold text-lg sm:text-xl flex items-center justify-between gap-4 h-10">
+                            <div class="flex items-center gap-4">
+                                <span :class="icons.info"></span>
+                                주문 상세 내역
+                            </div>
+                        </div>
+                        <div class="flex gap-2 ">
+                            <Btn
+                                icon="excel"
+                                label="Excel 다운로드"
+                                class="whitespace-nowrap"
+                                style="background-color: #16a34a; border: none;"
+                                @click="exportExcel"
+                            />
+                            <Btn
+                                icon="pdf"
+                                label="PDF 다운로드"
+                                class="whitespace-nowrap"
+                                style="background-color: #dc2626; border: none;"
+                                @click="exportPDF"
+                            />
+                            <Btn
+                                icon="cancel"
+                                label="주문 취소"
+                                color="danger"
+                                class="whitespace-nowrap"
+                                @click="cancelOrder"
+                                outlined
+                            />
+                        </div>
+                    </div>
+
+                    <Divider />
+
+                    <DataTable
+                        :value="orderDetails"
+                        responsiveLayout="scroll"
+                        resizableColumns
+                        columnResizeMode="fit"
+                        class="custom-table"
+                    >
+                        <Column field="prodId" header="제품코드" style="font-size: 12px; width:84px; text-align:center;" />
+                        <Column field="prodName" header="제품명" style="font-size: 12px; width:180px;" />
+                        <Column field="spec" header="규격" style="font-size: 12px; width:120px; text-align:center;" />
+                        <Column field="unit" header="단위" style="font-size: 12px; width:48px; text-align:center;" />
+
+                        <Column field="prodUnitPrice" header="제품단가" style="font-size: 12px; width:120px; text-align:right;">
+                            <template #body="slotProps">
+                            {{ formatCurrency(slotProps.data.prodUnitPrice) }} 원
+                            </template>
+                        </Column>
+
+                        <Column field="orderQty" header="주문 수량" style="font-size: 12px; width:56px; text-align:center;" />
+                        <Column field="totalUnitPrice" header="합계" style="font-size: 12px; width:120px; text-align:right;">
+                            <template #body="slotProps">
+                            {{ formatCurrency(slotProps.data.totalUnitPrice) }} 원
+                            </template>
+                        </Column>
+                        <Column field="prodStatus" header="상태" style="font-size: 12px;"/>
+
+                    </DataTable>
+
+                </div>
+            </div>
+
         </div>
-      </div>
+    </Fluid>
 
-      <!-- 주문번호 -->
-      <div class="filter-group">
-        <span class="filter-label">주문번호</span>
-        <InputText v-model="filters.orderId" placeholder="주문번호 검색" />
-      </div>
-    </div>
-
-    <!-- 목록 & 상세 -->
-    <div class="content-section">
-      <!-- 좌측 주문 목록 -->
-      <div class="order-list-table">
-        <DataTable
-          :value="orders"
-          selectionMode="single"
-          v-model:selection="selectedOrder"
-          dataKey="orderId"
-          paginator
-          :rows="10"
-          responsiveLayout="scroll"
-          resizableColumns
-          columnResizeMode="fit"
-          class="custom-table"
-        >
-          <Column field="orderId" header="주문번호" style="width:140px; text-align:center;" />
-          <Column field="orderDate" header="주문일자" style="width:140px; text-align:center;" />
-          <Column field="prodName" header="대표 제품명" style="width:200px;" />
-
-          <Column field="totalPrice" header="주문총액(원)" style="width:150px; text-align:right;">
-            <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.totalPrice) }}
-            </template>
-          </Column>
-
-          <Column field="deliveryDate" header="배송예정일" style="width:140px; text-align:center;" />
-          <Column field="status" header="주문상태" style="width:120px; text-align:center;" />
-          <Column field="payStatus" header="결제상태" style="width:120px; text-align:center;" />
-        </DataTable>
-      </div>
-
-      <!-- 우측 주문 상세 -->
-      <div class="order-detail-table">
-        <DataTable
-          :value="orderDetails"
-          responsiveLayout="scroll"
-          resizableColumns
-          columnResizeMode="fit"
-          class="custom-table"
-        >
-          <Column field="prodId" header="제품코드" style="width:120px; text-align:center;" />
-          <Column field="prodName" header="제품명" style="width:150px;" />
-          <Column field="spec" header="규격" style="width:100px; text-align:center;" />
-          <Column field="unit" header="단위" style="width:80px; text-align:center;" />
-
-          <Column field="prodUnitPrice" header="제품단가" style="width:120px; text-align:right;">
-            <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.prodUnitPrice) }}
-            </template>
-          </Column>
-
-          <Column field="orderQty" header="주문수량" style="width:80px; text-align:center;" />
-          <Column field="totalUnitPrice" header="합계" style="width:120px; text-align:right;">
-            <template #body="slotProps">
-              {{ formatCurrency(slotProps.data.totalUnitPrice) }}
-            </template>
-          </Column>
-          <Column field="prodStatus" header="주문개별상태" />
-        </DataTable>
-
-        <!-- 합계 금액 -->
-        <div class="total-footer">
-          합계금액 : <strong>{{ formatCurrency(detailTotal) }}</strong>
-        </div>
-      </div>
-    </div>
-  </div>
 </template>
 
 <script setup>
@@ -149,12 +185,25 @@ import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import DatePicker from 'primevue/datepicker'
 import { useUserStore } from '@/stores/user'
+import { useRoute } from 'vue-router'
+import { useIcon } from '@/composables/useIcon'
 
+const route = useRoute();
 const userStore = useUserStore()
 
 // -----------------------------
 // 상태 관리
 // -----------------------------
+const ORDER_STATUS_OPTIONS = {
+  WAITING: '대기',
+  PROCESSING: '처리중',
+  COMPLETED: '처리완료',
+  READY_TO_SHIP: '배송준비중',
+  SHIPPED: '출고완료',
+  DELIVERED: '배송완료',
+  CANCELED: '주문취소',
+}
+
 const filters = ref({
   startDate: null,
   endDate: null,
@@ -166,6 +215,30 @@ const orders = ref([])
 const selectedOrder = ref(null)
 const orderDetails = ref([])
 
+
+/* ───────────────────────────────
+ *  아이콘 세트
+ * ─────────────────────────────── */
+const icons = {
+  home: useIcon('home'),
+  list: useIcon('list'),
+  info: useIcon('info')
+};
+
+/* ───────────────────────────────
+ *  Breadcrumb 구성
+ * ─────────────────────────────── */
+const breadcrumbHome = { icon: icons.home, to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter(r => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  return [
+    { label: current.meta.breadcrumb?.parent || '' },
+    { label: '주문 내역 조회' }
+  ];
+});
+
 // -----------------------------
 // 계산 속성 & 유틸
 // -----------------------------
@@ -174,8 +247,8 @@ const detailTotal = computed(() =>
 )
 
 const formatCurrency = (value) => {
-  if (value === null || value === undefined) return '0 원'
-  return value.toLocaleString('ko-KR') + ' 원'
+  if (value === null || value === undefined) return '0'
+  return value.toLocaleString('ko-KR')
 }
 
 const formatDate = (dateString) => {
@@ -344,7 +417,7 @@ const cancelOrder = async () => {
 
 
 // -----------------------------
-// PDF 출력  
+// PDF 출력
 // -----------------------------
 const exportPDF = async () => {
   try {
@@ -402,104 +475,3 @@ watch(
 
 onMounted(fetchOrders)
 </script>
-
-<style scoped>
-/* ===== 레이아웃 ===== */
-.order-list {
-  padding: 20px;
-}
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-.filter-section {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 15px;
-  padding: 10px;
-  border: 1px solid #dcdcdc;
-  border-radius: 8px;
-  background: #f9f9f9;
-  margin-bottom: 20px;
-}
-.filter-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.filter-label {
-  font-weight: 600;
-  min-width: 70px;
-  text-align: right;
-}
-.status-buttons button {
-  margin-right: 5px;
-}
-.status-buttons .selected {
-  background: #007ad9 !important;
-  color: white !important;
-}
-.content-section {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-.order-list-table,
-.order-detail-table {
-  flex: 1;
-  min-width: 400px;
-}
-.total-footer {
-  margin-top: 10px;
-  text-align: right;
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #333;
-}
-
-/* ===== 테이블 스타일 ===== */
-.custom-table {
-  width: 100%;
-  font-size: 0.95rem;
-}
-::v-deep(.p-datatable-thead > tr > th) {
-  border-right: 1px solid #e5e7eb;
-  background: #f9fafb;
-  font-weight: 600;
-  text-align: center !important;
-  padding: 10px 0;
-}
-::v-deep(.p-datatable-tbody > tr > td) {
-  border-right: 1px solid #f0f0f0;
-  text-align: center;
-  padding: 8px 10px;
-}
-::v-deep(.p-datatable-wrapper) {
-  overflow-x: auto;
-}
-
-/* ===== 반응형 ===== */
-@media (max-width: 768px) {
-  .filter-section {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .order-list-table,
-  .order-detail-table {
-    min-width: 100%;
-  }
-}
-
-/* ===== 버튼 스타일 ===== */
-.header-actions .p-button-success {
-  background-color: #28a745;
-  border: none;
-}
-.header-actions .p-button-danger {
-  background-color: #dc3545;
-  border: none;
-}
-</style>

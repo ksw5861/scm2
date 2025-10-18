@@ -28,4 +28,8 @@ public interface MaterialMapper {
 
   // 자재정보수정
   int updateMaterial(MaterialVO materialVO);
+
+  // 자재검색 자동완성
+  List<String> autoCompleteMatName(String keyword);
+
 }

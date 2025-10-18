@@ -45,7 +45,9 @@ const iconMap = {
   dollar: 'pi pi-dollar',
   cart: 'pi pi-shopping-cart',
   chart: 'pi pi-chart-bar',
-  wrench: 'pi pi-wrench'
+  wrench: 'pi pi-wrench',
+  excel: 'pi pi-file-excel',
+  pdf: 'pi pi-file-pdf'
 };
 
 export const useIcon = (name) => {
