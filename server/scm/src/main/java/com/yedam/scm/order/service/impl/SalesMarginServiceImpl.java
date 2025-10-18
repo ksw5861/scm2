@@ -115,6 +115,57 @@ public class SalesMarginServiceImpl implements SalesMarginService {
 
         return result;
     }
+@Override
+public List<Map<String, Object>> getSalesTrend(String vendorId, String range) {
+    if ("monthly".equals(range)) {
+        // 최근 6개월 매출
+        return mapper.getSalesTrendMonthly(vendorId);
+    } else {
+        // 기본은 최근 7일 매출
+        return mapper.getSalesTrendDaily(vendorId);
+    }
+}
+@Override
+public Map<String, Object> getSalesCompare(String vendorId) {
+    Map<String, Object> result = new HashMap<>();
+    List<Map<String, Object>> data = mapper.getSalesCompare(vendorId);
+    result.put("compareData", data);
+    return result;
+}
+@Override
+public List<Map<String, Object>> getCoffeeRank(String vendorId) {
+    return mapper.getCoffeeRank(vendorId);
+}
+
+// 매출 성장률
+@Override
+public Map<String, Object> getSalesGrowth(String vendorId) {
+    Map<String, Object> result = new HashMap<>();
+    Map<String, Object> growth = mapper.selectSalesGrowth(vendorId);
+
+    if (growth != null) {
+        double dailyRate = calcGrowth(growth.get("TODAY"), growth.get("YESTERDAY"));
+        double monthlyRate = calcGrowth(growth.get("CURR_MONTH"), growth.get("PREV_MONTH"));
+        double yoyRate = calcGrowth(growth.get("THIS_YEAR"), growth.get("LAST_YEAR"));
+
+        result.put("dailyRate", dailyRate);
+        result.put("monthlyRate", monthlyRate);
+        result.put("yoyRate", yoyRate);
+    } else {
+        result.put("dailyRate", 0);
+        result.put("monthlyRate", 0);
+        result.put("yoyRate", 0);
+    }
+    return result;
+}
+
+// ✅ 이거는 Impl에만 private 메서드로!
+private double calcGrowth(Object curr, Object prev) {
+    double c = curr == null ? 0 : Double.parseDouble(curr.toString());
+    double p = prev == null ? 0 : Double.parseDouble(prev.toString());
+    if (p == 0) return 0;
+    return Math.round(((c - p) / p * 100) * 10) / 10.0;
+}
 
 
 }

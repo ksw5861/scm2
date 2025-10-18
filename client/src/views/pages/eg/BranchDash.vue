@@ -46,23 +46,111 @@
       <Card class="quick-card"><template #title><i class="pi pi-upload mr-2"></i>재고조사 업로드</template><template #content>실사 파일 업로드.</template></Card>
     </div>
 
-    <!-- KPI -->
-    <div class="kpi-row">
-      <Card class="kpi"><template #title>오늘 매출</template><template #content><div class="kpi-value">{{ asKRW(kpi.todaySales) }}</div><div class="kpi-sub"><i class="pi pi-arrow-up-right"></i> 전일 대비 +2.8%</div></template></Card>
-      <Card class="kpi"><template #title>이번 달 매출</template><template #content><div class="kpi-value">{{ asKRW(kpi.monthSales) }}</div><div class="kpi-sub"><i class="pi pi-arrow-up-right"></i> +4.2%</div></template></Card>
-      <Card class="kpi"><template #title>미배송 주문</template><template #content><div class="kpi-value">{{ kpi.unshipped }}건</div><div class="kpi-sub"><i class="pi pi-arrow-down-right"></i> -2건</div></template></Card>
-      <Card class="kpi"><template #title>다음 결제기한 금액</template><template #content><div class="kpi-value">{{ asKRW(kpi.nextDueAmount) }}</div><div class="kpi-sub"><i class="pi pi-clock"></i> 기준일: {{ formatDate(kpi.nextDueDate) }}</div></template></Card>
-    </div>
+<!-- KPI -->
+<div class="kpi-row">
+  <Card class="kpi">
+    <template #title>오늘 매출</template>
+    <template #content>
+      <div class="kpi-value">
+        {{ asKRW(kpi.todaySales) }}
+        <span
+          v-if="kpi.dailyRate !== null"
+          :style="{ color: kpi.dailyRate > 0 ? '#22c55e' : (kpi.dailyRate < 0 ? '#ef4444' : '#6b7280') }"
+          class="kpi-rate"
+        >
+          {{ kpi.dailyRate > 0 ? '▲' : (kpi.dailyRate < 0 ? '▼' : '') }}
+          {{ Math.abs(kpi.dailyRate).toFixed(1) }}%
+        </span>
+      </div>
+    </template>
+  </Card>
 
-    <!-- 매출 차트 -->
+  <Card class="kpi">
+    <template #title>이번 달 매출</template>
+    <template #content>
+      <div class="kpi-value">
+        {{ asKRW(kpi.monthSales) }}
+        <span
+          v-if="kpi.monthRate !== null"
+          :style="{ color: kpi.monthRate > 0 ? '#22c55e' : (kpi.monthRate < 0 ? '#ef4444' : '#6b7280') }"
+          class="kpi-rate"
+        >
+          {{ kpi.monthRate > 0 ? '▲' : (kpi.monthRate < 0 ? '▼' : '') }}
+          {{ Math.abs(kpi.monthRate).toFixed(1) }}%
+        </span>
+      </div>
+    </template>
+  </Card>
+
+  <Card class="kpi">
+    <template #title>미배송 주문</template>
+    <template #content>
+      <div class="kpi-value">{{ kpi.unshipped }}건</div>
+      <div class="kpi-sub"><i class="pi pi-truck"></i> 미배송 수량</div>
+    </template>
+  </Card>
+
+  <Card class="kpi">
+    <template #title>다음 결제기한 금액</template>
+    <template #content>
+      <div class="kpi-value">{{ asKRW(kpi.nextDueAmount) }}</div>
+      <div class="kpi-sub"><i class="pi pi-clock"></i> 기준일: {{ formatDate(kpi.nextDueDate) }}</div>
+    </template>
+  </Card>
+</div>
+
+    <!-- 매출 분석 (탭 3개) -->
     <Card class="chart-card">
       <template #title>
-        매출 추이
-        <Dropdown v-model="selectedRange" :options="rangeOptions" optionLabel="label" 
-                  optionValue="value" class="ml-2" size="small" @change="fetchSalesTrend" />
+        매출 분석
+        <Dropdown
+          v-model="selectedRange"
+          :options="rangeOptions"
+          optionLabel="label"
+          optionValue="value"
+          class="ml-2"
+          size="small"
+          @change="fetchAllCharts"
+        />
       </template>
+
       <template #content>
-        <Chart type="line" :data="chartData" :options="chartOptions" />
+        <TabView>
+          <!-- ① 매출 추이 (본사 주문금액 vs 실제 매출) -->
+          <TabPanel header="매출 추이">
+            <Chart type="line" :data="trendData" :options="trendOptions" />
+          </TabPanel>
+
+          <!-- ② 작년 vs 올해 매출 비교 -->
+          <TabPanel header="작년 vs 올해">
+            <Chart type="bar" :data="compareData" :options="compareOptions" />
+          </TabPanel>
+
+<!-- ③ 원두 판매 랭킹 (Progress Bar) -->
+<TabPanel header="원두 판매 랭킹">
+  <div v-if="beanRank.length" class="bean-rank-wrap">
+    <div v-for="bean in beanRank" :key="bean.LABEL ?? bean.name" class="bean-rank">
+      <div class="bean-row">
+        <div class="bean-info">
+          <strong>{{ bean.LABEL ?? bean.name }}</strong>
+          <small v-if="bean.category">{{ bean.category }}</small>
+        </div>
+        <!-- ✅ 안전 반올림 (문자/undefined/기호 모두 처리) -->
+        <div class="bean-percent">{{ roundRate(bean.RATE ?? bean.rate) }}%</div>
+      </div>
+      <ProgressBar
+        :value="roundRate(bean.RATE ?? bean.rate)"
+        :showValue="false"
+        style="height:10px"
+      />
+    </div>
+  </div>
+  <Message v-else severity="info" class="mt-2">표시할 랭킹 데이터가 없습니다.</Message>
+</TabPanel>
+
+
+
+        </TabView>
       </template>
     </Card>
 
@@ -128,22 +216,34 @@
 
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'
 
 import {
   Chart as ChartJS,
-  Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale
+  Title, Tooltip, Legend, LineElement, BarElement, PointElement,
+  CategoryScale, LinearScale, TimeScale, Filler
 } from 'chart.js'
+import 'chartjs-adapter-date-fns'
 
-import 'chartjs-adapter-date-fns';
+// PrimeVue tab/progress components (로컬 임포트로 전역등록 없이 사용)
+import TabView from 'primevue/tabview'
+import TabPanel from 'primevue/tabpanel'
+import ProgressBar from 'primevue/progressbar'
 
-ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale)
+ChartJS.register(
+  Title, Tooltip, Legend, LineElement, BarElement, PointElement,
+  CategoryScale, LinearScale, TimeScale, Filler
+)
 
 // Pinia Store
 const userStore = useUserStore();
 const vendorId = userStore.code;
+
+// TODO: 필요시 실데이터 연결
+const selectedStore = ref(null)
+const stores = ref([])
 
 // 날짜 포맷
 const formatDate = (dateStr) => {
@@ -173,15 +273,33 @@ const statusColor = (status) => {
 }
 
 // KPI
-const kpi = ref({ todaySales: 0, monthSales: 0, unshipped: 0, nextDueAmount: 0, nextDueDate: '' });
+const kpi = ref({
+  todaySales: 0,
+  monthSales: 0,
+  unshipped: 0,
+  nextDueAmount: 0,
+  nextDueDate: '',
+  dailyRate: 0,
+  monthRate: 0
+})
+
 const fetchKpi = async () => {
   try {
-    const { data } = await axios.get('/api/branchdashboard', { params: { vendorId } });
-    kpi.value = data;
+    const { data } = await axios.get('/api/branch/sales-growth', { params: { vendorId } })
+    kpi.value = {
+      todaySales: data.TODAY ?? 0,
+      monthSales: data.CURR_MONTH ?? 0,
+      unshipped: data.UNSHIPPED ?? 0,
+      nextDueAmount: data.NEXT_DUE_AMT ?? 0,
+      nextDueDate: data.NEXT_DUE_DATE ?? '',
+      dailyRate: data.DAILY_RATE ?? 0,
+      monthRate: data.MONTHLY_RATE ?? 0
+    }
   } catch (err) {
-    console.error('KPI 불러오기 오류:', err);
+    console.error('KPI 불러오기 오류:', err)
   }
-};
+}
+
 
 // 주문
 const orders = ref([]);
@@ -197,7 +315,7 @@ const fetchOrders = async () => {
 const filteredOrders = computed(() =>
   orders.value.filter(o =>
     !orderQuery.value ||
-    o.orderId.includes(orderQuery.value) ||
+    o.orderId?.includes(orderQuery.value) ||
     (o.prodName && o.prodName.includes(orderQuery.value))
   )
 );
@@ -225,72 +343,163 @@ const fetchNotices = async () => {
   }
 };
 
-// ========= 매출 차트 =========
-const selectedRange = ref('daily'); 
+// ========= 매출 분석(탭) =========
+
+// 공통 드롭다운: 일별/월별
+const selectedRange = ref('daily');
 const rangeOptions = [
   { label: '일별', value: 'daily' },
-  { label: '주별', value: 'weekly' },
-  { label: '월별', value: 'monthly' },
-  { label: '연별', value: 'yearly' }
+  { label: '월별', value: 'monthly' }
 ];
 
-const chartData = ref({ datasets: [] });
+// ① 매출 추이 (본사 주문금액 vs 실제 매출)
+const trendData = ref({ datasets: [] });
+const trendOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { position: 'bottom' } },
+  scales: {
+    x: {
+      type: selectedRange.value === 'daily' ? 'time' : 'category',
+      time: selectedRange.value === 'daily' ? { unit: 'day' } : undefined
+    },
+    y: {
+      beginAtZero: true,
+      ticks: { callback: (value) => (value / 10000).toLocaleString() + '만 원' }
+    }
+  },
+  elements: { line: { tension: 0.35 }, point: { radius: 2 } }
+}));
 
-const fetchSalesTrend = async () => {
+const fetchTrend = async () => {
   try {
-    const { data } = await axios.get('/api/salestrend', {
-      params: { vendorId, range: selectedRange.value }
+    const { data } = await axios.get('/api/branch/salestrend', {
+      params: { vendorId, range: selectedRange.value } // 기대 필드: LABEL, ORDER_AMT, SALES_AMT
     });
 
-    chartData.value = {
-      datasets: [{
-        label: '매출',
-        data: data.map(d => ({
-          x: d.LABEL,  // API에서 YYYY-MM-DD 내려줌
-          y: d.AMOUNT
-        })),
-        borderColor: '#4F46E5',
-        backgroundColor: 'rgba(79,70,229,0.08)',
-        fill: true,
-        tension: 0.35,
-        pointRadius: 2
-      }]
-    };
+    const labels = data.map(d => d.LABEL);
+    const orderAmt = data.map(d => d.ORDER_AMT ?? 0);
+    const salesAmt = data.map(d => d.SALES_AMT ?? 0);
 
+    trendData.value = {
+      labels,
+      datasets: [
+        {
+          label: '본사 주문금액',
+          data: orderAmt,
+          borderColor: '#93c5fd',
+          backgroundColor: 'rgba(147,197,253,0.20)',
+          fill: true
+        },
+        {
+          label: '실제 매출금액',
+          data: salesAmt,
+          borderColor: '#4F46E5',
+          backgroundColor: 'rgba(79,70,229,0.10)',
+          fill: true
+        }
+      ]
+    };
   } catch (err) {
     console.error('매출 추이 조회 오류:', err);
   }
 };
 
-const chartOptions = {
+// ② 작년 vs 올해 매출 비교
+const compareData = ref({ datasets: [] });
+const compareOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
+  plugins: { legend: { position: 'bottom' } },
   scales: {
-    x: {
-      type: 'time',
-      time: { unit: 'day' },
-      min: new Date(new Date().setMonth(new Date().getMonth() - 1)), // 1개월 전
-      max: new Date() // 오늘까지
+    x: { 
+      type: 'category'   // ✅ 무조건 카테고리로 강제 (월 라벨용)
     },
-    y: {
-      beginAtZero: true,
-      ticks: {
-        callback: (value) => (value / 10000).toLocaleString() + '만 원'
-      }
+    y: { 
+      beginAtZero: true, 
+      ticks: { callback: (v) => (v / 10000).toLocaleString() + '만 원' } 
     }
   }
-}
+}));
 
+
+const fetchCompare = async () => {
+  try {
+    const { data } = await axios.get('/api/branch/salescompare', {
+      params: { vendorId, range: selectedRange.value }
+    });
+
+    // ✅ 실제 데이터 위치: data.compareData
+    const list = data.compareData;
+
+    // ✅ LABEL이 이미 월(Label "05", "09" 이런 형식)
+    const labels = list.map(d => d.LABEL);
+
+    compareData.value = {
+      labels,
+      datasets: [
+        { label: '작년', data: list.map(d => d.LAST_YEAR ?? 0), backgroundColor: '#93c5fd' },
+        { label: '올해', data: list.map(d => d.THIS_YEAR ?? 0), backgroundColor: '#4F46E5' }
+      ]
+    };
+  } catch (err) {
+    console.error('작년 vs 올해 매출 비교 조회 오류:', err);
+  }
+};
+
+
+// 랭킹 데이터
+const beanRank = ref([]);
+
+// ✅ RATE 값 안전 파싱 + 반올림 (문자열/공백/%/콤마 모두 처리)
+const roundRate = (v) => {
+  if (v === null || v === undefined) return 0;
+  // 문자열일 수 있으므로 숫자/점/부호만 남기고 변환
+  const n = parseFloat(String(v).replace(/[^\d.\-]/g, ''));
+  return Number.isFinite(n) ? Math.round(n) : 0;
+};
+
+// ✅ API 호출 시 응답을 안전하게 매핑 (필드 불일치 대비)
+const fetchCoffeeRank = async () => {
+  try {
+    const { data } = await axios.get('/api/branch/coffeerank', {
+      params: { vendorId, range: selectedRange.value }
+    });
+
+    // 배열로 정규화 (직접 배열/객체 래핑 모두 대응)
+    const list = Array.isArray(data) ? data : (data?.list ?? data?.items ?? []);
+    // 필드 이름 가드 + RATE 숫자화
+    beanRank.value = list.map(r => ({
+      LABEL: r.LABEL ?? r.name ?? '',
+      RATE: roundRate(r.RATE ?? r.rate ?? 0)
+    }));
+  } catch (e) {
+    console.error('원두 랭킹 조회 오류:', e);
+    beanRank.value = [];
+  }
+};
+
+
+// 공통 fetch
+const fetchAllCharts = () => {
+  fetchTrend();
+  fetchCompare();
+  fetchCoffeeRank();
+};
+
+// 최초 로드
 onMounted(() => {
   fetchKpi();
   fetchOrders();
   fetchStock();
   fetchNotices();
-  fetchSalesTrend();
+  fetchAllCharts();
+
 });
+
+// range 실시간 반영(드롭다운 변경 시 자동 반영을 원하면 아래 watch 유지)
+// watch(selectedRange, fetchAllCharts);
 </script>
-
-
 
 
 
@@ -321,9 +530,18 @@ onMounted(() => {
 .kpi-value { font-size:22px; font-weight:800; margin-top:2px; }
 .kpi-sub { color:#6b7280; font-size:12px; margin-top:4px; display:flex; align-items:center; gap:6px; }
 
-/* 차트 */
+/* 차트 영역 */
 .chart-card { margin-bottom:16px; }
 .chart-card :deep(.p-card-content){ height:260px; }
+.chart-card :deep(canvas){ max-height: 220px !important; } /* 탭 내 차트 높이 안정화 */
+
+/* 원두 랭킹 */
+.bean-rank-wrap { display:flex; flex-direction:column; gap:10px; }
+.bean-rank { display:block; }
+.bean-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+.bean-info { display:flex; flex-direction:column; }
+.bean-info small { color:#9ca3af; font-size:12px; }
+.bean-percent { font-weight:700; color:#4F46E5; width:52px; text-align:right; }
 
 /* 테이블/공통 */
 .table-card { margin-bottom:16px; }
@@ -352,4 +570,10 @@ onMounted(() => {
 @media (max-width: 640px){
   .card-grid-4, .kpi-row { grid-template-columns: 1fr; }
 }
+.kpi-rate {
+  margin-left: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 </style>
