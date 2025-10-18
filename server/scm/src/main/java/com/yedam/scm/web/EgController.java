@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.yedam.scm.master.mapper.VendorMapper;
 import com.yedam.scm.order.service.BranchDashService;
 import com.yedam.scm.order.service.GoDelService;
 import com.yedam.scm.order.service.IamportService;
@@ -26,15 +27,15 @@ import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
-import com.yedam.scm.vo.PaymentVO;
-import com.yedam.scm.vo.ReturnVO;
-import com.yedam.scm.vo.SalesOrderVO;
-
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 
 import com.yedam.scm.vo.SalesOrderDetailVO;
+import com.yedam.scm.vo.SalesOrderVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ReturnDetailVO;
+import com.yedam.scm.vo.ReturnVO;
+import com.yedam.scm.vo.PaymentVO; 
 
 
 
@@ -66,6 +67,7 @@ public class EgController {
 
     @Autowired
     private GoDelService goDelSvc;
+
 
     // =================================================================
     // 1. 제품 목록 조회 (모달용)
@@ -107,27 +109,46 @@ public class EgController {
     @PostMapping("/insertorder")
     public ResponseEntity<Map<String, Object>> insertOrder(@RequestBody SalesOrderVO orderVO) {
         Map<String, Object> response = new HashMap<>();
-        // TODO: logger 사용 권장
-        System.out.println("Received OrderVO: " + orderVO);
 
         try {
             boolean success = orderSvc.insertOrder(orderVO);
+
             if (success) {
                 response.put("status", "success");
                 response.put("orderId", orderVO.getOrderId());
                 return ResponseEntity.ok(response);
             } else {
-                response.put("status", "error");
-                response.put("message", "주문 등록에 실패했습니다.");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+                String reason = orderVO.getFailReason();
+
+                if ("ZERO".equals(reason)) {
+                    response.put("status", "error");
+                    response.put("message", "총 주문 금액이 0원이어서 주문을 등록할 수 없습니다.");
+                } 
+                else if ("CREDIT".equals(reason)) {
+                    response.put("status", "error");
+                    response.put(
+                        "message",
+                        "주문금액이 여신한도를 초과하여 주문할 수 없습니다. (여신한도 잔액 : "
+                        + String.format("%,d", orderVO.getRemainCredit()) + "원)"
+                    );
+                } 
+                else {
+                    response.put("status", "error");
+                    response.put("message", "주문 등록 실패 (확인되지 않은 오류)");
+                }
+
+                return ResponseEntity.ok(response);
             }
-        } catch (Exception e) {
+        } 
+        catch (Exception e) {
             e.printStackTrace();
             response.put("status", "error");
             response.put("message", "서버 오류로 주문 등록에 실패했습니다.");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
+
+
 
     // =================================================================
     // 3. 주문 목록 조회

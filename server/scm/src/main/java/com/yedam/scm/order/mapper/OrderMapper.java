@@ -16,11 +16,8 @@ public interface OrderMapper {
     // 주문 등록
     // =============================================================
     int insertOrder(SalesOrderVO orderVO);
-
-    // =============================================================
-    // 주문 상세 등록
-    // =============================================================
     int insertOrderDetail(SalesOrderDetailVO detailVO);
+    int getCreditLimit(String vendorId);
 
     // =============================================================
     // 주문 목록 조회 (검색조건 포함)
