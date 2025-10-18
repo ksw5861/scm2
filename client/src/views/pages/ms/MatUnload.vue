@@ -9,11 +9,12 @@ import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import { useUserStore } from '@/stores/user';
+import SearchCard from '@/components/card/SearchCard.vue';
 
 // Pinia Store
 const userStore = useUserStore();
-const empName = ref(userStore.name);
-const empId = ref(userStore.code);
+const empName = userStore.name;
+const empId = userStore.code; //사원코드
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -38,6 +39,12 @@ const returnModal = ref(false);
 const returnMemo = ref('');
 // pagination
 const page = ref({ page: 1, size: 10, totalElements: 0 });
+//검색조건
+const searchFilter = ref({
+  startDate: '',
+  endDate: '',
+  vendor: ''
+});
 
 const pageLoad = async () => {
   const pageParam = { page: page.value.page, size: page.value.size };
@@ -80,7 +87,7 @@ const detailInfo = async () => {
 
 const approve = async () => {
   try {
-    await axios.post('/api/mat/approveUnload', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName.value } });
+    await axios.post('/api/mat/approveUnload', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName } });
     toast('info', '하차승인 성공', '하차승인 성공:', '3000');
     await pageLoad();
     shipDetailListData.value = [{ matId: '', matName: '', ortQty: null, unit: '' }];
@@ -92,7 +99,7 @@ const approve = async () => {
 const returnSubmit = async () => {
   //사유, 담당자, 하차등록시 해당 마스터와 디테일 모두 상태값 변경하고 기록해줘야함. [입고마스터 + 디테일 + 상태변경로그] + @ 발주상태값 반품으로도 가능??/??
   try {
-    await axios.post('/api/mat/unloadReturn', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName.value, rejMemo: returnMemo.value } });
+    await axios.post('/api/mat/unloadReturn', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName, rejMemo: returnMemo.value } });
     toast('info', '반품등록 성공', '반품등록 성공:', '3000');
     await pageLoad();
     closeReturnModal();
@@ -148,31 +155,35 @@ const shipDetailColumn = [
     <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
+
     <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">하차 등록</div>
-      <Divider />
-      <!--search BOX 영역-->
-      <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
-        <SearchField type="dateRange" label="구매요청일자" v-model="dateRange" />
-        <SearchField type="textIcon" label="자재명" v-model="materialName" />
-        <SearchField type="date" label="등록일" v-model="registerDate" />
-        <SearchField
-          type="checkbox"
-          label="상태"
-          v-model="statusList"
-          :options="[
-            { label: '대기', value: 'WAIT' },
-            { label: '진행중', value: 'PROGRESS' },
-            { label: '완료', value: 'DONE' },
-            { label: '취소', value: 'CANCEL' }
-          ]"
-        />
-        <!-- 버튼 영역 -->
-        <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화" />
-          <btn color="contrast" icon="pi pi-search" label="조회" />
+      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <label for="searchStart">시작일</label>
+            </IftaLabel>
+          </InputGroup>
+
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <label for="searchEnd">종료일</label>
+            </IftaLabel>
+          </InputGroup>
+
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <label for="searchVendor">공급처</label>
+            </IftaLabel>
+          </InputGroup>
         </div>
-      </div>
+      </SearchCard>
     </div>
     <!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">

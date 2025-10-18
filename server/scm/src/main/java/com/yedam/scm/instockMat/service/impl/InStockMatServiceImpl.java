@@ -2,6 +2,7 @@ package com.yedam.scm.instockMat.service.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -123,13 +124,22 @@ public Map<String, Object> getMatStockList(PageDTO pageDTO, MatStockSearchDTO se
     public ResponseEntity<?> callRegMatDefect(InboundLogVO defectData, MultipartFile file) {
         //프로세스 분리 1) 정보등록  2) 불량정보등록 시퀀스아이디get 3) 이미지첨부여부에 따른 이미지 등록
         try {
-            //1)불량정보등록
-            mapper.callRegMatDefect(defectData);
+             //1)불량정보등록
+            Map<String, Object> paramMap = new HashMap<>();
+             
+            paramMap.put("inboundDetId", defectData.getInboundDetId());
+            paramMap.put("logRejQty", defectData.getLogRejQty());
+            paramMap.put("logMemo", defectData.getLogMemo());
+            paramMap.put("logName", defectData.getLogName());
+            paramMap.put("logId", null); // OUT 파라미터 받을 자리 
+            //=> 값 리턴받을때는 자동매핑처리가 안되니 별도 mapping작업해서 넘겨줘야함. in은 vo로 자동매칭해서 넘어가나 out이 안됨.
 
-            //2)불량정보 등록한 최신시퀀스 받아오기 currval
-            Long logId = mapper.selectRecentSeq();
+            //프로시저 호출
+            mapper.callRegMatDefect(paramMap);
 
-            //3) 이미지첨부여부 check
+            Long logId = paramMap.get("logId") != null ? ((BigDecimal) paramMap.get("logId")).longValue() : null;
+
+            // 2) 이미지첨부여부 check 후 이미지등록 호출
             if (file != null && !file.isEmpty()) {
                 String filePath = saveDefectImage(file);  // 실제 파일 저장
                 defectData.setLogImg(filePath);           // 경로 세팅

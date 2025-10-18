@@ -12,9 +12,16 @@ import FileUpload from 'primevue/fileupload';
 import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
 import { useUserStore } from '@/stores/user';
+import SearchCard from '@/components/card/SearchCard.vue';
+import Select from 'primevue/select';
+import DatePicker from 'primevue/datepicker';
+
+// (userStore.name)이름
+// (userStore.code)코드 - 계정기준으로
 
 // Pinia Store
 const userStore = useUserStore();
+const empName = userStore.name;
 const route = useRoute();
 const { toast } = useAppToast();
 console.log(userStore.name);
@@ -30,7 +37,6 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const empName = ref(userStore.name);
 //테이블 데이터
 const approveUnloadList = ref();
 const approveUnloadDetailList = ref([]);
@@ -51,6 +57,13 @@ const previewUrl = ref(null);
 const selectedFile = ref(null);
 // pagination
 const page = ref({ page: 1, size: 10, totalElements: 0 });
+//검색필드
+const searchFilter = ref({
+  stardDate: '',
+  endDate: '',
+  vendor: ''
+  //   lotStatus: ''
+});
 
 //불량정보를 백단에서 받을 inboundLogVO랑 바로 매핑가능하도록 사용!
 const defectForm = ref({
@@ -58,7 +71,7 @@ const defectForm = ref({
   inboundDetId: null,
   logRejQty: '',
   logMemo: '',
-  logName: empName.value
+  logName: empName
 });
 
 const pageLoad = async () => {
@@ -135,7 +148,7 @@ const submit = async () => {
     inQty: inQty.value,
     inboundLogVO: {
       logExpDate: expDate.value,
-      logName: empName.value
+      logName: empName
     }
   };
   console.log(payload);
@@ -169,7 +182,7 @@ const opendefectModal = () => {
     inboundDetId: row.id,
     logRejQty: '',
     logMemo: '',
-    logName: empName.value
+    logName: empName
   };
   defectModal.value = true;
 };
@@ -269,31 +282,42 @@ const approveUnloadDetaiColumn = [
     <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
+    <!--검색영역-->
     <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">입고 등록</div>
-      <Divider />
-      <!--search BOX 영역-->
-      <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
-        <SearchField type="dateRange" label="구매요청일자" v-model="dateRange" />
-        <SearchField type="textIcon" label="자재명" v-model="materialName" />
-        <SearchField type="date" label="등록일" v-model="registerDate" />
-        <SearchField
-          type="checkbox"
-          label="상태"
-          v-model="statusList"
-          :options="[
-            { label: '대기', value: 'WAIT' },
-            { label: '진행중', value: 'PROGRESS' },
-            { label: '완료', value: 'DONE' },
-            { label: '취소', value: 'CANCEL' }
-          ]"
-        />
-        <!-- 버튼 영역 -->
-        <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화" />
-          <btn color="contrast" icon="pi pi-search" label="조회" />
+      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <label for="searchStart">시작일</label>
+            </IftaLabel>
+          </InputGroup>
+
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <label for="searchEnd">종료일</label>
+            </IftaLabel>
+          </InputGroup>
+
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <label for="searchVendor">공급처</label>
+            </IftaLabel>
+          </InputGroup>
+
+          <div class="flex flex-col w-full">
+            <InputGroup>
+              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <Select v-model="searchFilter.lotStatus" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="입고 상태" class="w-full h-[48px] text-base" />
+            </InputGroup>
+          </div>
         </div>
-      </div>
+      </SearchCard>
     </div>
     <!--테이블영역--><!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">
