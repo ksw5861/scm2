@@ -49,6 +49,7 @@ public class SalesOrderVO {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     BigDecimal finalAmount;
 
+    private String failReason;  
     // 추가된 대표 제품명 필드
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String prodName;
@@ -58,6 +59,8 @@ public class SalesOrderVO {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private List<SalesOrderDetailVO> details;
+
+    private Long remainCredit; // 여신 잔액
 
     // Getter / Setter
     public String getProdName() {
