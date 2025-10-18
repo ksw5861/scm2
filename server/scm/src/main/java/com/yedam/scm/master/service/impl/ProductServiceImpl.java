@@ -47,4 +47,8 @@ public class ProductServiceImpl implements ProductService {
   public int updateProduct(ProductVO productVO) {
     return mapper.updateProduct(productVO);
   }
+
+  public List<String> autoCompletePrdName(String keyword) {
+        return mapper.autoCompletePrdName(keyword);
+    }
 }

@@ -26,4 +26,8 @@ public interface WareHouseMapper1 {
 
     // 5. 창고 수정
     int updateWareHouse(WareHouseVO wareHouseVO);
+
+    // 자동완성
+    List<String> autoCompleteWhName(String keyword);
+
 }

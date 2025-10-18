@@ -19,4 +19,8 @@ public interface BomService {
     void insertBomWithDetails(BomVO bom, List<BomDetailVO> details);
     void updateBomWithDetails(BomVO bom, List<BomDetailVO> details);
     int deleteBomWithDetails(String bomId);
+
+    // 자동 완성
+    List<String> autoCompletePrdName(String keyword);
+
 }

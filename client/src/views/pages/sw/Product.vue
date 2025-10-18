@@ -5,9 +5,27 @@ import axios from 'axios';
 import InputText from 'primevue/inputtext';
 import { useIcon } from '@/composables/useIcon';
 import { useAppToast } from '@/composables/useAppToast';
+import AutoComplete from 'primevue/autocomplete';
 
 const route = useRoute();
 const { toast } = useAppToast();
+
+const suggestions = ref([]);
+
+const searchProdSuggestions = async (event) => {
+  const keyword = (typeof event === 'string' ? event : event.query)?.trim();
+  if (!keyword) {
+    suggestions.value = [];
+    return;
+  }
+
+  try {
+    const { data } = await axios.get(`http://localhost:8080/api/product/autocomplete?keyword=${keyword}`);
+    suggestions.value = data;
+  } catch (e) {
+    suggestions.value = [];
+  }
+};
 
 // icons
 const iconList = useIcon('list');
@@ -248,7 +266,7 @@ onMounted(() => fetchProductList());
           <InputGroup>
             <InputGroupAddon><i :class="iconBox" /></InputGroupAddon>
             <IftaLabel>
-              <InputText v-model="searchParams.prodName" inputId="prodName" />
+              <AutoComplete v-model="searchParams.prodName" inputId="prodName" :suggestions="suggestions" @complete="searchProdSuggestions" placeholder="제품명 입력" />
               <label for="prodName">제품명</label>
             </IftaLabel>
           </InputGroup>
@@ -329,8 +347,24 @@ onMounted(() => fetchProductList());
                 <label><input type="radio" value="N" v-model="productForm.status" /> 미사용</label>
               </div>
             </div>
-            <div><label class="text-sm block mb-1">만료일</label><InputText v-model="productForm.exp" class="w-full h-10" /></div>
-            <div><label class="text-sm block mb-1">단가</label><InputText v-model="productForm.prodUnitPrice" class="w-full h-10" /></div>
+            <div><label class="text-sm block mb-1">만료일</label><InputText :value="productForm.exp" @input="(e) => (productForm.exp = e.target.value.replace(/[^0-9]/g, ''))" class="w-full h-10" placeholder="숫자만 입력" /></div>
+            <div>
+              <label class="text-sm block mb-1">단가</label>
+              <InputText
+                :value="productForm.prodUnitPrice"
+                @input="
+                  (e) => {
+                    // 숫자만 남기기
+                    let val = e.target.value.replace(/[^0-9]/g, '');
+                    // 3자리마다 콤마
+                    val = val.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    productForm.prodUnitPrice = val;
+                  }
+                "
+                class="w-full h-10"
+                placeholder="숫자만 입력"
+              />
+            </div>
             <div><label class="text-sm block mb-1">제품코드</label><InputText v-model="productForm.prodId" class="w-full h-10" disabled /></div>
           </div>
         </div>

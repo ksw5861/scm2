@@ -79,4 +79,9 @@ public class BomServiceImpl implements BomService {
         bomMapper.deleteBomDetailsByBomId(bomId);
         return bomMapper.deleteBom(bomId);
     }
+
+    @Override
+    public List<String> autoCompletePrdName(String keyword) {
+  return bomMapper.autoCompletePrdName(keyword);
+}
 }

@@ -175,4 +175,12 @@
         DELETE FROM BOM_DETAIL WHERE BOM_ID = #{bomId}
     </delete>
 
+    <!-- 자동완성 -->
+    <select id="autoCompletePrdName" parameterType="string" resultType="string">
+  SELECT DISTINCT PROD_NAME
+  FROM PRODUCT
+  WHERE PROD_NAME LIKE '%' || #{keyword} || '%'
+</select>
+
+
 </mapper>

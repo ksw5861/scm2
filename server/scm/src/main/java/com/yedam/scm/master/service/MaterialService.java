@@ -10,4 +10,6 @@ public interface MaterialService {
   int deleteMaterial(String matId);
   boolean insertMaterial(MaterialVO materialVO);
   int updateMaterial(MaterialVO materialVO);
+  List<String> autoCompleteMatName(String keyword);
+
 }
