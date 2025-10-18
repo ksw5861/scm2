@@ -9,6 +9,8 @@ import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import { useUserStore } from '@/stores/user';
+import SearchCard from '@/components/card/SearchCard.vue';
+import Select from 'primevue/select';
 
 // Pinia Store
 const userStore = useUserStore();
@@ -38,8 +40,7 @@ const statusOptions = ref([]);
 const searchFilter = ref({
   materialId: '',
   materialName: '',
-  lotNo: '',
-  lotStatus: ''
+  lotNo: ''
 });
 // pagination
 const page = ref({ page: 1, size: 10, totalElements: 0 });
@@ -164,30 +165,56 @@ const matLotColumns = [
     <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
-    <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">재고 조정</div>
-      <Divider />
-      <!--search BOX 영역-->
-      <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
-        <SearchField type="textIcon" label="자재코드" v-model="searchFilter.materialId" />
-        <SearchField type="text" label="자재명" v-model="searchFilter.materialName" />
-        <SearchField type="text" label="LOT번호" v-model="searchFilter.lotNo" />
-        <SearchField type="dropDown" label="LOT상태" v-model="searchFilter.lotStatus" :options="statusOptions" />
-        <!-- <SearchField type="date" label="등록일" v-model="registerDate" /> -->
 
-        <!-- 버튼 영역 -->
-        <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화" @click="resetSearch" />
-          <btn color="contrast" icon="pi pi-search" label="조회" @click="fetchMatList" />
-        </div>
-      </div>
+    <!--검색영역-->
+    <div class="card flex flex-col gap-4">
+        <SearchCard title="재고 조회" @search="fetchMatList" @reset="resetSearch">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+                <!-- <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <InputText v-model="searchFilter.materialId" inputId="searchMatId" />
+                        <label for="searchMatId">자재코드</label>
+                    </IftaLabel>
+                </InputGroup> -->
+
+                <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <InputText v-model="searchFilter.materialId" inputId="searchMa" />
+                        <label for="searchMatName">자재명</label>
+                    </IftaLabel>
+                </InputGroup>
+
+                <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <InputText v-model="searchFilter.materialId" inputId="searchMa" />
+                        <label for="searchLotNo">LOT번호</label>
+                    </IftaLabel>
+                </InputGroup>
+
+                <div class="flex flex-col w-full">
+                    <InputGroup>
+                        <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                        <Select
+                        v-model="searchFilter.lotStatus"
+                        :options="statusOptions"
+                        optionLabel="name"
+                        optionValue="value"
+                        placeholder="LOT 상태"
+                        class="w-full h-[48px] text-base"/>
+                    </InputGroup>
+                </div>
+            </div>
+        </SearchCard>
     </div>
-    <!--검색박스 end-->
+
     <!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">
       <div class="md:w-1/2">
         <div class="card flex flex-col gap-4 h-full">
-          <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">목록</div>
             <Divider />
@@ -195,6 +222,7 @@ const matLotColumns = [
           </div>
         </div>
       </div>
+      <!--오른쪽-->
       <div class="md:w-1/2 h-full">
         <div class="card flex flex-col gap-4 h-full">
           <div class="flex items-center justify-between my-3">
@@ -208,18 +236,18 @@ const matLotColumns = [
           <div class="flex flex-col gap-4 h-[600px]">
             <!-- 카드 전체 높이 지정 -->
             <!-- 상단 입력폼 (4 비율) -->
-
-            <div class="flex-[6] overflow-auto">
+            <div class="flex-[3] overflow-auto">
               <selectTable v-model:selection="selectedDeRow" :selectionMode="'single'" :columns="matLotColumns" :data="matLotList" :paginator="false" :showCheckbox="false" />
             </div>
             <!-- 하단 테이블 (6 비율) -->
             <div class="flex-[4]">
+                <Divider />
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
-                <!-- <SearchField type="readOnly" label="출고일" v-model="shipmentDate" />
-                    <SearchField type="readOnly" label="담당자" v-model="vanEmpName" />
-                    <searchField type="dropDown" label="배송지" v-model="deliveryPlace" class="w-full" :options="warehoustListOpt" />
-                    <SearchField type="text" label="운송번호" v-model="trackingNo" />
-                    <SearchField type="text" label="차량번호" v-model="carNo" visibility: hidden/> -->
+                <SearchField type="readOnly" label="출고일" v-model="shipmentDate" />
+                <SearchField type="readOnly" label="담당자" v-model="vanEmpName" />
+                <SearchField type="dropDown" label="배송지" v-model="deliveryPlace" class="w-full" :options="warehoustListOpt" />
+                <SearchField type="text" label="운송번호" v-model="trackingNo" />
+                <SearchField type="text" label="차량번호" v-model="carNo" visibility: hidden/>
               </div>
             </div>
           </div>

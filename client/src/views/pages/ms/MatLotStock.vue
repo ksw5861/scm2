@@ -1,14 +1,15 @@
 <script setup>
 import { ref, onMounted, computed, getCurrentWatcher } from 'vue';
 import axios from 'axios';
-import btn from '@/components/common/Btn.vue';
 import selectTable from '@/components/common/checkBoxTable.vue';
-import SearchField from '@/components/common/SearchBox.vue';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import { useUserStore } from '@/stores/user';
+import SearchCard from '@/components/card/SearchCard.vue';
+import Select from 'primevue/select';
+
 
 // Pinia Store
 const userStore = useUserStore();
@@ -164,23 +165,49 @@ const matLotColumns = [
     <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
+    <!--검색영역-->
     <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">재고 조회</div>
-      <Divider />
-      <!--search BOX 영역-->
-      <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
-        <SearchField type="textIcon" label="자재코드" v-model="searchFilter.materialId" />
-        <SearchField type="text" label="자재명" v-model="searchFilter.materialName" />
-        <SearchField type="text" label="LOT번호" v-model="searchFilter.lotNo" />
-        <SearchField type="dropDown" label="LOT상태" v-model="searchFilter.lotStatus" :options="statusOptions" />
-        <!-- <SearchField type="date" label="등록일" v-model="registerDate" /> -->
+        <SearchCard title="재고 조회" @search="fetchMatList" @reset="resetSearch">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
-        <!-- 버튼 영역 -->
-        <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화" @click="resetSearch" />
-          <btn color="contrast" icon="pi pi-search" label="조회" @click="fetchMatList" />
-        </div>
-      </div>
+                <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <InputText v-model="searchFilter.materialId" inputId="searchMatId" />
+                        <label for="searchMatId">자재코드</label>
+                    </IftaLabel>
+                </InputGroup>
+
+                <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <InputText v-model="searchFilter.materialId" inputId="searchMa" />
+                        <label for="searchMatName">자재명</label>
+                    </IftaLabel>
+                </InputGroup>
+
+                <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <InputText v-model="searchFilter.materialId" inputId="searchMa" />
+                        <label for="searchLotNo">LOT번호</label>
+                    </IftaLabel>
+                </InputGroup>
+
+                <div class="flex flex-col w-full">
+                    <InputGroup>
+                        <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                        <Select
+                        v-model="searchFilter.lotStatus"
+                        :options="statusOptions"
+                        optionLabel="name"
+                        optionValue="value"
+                        placeholder="LOT 상태"
+                        class="w-full h-[48px] text-base"/>
+                    </InputGroup>
+                </div>
+            </div>
+        </SearchCard>
     </div>
     <!--검색박스 end-->
     <!--테이블영역-->

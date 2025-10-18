@@ -1,15 +1,16 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
-import btn from '@/components/common/Btn.vue';
 import selectTable from '@/components/common/checkBoxTable.vue';
-import SearchField from '@/components/common/SearchBox.vue';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import Timeline from 'primevue/timeline';
 import { useUserStore } from '@/stores/user';
+import SearchCard from '@/components/card/SearchCard.vue';
+import DatePicker from 'primevue/datepicker';
+
 
 // Pinia Store
 const userStore = useUserStore();
@@ -38,6 +39,14 @@ const selectedRows = ref();
 const codeMap = ref({}); // codeId → codeName 매핑용
 // pagination
 const page = ref({ page: 1, size: 10, totalElements: 0 });
+
+//검색필드
+const searchFilter = ref({
+  stardDate: '',
+  endDate: '',
+  metName:'',
+  vendor: ''
+});
 
 const pageLoad = async () => {
   const pageParam = { page: page.value.page, size: page.value.size };
@@ -136,31 +145,36 @@ const statusColumn = [
     <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
-    <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">자재주문 조회</div>
-      <Divider />
-      <!--search BOX 영역-->
-      <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
-        <SearchField type="dateRange" label="구매요청일자" v-model="dateRange" />
-        <SearchField type="textIcon" label="자재명" v-model="materialName" />
-        <SearchField type="date" label="등록일" v-model="registerDate" />
-        <SearchField
-          type="checkbox"
-          label="상태"
-          v-model="statusList"
-          :options="[
-            { label: '대기', value: 'WAIT' },
-            { label: '진행중', value: 'PROGRESS' },
-            { label: '완료', value: 'DONE' },
-            { label: '취소', value: 'CANCEL' }
-          ]"
-        />
-        <!-- 버튼 영역 -->
-        <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화" />
-          <btn color="contrast" icon="pi pi-search" label="조회" />
-        </div>
-      </div>
+     <!--검색영역-->
+      <div class="card flex flex-col gap-4">
+        <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+                <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+                        <label for="searchStart">시작일</label>
+                    </IftaLabel>
+                </InputGroup>
+
+                <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+                        <label for="searchEnd">종료일</label>
+                    </IftaLabel>
+                </InputGroup>
+
+                <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+                        <label for="searchVendor">공급처</label>
+                    </IftaLabel>
+                </InputGroup>
+            </div>
+        </SearchCard>
     </div>
     <!--테이블영역--><!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">
