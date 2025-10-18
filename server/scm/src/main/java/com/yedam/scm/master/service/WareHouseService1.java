@@ -9,4 +9,6 @@ public interface WareHouseService1 {
     int deleteWareHouse(String whId);
     int insertWareHouse(WareHouseVO wareHouseVO);
     int updateWareHouse(WareHouseVO wareHouseVO);
+    List<String> autoCompleteWhName(String keyword);
+
 }

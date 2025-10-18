@@ -103,4 +103,14 @@
     UNIT = #{unit}
     WHERE MAT_ID = #{matId}
 </update>
+
+<!-- 자동완성 api -->
+<select id="autoCompleteMatName" parameterType="string" resultType="string">
+  SELECT DISTINCT MAT_NAME
+  FROM MATERIAL
+  WHERE MAT_NAME LIKE '%' || #{keyword} || '%'
+  ORDER BY MAT_NAME
+</select>
+
+
 </mapper>

@@ -51,4 +51,11 @@
     WHERE WH_ID = #{whId}
   </update>
 
+  <!-- 자동완성-->
+  <select id="autoCompleteWhName" parameterType="string" resultType="string">
+  SELECT DISTINCT WH_NAME
+  FROM WAREHOUSE
+  WHERE WH_NAME LIKE '%' || #{keyword} || '%'
+  </select> 
+
 </mapper>

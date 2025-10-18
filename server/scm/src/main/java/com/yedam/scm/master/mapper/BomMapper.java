@@ -18,5 +18,7 @@ public interface BomMapper {
     int updateBomDetail(BomDetailVO detail);
     int deleteBom(@Param("bomId") String bomId);
     int deleteBomDetailsByBomId(@Param("bomId") String bomId);
+    List<String> autoCompletePrdName(String keyword);
+
 }
 

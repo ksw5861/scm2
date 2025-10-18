@@ -16,9 +16,26 @@ import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import axios from 'axios';
+import AutoComplete from 'primevue/autocomplete';
 
 const route = useRoute();
 const { toast } = useAppToast();
+const suggestions = ref([]);
+
+const searchProdSuggestions = async (event) => {
+  const keyword = (typeof event === 'string' ? event : event.query)?.trim();
+  if (!keyword) {
+    suggestions.value = [];
+    return;
+  }
+
+  try {
+    const { data } = await axios.get(`http://localhost:8080/api/product/autocomplete?keyword=${keyword}`);
+    suggestions.value = data;
+  } catch (e) {
+    suggestions.value = [];
+  }
+};
 
 // breadcrumb (사원 페이지 스타일과 동일)
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
@@ -283,7 +300,7 @@ onMounted(() => fetchProdList());
               <Toolbar class="mb-2">
                 <template #start>
                   <div class="flex gap-2 flex-wrap">
-                    <InputText v-model="searchFilters.prodName" placeholder="제품명" />
+                    <AutoComplete v-model="searchFilters.prodName" inputId="prodName" :suggestions="suggestions" @complete="searchProdSuggestions" placeholder="제품명 입력" />
                   </div>
                 </template>
                 <template #end>
@@ -440,12 +457,36 @@ onMounted(() => fetchProdList());
 
                         <div>
                           <label class="block text-sm mb-1">비율(%)</label>
-                          <InputNumber v-model="currentBom.mixingRate" class="w-full" mode="decimal" />
+                          <InputNumber
+                            v-model="currentBom.mixingRate"
+                            class="w-full"
+                            mode="decimal"
+                            :min="1"
+                            :max="100"
+                            :useGrouping="false"
+                            @input="
+                              (e) => {
+                                if (currentBom.mixingRate < 1) currentBom.mixingRate = 1;
+                                if (currentBom.mixingRate > 100) currentBom.mixingRate = 100;
+                              }
+                            "
+                          />
                         </div>
 
                         <div>
                           <label class="block text-sm mb-1">수량</label>
-                          <InputNumber v-model="currentBom.qty" class="w-full" mode="decimal" />
+                          <InputNumber
+                            v-model="currentBom.qty"
+                            class="w-full"
+                            mode="decimal"
+                            :min="0"
+                            :useGrouping="false"
+                            @input="
+                              (e) => {
+                                if (currentBom.qty < 0) currentBom.qty = 0;
+                              }
+                            "
+                          />
                         </div>
 
                         <div>
@@ -501,7 +542,17 @@ onMounted(() => fetchProdList());
           </div>
           <div class="flex flex-column">
             <label>수량</label>
-            <InputNumber v-model="currentBom.qty" mode="decimal" />
+            <InputNumber
+              v-model="currentBom.qty"
+              mode="decimal"
+              :min="0"
+              :useGrouping="false"
+              @input="
+                (e) => {
+                  if (currentBom.qty < 0) currentBom.qty = 0;
+                }
+              "
+            />
           </div>
           <div class="flex flex-column">
             <label>시작일</label>

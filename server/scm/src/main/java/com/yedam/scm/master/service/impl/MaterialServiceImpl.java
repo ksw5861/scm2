@@ -47,4 +47,10 @@ public class MaterialServiceImpl implements MaterialService {
     return mapper.updateMaterial(materialVO);
   }
 
+  @Override
+  public List<String> autoCompleteMatName(String keyword) {
+    return mapper.autoCompleteMatName(keyword);
+}
+
+
 }
