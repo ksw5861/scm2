@@ -4,12 +4,16 @@ import DatePicker from 'primevue/datepicker';
 import InputText from 'primevue/inputtext';
 import Checkbox from 'primevue/checkbox';
 import Select from 'primevue/select';
+import InputGroup from 'primevue/inputgroup';
+import InputGroupAddon from 'primevue/inputgroupaddon';
+import FloatLabel from 'primevue/floatlabel';
 
 const props = defineProps({
   type: { type: String, required: true }, // "dateRange", "text", "checkbox"
   label: { type: String, required: true },
   modelValue: { type: [String, Array, Object], default: null },
   options: { type: Array, default: () => [] }, // checkbox 전용 [{label:'대기', value:'WAIT'}, ...]
+  icon: { type: String, default: '' },
   width: { type: String, default: 'w-64' }
 });
 
@@ -69,6 +73,19 @@ watch(
         <label :for="opt.value">{{ opt.label }}</label>
       </div>
     </div>
+
+    <!-- 아이콘 + 라벨 InputGroup -->
+<div v-else-if="type === 'iconLabel'" :class="width">
+  <InputGroup>
+    <InputGroupAddon v-if="icon">
+      <i :class="icon" />
+    </InputGroupAddon>
+    <FloatLabel>
+      <InputText v-model="internalValue" :inputId="label" />
+      <label :for="label">{{ label }}</label>
+    </FloatLabel>
+  </InputGroup>
+</div>
   </div>
 </template>
 

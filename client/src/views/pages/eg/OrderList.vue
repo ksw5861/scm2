@@ -22,14 +22,14 @@
                     <label class="font-semibold mb-1">주문 상태</label>
                     <div class="flex gap-2 flex-nowrap overflow-x-auto">
                         <Button
-                        v-for="status in ORDER_STATUS_OPTIONS"
-                        :key="status"
-                        :label="status"
-                        :class="[
-                            'whitespace-nowrap',
-                            filters.status === status ? '' : 'p-button-outlined'
-                        ]"
-                        @click="selectStatus(status)"
+                            v-for="status in ORDER_STATUS_OPTIONS"
+                            :key="status"
+                            :label="status"
+                            :class="[
+                                'whitespace-nowrap',
+                                filters.status === status ? '' : 'p-button-outlined'
+                            ]"
+                            @click="selectStatus(status)"
                         />
                     </div>
                 </div>
@@ -66,7 +66,7 @@
                     <div class="font-semibold text-lg sm:text-xl flex items-center justify-between gap-4 h-10">
                         <div class="flex items-center gap-4">
                             <span :class="icons.list"></span>
-                            주문 내역 목록
+                            주문 내역
                         </div>
                     </div>
 

@@ -8,62 +8,69 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.yedam.scm.master.mapper.VendorMapper;
 import com.yedam.scm.order.mapper.OrderMapper;
 import com.yedam.scm.order.service.OrderService;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
 
-    @Autowired
-    private OrderMapper orderMapper;
+    private final OrderMapper orderMapper;
+   
 
-    // =============================================================
-    // 주문 등록 (마스터 + 상세)
-    // =============================================================
     @Transactional
     @Override
     public boolean insertOrder(SalesOrderVO orderVO) {
-        // 0원 체크 (상세 합계 계산)
-        Long totalPrice = 0L;
+        long totalPrice = 0L;
         if (orderVO.getDetails() != null) {
             for (SalesOrderDetailVO detail : orderVO.getDetails()) {
-                totalPrice += (long)detail.getProdUnitPrice() * detail.getOrderQty();
+                totalPrice += (long) detail.getProdUnitPrice() * detail.getOrderQty();
             }
         }
 
         if (totalPrice <= 0) {
-            throw new RuntimeException("총액이 0원인 주문은 등록할 수 없습니다.");
+            orderVO.setFailReason("ZERO"); // ✅ 총액 0원
+            return false;
         }
 
-        // 마스터에 총액 세팅
         orderVO.setTotalPrice(totalPrice);
 
-        int masterResult = orderMapper.insertOrder(orderVO);
+        int creditLimit = orderMapper.getCreditLimit(orderVO.getVendorId());
+        long remainCredit = creditLimit - totalPrice;
+        orderVO.setRemainCredit(remainCredit < 0 ? creditLimit : remainCredit);
 
-        if (masterResult > 0 && orderVO.getDetails() != null && !orderVO.getDetails().isEmpty()) {
-            for (SalesOrderDetailVO detail : orderVO.getDetails()) {
-                detail.setOrderId(orderVO.getOrderId());
-                int detailResult = orderMapper.insertOrderDetail(detail);
-                if (detailResult <= 0) {
-                    throw new RuntimeException("주문 상세 저장 실패");
-                }
-            }
-            return true;
+        if (remainCredit < 0) {
+            orderVO.setFailReason("CREDIT"); // ✅ 여신 초과
+            return false;
         }
 
-        return masterResult > 0;
+        int masterResult = orderMapper.insertOrder(orderVO);
+        if (masterResult <= 0) return false;
+
+        for (SalesOrderDetailVO detail : orderVO.getDetails()) {
+            detail.setOrderId(orderVO.getOrderId());
+            if (orderMapper.insertOrderDetail(detail) <= 0) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
-    // =============================================================
-    // 주문 상세 단건 등록
-    // =============================================================
+
     @Override
     public boolean insertOrderDetail(SalesOrderDetailVO detailVO) {
         return orderMapper.insertOrderDetail(detailVO) > 0;
     }
+
+ 
+
 
     // =============================================================
     // 조건별 주문 목록 조회

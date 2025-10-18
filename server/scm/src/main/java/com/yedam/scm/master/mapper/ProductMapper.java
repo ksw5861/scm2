@@ -29,4 +29,6 @@ public interface ProductMapper {
 
   // 제품정보수정
   int updateProduct(ProductVO productVO);
+
+  List<String> autoCompletePrdName(String keyword);
 }

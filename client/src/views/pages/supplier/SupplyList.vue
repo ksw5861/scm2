@@ -2,9 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import btn from '@/components/common/Btn.vue';
-import Button from 'primevue/button';
 import selectTable from '@/components/common/checkBoxTable.vue';
-import SearchField from '@/components/common/SearchBox.vue';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
@@ -12,13 +10,15 @@ import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import Timeline from 'primevue/timeline';
 import Dialog from 'primevue/dialog';
 import { useUserStore } from '@/stores/user';
+import SearchCard from '@/components/card/SearchCard.vue';
+import Select from 'primevue/select';
+import DatePicker from 'primevue/datepicker';
 
 // Pinia Store
+// (userStore.name)이름
+// (userStore.code)코드 - 계정기준으로
 const userStore = useUserStore();
-// const vendorId = userStore.code;
-const vendorId = ref('V800');
-const vendorName = ref('홍길동'); //공급처담당자이름으로 로그찍히니 변경xxx
-
+const vendorId = userStore.code;
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -34,7 +34,6 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-
 const events = ref(); //타임라인용!
 const statusList = ref();
 const supplyList = ref();
@@ -46,9 +45,17 @@ const defectImg = ref();
 
 const page = ref({ page: 1, size: 10, totalElements: 0 });
 
+//검색필드
+const searchFilter = ref({
+  stardDate: '',
+  endDate: '',
+  vendor: ''
+  //   lotStatus: ''
+});
+
 const fetchSuppliyList = async () => {
   try {
-    const list = await axios.get(`/api/supplier/supplyList/${vendorId.value}`);
+    const list = await axios.get(`/api/supplier/supplyList/${vendorId}`);
     console.log(list);
     // flatMap으로 평탄화
     const flattened = list.data.flatMap((row) =>
@@ -161,31 +168,42 @@ const statusColumn = [
     <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
+    <!--검색영역-->
     <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">공급 조회</div>
-      <Divider />
-      <!--search BOX 영역-->
-      <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
-        <SearchField type="dateRange" label="구매요청일자" v-model="dateRange" />
-        <SearchField type="textIcon" label="자재명" v-model="materialName" />
-        <SearchField type="date" label="등록일" v-model="registerDate" />
-        <SearchField
-          type="checkbox"
-          label="상태"
-          v-model="statusList"
-          :options="[
-            { label: '대기', value: 'WAIT' },
-            { label: '진행중', value: 'PROGRESS' },
-            { label: '완료', value: 'DONE' },
-            { label: '취소', value: 'CANCEL' }
-          ]"
-        />
-        <!-- 버튼 영역 -->
-        <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화" />
-          <btn color="contrast" icon="pi pi-search" label="조회" />
+      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <label for="searchStart">시작일</label>
+            </IftaLabel>
+          </InputGroup>
+
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <label for="searchEnd">종료일</label>
+            </IftaLabel>
+          </InputGroup>
+
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <label for="searchVendor">자재명</label>
+            </IftaLabel>
+          </InputGroup>
+
+          <div class="flex flex-col w-full">
+            <InputGroup>
+              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <Select v-model="searchFilter.lotStatus" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="출고 상태" class="w-full h-[48px] text-base" />
+            </InputGroup>
+          </div>
         </div>
-      </div>
+      </SearchCard>
     </div>
     <!--테이블영역--><!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">

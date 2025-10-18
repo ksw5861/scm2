@@ -262,18 +262,20 @@ const saveOrder = async () => {
   }
 
   try {
-    const { data } = await axios.post('/api/insertorder', payload)
-    if (data.status === 'success') {
-      toast('success', '주문 등록', data.message || '주문이 성공적으로 등록되었습니다.')
+    const res = await axios.post('/api/insertorder', payload)
+    console.log(res)
+    if (res.data.status === 'success') {
+      toast('success', '주문 등록', res.data.message || '주문이 성공적으로 등록되었습니다.')
       orderDetailList.value = []
     } else {
-      toast('warn', '등록 실패', data.message || '주문 등록에 실패했습니다.')
+      toast('error', '등록 실패', res.data.message)
     }
   } catch (err) {
     console.error('❌ API 오류:', err)
     toast('error', '서버 오류', '주문 등록 중 서버 오류가 발생했습니다.')
   }
 }
+
 
 // -----------------------------
 // 라이프사이클 & watch

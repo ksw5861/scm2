@@ -26,7 +26,6 @@ import com.yedam.scm.vo.MaterialVO;
 import com.yedam.scm.vo.PrdPlanDetailVO;
 import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ReqMatVO;
-import com.yedam.scm.vo.UnitVO;
 import com.yedam.scm.vo.VendorVO;
 import com.yedam.scm.vo.WareHouseVO;
 
@@ -146,11 +145,20 @@ public class SwController {
         return materialSvc.updateMaterial(materialVO);
     }
 
+    @GetMapping("/api/material/autocomplete")
+    public List<String> autoComplete(@RequestParam String keyword) {
+        return materialSvc.autoCompleteMatName(keyword);
+}
+
+
     // =========================================================
     // ================ Product API ===========================
     // =========================================================
     
-
+    @GetMapping("/api/product/autocomplete")
+public List<String> autocompleteProduct(@RequestParam String keyword) {
+    return productSvc.autoCompletePrdName(keyword);
+}
 
     @GetMapping("/product")
     public List<ProductVO> getProductList(
@@ -225,6 +233,11 @@ public class SwController {
         wareHouseVO.setWhId(whId);
         return whSvc.updateWareHouse(wareHouseVO);
     }
+
+    @GetMapping("/api/warehouse1/autocomplete")
+    public List<String> autoCompleteWhName(@RequestParam String keyword) {
+    return whSvc.autoCompleteWhName(keyword);
+}
 
     // =========================================================
 // ================ BOM API ===============================

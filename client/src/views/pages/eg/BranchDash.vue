@@ -71,7 +71,7 @@
       <template #title>미결제 주문/반품 요약</template>
       <template #content>
         <div class="table-toolbar">
-          <span class="p-input-icon-left"><i class="pi pi-search" /><InputText v-model="orderQuery" placeholder="주문번호(orderId) 또는 제품명(prodName) 검색" /></span>
+          <span class="p-input-icon-left"><i class="pi pi-search" /><InputText v-model="orderQuery" placeholder="주문번호 또는 제품명 검색" /></span>
         </div>
         <DataTable :value="filteredOrders" paginator :rows="7" dataKey="orderId" :rowHover="true" class="p-datatable-sm">
           <Column field="orderId" header="주문코드" style="width:160px" />

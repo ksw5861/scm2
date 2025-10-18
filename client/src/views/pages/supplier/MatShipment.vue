@@ -9,12 +9,18 @@ import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import { useUserStore } from '@/stores/user';
+import SearchCard from '@/components/card/SearchCard.vue';
+import Select from 'primevue/select';
+import DatePicker from 'primevue/datepicker';
 
 // Pinia Store
+// (userStore.name)이름
+// (userStore.code)코드 - 계정기준으로
 const userStore = useUserStore();
-// const vendorId = userStore.code;
-const vendorId = ref('V800');
-const vanEmpName = ref('홍길동');
+const vendorId = userStore.code;
+const vanEmpName = '배송담당';
+
+console.log(userStore);
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -39,16 +45,11 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-
 const shipmentDate = ref(getNowDate()); //출고일
 const deliveryPlace = ref(''); //배송창고 바인딩용
 const carrier = ref()//운송업체
 const trackingNo = ref() //운송번호
-const carNo = ref()//
-//검색
-const dateRange = ref({ start: null, end: null }); // 초기값을 객체로
-const materialName = ref();
-const statusList = ref();
+const carNo = ref()
 
 const approveShipData = ref(); //페이지로드시 목록
 const warehoustListOpt = ref([]); //창고드롭다운용
@@ -58,11 +59,18 @@ const page = ref({ page: 1, size: 10, totalElements: 0 });
 const shipDetailList = ref([
   { matId: '', matName: '', ortQty: null, unit: ''}
 ]);
+//검색필드
+const searchFilter = ref({
+  stardDate: '',
+  endDate: '',
+  matName: '',
+  warehouse: ''
+});
 
 //페이지로드시 목록출력
 const pageLoad = async () => {
   try {
-    const list = await axios.get(`/api/supplier/ApprovedList/${vendorId.value}`);
+    const list = await axios.get(`/api/supplier/ApprovedList/${vendorId}`);
     console.log(list);
 
     approveShipData.value = list.data.map((item) => ({
@@ -119,15 +127,15 @@ const submit = async () => {
   //디테일 필요데이터 [출고수량, 공급처코드, 자재코드, 주문이력아이디]
   const payload = ({
   //입고마스터
-  venName: vanEmpName.value,
-  vendorId: vendorId.value,
+  venName: vanEmpName,
+  vendorId: vendorId,
   //입고상세
   details: list.map((row) => ({
       purId: row.purId,               //주문테이블 아이디
       matId: row.matId,               // 자재 코드
       outQty: row.ortQty,             // 공급처 출고수량
       purStatusId: row.purStatusId,   //주문로그T아이디 : : 출고상태값 제어필수
-      vendorId: vendorId.value        // 공급처코드 (공통)
+      vendorId: vendorId        // 공급처코드 (공통)
     })),
   //배송정보
   shipmentInfoVO: {
@@ -206,31 +214,46 @@ const addShipColumns = [
     <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
-    <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl">출고 등록</div>
-      <Divider />
-      <!--search BOX 영역-->
-      <div class="flex flex-col gap-4 md:flex-row md:items-end md:gap-6 mt-5 mb-10">
-        <SearchField type="dateRange" label="구매요청일자" v-model="dateRange" />
-        <SearchField type="textIcon" label="자재명" v-model="materialName" />
-        <SearchField type="date" label="등록일" v-model="registerDate" />
-        <SearchField
-          type="checkbox"
-          label="상태"
-          v-model="statusList"
-          :options="[
-            { label: '대기', value: 'WAIT' },
-            { label: '진행중', value: 'PROGRESS' },
-            { label: '완료', value: 'DONE' },
-            { label: '취소', value: 'CANCEL' }
-          ]"
-        />
-        <!-- 버튼 영역 -->
-        <div class="flex flex-wrap items-center gap-2">
-          <btn color="secondary" icon="pi pi-undo" label="초기화" />
-          <btn color="contrast" icon="pi pi-search" label="조회" />
-        </div>
-      </div>
+
+    <!--검색영역-->
+      <div class="card flex flex-col gap-4">
+        <SearchCard title="출고 검색" @search="fetchMatList" @reset="resetSearch">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+                <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+                        <label for="searchStart">시작일</label>
+                    </IftaLabel>
+                </InputGroup>
+
+                <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+                        <label for="searchEnd">종료일</label>
+                    </IftaLabel>
+                </InputGroup>
+
+                <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+                        <label for="searchVendor">자재명</label>
+                    </IftaLabel>
+                </InputGroup>
+
+                 <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <IftaLabel>
+                        <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+                        <label for="searchVendor">도착지</label>
+                    </IftaLabel>
+                </InputGroup>
+
+            </div>
+        </SearchCard>
     </div>
    <!--테이블영역--><!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">

@@ -11,9 +11,8 @@ import { useUserStore } from '@/stores/user';
 
 // Pinia Store
 const userStore = useUserStore();
-const empName = ref(userStore.name);
-const empId = ref(userStore.code);
-
+const empName = userStore.name;
+const empId = userStore.code;
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -130,7 +129,7 @@ const submit = async () => {
     memo: memo.value,
     startDate: dateRange.value.start,
     endDate: dateRange.value.end,
-    empName: empName.value,
+    empName: empName,
     prdPlanDetailList: productionPlans.value
   };
 
