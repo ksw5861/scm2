@@ -35,4 +35,15 @@ public interface SalesMarginService {
     // 월별 매출 요약
     Map<String, Object> getMonthlySummary(String vendorId, int year, int month);
 
+    // 대시보드용 매출 추이
+List<Map<String, Object>> getSalesTrend(String vendorId, String range);
+Map<String, Object> getSalesCompare(String vendorId);
+List<Map<String, Object>> getCoffeeRank(String vendorId);
+
+// 매출 성장률
+
+    Map<String, Object> getSalesGrowth(String vendorId);
+
+
+
 }

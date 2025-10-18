@@ -82,5 +82,46 @@ public class SalesMarginController {
     ) {
         return service.getMonthlySummary(vendorId, year, month);
     }
+//-----------------------------------------------------대시보드--------------------------------------------------------
+
+
+    // ✅ 대시보드용 매출 추이 그래프 (일별/월별)
+@GetMapping("/branch/salestrend")
+public ResponseEntity<List<Map<String, Object>>> getSalesTrend(
+        @RequestParam String vendorId,
+        @RequestParam(defaultValue = "daily") String range) {
+
+    List<Map<String, Object>> list = service.getSalesTrend(vendorId, range);
+    return ResponseEntity.ok(list);
+}
+
+// 📊 작년 vs 올해 매출 비교
+@GetMapping("/branch/salescompare")
+public ResponseEntity<Map<String, Object>> getSalesCompare(@RequestParam String vendorId) {
+    Map<String, Object> result = service.getSalesCompare(vendorId);
+    return ResponseEntity.ok(result);
+}
+
+// ✅ 원두 랭킹
+@GetMapping("/branch/coffeerank")
+public ResponseEntity<List<Map<String, Object>>> getCoffeeRank(@RequestParam String vendorId) {
+    List<Map<String, Object>> result = service.getCoffeeRank(vendorId);
+    return ResponseEntity.ok(result);
+}
+
+// 매출 성장률 (오늘vs어제, 이번달vs지난달, 올해vs작년)
+@GetMapping("/branch/sales-growth")
+public Map<String, Object> getSalesGrowth(@RequestParam String vendorId) {
+    return service.getSalesGrowth(vendorId);
+}
+
+
+
+
+
+
+
+
+
 
 }
