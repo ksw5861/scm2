@@ -1,17 +1,21 @@
 package com.yedam.scm.order.mapper;
 
 import java.util.List;
+import java.util.Map;
+
 import com.yedam.scm.vo.SalesMarginVO;
+import com.yedam.scm.vo.SalesMasterVO;
+import com.yedam.scm.vo.SalesDetailVO;
+
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 @Mapper
 public interface SalesMarginMapper {
-   
-    // 단건 MERGE
-    int mergeSalesMargin(SalesMarginVO vo);
 
-    // 다건 MERGE
-    int mergeSalesMarginList(List<SalesMarginVO> list);
+    // 등록
+    int deleteAll();
+    int insert(SalesMarginVO vo);
    
    
     // 전체 목록 조회
@@ -24,4 +28,36 @@ public interface SalesMarginMapper {
 
     // 삭제
     int deleteSalesMargin(String saleProdId);
+
+    // ✅ 매출등록 관련
+    int insertSaleMaster(SalesMasterVO vo);
+    int insertSaleDetail(SalesDetailVO vo);
+
+    // 매출이력조회
+    List<SalesMasterVO> getSalesHistory(String vendorId);
+
+    // 📌 매출 요약 (오늘 vs 어제
+    Map<String, Object> getDailySales(@Param("vendorId") String vendorId, @Param("dayOffset") int dayOffset);
+
+
+    // 월별 매출 요약
+    // 이번 달 총 매출
+    Integer getMonthlyTotal(@Param("vendorId") String vendorId,
+                            @Param("year") int year,
+                            @Param("month") int month);
+
+    // 일자별 매출
+    List<Map<String, Object>> getMonthlyDailySales(
+        @Param("vendorId") String vendorId,
+        @Param("year") int year,
+        @Param("month") int month
+    );
+
+    // 영업일 수 (매출 발생한 일자 수)
+    Integer getWorkingDays(@Param("vendorId") String vendorId,
+                           @Param("year") int year,
+                           @Param("month") int month);
+
+
+
 }
