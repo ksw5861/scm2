@@ -228,6 +228,23 @@
   </update>
 
 
+  
+  <update id="updateReturnStatus">
+   
+  UPDATE RETURN r
+     SET RETURN_STATUS = (SELECT CASE
+                              WHEN SUM(CASE WHEN d.RDETAIL_STATUS = '대기' THEN 1 ELSE 0 END) = COUNT(*)
+                                THEN '배송완료'
+                              WHEN SUM(CASE WHEN d.RDETAIL_STATUS = '대기' THEN 1 ELSE 0 END) > 0
+                                THEN '처리중'
+                              ELSE '처리완료'
+                            END
+                        FROM RETURN_DETAIL d
+                      WHERE d.RETURN_ID = r.return_id )
+   WHERE RETURN_ID = (SELECT min(RETURN_ID) FROM RETURN_DETAIL WHERE rdetail_id = #{returnId})
+  </update>
+
+
   <!-- ===================== 출하지시 ===================== -->
 
   <!-- 출하지시 대상 주문 목록 (SalesOrderVO 기준) -->
@@ -266,7 +283,7 @@
 
 
 
-<!-- ===================== 거래처원장 목록 ===================== -->
+<!-- ===================== 거래처원장 페이지 ===================== -->
 <select id="selectAccountLedgerList" parameterType="AccountLedgerSearchDTO" resultType="SalesOrderVO">
   SELECT
       v.vendor_id AS vendorId,
@@ -276,12 +293,14 @@
       NVL(r.return_price, 0) AS returnPrice,
       NVL(p.pay_amount, 0) AS totalPayment,
       NVL(s.total_price, 0) - NVL(r.return_price, 0) - NVL(p.pay_amount, 0) AS totalAr,
-      MAX_SO.last_order_date AS lastOrderDate
+      MAX_SO.last_order_date AS lastOrderDate,
+      NVL(o.order_cnt, 0) AS orderCount,          -- ✅ 추가
+      NVL(u.unpaid_cnt, 0) AS unpaidCount         -- ✅ 추가
   FROM vendor v
+
+  <!-- 이월금액 -->
   LEFT JOIN (
-      SELECT 
-          vendor_id,
-          SUM(total_price) AS total_price
+      SELECT vendor_id, SUM(total_price) AS total_price
       FROM sales_order
       WHERE pay_status = '대기'
         AND status IN ('출고완료', '배송완료')
@@ -291,10 +310,9 @@
       GROUP BY vendor_id
   ) prev ON v.vendor_id = prev.vendor_id
 
+  <!-- 기간 매출 -->
   LEFT JOIN (
-      SELECT
-          vendor_id,
-          SUM(total_price) AS total_price
+      SELECT vendor_id, SUM(total_price) AS total_price
       FROM sales_order
       WHERE status IN ('출고완료', '배송완료')
         <if test="startDate != null and endDate != null">
@@ -309,79 +327,65 @@
       GROUP BY vendor_id
   ) s ON v.vendor_id = s.vendor_id
 
+  <!-- 반품금액 -->
   LEFT JOIN (
-      SELECT
-          r.vendor_id,
-          SUM(rd.return_qty * rd.prod_unit_price) AS return_price
+      SELECT r.vendor_id, SUM(rd.return_qty * rd.prod_unit_price) AS return_price
       FROM return r
       JOIN return_detail rd ON r.return_id = rd.return_id
       WHERE rd.rdetail_status = '승인'
         <if test="startDate != null and endDate != null">
           AND r.return_date BETWEEN #{startDate} AND #{endDate}
         </if>
-        <if test="startDate != null and endDate == null">
-          AND r.return_date &gt;= #{startDate}
-        </if>
-        <if test="startDate == null and endDate != null">
-          AND r.return_date &lt;= #{endDate}
-        </if>
       GROUP BY r.vendor_id
   ) r ON v.vendor_id = r.vendor_id
 
+  <!-- 입금금액 -->
   LEFT JOIN (
-      SELECT
-          vendor_id,
-          SUM(pay_amount) AS pay_amount
+      SELECT vendor_id, SUM(pay_amount) AS pay_amount
       FROM payment
-        <trim prefix="WHERE" prefixOverrides="AND |OR ">
-          <if test="startDate != null and endDate != null">
-            pay_date BETWEEN #{startDate} AND #{endDate}
-          </if>
-          <if test="startDate != null and endDate == null">
-            pay_date &gt;= #{startDate}
-          </if>
-          <if test="startDate == null and endDate != null">
-            pay_date &lt;= #{endDate}
-          </if>
-        </trim>
+      WHERE 1=1
+        <if test="startDate != null and endDate != null">
+          AND pay_date BETWEEN #{startDate} AND #{endDate}
+        </if>
       GROUP BY vendor_id
   ) p ON v.vendor_id = p.vendor_id
 
+  <!-- 최근거래일 -->
   LEFT JOIN (
-      SELECT
-          vendor_id,
-          MAX(order_date) AS last_order_date
+      SELECT vendor_id, MAX(order_date) AS last_order_date
       FROM sales_order
       GROUP BY vendor_id
   ) MAX_SO ON v.vendor_id = MAX_SO.vendor_id
 
-  <where> 
-      v.type IN (0,2)
+  <!-- ✅ 주문건수 -->
+  LEFT JOIN (
+      SELECT vendor_id, COUNT(*) AS order_cnt
+      FROM sales_order
+      WHERE 1=1
+        <if test="startDate != null and endDate != null">
+          AND order_date BETWEEN #{startDate} AND #{endDate}
+        </if>
+      GROUP BY vendor_id
+  ) o ON v.vendor_id = o.vendor_id
 
-      <if test="vendorId != null and vendorId != ''">
-          v.vendor_id = #{vendorId}
-      </if>
+  <!-- ✅ 미수건수 -->
+  LEFT JOIN (
+      SELECT vendor_id, COUNT(*) AS unpaid_cnt
+      FROM sales_order
+      WHERE pay_status = '대기'
+      GROUP BY vendor_id
+  ) u ON v.vendor_id = u.vendor_id
+
+  <where>
+      v.type IN (0,2)
   </where>
 </select>
 
 
-  <!-- ===================== 거래처원장 상단 요약 ===================== -->
-<select id="selectDashboardSummary" parameterType="map" resultType="SalesOrderVO">
-  SELECT
-      NVL(s.total_price, 0) AS totalPrice,
-      NVL(r.return_price, 0) AS returnPrice,
-      NVL(p.pay_amount, 0) AS totalPayment,
-      NVL(s.total_price, 0) - NVL(r.return_price, 0) - NVL(p.pay_amount, 0) AS totalAr,
-      MAX_SO.last_order_date AS lastOrderDate
-  FROM
-      (SELECT SUM(total_price) AS total_price FROM sales_order WHERE status in ('출고완료', '배송완료')) s,
-      (SELECT SUM(rd.return_qty * rd.prod_unit_price) AS return_price
-      FROM return r
-      JOIN return_detail rd ON r.return_id = rd.return_id
-      WHERE rd.rdetail_status = '승인') r,
-      (SELECT SUM(pay_amount) AS pay_amount FROM payment) p,
-      (SELECT MAX(order_date) AS last_order_date FROM sales_order) MAX_SO
-</select>
+
+
+
+  <!-- ===================== 거래처원장 대시보드  ===================== -->
 
 
 <!-- 거래처별 상세 리스트 -->

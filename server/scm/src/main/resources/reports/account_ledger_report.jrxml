@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports
+                      http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+  name="AccountLedgerReport" pageWidth="595" pageHeight="842"
+  columnWidth="515" leftMargin="40" rightMargin="40"
+  topMargin="40" bottomMargin="40">
+
+  <!-- ===== 데이터 필드 정의 ===== -->
+  <field name="companyName" class="java.lang.String"/>
+  <field name="totalPrice" class="java.math.BigDecimal"/>
+  <field name="returnPrice" class="java.math.BigDecimal"/>
+  <field name="totalPayment" class="java.math.BigDecimal"/>
+  <field name="totalAr" class="java.math.BigDecimal"/>
+  <field name="orderCount" class="java.lang.Integer"/>
+  <field name="unpaidCount" class="java.lang.Integer"/>
+  <field name="lastOrderDate" class="java.lang.String"/>
+
+  <!-- ===== 제목 ===== -->
+  <title>
+    <band height="70">
+      <staticText>
+        <reportElement x="0" y="10" width="515" height="30"/>
+        <textElement textAlignment="Center" verticalAlignment="Middle">
+          <font size="18" isBold="true"/>
+        </textElement>
+        <text><![CDATA[거래처원장 리포트]]></text>
+      </staticText>
+      <textField>
+        <reportElement x="390" y="40" width="125" height="20"/>
+        <textElement textAlignment="Right">
+          <font size="10" isItalic="true"/>
+        </textElement>
+        <textFieldExpression><![CDATA["출력일: " + new java.text.SimpleDateFormat("yyyy-MM-dd").format(new java.util.Date())]]></textFieldExpression>
+      </textField>
+    </band>
+  </title>
+
+  <!-- ===== 테이블 헤더 ===== -->
+  <columnHeader>
+    <band height="25">
+      <rectangle>
+        <reportElement x="0" y="0" width="515" height="25" backcolor="#f2f2f2" mode="Opaque"/>
+      </rectangle>
+      <staticText><reportElement x="0" y="0" width="120" height="25"/><text><![CDATA[거래처명]]></text></staticText>
+      <staticText><reportElement x="120" y="0" width="65" height="25"/><text><![CDATA[총매출]]></text></staticText>
+      <staticText><reportElement x="185" y="0" width="65" height="25"/><text><![CDATA[총반품]]></text></staticText>
+      <staticText><reportElement x="250" y="0" width="65" height="25"/><text><![CDATA[총입금]]></text></staticText>
+      <staticText><reportElement x="315" y="0" width="65" height="25"/><text><![CDATA[미수금]]></text></staticText>
+      <staticText><reportElement x="380" y="0" width="65" height="25"/><text><![CDATA[주문건수]]></text></staticText>
+      <staticText><reportElement x="445" y="0" width="70" height="25"/><text><![CDATA[미수건수]]></text></staticText>
+    </band>
+  </columnHeader>
+
+  <!-- ===== 데이터 행 ===== -->
+  <detail>
+    <band height="20">
+      <textField><reportElement x="0" y="0" width="120" height="20"/><textFieldExpression><![CDATA[$F{companyName}]]></textFieldExpression></textField>
+      <textField><reportElement x="120" y="0" width="65" height="20"/><textFieldExpression><![CDATA[$F{totalPrice}]]></textFieldExpression></textField>
+      <textField><reportElement x="185" y="0" width="65" height="20"/><textFieldExpression><![CDATA[$F{returnPrice}]]></textFieldExpression></textField>
+      <textField><reportElement x="250" y="0" width="65" height="20"/><textFieldExpression><![CDATA[$F{totalPayment}]]></textFieldExpression></textField>
+      <textField><reportElement x="315" y="0" width="65" height="20"/><textFieldExpression><![CDATA[$F{totalAr}]]></textFieldExpression></textField>
+      <textField><reportElement x="380" y="0" width="65" height="20"/><textFieldExpression><![CDATA[$F{orderCount}]]></textFieldExpression></textField>
+      <textField><reportElement x="445" y="0" width="70" height="20"/><textFieldExpression><![CDATA[$F{unpaidCount}]]></textFieldExpression></textField>
+    </band>
+  </detail>
+
+  <!-- ===== 요약 (합계) ===== -->
+  <summary>
+    <band height="40">
+      <rectangle>
+        <reportElement x="0" y="5" width="515" height="30" backcolor="#f9f9f9" mode="Opaque"/>
+      </rectangle>
+      <staticText>
+        <reportElement x="0" y="5" width="100" height="20"/>
+        <textElement><font size="12" isBold="true"/></textElement>
+        <text><![CDATA[총계]]></text>
+      </staticText>
+    </band>
+  </summary>
+
+</jasperReport>

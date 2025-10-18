@@ -76,6 +76,10 @@ public interface InboundMapper {
 
         int rejectReturnDetails(@Param("ids") List<String> ids, @Param("reason") String reason);
 
+
+        int updateReturnStatus(@Param("returnId") String returnId);
+
+
         /* ===================== 출하지시 ===================== */
 
         // 출하지시 대상 주문 목록
