@@ -3,7 +3,6 @@ import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import btn from '@/components/common/Btn.vue';
 import selectTable from '@/components/common/checkBoxTable.vue';
-import SearchField from '@/components/common/SearchBox.vue';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
@@ -12,12 +11,16 @@ import { useUserStore } from '@/stores/user';
 import SearchCard from '@/components/card/SearchCard.vue';
 import Select from 'primevue/select';
 import DatePicker from 'primevue/datepicker';
+//출고수량화면
 
 // Pinia Store
+// (userStore.name)이름
+// (userStore.code)코드 - 계정기준으로
 const userStore = useUserStore();
-// const vendorId = userStore.code;
-const vendorId = ref('V800');
-const vanEmpName = ref('홍길동');
+const vendorId = userStore.code;
+const vanEmpName = '출고담당';
+
+console.log(userStore);
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -33,9 +36,6 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const dateRange = ref({ start: null, end: null }); // 초기값을 객체로
-const materialName = ref();
-const statusList = ref();
 const matOutData = ref();
 const selectedRows = ref();
 const page = ref({ page: 1, size: 10, totalElements: 0 });
@@ -44,13 +44,13 @@ const page = ref({ page: 1, size: 10, totalElements: 0 });
 const searchFilter = ref({
   stardDate: '',
   endDate: '',
-  vendor: '',
-//   lotStatus: ''
+  vendor: ''
+  //   lotStatus: ''
 });
 
 const pageLoad = async () => {
   try {
-    const list = await axios.get(`/api/supplier/releaseList/${vendorId.value}`);
+    const list = await axios.get(`/api/supplier/releaseList/${vendorId}`);
     console.log(list);
 
     matOutData.value = list.data.map((item) => ({
@@ -115,7 +115,8 @@ const approvedShip = async () => {
     purNo: row.purNo,
     purStatusLogVO: { logSupOutQty: row.outQty }, //이걸 백 로그VO에 넣기위해!
     expectDate: row.expectDate,
-    vendorId: vendorId.value //이렇게 넣으면 행 마다 다 들어감.
+    vendorId: vendorId, //이렇게 넣으면 행 마다 다 들어감.
+    empName: vanEmpName
   }));
 
   console.log(payload);
@@ -153,47 +154,40 @@ const matOutColumns = [
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
     <div class="card flex flex-col gap-4">
-        <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <label for="searchStart">시작일</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
-                        <label for="searchStart">시작일</label>
-                    </IftaLabel>
-                </InputGroup>
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <label for="searchEnd">종료일</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
-                        <label for="searchEnd">종료일</label>
-                    </IftaLabel>
-                </InputGroup>
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <label for="searchVendor">자재명</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <InputText v-model="searchFilter.vendor" inputId="searchMa" />
-                        <label for="searchVendor">자재명</label>
-                    </IftaLabel>
-                </InputGroup>
-
-                <div class="flex flex-col w-full">
-                    <InputGroup>
-                        <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                        <Select
-                        v-model="searchFilter.lotStatus"
-                        :options="statusOptions"
-                        optionLabel="name"
-                        optionValue="value"
-                        placeholder="출고 상태"
-                        class="w-full h-[48px] text-base"/>
-                    </InputGroup>
-                </div>
-            </div>
-        </SearchCard>
+          <div class="flex flex-col w-full">
+            <InputGroup>
+              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <Select v-model="searchFilter.lotStatus" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="출고 상태" class="w-full h-[48px] text-base" />
+            </InputGroup>
+          </div>
+        </div>
+      </SearchCard>
     </div>
     <!--테이블영역--><!--테이블영역-->
     <div class="card flex flex-col gap-4">

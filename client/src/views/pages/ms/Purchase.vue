@@ -12,8 +12,8 @@ import { useUserStore } from '@/stores/user';
 
 // Pinia Store
 const userStore = useUserStore();
-const empName = ref(userStore.name);
-const empId = ref(userStore.code);
+const empName = userStore.name;
+const empId = userStore.code;
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -40,7 +40,7 @@ const purchaseList = ref([
 ]);
 
 const warehouseOptions = ref([]);
-const codeMap = ref({}) //공통코드용
+const codeMap = ref({}); //공통코드용
 
 //모달
 const showPlanModal = ref(false);
@@ -60,11 +60,11 @@ const closePlanModal = () => {
 const fetchPlanMaster = async () => {
   // 코드맵이 아직 비어있다면 먼저 로드 (중복 요청 방지)
   if (!Object.keys(codeMap.value).length) {
-    await loadStatusCodes()
+    await loadStatusCodes();
   }
 
   try {
-    const res = await axios.get('/api/mat/planMasterList')
+    const res = await axios.get('/api/mat/planMasterList');
     return {
       items: res.data.map((item) => ({
         ...item,
@@ -72,26 +72,26 @@ const fetchPlanMaster = async () => {
         endDate: useDateFormat(item.endDate).value,
         planType: codeMap.value[item.planType] || item.planType
       }))
-    }
+    };
   } catch (error) {
-    toast('error', '리스트 로드 실패', '생산계획 리스트 불러오기 실패', '3000')
-    return { items: [] }
+    toast('error', '리스트 로드 실패', '생산계획 리스트 불러오기 실패', '3000');
+    return { items: [] };
   }
-}
+};
 
 //공통코드
 const loadStatusCodes = async () => {
   try {
-    const res = await axios.get('/api/mat/status/p03')
+    const res = await axios.get('/api/mat/status/p03');
     // {"pt1": "정규생산", "pt2": "특별생산", ...} 형태로 변환
     codeMap.value = res.data.reduce((acc, cur) => {
-      acc[cur.codeId] = cur.codeName
-      return acc
-    }, {})
+      acc[cur.codeId] = cur.codeName;
+      return acc;
+    }, {});
   } catch (err) {
-    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000')
+    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
   }
-}
+};
 
 //모달내부 계획선택
 const onSelectPlan = async (plan) => {
@@ -121,10 +121,10 @@ const calculatMrp = async () => {
 
   try {
     await axios.post(`/api/mat/calcMrp/${selectedPlan.value.plId}`, null, {
-      params: { empName: empName.value }
+      params: { empName: empName }
     });
     toast('success', 'MRP 산출 완료', '산출 결과가 저장되었습니다.');
-    await pageLoadMrp();  // 최신 MRP_DETAIL 로드
+    await pageLoadMrp(); // 최신 MRP_DETAIL 로드
   } catch (error) {
     toast('error', 'MRP 산출 실패', '프로시저 실행 중 오류 발생.');
   }
@@ -133,7 +133,7 @@ const calculatMrp = async () => {
 //mrp목록
 const pageLoadMrp = async () => {
   const res = await axios.get('/api/mat/mrpList');
-    mrpList.value = res.data.map((item) => ({
+  mrpList.value = res.data.map((item) => ({
     id: item.mrpDetId,
     matId: item.matId,
     matName: item.materialVO.matName,
@@ -143,11 +143,10 @@ const pageLoadMrp = async () => {
   }));
 };
 
-
 onMounted(() => {
- pageLoadMrp();
- loadWarehouseList();
- loadStatusCodes();
+  pageLoadMrp();
+  loadWarehouseList();
+  loadStatusCodes();
 });
 
 //자재별 공급처
@@ -213,11 +212,10 @@ const loadWarehouseList = async () => {
 
 // 도착지 선택시 row에 반영
 const selectWarehouseOpt = (row, value) => {
-      row.toWarehouse = value; // 선택된 창고ID 저장
-      const wh = warehouseOptions.value.find(w => w.value === value);
-      row.toWarehouseName = wh ? wh.label : '';
+  row.toWarehouse = value; // 선택된 창고ID 저장
+  const wh = warehouseOptions.value.find((w) => w.value === value);
+  row.toWarehouseName = wh ? wh.label : '';
 };
-
 
 //주문등록
 const reqSubmit = async () => {
@@ -229,7 +227,7 @@ const reqSubmit = async () => {
     total: row.reqQty * row.price,
     dueDate: row.dueDate,
     toWarehouse: row.toWarehouse,
-    empName: empName.value
+    empName: empName
   }));
   console.log(reqList);
   try {
@@ -238,10 +236,10 @@ const reqSubmit = async () => {
     toast('info', '등록 성공', '자재주문 등록 성공', '5000');
     await pageLoadMrp();
     purchaseList.value = [
-  { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
-  { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
-  { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
-];
+      { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
+      { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
+      { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
+    ];
   } catch (error) {
     toast('error', '등록 실패', '자재주문 등록 실패:', '500');
   }
@@ -282,10 +280,9 @@ const purchaseColumns = [
   { field: 'vendor', label: '공급처', style: 'width: 15rem', select: true, option: (row) => row.vendorOptions || [], change: selectOpt },
   { field: 'price', label: '단가', style: 'width: 10rem' },
   { field: 'total', label: '총 금액', style: 'width: 12rem' },
-  { field: 'toWarehouse', label: '도착지', style: 'width: 15rem', select: true, option: () => warehouseOptions.value, change: selectWarehouseOpt},
+  { field: 'toWarehouse', label: '도착지', style: 'width: 15rem', select: true, option: () => warehouseOptions.value, change: selectWarehouseOpt },
   { field: 'dueDate', label: '납기요청일', style: 'width: 12rem', datePicker: true }
 ];
-
 </script>
 
 <template>
@@ -303,14 +300,7 @@ const purchaseColumns = [
             <btn color="secondary" icon="pi pi-file-excel" @click="reqSubmit" label="주문" />
           </div>
           <Divider />
-          <selectTable
-            :columns="purchaseColumns"
-            :scrollable="true"
-            :data="purchaseList"
-            :paginator="false"
-            :showCheckbox="false"
-            @row-select="selectVendor"
-          />
+          <selectTable :columns="purchaseColumns" :scrollable="true" :data="purchaseList" :paginator="false" :showCheckbox="false" @row-select="selectVendor" />
         </div>
       </div>
 
@@ -342,13 +332,6 @@ const purchaseColumns = [
     </div>
 
     <!-- 생산계획 선택 모달 -->
-    <CommonModal
-      :visible="showPlanModal"
-      title="생산계획 선택"
-      :columns="planMasterColumns"
-      :fetchData="fetchPlanMaster"
-      @close="closePlanModal"
-      @select="onSelectPlan"
-    />
+    <CommonModal :visible="showPlanModal" title="생산계획 선택" :columns="planMasterColumns" :fetchData="fetchPlanMaster" @close="closePlanModal" @select="onSelectPlan" />
   </div>
 </template>

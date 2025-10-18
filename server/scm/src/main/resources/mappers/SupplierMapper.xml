@@ -57,8 +57,8 @@ WHERE pur_id = #{purId}
 </update>
 <!--발주상태변경이력등록-->
 <insert id="insertStatusLog" parameterType="map">
-INSERT INTO purchase_status_log (pur_status_id, log_name, log_pur_mat_status, log_pur_id)
-VALUES (seq_purchase_status_log.NEXTVAL, #{name}, 'ms2', #{purId})
+INSERT INTO purchase_status_log (pur_status_id, log_name, log_pur_mat_status, log_pur_id, log_vendor_id)
+VALUES (seq_purchase_status_log.NEXTVAL, #{venName}, 'ms2', #{purId}, #{venId})
 </insert>
 
 <!--발주반려-->
@@ -103,6 +103,7 @@ WHERE pm.vendor_id = #{vendorId}
             #{purId,    mode=IN, jdbcType=NUMERIC},  
             #{outQty,   mode=IN, jdbcType=NUMERIC},  
             #{vendorId,   mode=IN, jdbcType=VARCHAR},
+            #{vendorEmp,   mode=IN, jdbcType=VARCHAR},
             #{expectDate, mode=IN, jdbcType=DATE}
         )}
 </select>

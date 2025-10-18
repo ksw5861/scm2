@@ -14,7 +14,8 @@ import Select from 'primevue/select';
 
 // Pinia Store
 const userStore = useUserStore();
-const empName = ref(userStore.name);
+const empName = userStore.name;
+const empId = userStore.Id;
 const route = useRoute();
 const { toast } = useAppToast();
 

@@ -18,13 +18,13 @@ public interface SupplierMapper {
     //발주승인상태변경
     int updateOrderApprove(Integer purId);
     //발주승인상태이력남김
-    void insertStatusLog(@Param("purId")int purId, @Param("name")String name);
+    void insertStatusLog(@Param("purId")int purId,  @Param("venId")String vendorId, @Param("venName")String name);
     //발주반려
     void callUpdateOrderReject(@Param("p_pur_id")Long purId, @Param("p_rej_memo")String rejMemo, @Param("p_staff")String staff);
     //출고지시대기목록
     List <PurchaseMatVO> getMatWReleaseList(String vendorId);
     //출고지시등록
-    void callReleaseMatPoc(@Param("purId")Long purId, @Param("outQty")Long outQty, @Param("vendorId")String vendorId, @Param("expectDate")Date expectDate);
+    void callReleaseMatPoc(@Param("purId")Long purId, @Param("outQty")Long outQty, @Param("vendorId")String vendorId, @Param("expectDate")Date expectDate, @Param("vendorEmp")String vendorEmp);
     
     //출고등록화면
     //1)출고대기리스트

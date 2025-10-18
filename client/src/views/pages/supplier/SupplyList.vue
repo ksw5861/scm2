@@ -3,7 +3,6 @@ import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import btn from '@/components/common/Btn.vue';
 import selectTable from '@/components/common/checkBoxTable.vue';
-import SearchField from '@/components/common/SearchBox.vue';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
@@ -16,10 +15,10 @@ import Select from 'primevue/select';
 import DatePicker from 'primevue/datepicker';
 
 // Pinia Store
+// (userStore.name)이름
+// (userStore.code)코드 - 계정기준으로
 const userStore = useUserStore();
-// const vendorId = userStore.code;
-const vendorId = ref('V800');
-const vendorName = ref('홍길동'); //공급처담당자이름으로 로그찍히니 변경xxx
+const vendorId = userStore.code;
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -50,13 +49,13 @@ const page = ref({ page: 1, size: 10, totalElements: 0 });
 const searchFilter = ref({
   stardDate: '',
   endDate: '',
-  vendor: '',
-//   lotStatus: ''
+  vendor: ''
+  //   lotStatus: ''
 });
 
 const fetchSuppliyList = async () => {
   try {
-    const list = await axios.get(`/api/supplier/supplyList/${vendorId.value}`);
+    const list = await axios.get(`/api/supplier/supplyList/${vendorId}`);
     console.log(list);
     // flatMap으로 평탄화
     const flattened = list.data.flatMap((row) =>
@@ -169,49 +168,42 @@ const statusColumn = [
     <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
-<!--검색영역-->
-      <div class="card flex flex-col gap-4">
-        <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <!--검색영역-->
+    <div class="card flex flex-col gap-4">
+      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <label for="searchStart">시작일</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
-                        <label for="searchStart">시작일</label>
-                    </IftaLabel>
-                </InputGroup>
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <label for="searchEnd">종료일</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
-                        <label for="searchEnd">종료일</label>
-                    </IftaLabel>
-                </InputGroup>
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <label for="searchVendor">자재명</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <InputText v-model="searchFilter.vendor" inputId="searchMa" />
-                        <label for="searchVendor">자재명</label>
-                    </IftaLabel>
-                </InputGroup>
-
-                <div class="flex flex-col w-full">
-                    <InputGroup>
-                        <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                        <Select
-                        v-model="searchFilter.lotStatus"
-                        :options="statusOptions"
-                        optionLabel="name"
-                        optionValue="value"
-                        placeholder="출고 상태"
-                        class="w-full h-[48px] text-base"/>
-                    </InputGroup>
-                </div>
-            </div>
-        </SearchCard>
+          <div class="flex flex-col w-full">
+            <InputGroup>
+              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <Select v-model="searchFilter.lotStatus" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="출고 상태" class="w-full h-[48px] text-base" />
+            </InputGroup>
+          </div>
+        </div>
+      </SearchCard>
     </div>
     <!--테이블영역--><!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">

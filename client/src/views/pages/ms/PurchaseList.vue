@@ -11,12 +11,10 @@ import { useUserStore } from '@/stores/user';
 import SearchCard from '@/components/card/SearchCard.vue';
 import DatePicker from 'primevue/datepicker';
 
-
 // Pinia Store
 const userStore = useUserStore();
-const empName = ref(userStore.name);
-const empId = ref(userStore.code);
-
+const empName = userStore.name;
+const empId = userStore.code;
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -44,7 +42,7 @@ const page = ref({ page: 1, size: 10, totalElements: 0 });
 const searchFilter = ref({
   stardDate: '',
   endDate: '',
-  metName:'',
+  metName: '',
   vendor: ''
 });
 
@@ -145,36 +143,35 @@ const statusColumn = [
     <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
-     <!--검색영역-->
-      <div class="card flex flex-col gap-4">
-        <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+    <!--검색영역-->
+    <div class="card flex flex-col gap-4">
+      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <label for="searchStart">시작일</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
-                        <label for="searchStart">시작일</label>
-                    </IftaLabel>
-                </InputGroup>
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <label for="searchEnd">종료일</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
-                        <label for="searchEnd">종료일</label>
-                    </IftaLabel>
-                </InputGroup>
-
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <InputText v-model="searchFilter.vendor" inputId="searchMa" />
-                        <label for="searchVendor">공급처</label>
-                    </IftaLabel>
-                </InputGroup>
-            </div>
-        </SearchCard>
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <label for="searchVendor">공급처</label>
+            </IftaLabel>
+          </InputGroup>
+        </div>
+      </SearchCard>
     </div>
     <!--테이블영역--><!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">

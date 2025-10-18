@@ -10,10 +10,10 @@ import { useUserStore } from '@/stores/user';
 import SearchCard from '@/components/card/SearchCard.vue';
 import Select from 'primevue/select';
 
-
 // Pinia Store
 const userStore = useUserStore();
-const empName = ref(userStore.name);
+const empName = userStore.name;
+const empId = userStore.code;
 const route = useRoute();
 const { toast } = useAppToast();
 
@@ -167,47 +167,32 @@ const matLotColumns = [
     </div>
     <!--검색영역-->
     <div class="card flex flex-col gap-4">
-        <SearchCard title="재고 조회" @search="fetchMatList" @reset="resetSearch">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <SearchCard title="재고 조회" @search="fetchMatList" @reset="resetSearch">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchFilter.materialId" inputId="searchMa" />
+              <label for="searchMatName">자재명</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <InputText v-model="searchFilter.materialId" inputId="searchMatId" />
-                        <label for="searchMatId">자재코드</label>
-                    </IftaLabel>
-                </InputGroup>
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchFilter.materialId" inputId="searchMa" />
+              <label for="searchLotNo">LOT번호</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <InputText v-model="searchFilter.materialId" inputId="searchMa" />
-                        <label for="searchMatName">자재명</label>
-                    </IftaLabel>
-                </InputGroup>
-
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <InputText v-model="searchFilter.materialId" inputId="searchMa" />
-                        <label for="searchLotNo">LOT번호</label>
-                    </IftaLabel>
-                </InputGroup>
-
-                <div class="flex flex-col w-full">
-                    <InputGroup>
-                        <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                        <Select
-                        v-model="searchFilter.lotStatus"
-                        :options="statusOptions"
-                        optionLabel="name"
-                        optionValue="value"
-                        placeholder="LOT 상태"
-                        class="w-full h-[48px] text-base"/>
-                    </InputGroup>
-                </div>
-            </div>
-        </SearchCard>
+          <div class="flex flex-col w-full">
+            <InputGroup>
+              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <Select v-model="searchFilter.lotStatus" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="LOT 상태" class="w-full h-[48px] text-base" />
+            </InputGroup>
+          </div>
+        </div>
+      </SearchCard>
     </div>
     <!--검색박스 end-->
     <!--테이블영역-->

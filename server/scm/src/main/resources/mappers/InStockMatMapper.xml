@@ -188,13 +188,15 @@ AND id.inbound_status in ('d6', 'd3')
 { call PROC_REGISTER_DEFECT(
         #{inboundDetId, mode=IN, jdbcType=NUMERIC},   
         #{logRejQty,   mode=IN, jdbcType=NUMERIC},
-        #{logMemo,   mode=IN, jdbcType=VARCHAR},     
-        #{logName,   mode=IN, jdbcType=VARCHAR}   )} 
+        #{logMemo,     mode=IN, jdbcType=VARCHAR},     
+        #{logName,     mode=IN, jdbcType=VARCHAR},
+        #{logId,       mode=OUT, jdbcType=NUMERIC}    
+) }
 </select>
 
-<select id="selectRecentSeq" resultType="long">
+<!-- <select id="selectRecentSeq" resultType="long">
 SELECT SEQ_INBOUND_LOG.CURRVAL FROM dual
-</select>
+</select> -->
 
 <update id="updateDefectImagePath" parameterType="InboundLogVO">
 UPDATE inbound_log

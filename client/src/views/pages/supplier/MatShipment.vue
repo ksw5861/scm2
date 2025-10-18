@@ -14,10 +14,13 @@ import Select from 'primevue/select';
 import DatePicker from 'primevue/datepicker';
 
 // Pinia Store
+// (userStore.name)이름
+// (userStore.code)코드 - 계정기준으로
 const userStore = useUserStore();
-// const vendorId = userStore.code;
-const vendorId = ref('V800');
-const vanEmpName = ref('홍길동');
+const vendorId = userStore.code;
+const vanEmpName = '배송담당';
+
+console.log(userStore);
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -67,7 +70,7 @@ const searchFilter = ref({
 //페이지로드시 목록출력
 const pageLoad = async () => {
   try {
-    const list = await axios.get(`/api/supplier/ApprovedList/${vendorId.value}`);
+    const list = await axios.get(`/api/supplier/ApprovedList/${vendorId}`);
     console.log(list);
 
     approveShipData.value = list.data.map((item) => ({
@@ -124,15 +127,15 @@ const submit = async () => {
   //디테일 필요데이터 [출고수량, 공급처코드, 자재코드, 주문이력아이디]
   const payload = ({
   //입고마스터
-  venName: vanEmpName.value,
-  vendorId: vendorId.value,
+  venName: vanEmpName,
+  vendorId: vendorId,
   //입고상세
   details: list.map((row) => ({
       purId: row.purId,               //주문테이블 아이디
       matId: row.matId,               // 자재 코드
       outQty: row.ortQty,             // 공급처 출고수량
       purStatusId: row.purStatusId,   //주문로그T아이디 : : 출고상태값 제어필수
-      vendorId: vendorId.value        // 공급처코드 (공통)
+      vendorId: vendorId        // 공급처코드 (공통)
     })),
   //배송정보
   shipmentInfoVO: {

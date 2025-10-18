@@ -10,11 +10,11 @@ public class PurStatusLogVO {
 
     private Long purStatusId;    // PUR_STATUS_ID
     private Date reDate;         // RE_DATE   
-    private String logName;         // NAME
+    private String logName;         // NAME- 담당자이름
     private String logPurMatStatus; // PUR_MAT_STATUS
     private Long logPurId;          // PUR_ID
     private Long logSupOutQty;      //공급처 출고수량 (for 부분출고)
-    private String logVendorId;
+    private String logVendorId;     //밴더코드로 들어가야함! 
     private String logResonComm; //반려사유(공급처)
     //부분출고처리때문에 컬럼추가 
     private Date logExpectDate;

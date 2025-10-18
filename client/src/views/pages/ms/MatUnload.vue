@@ -13,8 +13,8 @@ import SearchCard from '@/components/card/SearchCard.vue';
 
 // Pinia Store
 const userStore = useUserStore();
-const empName = ref(userStore.name);
-const empId = ref(userStore.code);
+const empName = userStore.name;
+const empId = userStore.code; //사원코드
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -87,7 +87,7 @@ const detailInfo = async () => {
 
 const approve = async () => {
   try {
-    await axios.post('/api/mat/approveUnload', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName.value } });
+    await axios.post('/api/mat/approveUnload', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName } });
     toast('info', '하차승인 성공', '하차승인 성공:', '3000');
     await pageLoad();
     shipDetailListData.value = [{ matId: '', matName: '', ortQty: null, unit: '' }];
@@ -99,7 +99,7 @@ const approve = async () => {
 const returnSubmit = async () => {
   //사유, 담당자, 하차등록시 해당 마스터와 디테일 모두 상태값 변경하고 기록해줘야함. [입고마스터 + 디테일 + 상태변경로그] + @ 발주상태값 반품으로도 가능??/??
   try {
-    await axios.post('/api/mat/unloadReturn', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName.value, rejMemo: returnMemo.value } });
+    await axios.post('/api/mat/unloadReturn', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName, rejMemo: returnMemo.value } });
     toast('info', '반품등록 성공', '반품등록 성공:', '3000');
     await pageLoad();
     closeReturnModal();
@@ -157,34 +157,33 @@ const shipDetailColumn = [
     </div>
 
     <div class="card flex flex-col gap-4">
-        <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
-            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <label for="searchStart">시작일</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
-                        <label for="searchStart">시작일</label>
-                    </IftaLabel>
-                </InputGroup>
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <label for="searchEnd">종료일</label>
+            </IftaLabel>
+          </InputGroup>
 
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
-                        <label for="searchEnd">종료일</label>
-                    </IftaLabel>
-                </InputGroup>
-
-                <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                    <IftaLabel>
-                        <InputText v-model="searchFilter.vendor" inputId="searchMa" />
-                        <label for="searchVendor">공급처</label>
-                    </IftaLabel>
-                </InputGroup>
-            </div>
-        </SearchCard>
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <label for="searchVendor">공급처</label>
+            </IftaLabel>
+          </InputGroup>
+        </div>
+      </SearchCard>
     </div>
     <!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">
