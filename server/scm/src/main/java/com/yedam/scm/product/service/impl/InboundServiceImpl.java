@@ -126,20 +126,27 @@ public class InboundServiceImpl implements InboundService {
         return inboundMapper.selectReturnDetails(returnId);
     }
 
+    // 반품승인 
     @Override
     @Transactional
     public int approveReturnDetails(List<String> ids) {
         if (ids == null || ids.isEmpty())
             return 0;
-        return inboundMapper.approveReturnDetails(ids);
+        int result = inboundMapper.approveReturnDetails(ids);
+        inboundMapper.updateReturnStatus(ids.get(0));
+        return result;
     }
 
+    // 반품반려
     @Override
     @Transactional
     public int rejectReturnDetails(List<String> ids, String reason) {
         if (ids == null || ids.isEmpty())
             return 0;
-        return inboundMapper.rejectReturnDetails(ids, reason);
+
+         int result = inboundMapper.rejectReturnDetails(ids, reason);
+         inboundMapper.updateReturnStatus(ids.get(0));
+        return result;
     }
 
     /* ===================== 출하지시 ===================== */

@@ -19,13 +19,17 @@ import com.yedam.scm.dto.AccountLedgerSearchDTO;
 import com.yedam.scm.dto.InboundListRes;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.WarehouseListRes;
+import com.yedam.scm.dto.WonjangReportDTO;
 import com.yedam.scm.product.service.InboundService;
+import com.yedam.scm.product.service.JasperReportService;
 import com.yedam.scm.vo.ItemInboundVO;
 import com.yedam.scm.vo.ReturnDetailVO;
 import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 
+
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -33,6 +37,9 @@ import lombok.RequiredArgsConstructor;
 public class DwController {
 
     private final InboundService service;
+
+    //pdf 재스퍼 추가
+    private final JasperReportService jasperService;
 
     /* ===================== 제품입고 ===================== */
 
@@ -196,6 +203,44 @@ public class DwController {
         result.put("summary", service.getDashboardSummary());
         result.put("items", service.getDashboardList());
         return ResponseEntity.ok(result);
+    }
+
+
+       
+
+        
+          // ✅ 거래처원장 PDF 출력
+    @GetMapping("/account-ledger/report")
+    public void exportLedgerReport(HttpServletResponse response) throws Exception {
+        // 1️⃣ 데이터 조회
+        List<SalesOrderVO> voList = (List<SalesOrderVO>)
+            service.getAccountLedger(new AccountLedgerSearchDTO()).get("items");
+
+        // 2️⃣ VO → DTO 매핑
+        List<WonjangReportDTO> reportList = voList.stream().map(vo -> {
+            WonjangReportDTO dto = new WonjangReportDTO();
+            dto.setCompanyName(vo.getCompanyName());
+            dto.setTotalPrice(vo.getTotalSales());
+            dto.setReturnPrice(vo.getTotalReturn());
+            dto.setTotalPayment(vo.getTotalPayment());
+            dto.setTotalAr(vo.getTotalAr());
+            dto.setOrderCount(vo.getOrderCount());
+            dto.setUnpaidCount(vo.getUnpaidCount());
+            dto.setLastOrderDate(
+                vo.getLastOrderDate() != null
+                    ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(vo.getLastOrderDate())
+                    : "-"
+            );
+            return dto;
+        }).toList();
+
+        // 3️⃣ Jasper 서비스 호출
+        byte[] pdfBytes = jasperService.generateAccountLedgerReport(reportList);
+
+        // 4️⃣ 응답으로 PDF 전송
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "inline; filename=wonjang_report.pdf");
+        response.getOutputStream().write(pdfBytes);
     }
 
 }// end

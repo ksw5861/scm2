@@ -15,4 +15,8 @@ public class PaymentDetailVO {
 
     private String returnId;
    
+
+
+    //1018 추가
+    private int allocAmount;   // 입금 상세 금액
 }

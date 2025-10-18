@@ -14,6 +14,7 @@ import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 // import com.yedam.scm.vo.ShipOrderVO;
 
+
 public interface InboundService {
 
     /* ===================== 제품입고 ===================== */
@@ -78,7 +79,9 @@ public interface InboundService {
 
 
 
+}
+
      
 
   
-}
+

@@ -107,4 +107,10 @@ public class SalesOrderVO {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private BigDecimal prevTotalPrice; // 이전 금엑
+
+
+
+    // 1018 추가
+    private Integer orderCount;   // 주문건수
+    private Integer unpaidCount;  // 미수건수
 }
