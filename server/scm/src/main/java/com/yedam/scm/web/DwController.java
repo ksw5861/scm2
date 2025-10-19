@@ -28,7 +28,6 @@ import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 
-
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -38,7 +37,7 @@ public class DwController {
 
     private final InboundService service;
 
-    //pdf 재스퍼 추가
+    // pdf 재스퍼 추가
     private final JasperReportService jasperService;
 
     /* ===================== 제품입고 ===================== */
@@ -205,16 +204,12 @@ public class DwController {
         return ResponseEntity.ok(result);
     }
 
-
-       
-
-        
-          // ✅ 거래처원장 PDF 출력
+    // ✅ 거래처원장 PDF 출력
     @GetMapping("/account-ledger/report")
     public void exportLedgerReport(HttpServletResponse response) throws Exception {
         // 1️⃣ 데이터 조회
-        List<SalesOrderVO> voList = (List<SalesOrderVO>)
-            service.getAccountLedger(new AccountLedgerSearchDTO()).get("items");
+        List<SalesOrderVO> voList = (List<SalesOrderVO>) service.getAccountLedger(new AccountLedgerSearchDTO())
+                .get("items");
 
         // 2️⃣ VO → DTO 매핑
         List<WonjangReportDTO> reportList = voList.stream().map(vo -> {
@@ -227,10 +222,9 @@ public class DwController {
             dto.setOrderCount(vo.getOrderCount());
             dto.setUnpaidCount(vo.getUnpaidCount());
             dto.setLastOrderDate(
-                vo.getLastOrderDate() != null
-                    ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(vo.getLastOrderDate())
-                    : "-"
-            );
+                    vo.getLastOrderDate() != null
+                            ? new java.text.SimpleDateFormat("yyyy-MM-dd").format(vo.getLastOrderDate())
+                            : "-");
             return dto;
         }).toList();
 
@@ -241,6 +235,33 @@ public class DwController {
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "inline; filename=wonjang_report.pdf");
         response.getOutputStream().write(pdfBytes);
+    }
+
+    /* ===================== 거래처원장 페이지 모달 ===================== */
+    // ✅ 판매처 모달 조회 (원장페이지 전용)
+    @GetMapping("/wonjang/modal-list")
+    public Map<String, Object> getVendorList(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return service.getVendorList(keyword, page, size);
+    }
+
+    /* ===================== 주문승인 페이지 모달 ===================== */
+    @GetMapping("/approval/vendor-list") // 판매처명 모달
+    public List<Map<String, Object>> getVendorModalList(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return service.getVendorModalList(keyword, page, size);
+    }
+
+    @GetMapping("/approval/order-list") // 주문번호 모달
+    public List<Map<String, Object>> getOrderModalList(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return service.getOrderModalList(keyword, page, size);
     }
 
 }// end

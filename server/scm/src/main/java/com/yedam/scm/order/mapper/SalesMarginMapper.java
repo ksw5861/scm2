@@ -59,5 +59,17 @@ public interface SalesMarginMapper {
                            @Param("month") int month);
 
 
+// 최근 7일 일별 매출 추이
+List<Map<String, Object>> getSalesTrendDaily(@Param("vendorId") String vendorId);
+
+// 최근 6개월 월별 매출 추이
+List<Map<String, Object>> getSalesTrendMonthly(@Param("vendorId") String vendorId);
+List<Map<String, Object>> getSalesCompare(@Param("vendorId") String vendorId);
+List<Map<String, Object>> getCoffeeRank(@Param("vendorId") String vendorId);
+
+
+// 매출 성장률
+Map<String, Object> selectSalesGrowth(String vendorId);
+
 
 }

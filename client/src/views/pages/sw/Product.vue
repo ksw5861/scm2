@@ -46,6 +46,16 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
+const displayPrice = computed({
+  get: () => {
+    if (!productForm.prodUnitPrice) return '';
+    return productForm.prodUnitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  },
+  set: (val) => {
+    productForm.prodUnitPrice = val.replace(/,/g, '').replace(/[^0-9.]/g, '');
+  }
+});
+
 // 검색 파라미터
 const searchParams = reactive({
   prodId: '',
@@ -163,6 +173,7 @@ const addProduct = async () => {
   if (!productForm.prodName) return toast('warn', '등록 실패', '제품명을 입력하세요.');
   try {
     const payload = { ...productForm };
+    payload.prodUnitPrice = payload.prodUnitPrice.replace(/[^0-9.]/g, '');
     delete payload.prodId;
     const res = await axios.post('/api/product', payload);
     toast('success', '등록 성공', '제품이 등록되었습니다.');
@@ -350,20 +361,7 @@ onMounted(() => fetchProductList());
             <div><label class="text-sm block mb-1">만료일</label><InputText :value="productForm.exp" @input="(e) => (productForm.exp = e.target.value.replace(/[^0-9]/g, ''))" class="w-full h-10" placeholder="숫자만 입력" /></div>
             <div>
               <label class="text-sm block mb-1">단가</label>
-              <InputText
-                :value="productForm.prodUnitPrice"
-                @input="
-                  (e) => {
-                    // 숫자만 남기기
-                    let val = e.target.value.replace(/[^0-9]/g, '');
-                    // 3자리마다 콤마
-                    val = val.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                    productForm.prodUnitPrice = val;
-                  }
-                "
-                class="w-full h-10"
-                placeholder="숫자만 입력"
-              />
+              <InputText v-model="displayPrice" class="w-full h-10" placeholder="숫자만 입력"/>
             </div>
             <div><label class="text-sm block mb-1">제품코드</label><InputText v-model="productForm.prodId" class="w-full h-10" disabled /></div>
           </div>

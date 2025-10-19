@@ -33,7 +33,7 @@
         <div class="form-group code-group">
           <label class="form-label">결제번호</label>
           <InputText
-            v-model="filters.paymentNo"
+            v-model="filters.payId"
             placeholder="결제번호 입력"
             class="input-text"
           />
@@ -83,7 +83,7 @@
         columnResizeMode="fit"
         class="payment-table"
       >
-        <Column field="paymentNo" header="결제번호" style="width:140px;" />
+        <Column field="payId" header="결제번호" style="width:140px;" />
         <Column field="payDate" header="결제일자" style="width:140px;" />
 
         <Column field="outstandingAmount" header="미수금" style="width:140px; text-align:right;">
@@ -173,15 +173,17 @@ const searchPayments = async () => {
     const res = await axios.get('/api/payments', { params })
     console.log('납부내역 조회 결과:', res.data)
 
-    payList.value = (res.data.list || []).map((item) => ({
-      paymentNo: item.PAYMENTNO,
-      payDate: item.PAYDATE,
-      outstandingAmount: item.OUTSTANDINGAMOUNT,
-      payAmount: item.PAYAMOUNT,
-      finalBalance: item.FINALBALANCE,
-      creditBalance: item.CREDITBALANCE,
-      payRmk: item.PAYRMK || ''
-    }))
+    payList.value = (res.data.list || []).map(item => ({
+          payId: item.payId,
+          payDate: item.payDate,
+          outstandingAmount: item.outstandingAmount,
+          payAmount: item.payAmount,
+          finalBalance: item.finalBalance,
+          creditBalance: item.creditBalance,
+          payRmk: item.payRmk || ''
+
+          }))
+
   } catch (error) {
     console.error('납부내역 조회 실패:', error)
     payList.value = []
