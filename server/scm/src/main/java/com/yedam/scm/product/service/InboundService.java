@@ -14,7 +14,6 @@ import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
 // import com.yedam.scm.vo.ShipOrderVO;
 
-
 public interface InboundService {
 
     /* ===================== 제품입고 ===================== */
@@ -42,9 +41,6 @@ public interface InboundService {
     // 주문승인 프로시저 직접 호출 (반려 시 0원 처리용)
     void callProcApproveOrder(Map<String, Object> param);
 
-
-
-
     /* ===================== 반품승인 ===================== */
     List<ReturnVO> getReturnList();
 
@@ -68,20 +64,20 @@ public interface InboundService {
     // 거래처원장 조회
     Map<String, Object> getAccountLedger(AccountLedgerSearchDTO condition);
 
-
     // 대시보드
     Map<String, Object> getDashboardSummary();
-    List<SalesOrderVO> getDashboardList();  
 
+    List<SalesOrderVO> getDashboardList();
 
-     // 주문승인 프로시저 실행 (상세 상태 변경 + 부모 합산/상태 반영)
+    // 주문승인 프로시저 실행 (상세 상태 변경 + 부모 합산/상태 반영)
     int approveOrderWithProc(List<String> odetailIds, String status);
 
+    // 거래처원장 페이지 모달
+    Map<String, Object> getVendorList(String keyword, int page, int size);
 
+    // 주문승인 페이지 모달
+    List<Map<String, Object>> getVendorModalList(String keyword, int page, int size); // companyName만
+
+    List<Map<String, Object>> getOrderModalList(String keyword, int page, int size); // orderId만
 
 }
-
-     
-
-  
-

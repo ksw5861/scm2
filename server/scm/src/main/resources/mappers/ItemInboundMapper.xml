@@ -358,26 +358,30 @@
   ) MAX_SO ON v.vendor_id = MAX_SO.vendor_id
 
   <!-- ✅ 주문건수 -->
-  LEFT JOIN (
-      SELECT vendor_id, COUNT(*) AS order_cnt
-      FROM sales_order
-      WHERE 1=1
-        <if test="startDate != null and endDate != null">
-          AND order_date BETWEEN #{startDate} AND #{endDate}
-        </if>
-      GROUP BY vendor_id
-  ) o ON v.vendor_id = o.vendor_id
+ LEFT JOIN (
+    SELECT vendor_id, COUNT(*) AS order_cnt
+    FROM sales_order
+    WHERE status IN ('출고완료', '배송완료')  
+      <if test="startDate != null and endDate != null">
+        AND order_date BETWEEN #{startDate} AND #{endDate}
+      </if>
+    GROUP BY vendor_id
+) o ON v.vendor_id = o.vendor_id
 
   <!-- ✅ 미수건수 -->
   LEFT JOIN (
-      SELECT vendor_id, COUNT(*) AS unpaid_cnt
-      FROM sales_order
-      WHERE pay_status = '대기'
-      GROUP BY vendor_id
-  ) u ON v.vendor_id = u.vendor_id
+  SELECT vendor_id, COUNT(*) AS unpaid_cnt
+  FROM sales_order
+  WHERE status IN ('출고완료','배송완료')
+    AND pay_status = '대기'
+  GROUP BY vendor_id
+) u ON v.vendor_id = u.vendor_id
 
   <where>
-      v.type IN (0,2)
+          v.type IN (0,2)
+    <if test="vendorId != null and vendorId != ''">
+        AND v.vendor_id = #{vendorId}
+    </if>
   </where>
 </select>
 
@@ -401,9 +405,66 @@
 </select>
 
 
+ <!-- ✅ 판매처(원장페이지 전용) 모달 목록 -->
+  <select id="selectVendorListByCondition" resultType="com.yedam.scm.vo.VendorVO">
+    SELECT *
+      FROM (
+        SELECT v.vendor_id AS vendorId,
+               v.company_name AS companyName,
+               ROW_NUMBER() OVER (ORDER BY v.vendor_id DESC) AS rn
+          FROM vendor v
+         WHERE 1=1
+           <if test="condition != null and condition != ''">
+             AND (v.vendor_id LIKE '%' || #{condition} || '%'
+              OR v.company_name LIKE '%' || #{condition} || '%')
+           </if>
+      )
+     WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
+  </select>
+
+  <!-- ✅ 총 개수 -->
+  <select id="selectVendorCountByCondition" resultType="long">
+    SELECT COUNT(*)
+      FROM vendor v
+     WHERE 1=1
+       <if test="condition != null and condition != ''">
+         AND (v.vendor_id LIKE '%' || #{condition} || '%'
+          OR v.company_name LIKE '%' || #{condition} || '%')
+       </if>
+  </select>
 
 
 
+
+
+ <!-- ===================== 주문승인 페이지 모달  ===================== -->
+ <select id="getVendorModalList" resultType="map"> <!-- 판매처명 모달 -->
+  SELECT *
+    FROM (
+      SELECT v.company_name AS companyName,
+             ROW_NUMBER() OVER (ORDER BY v.vendor_id DESC) AS rn
+        FROM vendor v
+       WHERE v.type IN (0, 2)
+         <if test="keyword != null and keyword != ''">
+           AND v.company_name LIKE '%' || #{keyword} || '%'
+         </if>
+    )
+   WHERE rn BETWEEN ((#{page}-1)*#{size}+1) AND (#{page}*#{size})
+</select>
+
+<select id="getOrderModalList" resultType="map"> <!-- 주문번호 모달 -->
+  SELECT *
+    FROM (
+      SELECT s.order_id AS orderId,
+             ROW_NUMBER() OVER (ORDER BY s.order_id DESC) AS rn
+        FROM sales_order s
+       WHERE 1=1
+         <if test="keyword != null and keyword != ''">
+           AND s.order_id LIKE '%' || #{keyword} || '%'
+         </if>
+    )
+   WHERE rn BETWEEN ((#{page}-1)*#{size}+1) AND (#{page}*#{size})
+</select>
 
 
 

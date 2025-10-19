@@ -14,6 +14,7 @@ import com.yedam.scm.vo.ReturnDetailVO;
 import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
+import com.yedam.scm.vo.VendorVO;
 // import com.yedam.scm.vo.ShipOrderVO;
 import com.yedam.scm.vo.WareHouseVO;
 
@@ -58,10 +59,8 @@ public interface InboundMapper {
 
         int rejectDetails(@Param("odetailIds") List<String> odetailIds);
 
-                
         // 주문승인 프로시저 실행 (상세 상태 변경 + 부모 합산/상태 반영)
         void callProcApproveOrder(Map<String, Object> param);
-
 
         /* ===================== 반품승인 ===================== */
 
@@ -76,9 +75,7 @@ public interface InboundMapper {
 
         int rejectReturnDetails(@Param("ids") List<String> ids, @Param("reason") String reason);
 
-
         int updateReturnStatus(@Param("returnId") String returnId);
-
 
         /* ===================== 출하지시 ===================== */
 
@@ -100,8 +97,18 @@ public interface InboundMapper {
         // 대시보드
         // Map<String, Object> selectDashboardSummary();
         SalesOrderVO selectDashboardSummary();
+
         List<SalesOrderVO> selectDashboardList();
 
+        // 거래처원장 페이지 모달
+        List<VendorVO> selectVendorListByCondition(@Param("condition") String condition,
+                        @Param("paging") PageDTO paging);
 
+        long selectVendorCountByCondition(@Param("condition") String condition);
+
+        // 주문승인 페이지 모달
+        List<Map<String, Object>> getVendorModalList(String keyword, int page, int size); // 판매처명 모달
+
+        List<Map<String, Object>> getOrderModalList(String keyword, int page, int size); // 주문번호 모달
 
 }
