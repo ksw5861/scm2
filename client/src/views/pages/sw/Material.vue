@@ -584,7 +584,7 @@ onMounted(() => fetchList());
                 </div>
                 <div>
                   <label class="text-sm block mb-1">단가(원)</label>
-                  <InputText :value="form.matUnitPrice" @input="(e) => (form.matUnitPrice = e.target.value.replace(/[^0-9.]/g, ''))" placeholder="숫자만 입력" />
+                  <InputText v-model="displayPrice" class="w-full h-10" placeholder="숫자만 입력"/>
                 </div>
                 <div>
                   <label class="text-sm block mb-1">상태</label>
