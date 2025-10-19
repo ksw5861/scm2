@@ -1,16 +1,22 @@
 <template>
   <div class="pos-dashboard">
     <!-- 탭 -->
-    <div class="tab-container">
-      <Button
-        v-for="tab in tabs"
-        :key="tab"
-        :label="tab"
-        class="tab-btn"
-        :class="{ active: activeTab === tab }"
-        @click="activeTab = tab"
-      />
-    </div>
+<div class="tab-container">
+  <Button
+    v-for="tab in tabs"
+    :key="tab"
+    :label="tab"
+    class="tab-btn"
+    :class="{ active: activeTab === tab }"
+    @click="activeTab = tab"
+  />
+
+  <!-- ✅ 여기! 닫기 전에 -->
+  <div class="pos-info">
+    <strong>{{ userStore.name }}</strong> | {{ currentTime }}
+  </div>
+</div>
+
 
     <!-- ================== 탭1: 매출 발생 ================== -->
     <div v-if="activeTab === '매출 발생'" class="tab-content">
@@ -274,6 +280,8 @@ console.log("✅ 총 공휴일:", fixedHolidays.length)
 ============================= */
 const tabs = ["매출 발생", "매출 내역", "월별 매출"]
 const activeTab = ref("매출 발생")
+const currentTime = ref('')
+
 const userStore = useUserStore()
 const vendorId = userStore.code
 
@@ -291,7 +299,18 @@ const fetchPosProducts = async () => {
     posShowYn: p.posShowYn,
   }))
 }
-onMounted(fetchPosProducts)
+
+
+onMounted(() => {
+  fetchPosProducts(),
+  setInterval(() => {
+    const now = new Date()
+    currentTime.value = now.toLocaleString('ko-KR', { 
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    })
+  }, 1000)
+})
 
 const filteredProducts = computed(() => productList.value)
 const addToOrder = (item) => {
@@ -329,6 +348,11 @@ const handlePayment = async () => {
 /* =============================
   📊 매출 내역
 ============================= */
+
+// ✅ 날짜 변수 분리 (문자열용 + Date 객체용)
+const todayDate = new Date()
+const todayStr = todayDate.toISOString().split("T")[0]
+
 const salesList = ref([])
 const search = ref("")
 const dailySummary = ref({})
@@ -342,11 +366,12 @@ const fetchDailySummary = async () => {
   }
 }
 
+// ✅ 어제 대비 증감률 계산
 const salesChange = computed(() => {
-  const today = Number(dailySummary.value.today || 0)
-  const yesterday = Number(dailySummary.value.yesterday || 0)
-  if (!yesterday) return 0
-  return (((today - yesterday) / yesterday) * 100).toFixed(1)
+  const todaySales = Number(dailySummary.value.today || 0)
+  const yesterdaySales = Number(dailySummary.value.yesterday || 0)
+  if (!yesterdaySales) return 0
+  return (((todaySales - yesterdaySales) / yesterdaySales) * 100).toFixed(1)
 })
 
 const countChange = computed(() => {
@@ -355,8 +380,17 @@ const countChange = computed(() => {
   return todayCount - yesterdayCount
 })
 
-const todaySales = computed(() => Number(dailySummary.value.today || 0))
-const todayCount = computed(() => Number(dailySummary.value.todayCount || 0))
+// ✅ 오늘 매출만 필터링해서 합계
+const totalSales = computed(() =>
+  salesList.value
+    .filter((s) => s.saleDate?.startsWith(todayStr))
+    .reduce((sum, s) => sum + (s.saleTotalAmount || 0), 0)
+)
+
+// ✅ 오늘 주문 건수
+const todayCount = computed(() =>
+  salesList.value.filter((s) => s.saleDate?.startsWith(todayStr)).length
+)
 
 const fetchSalesHistory = async () => {
   try {
@@ -374,12 +408,14 @@ const filteredSales = computed(() => {
   )
 })
 
-const totalSales = computed(() =>
-  salesList.value.reduce((sum, s) => sum + (s.saleTotalAmount || 0), 0)
-)
-const avgOrder = computed(() =>
-  salesList.value.length ? Math.round(totalSales.value / salesList.value.length) : 0
-)
+// ✅ 평균 주문 금액 (오늘 기준)
+const avgOrder = computed(() => {
+  const todaySalesList = salesList.value.filter((s) => s.saleDate?.startsWith(todayStr))
+  return todaySalesList.length
+    ? Math.round(totalSales.value / todaySalesList.length)
+    : 0
+})
+
 
 /* =============================
   📅 월별 매출
@@ -403,9 +439,10 @@ const dailyAvg = computed(() =>
     : 0
 )
 
-const today = new Date()
-const year = ref(today.getFullYear())
-const month = ref(today.getMonth())
+
+const year = ref(todayDate.getFullYear())
+const month = ref(todayDate.getMonth())
+
 const daysInMonth = ref([])
 
 const fetchMonthlySummary = async () => {
@@ -505,6 +542,18 @@ watch(activeTab, (tab) => {
 }
 
 /* POS (탭1) */
+.tab-container {
+  display: flex;
+  justify-content: space-between; /* 왼쪽 버튼들 + 오른쪽 정보 분리 */
+  align-items: center;
+}
+
+.pos-info {
+  margin-left: auto; 
+  font-size: 1.0rem;
+  color: #555;
+}
+
 .pos-body {
   display: grid;
   grid-template-columns: 3fr 1fr;
@@ -705,7 +754,7 @@ watch(activeTab, (tab) => {
 }
 .day-sales {
   text-align: right;
-  font-size: 1rem;
+  font-size: 1.3rem;
   color: #222;
   font-weight: 400;
 }
