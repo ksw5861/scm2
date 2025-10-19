@@ -4,6 +4,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.yedam.scm.dto.ApproveMatSearchDTO;
+import com.yedam.scm.dto.matSupplySearchDTO;
 import com.yedam.scm.supplier.service.SupplierService;
 import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
@@ -28,8 +30,8 @@ public class SupplierController {
 
     //발주목록
     @GetMapping("/OrderList/{vendorId}")
-    public List<PurchaseMatVO> getMatOerderList(@PathVariable String vendorId) {
-        return service.getMatOerderList(vendorId);
+    public List<PurchaseMatVO> getMatOerderList(@PathVariable String vendorId, ApproveMatSearchDTO searchDTO) {
+        return service.getMatOerderList(vendorId, searchDTO);
     }
     
     //발주승인처리
@@ -46,8 +48,8 @@ public class SupplierController {
 
     //출고승인된목록(출고지시등록페이지 로드시 출력되는 목록)
     @GetMapping("/releaseList/{vendorId}")
-    public List<PurchaseMatVO> getMatWReleaseList (@PathVariable String vendorId) {
-        return service. getMatWReleaseList(vendorId);
+    public List<PurchaseMatVO> getMatWReleaseList (@PathVariable String vendorId, matSupplySearchDTO searchDTO) {
+        return service. getMatWReleaseList(vendorId, searchDTO);
     }
     
     //출고지시(부분출고/전량출고 + 출고예정일)
@@ -59,8 +61,8 @@ public class SupplierController {
     //출고등록화면
     //1) 출고승인목록
     @GetMapping("/ApprovedList/{vendorId}")
-    public List<PurchaseMatVO> getApprovedShipmentList (@PathVariable String vendorId) {
-        return service.getApprovedShipmentList(vendorId);
+    public List<PurchaseMatVO> getApprovedShipmentList (@PathVariable String vendorId, ApproveMatSearchDTO searchDTO) {
+        return service.getApprovedShipmentList(vendorId, searchDTO);
     }
     
     //2)출고등록
@@ -75,8 +77,8 @@ public class SupplierController {
     
     //출고(공급)목록
     @GetMapping("/supplyList/{vendorId}")
-    public List<InboundVO> getSupplyList(@PathVariable String vendorId) {
-        return service.getSupplyList(vendorId);
+    public List<InboundVO> getSupplyList(@PathVariable String vendorId, matSupplySearchDTO searchDTO) {
+        return service.getSupplyList(vendorId, searchDTO);
     }
     //출고상세목록
     @GetMapping("/supplyDetailList")

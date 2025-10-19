@@ -10,8 +10,8 @@ import com.yedam.scm.dto.MatStockSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundLogVO;
-import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatLotVO;
+import com.yedam.scm.web.MatUnloadSearchDTO;
 
 public interface InStockMatService {
     //하차대기(마스터)
@@ -23,7 +23,7 @@ public interface InStockMatService {
     //하차반품
     void callUnloadReturn(Long inboundId, String unloadEmp, String rejMemo);
     //입고대기목록
-    Map<String, Object> getApproveUnload(PageDTO pageDTO);
+    Map<String, Object> getApproveUnload(MatUnloadSearchDTO searchDTO, PageDTO pageDTO);
     //입고대기목록(상세)
     List<InboundDetailVO> getApproveUnloadDetailList(Long inboundId);
     //입고등록

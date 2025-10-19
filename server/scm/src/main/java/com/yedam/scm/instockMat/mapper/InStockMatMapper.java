@@ -6,10 +6,12 @@ import java.util.Map;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatLotVO;
+import com.yedam.scm.web.MatUnloadSearchDTO;
 
 @Mapper
 public interface InStockMatMapper {
@@ -20,10 +22,10 @@ public interface InStockMatMapper {
     List<InboundDetailVO> getVenShipDetailList(@Param("inboundId")Long inboundId);
     //하차승인
     void callApproveUnload(@Param("inboundId")Long inboundId, @Param("unloadEmp")String unloadEmp);
-    void callUnloadReturn(@Param("inboundId")Long inboundId,  @Param("unloadEmp")String unloadEmp,  @Param("rejMemo")String rejMemo);
+    void callUnloadReturn(@Param("inboundId")Long inboundId,  @Param("unloadEmp")String unloadEmp, @Param("rejMemo")String rejMemo);
     //입고대기목록
-    List<InboundVO> getApproveUnload(@Param("startRow")int start, @Param("endRow")int end);
-    Long getApproveUnloadListCount();
+    List<InboundVO> getApproveUnload(@Param("page")PageDTO pageDTO, @Param("search")MatUnloadSearchDTO searchDTO);
+    Long getApproveUnloadListCount(@Param("search")MatUnloadSearchDTO searchDTO);
     //입고대기목록(상세)
     List<InboundDetailVO> getApproveUnloadDetailList(@Param("inboundId")Long inboundId);
     //입고등록

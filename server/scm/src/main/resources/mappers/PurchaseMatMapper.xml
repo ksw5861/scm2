@@ -222,17 +222,39 @@ SELECT * FROM (
     ON pm.mat_id = m.mat_id
     JOIN vendor v
     ON pm.vendor_id = v.vendor_id
+    WHERE 1=1
+    <if test="search.startDate != null">
+        AND pm.reg_date &gt;= #{search.startDate}
+    </if>
+    <if test="search.endDate != null">
+        AND pm.reg_date &lt;= #{search.endDate}
+    </if>
+    <if test="search.vendorName != null and search.vendorName != ''">
+        AND UPPER(v.company_name) LIKE '%' || UPPER(#{search.vendorName}) || '%'
+    </if>
     ORDER BY pm.reg_date DESC
      ) a
-    WHERE ROWNUM &lt;= #{endRow}
+    WHERE ROWNUM &lt;= #{page.endRow}
 )
-WHERE rnum &gt;= #{startRow}
-    </select>
+WHERE rnum &gt;= #{page.startRow}
+</select>
     
 <!--자재주문마스터 수량 for pagenation-->
 <select id="getPurchaseMasterCount" resultType="long">
-SELECT count (pur_id)
-FROM purchase_mat
+SELECT count(pur_id)
+FROM purchase_mat pm
+JOIN vendor v
+ON pm.vendor_id = v.vendor_id
+WHERE 1=1
+<if test="search.startDate != null">
+  AND pm.reg_date &gt;= #{search.startDate}
+</if>
+<if test="search.endDate != null">
+  AND pm.reg_date &lt;= #{search.endDate}
+</if>
+<if test="search.vendorName != null and search.vendorName != ''">
+  AND UPPER(v.company_name) LIKE '%' || UPPER(#{search.vendorName}) || '%'
+</if>
 </select>
 
 <!--자재주문상세이력-->

@@ -128,30 +128,57 @@ WHERE id.inbound_id = #{inboundId}
 </select>
 
 <!--입고대기목록-->
-<select id = "getApproveUnload" resultMap="inboundResultMap">
+<select id="getApproveUnload" resultMap="inboundResultMap">
 SELECT * FROM (
-    SELECT a.*, ROWNUM rnum
-    FROM (
-            SELECT i.inbound_id,
-                i.inbound_no,
-                i.unload_date,
-                i.unload_emp,
-                i.inbound_status,
-                v.company_name
-            FROM inbound i
-            JOIN vendor v
-            ON i.vendor_id = v.vendor_id
-            WHERE inbound_status in ('app', 'm2')
-    ) a
-    WHERE ROWNUM &lt;= #{endRow}
+  SELECT a.*, ROWNUM rnum
+  FROM (
+    SELECT i.inbound_id,
+           i.inbound_no,
+           i.unload_date,
+           i.unload_emp,
+           i.inbound_status,
+           v.company_name
+    FROM inbound i
+    JOIN vendor v ON i.vendor_id = v.vendor_id
+    WHERE 1=1
+      AND i.inbound_status IN ('app', 'm2')
+      <if test="search.startDate != null">
+        AND i.unload_date &gt;= TO_DATE(#{search.startDate}, 'YYYY-MM-DD')
+      </if>
+      <if test="search.endDate != null">
+        AND i.unload_date &lt;= TO_DATE(#{search.endDate}, 'YYYY-MM-DD')
+      </if>
+      <if test="search.vendorName != null and search.vendorName != ''">
+        AND v.company_name LIKE '%' || #{search.vendorName} || '%'
+      </if>
+      <if test="search.status != null and search.status != ''">
+        AND i.inbound_status LIKE '%' || #{search.status} || '%'
+      </if>
+    ORDER BY i.unload_date DESC
+  ) a
+  WHERE ROWNUM &lt;= #{page.endRow}
 )
-WHERE rnum &gt;= #{startRow}
+WHERE rnum &gt;= #{page.startRow}
 </select>
 <!--입고대기목록데이터 수-->
 <select id="getApproveUnloadListCount" resultType="long">
 SELECT count(DISTINCT inbound_id)
-FROM inbound
-WHERE inbound_status in ('app', 'm2')
+FROM inbound i
+JOIN vendor v ON i.vendor_id = v.vendor_id
+WHERE 1=1
+AND i.inbound_status IN ('app', 'm2')
+<if test="search.startDate != null">
+  AND i.unload_date &gt;= TO_DATE(#{search.startDate}, 'YYYY-MM-DD')
+</if>
+<if test="search.endDate != null">
+  AND i.unload_date &lt;= TO_DATE(#{search.endDate}, 'YYYY-MM-DD')
+</if>
+<if test="search.vendorName != null and search.vendorName != ''">
+  AND v.company_name LIKE '%' || #{search.vendorName} || '%'
+</if>
+<if test="search.status != null and search.status != ''">
+  AND i.inbound_status LIKE '%' || #{search.status} || '%'
+</if>
 </select>
 
 <!--입고대기목록상세-->

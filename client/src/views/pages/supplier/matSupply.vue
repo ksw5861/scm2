@@ -42,15 +42,30 @@ const page = ref({ page: 1, size: 10, totalElements: 0 });
 
 //검색필드
 const searchFilter = ref({
-  stardDate: '',
+  startDate: '',
   endDate: '',
-  vendor: ''
-  //   lotStatus: ''
+  matName: '',
+  status: ''
 });
 
+//datePicker날짜변환
+const formatDate = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toISOString().slice(0, 10);
+};
+
 const pageLoad = async () => {
-  try {
-    const list = await axios.get(`/api/supplier/releaseList/${vendorId}`);
+
+    const params = {
+        startDate: formatDate(searchFilter.value.startDate),
+        endDate: formatDate(searchFilter.value.endDate),
+        matName: searchFilter.value.matName,
+        status:searchFilter.value.status
+    };
+
+    try {
+    const list = await axios.get(`/api/supplier/releaseList/${vendorId}`, { params });
     console.log(list);
 
     matOutData.value = list.data.map((item) => ({
@@ -77,12 +92,16 @@ const pageLoad = async () => {
 const onPage = (event) => {
   const startRow = event.page * event.rows + 1;
   const endRow = (event.page + 1) * event.rows;
-  pageLoad({ startRow, endRow });
-};
 
-onMounted(() => {
-  pageLoad();
-});
+  pageLoad({
+    startRow,
+    endRow,
+    startDate: formatDate(searchFilter.value.startDate),
+    endDate: formatDate(searchFilter.value.endDate),
+    matName: searchFilter.value.matName,
+    status:searchFilter.value.status
+  });
+};
 
 const approvedShip = async () => {
   //선택행 없으면 출고처리 선택 안내
@@ -119,9 +138,7 @@ const approvedShip = async () => {
     empName: vanEmpName
   }));
 
-  console.log(payload);
-
-  try {
+   try {
     const res = await axios.post('/api/supplier/shipMaterial', payload);
     toast('info', '등록 성공', '출고등록  성공:', '3000');
     selectedRows.value = [];
@@ -130,6 +147,20 @@ const approvedShip = async () => {
     toast('error', '등록 실패', '출고등록  실패:', '3000');
   }
 };
+
+const resetSearch = () => {
+  searchFilter.value = {
+    startDate: '',
+    endDate: '',
+    matName: '',
+    status: ''
+  };
+  pageLoad();
+};
+
+onMounted(() => {
+  pageLoad();
+});
 
 const matOutColumns = [
   { label: '납기요청일', field: 'dueDate' },
@@ -154,12 +185,12 @@ const matOutColumns = [
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     </div>
     <div class="card flex flex-col gap-4">
-      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+      <SearchCard title="주문 검색" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <DatePicker v-model="searchFilter.startDate" inputId="searchMatId" />
               <label for="searchStart">시작일</label>
             </IftaLabel>
           </InputGroup>
@@ -175,7 +206,7 @@ const matOutColumns = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <InputText v-model="searchFilter.matName" inputId="searchMa" />
               <label for="searchVendor">자재명</label>
             </IftaLabel>
           </InputGroup>
@@ -183,7 +214,7 @@ const matOutColumns = [
           <div class="flex flex-col w-full">
             <InputGroup>
               <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-              <Select v-model="searchFilter.lotStatus" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="출고 상태" class="w-full h-[48px] text-base" />
+              <Select v-model="searchFilter.status" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="출고 상태" class="w-full h-[48px] text-base" />
             </InputGroup>
           </div>
         </div>

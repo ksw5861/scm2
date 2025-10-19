@@ -5,6 +5,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.yedam.scm.dto.MatStockSearchDTO;
 import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.dto.PurchaseListSearchDTO;
 import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
 import com.yedam.scm.vo.InboundDetailVO;
@@ -83,8 +84,10 @@ public class MsController {
     
     //발주목록
     @GetMapping("/purchaseList")
-    public Map<String, Object> getPurchaseList(PageDTO pageDTO) {
-        return purchaseMatService.getPurchaseList(pageDTO);
+    public ResponseEntity<Map<String, Object>> getPurchaseList(PurchaseListSearchDTO searchDTO, PageDTO pageDTO) {
+
+        Map<String, Object> result = purchaseMatService.getPurchaseList(searchDTO, pageDTO);
+        return ResponseEntity.ok(result);
     }
     
     //발주상세조회
@@ -115,8 +118,9 @@ public class MsController {
     }
     //입고대기목록
     @GetMapping("/unloadList")
-    public Map<String, Object> getApproveUnload(PageDTO pageDTO) {
-        return inStockMatService.getApproveUnload(pageDTO);
+    public ResponseEntity<Map<String, Object>> getApproveUnload(MatUnloadSearchDTO searchDTO, PageDTO pageDTO) {
+        Map<String, Object> result = inStockMatService.getApproveUnload(searchDTO, pageDTO);
+        return ResponseEntity.ok(result);
     }
     //입고대기목록(상세)
     @GetMapping("/unloadDetailList")

@@ -23,6 +23,7 @@ import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatLotVO;
+import com.yedam.scm.web.MatUnloadSearchDTO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -64,9 +65,9 @@ public class InStockMatServiceImpl implements InStockMatService {
     }
 
     @Override
-    public Map<String, Object> getApproveUnload(PageDTO pageDTO) {
-       List<InboundVO> list = mapper.getApproveUnload(pageDTO.getStartRow(), pageDTO.getEndRow());
-       Long total = mapper.getApproveUnloadListCount();
+    public Map<String, Object> getApproveUnload(MatUnloadSearchDTO searchDTO, PageDTO pageDTO) {
+       List<InboundVO> list = mapper.getApproveUnload(pageDTO, searchDTO);
+       Long total = mapper.getApproveUnloadListCount(searchDTO);
 
        pageDTO.updatePageInfo(total);
 

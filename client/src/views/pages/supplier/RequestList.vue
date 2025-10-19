@@ -11,7 +11,6 @@ import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
 import { useUserStore } from '@/stores/user';
 import SearchCard from '@/components/card/SearchCard.vue';
-import Select from 'primevue/select';
 import DatePicker from 'primevue/datepicker';
 //출고승인화면
 
@@ -47,16 +46,31 @@ const page = ref({ page: 1, size: 10, totalElements: 0 });
 
 //검색필드
 const searchFilter = ref({
-  stardDate: '',
+  startDate: '',
   endDate: '',
-  vendor: ''
-  //   lotStatus: ''
+  matName: '',
+  toWarehouse: ''
 });
+
+//datePicker날짜변환
+const formatDate = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toISOString().slice(0, 10);
+};
 
 //주문목록(페이지로드시)
 const fetchList = async () => {
+
+    const params = {
+        startDate: formatDate(searchFilter.value.startDate),
+        endDate: formatDate(searchFilter.value.endDate),
+        matName: searchFilter.value.matName,
+        toWarehouse:searchFilter.value.toWarehouse
+  };
+
   try {
-    const list = await axios.get(`/api/supplier/OrderList/${vendorId}`);
+    const list = await axios.get(`/api/supplier/OrderList/${vendorId}`, { params });
     console.log(list);
     matOrderData.value = list.data.map((item) => ({
       id: item.purId,
@@ -81,12 +95,16 @@ const fetchList = async () => {
 const onPage = (event) => {
   const startRow = event.page * event.rows + 1;
   const endRow = (event.page + 1) * event.rows;
-  fetchList({ startRow, endRow });
-};
 
-onMounted(() => {
-  fetchList();
-});
+  fetchList({
+    startDate: formatDate(searchFilter.value.startDate),
+    endDate: formatDate(searchFilter.value.endDate),
+    matName: searchFilter.value.matName,
+    toWarehouse: searchFilter.value.toWarehouse,
+    startRow,
+    endRow
+  });
+};
 
 //주문승인
 const approve = async () => {
@@ -133,9 +151,24 @@ const rejectPurchase = async () => {
   }
 };
 
+const resetSearch = () => {
+  searchFilter.value = {
+    stardDate: '',
+    endDate: '',
+    matName: '',
+    location: ''
+  };
+  fetchList();
+};
+
+
+onMounted(() => {
+  fetchList();
+});
+
 const matOrderColumns = [
   { label: '주문일자', field: 'orderDate', sortable: true },
-  { label: '구매요청번호', field: 'orderNo' },
+  { label: '주문번호', field: 'orderNo' },
   { label: '납기요청일', field: 'dueDate', sortable: true },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName', sortable: true },
@@ -154,12 +187,12 @@ const matOrderColumns = [
     </div>
     <!--검색영역-->
     <div class="card flex flex-col gap-4">
-      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+      <SearchCard title="주문 검색" @search="fetchList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <DatePicker v-model="searchFilter.startDate" inputId="searcStart" />
               <label for="searchStart">시작일</label>
             </IftaLabel>
           </InputGroup>
@@ -167,7 +200,7 @@ const matOrderColumns = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <DatePicker v-model="searchFilter.endDate" inputId="searcEnd" />
               <label for="searchEnd">종료일</label>
             </IftaLabel>
           </InputGroup>
@@ -175,16 +208,16 @@ const matOrderColumns = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
-              <label for="searchVendor">자재명</label>
+              <InputText v-model="searchFilter.matName" inputId="searchMatName" />
+              <label for="searchMatName">자재명</label>
             </IftaLabel>
           </InputGroup>
 
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
-              <label for="searchVendor">도착지</label>
+              <InputText v-model="searchFilter.toWarehouse" inputId="searchtoWarehouse" />
+              <label for="searchtoWarehouse">도착지</label>
             </IftaLabel>
           </InputGroup>
         </div>
@@ -195,8 +228,8 @@ const matOrderColumns = [
     <!--중간버튼영역-->
     <div class="card flex flex-col gap-4">
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="secondary" icon="cancel" label="발주 반려" @click="oepnRejModal" outlined />
-        <btn color="info" icon="add" label="발주 승인" class="whitespace-nowrap" outlined @click="approve" />
+        <btn color="secondary" icon="cancel" label="주문 거부" @click="oepnRejModal" outlined />
+        <btn color="info" icon="add" label="주문 승인" class="whitespace-nowrap" outlined @click="approve" />
       </div>
       <div class="font-semibold text-xl mb-5">조회 내역</div>
       <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" @page-change="onPage" :page="page" />
