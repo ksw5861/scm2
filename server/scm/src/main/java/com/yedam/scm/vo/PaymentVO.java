@@ -14,7 +14,7 @@ public class PaymentVO {
     private Date payDate;
     private String payType;
     
-    private Long totalUnpaid;     // 총 미결제 금액
+    private Long totalUnpaid;     // 총 미결제 금액 ---나중에 보고 삭제하기
     private Integer overdueCount; // 연체된 건수
     private Integer upcomingCount;// 납부 예정 건수
     private Long thisMonthReturnAmount;   // 이번 달 결제 총액
@@ -25,7 +25,9 @@ public class PaymentVO {
     private Integer completedCount; // 완료된 거래 건수
     private Integer pendingCount;   // 대기중 거래 건수 
 
-
+    private Long outstandingAmount;  // 미수금(결제전:납부조회페이지 플로우형식)
+    private Long finalBalance;       // 최종 잔액(결제후:납부조회페이지 플로우형식)
+    private Long creditBalance;      // 여신 잔액
 
     
     private String impUid;        // 아임포트 결제번호
