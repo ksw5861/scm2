@@ -49,14 +49,14 @@
       pay_detail_id,
       pay_id,
       order_id,
-      total_price,
-      return_price
+      total_price
+      
     ) VALUES (
       #{payDetailId},
       #{payId},
       #{orderId},
-      #{totalPrice},
-      #{returnPrice}
+      #{totalPrice}
+    
     )
   </insert>
 
@@ -94,7 +94,7 @@
   <!-- ============================================================= -->
   <!-- 4. 결제 목록 조회 -->
   <!-- ============================================================= -->
-  <select id="selectPaymentList" resultType="map">
+  <!-- <select id="selectPaymentList" resultType="map">
     SELECT
       p.pay_id AS paymentNo,                         
       TO_CHAR(p.pay_date, 'YYYY-MM-DD') AS payDate,   
@@ -161,7 +161,7 @@
     JOIN payment_detail pd ON p.pay_id = pd.pay_id
     GROUP BY p.pay_id, p.pay_date, p.pay_rmk
     ORDER BY p.pay_date DESC
-  </select>
+  </select> -->
 
   <!-- ============================================================= -->
   <!-- 5. 결제 상세 조회 -->
@@ -285,16 +285,95 @@
   <!-- ============================================================= -->
   <!-- 10. 납부내역 조회 -->
   <!-- ============================================================= -->
-  <select id="selectPaymentSummaryList" resultType="PaymentVO">
-    SELECT 
-      p.pay_id     AS payId,
-      p.vendor_id  AS vendorId,
-      p.pay_date   AS payDate,
-      p.pay_amount AS payAmount,
-      p.pay_type   AS payType,
-      p.pay_rmk    AS payRmk
-    FROM payment p
-    ORDER BY p.pay_date DESC
-  </select>
+<select id="selectPaymentList" resultType="PaymentVO">
+  SELECT
+      p.pay_id        AS payId,
+      p.vendor_id     AS vendorId,
+      p.pay_date      AS payDate,
+      p.pay_amount    AS payAmount,
+      p.pay_type      AS payType,
+      p.pay_rmk       AS payRmk,
+
+      
+      (
+        NVL((
+          SELECT SUM(so.total_price)
+          FROM sales_order so
+          WHERE so.vendor_id = p.vendor_id
+            AND so.pay_status = '대기'
+            AND so.send_date <![CDATA[<=]]> p.pay_date
+        ), 0)
+        -
+        NVL((
+          SELECT SUM(pd2.total_price)
+          FROM payment_detail pd2
+          JOIN payment p2 ON pd2.pay_id = p2.pay_id
+          WHERE p2.vendor_id = p.vendor_id
+            AND p2.pay_date <![CDATA[<]]> p.pay_date
+        ), 0)
+      ) AS outstandingAmount,
+
+     
+      NVL(SUM(pd.total_price), 0) AS payAmount,
+
+      
+      (
+        (
+          NVL((
+            SELECT SUM(so.total_price)
+            FROM sales_order so
+            WHERE so.vendor_id = p.vendor_id
+              AND so.pay_status = '대기'
+              AND so.send_date <![CDATA[<=]]> p.pay_date
+          ), 0)
+          -
+          NVL((
+            SELECT SUM(pd2.total_price)
+            FROM payment_detail pd2
+            JOIN payment p2 ON pd2.pay_id = p2.pay_id
+            WHERE p2.vendor_id = p.vendor_id
+              AND p2.pay_date <![CDATA[<]]> p.pay_date
+          ), 0)
+        )
+        - NVL(SUM(pd.total_price), 0)
+      ) AS finalBalance,
+
+      
+      (
+        v.credit_limit
+        -
+        (
+          (
+            NVL((
+              SELECT SUM(so.total_price)
+              FROM sales_order so
+              WHERE so.vendor_id = p.vendor_id
+                AND so.pay_status = '대기'
+                AND so.send_date <![CDATA[<=]]> p.pay_date
+            ), 0)
+            -
+            NVL((
+              SELECT SUM(pd2.total_price)
+              FROM payment_detail pd2
+              JOIN payment p2 ON pd2.pay_id = p2.pay_id
+              WHERE p2.vendor_id = p.vendor_id
+                AND p2.pay_date <![CDATA[<]]> p.pay_date
+            ), 0)
+          )
+          - NVL(SUM(pd.total_price), 0)
+        )
+      ) AS creditBalance
+
+  FROM payment p
+  JOIN payment_detail pd ON p.pay_id = pd.pay_id
+  JOIN vendor v ON p.vendor_id = v.vendor_id
+  GROUP BY 
+      p.pay_id, p.vendor_id, p.pay_date, p.pay_amount, p.pay_type, p.pay_rmk, v.credit_limit
+  ORDER BY p.pay_date DESC
+</select>
+
+
+
+
 
 </mapper>

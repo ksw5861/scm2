@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.yedam.scm.master.mapper.VendorMapper;
+
 import com.yedam.scm.order.service.BranchDashService;
 import com.yedam.scm.order.service.GoDelService;
 import com.yedam.scm.order.service.IamportService;
@@ -26,9 +26,6 @@ import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
-
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
@@ -478,6 +475,9 @@ public class EgController {
     public ResponseEntity<Map<String, Object>> verifyPayment(@RequestBody PaymentVO req) {
         Map<String, Object> response = new HashMap<>();
         try {
+
+            
+
             // 1. 아임포트 서버 검증
             Map<String, Object> verifyResult = iamportService.verifyPayment(req.getImpUid());
             if (verifyResult == null || verifyResult.get("response") == null) {

@@ -18,14 +18,16 @@
             VENDOR_ID,
             RETURN_DATE,
             RETURN_PRICE,
-            RETURN_STATUS
+            RETURN_STATUS,
+            ORDER_ID
         )
         VALUES (
             #{returnId},
             #{vendorId},
             SYSDATE,
             #{returnPrice},
-            '대기'
+            '대기',
+            #{orderId}
         )
     </insert>
 
@@ -142,17 +144,18 @@
         so.total_price    AS totalPrice
     FROM sales_order so
     WHERE so.vendor_id = #{vendorId}
-      AND so.status = '배송완료'
+      AND so.status IN ('출고완료', '배송완료')
       AND so.delivery_date <![CDATA[>=]]> TRUNC(SYSDATE) - 7
       AND NOT EXISTS (
           SELECT 1
           FROM return r
-          JOIN return_detail rd ON r.return_id = rd.return_id
-          JOIN sales_order_detail d ON rd.odetail_id = d.odetail_id
-          WHERE d.order_id = so.order_id
+          WHERE r.order_id = so.order_id
+            AND r.return_status IN ('대기', '처리중', '처리완료')
       )
     ORDER BY so.delivery_date DESC
 </select>
+
+
 
 
 
