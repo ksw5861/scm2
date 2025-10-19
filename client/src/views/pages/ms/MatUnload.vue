@@ -42,14 +42,28 @@ const page = ref({ page: 1, size: 10, totalElements: 0 });
 const searchFilter = ref({
   startDate: '',
   endDate: '',
-  vendor: ''
+  vendorName: ''
 });
 
+//datePicker날짜변환
+const formatDate = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toISOString().slice(0, 10);
+};
+
 const pageLoad = async () => {
-  const pageParam = { page: page.value.page, size: page.value.size };
+
+    const params = {
+        page: page.value.page,
+        size: page.value.size,
+        startDate: formatDate(searchFilter.value.startDate),
+        endDate: formatDate(searchFilter.value.endDate),
+        vendorName: searchFilter.value.vendorName
+    };
 
   try {
-    const res = await axios.get(`/api/mat/shipedList`, { params: pageParam });
+    const res = await axios.get(`/api/mat/shipedList`, { params });
     const { list, page: pageInfo } = res.data;
     shipedListData.value = list.map((item) => ({
       id: item.inboundId,
@@ -114,6 +128,16 @@ const onPage = (event) => {
   pageLoad({ startRow, endRow }); // 여기서 axios 호출
 };
 
+const resetSearch = () => {
+  searchFilter.value = {
+    startDate: '',
+    endDate: '',
+    vendorName: ''
+  };
+  pageLoad();
+};
+
+
 onMounted(() => {
   pageLoad();
 });
@@ -156,12 +180,12 @@ const shipDetailColumn = [
     </div>
 
     <div class="card flex flex-col gap-4">
-      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+      <SearchCard title="입고 조회" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <DatePicker v-model="searchFilter.startDate" inputId="searchStart" />
               <label for="searchStart">시작일</label>
             </IftaLabel>
           </InputGroup>
@@ -169,7 +193,7 @@ const shipDetailColumn = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <DatePicker v-model="searchFilter.endDate" inputId="searchEnd" />
               <label for="searchEnd">종료일</label>
             </IftaLabel>
           </InputGroup>
@@ -177,7 +201,7 @@ const shipDetailColumn = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <InputText v-model="searchFilter.vendorName" inputId="searchVendor" />
               <label for="searchVendor">공급처</label>
             </IftaLabel>
           </InputGroup>

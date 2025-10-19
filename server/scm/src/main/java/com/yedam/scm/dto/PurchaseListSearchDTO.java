@@ -14,6 +14,6 @@ public class PurchaseListSearchDTO {
     
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private Date endDate;
-    
+
     private String vendorName;
 }

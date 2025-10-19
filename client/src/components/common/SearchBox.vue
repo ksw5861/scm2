@@ -7,6 +7,8 @@ import Select from 'primevue/select';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
 import FloatLabel from 'primevue/floatlabel';
+import InputNumber from 'primevue/inputnumber';
+
 
 const props = defineProps({
   type: { type: String, required: true }, // "dateRange", "text", "checkbox"
@@ -14,7 +16,9 @@ const props = defineProps({
   modelValue: { type: [String, Array, Object], default: null },
   options: { type: Array, default: () => [] }, // checkbox 전용 [{label:'대기', value:'WAIT'}, ...]
   icon: { type: String, default: '' },
-  width: { type: String, default: 'w-64' }
+  width: { type: String, default: 'w-64' },
+  sizs: { type: String, default: ''},
+  style: { type: [String, Object], default: () => ({}) },
 });
 
 const emit = defineEmits(['update:modelValue']);
@@ -46,6 +50,11 @@ watch(
     <!-- 텍스트 입력 -->
     <div v-else-if="type === 'text'">
       <InputText v-model="internalValue" :class="['w-full', width]" />
+    </div>
+
+    <!--숫자-->
+     <div v-else-if="type === 'number'">
+      <InputNumber v-model="internalValue" :class="['w-10rem', width]" :style="style"/>
     </div>
 
     <!-- 텍스트박스 읽기 전용 -->

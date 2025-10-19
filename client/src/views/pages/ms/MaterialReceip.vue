@@ -90,7 +90,7 @@ const pageLoad = async () => {
         endDate: formatDate(searchFilter.value.endDate),
         vendorName: searchFilter.value.vendorName,
         status:searchFilter.value.status
-  };
+    };
 
 
   try {

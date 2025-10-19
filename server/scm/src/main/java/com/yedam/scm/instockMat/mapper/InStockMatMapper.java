@@ -7,17 +7,19 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.dto.PurchaseListSearchDTO;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
+import com.yedam.scm.vo.MatLotStockAdjVO;
 import com.yedam.scm.vo.MatLotVO;
 import com.yedam.scm.web.MatUnloadSearchDTO;
 
 @Mapper
 public interface InStockMatMapper {
     //하차대기(마스터)
-    List<InboundVO> getVenShipList(@Param("startRow")int start, @Param("endRow")int end);
-    Long getVenShipListCount();
+    List<InboundVO> getVenShipList(@Param("page")PageDTO pageDTO, @Param("search")PurchaseListSearchDTO searchDTO);
+    Long getVenShipListCount(@Param("search")PurchaseListSearchDTO searchDTO);
     //하차대기(상세)
     List<InboundDetailVO> getVenShipDetailList(@Param("inboundId")Long inboundId);
     //하차승인
@@ -32,8 +34,9 @@ public interface InStockMatMapper {
     void callMatInboundStock(InboundDetailVO inStockInfo);
     //불량등록 [1.불량정보등록 프로시저 2.불량정보등록 시퀀스아이디get 3.이미지등록]
     Long callRegMatDefect(Map<String, Object> paramMap);
-    //Long selectRecentSeq();
     void updateDefectImagePath(InboundLogVO defectData);
+
+    //재고조회(자재리스트)
     List<MatLotVO> getMatStockList(@Param("startRow") int startRow,
                                    @Param("endRow") int endRow,
                                    @Param("materialId") String materialId,
@@ -41,10 +44,15 @@ public interface InStockMatMapper {
                                    @Param("lotNo") String lotNo,
                                    @Param("lotStatus") String lotStatus);
 
-Long getMatStockCount(@Param("materialId") String materialId,
-                      @Param("materialName") String materialName,
-                      @Param("lotNo") String lotNo,
-                      @Param("lotStatus") String lotStatus);
+   Long getMatStockCount(@Param("materialId") String materialId,
+                         @Param("materialName") String materialName,
+                         @Param("lotNo") String lotNo,
+                         @Param("lotStatus") String lotStatus);
     //자재별LOT목록
     List<MatLotVO> getMatLotList(@Param("matId") String matId);
+
+    //재고조정
+    void callProcAdjustStock(MatLotStockAdjVO vo);
+    //조정이력
+    List<MatLotStockAdjVO> selectAdjustHistoryByLotId(Long lotId);
 }

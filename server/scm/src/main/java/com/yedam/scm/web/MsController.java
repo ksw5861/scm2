@@ -3,6 +3,7 @@ package com.yedam.scm.web;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.yedam.scm.dto.AdjStockDTO;
 import com.yedam.scm.dto.MatStockSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.PurchaseListSearchDTO;
@@ -10,6 +11,7 @@ import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundLogVO;
+import com.yedam.scm.vo.MatLotStockAdjVO;
 import com.yedam.scm.vo.MatLotVO;
 import com.yedam.scm.vo.MatStatusVO;
 import com.yedam.scm.vo.MatVendorVO;
@@ -98,8 +100,10 @@ public class MsController {
     //============================================================================ 입고Part
     //하차대기목록(마스터)
     @GetMapping("/shipedList")
-    public Map<String, Object> getVenShipList(PageDTO pageDTO) {
-        return inStockMatService.getVenShipList(pageDTO);
+    public ResponseEntity<Map<String, Object>> getVenShipList(PageDTO pageDTO, PurchaseListSearchDTO searchDTO) {
+       
+       Map<String, Object> result = inStockMatService.getVenShipList(pageDTO, searchDTO);
+       return ResponseEntity.ok(result);
     }
     //하차대기목록(상세)
     @GetMapping("/shipedDetailList")
@@ -162,6 +166,19 @@ public class MsController {
     public List<MatLotVO> getMatLotList(@RequestParam String matId) {
         return inStockMatService.getMatLotList(matId);
     }
+    //재고조정
+    @PostMapping("/adjustStock")
+    public ResponseEntity<?> adjustStock(@RequestBody AdjStockDTO dto) {
+        Long id = inStockMatService.adjustMatStock(dto);
+        return ResponseEntity.ok().body(id);
+    }
+    //조정이력
+    @GetMapping("/adjustHistory")
+    public ResponseEntity<List<MatLotStockAdjVO>> getAdjustHistory(@RequestParam Long lotId) {
+        List<MatLotStockAdjVO> history = inStockMatService.getAdjustHistoryByLotId(lotId);
+        return ResponseEntity.ok(history);
+    }
+
     /*======================
     드롭다운/모달용   
     ======================*/

@@ -81,18 +81,42 @@ SELECT * FROM (
             FROM inbound i
             JOIN vendor v
             ON i.vendor_id = v.vendor_id
-            WHERE i.inbound_status = 'm1'
-            ORDER BY i.vendor_out_date DESC
-        ) a
-    WHERE ROWNUM &lt;= #{endRow}
+            WHERE 1=1
+          AND i.inbound_status = 'm1'
+
+          <if test="search.startDate != null">
+            AND i.vendor_out_date &gt;= #{search.startDate}
+          </if>
+          <if test="search.endDate != null">
+            AND i.vendor_out_date &lt;= #{search.endDate}
+          </if>
+          <if test="search.vendorName != null and search.vendorName != ''">
+            AND v.company_name LIKE '%' || #{search.vendorName} || '%'
+          </if>
+        ORDER BY i.vendor_out_date DESC
+    ) a
+    WHERE ROWNUM &lt;= #{page.endRow}
 )
-WHERE rnum &gt;= #{startRow}
+WHERE rnum &gt;= #{page.startRow}
 </select>
+
 <!--입고마스터T 데이터 count-->
 <select id="getVenShipListCount" resultType="long">
 SELECT count(DISTINCT inbound_id)
-FROM inbound 
-WHERE inbound_status = 'm1'
+FROM inbound i
+JOIN vendor v
+ON i.vendor_id = v.vendor_id
+WHERE 1=1
+  AND i.inbound_status = 'm1'
+  <if test="search.startDate != null">
+    AND .vendor_out_date &gt;= #{search.startDate}
+  </if>
+  <if test="search.endDate != null">
+    AND i.vendor_out_date &lt;= #{search.endDate}
+  </if>
+  <if test="search.vendorName != null and search.vendorName != ''">
+    AND v.company_name LIKE '%' || #{search.vendorName} || '%'
+  </if>
 </select>
 
 <!--입고상세T 출력-->
@@ -303,6 +327,32 @@ JOIN material m
 ON ml.mat_id = m.mat_id
 where ml.mat_id = #{matId}
 ORDER BY ml.lot_id
+</select>
+
+<!--재고조정등록-->
+<select id="callProcAdjustStock" statementType="CALLABLE" parameterType="MatLotStockAdjVO">
+    { call PROC_MAT_ADJUST_STOCK(
+        #{lotId, mode=IN, jdbcType=NUMERIC},
+        #{inOut, mode=IN, jdbcType=VARCHAR},
+        #{weight, mode=IN, jdbcType=NUMERIC},
+        #{reason, mode=IN, jdbcType=VARCHAR},
+        #{name, mode=IN, jdbcType=VARCHAR},
+        #{adjStockId, mode=OUT, jdbcType=NUMERIC}
+      ) }
+</select>
+<!--조정이력-->
+<select id="selectAdjustHistoryByLotId" parameterType="long" resultType="MatLotStockAdjVO">
+SELECT adj_stock_id, 
+        re_date, 
+        in_out,
+        weight,
+        before_weight, 
+        after_weight,
+        name, reason,
+        lot_id
+FROM mat_lotstock_adj
+WHERE lot_id = #{lotId}
+ ORDER BY re_date DESC
 </select>
 
 </mapper>
