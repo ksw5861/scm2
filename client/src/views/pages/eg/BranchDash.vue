@@ -113,7 +113,7 @@
           </TabPanel>
 
           <!-- ② 순이익(영업이익) = 실제매출 - 본사주문 -->
-          <TabPanel header="순이익(영업이익)">
+          <TabPanel header="매출-주문">
             <Chart type="bar" :data="profitData" :options="profitOptions" />
           </TabPanel>
 
@@ -377,6 +377,7 @@ const trendData = ref({ labels: [], datasets: [] })
 const trendOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
+  layout: { padding: 0 },
   plugins: { legend: { position: 'bottom' } },
   scales: {
     x: {
@@ -448,7 +449,7 @@ const fetchTrend = async () => {
         {
           label: '순이익',
           data: profits,
-          backgroundColor: '#22c55e'
+          backgroundColor: profits.map(v => v >= 0 ? '#22c55e' : '#ef4444')
         }
       ]
     }
@@ -555,10 +556,40 @@ onMounted(() => {
 .quick-card:hover { transform: translateY(-4px); box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); }
 .quick-card:active { transform: scale(0.97); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08); }
 
-/* 차트 영역 */
-.chart-card { margin-bottom:16px; }
-.chart-card :deep(.p-card-content){ height:260px; }
-.chart-card :deep(canvas){ max-height: 220px !important; }
+/* 차트 카드 */
+.chart-card {
+  margin-bottom: 16px;
+}
+
+/* 카드 콘텐츠 영역 */
+.chart-card :deep(.p-card-content) {
+  position: relative;
+  height: 380px;              /* ✅ 전체 탭 동일 높이 */
+  padding: 24px 16px 16px;    /* ✅ 위쪽 약간 여백 추가 (제목이 안 짤리게) */
+  overflow: hidden;           /* ✅ 그래프 삐져나오는 현상 차단 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Chart.js 캔버스 영역 */
+.chart-card :deep(canvas) {
+  flex: 1;                    /* ✅ 자동 비율로 높이 채우기 */
+  width: 100% !important;
+  height: auto !important;
+  max-height: 340px !important; /* ✅ 그래프가 너무 커지지 않도록 상한 고정 */
+  display: block;
+}
+
+/* Chart.js 내부 여백 완전 제거 */
+.chart-card :deep(.p-chart) canvas {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+
+
+
 
 /* 원두 랭킹 */
 .bean-rank-wrap { display:flex; flex-direction:column; gap:10px; }

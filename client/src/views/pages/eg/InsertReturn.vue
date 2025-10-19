@@ -284,6 +284,7 @@ const saveReturn = async () => {
     returnId: 'RT' + Date.now(),
     vendorId: userStore.code,
     status: '대기',
+    orderId: selectedOrder.value.orderId,
     details: validItems.map((it) => ({
       rdetailId: 'RD' + Date.now() + '_' + it.prodId,
       prodId: it.prodId,
