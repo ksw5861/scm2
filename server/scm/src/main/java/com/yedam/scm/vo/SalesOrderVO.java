@@ -110,4 +110,8 @@ public class SalesOrderVO {
     // 1018 추가
     private Integer orderCount; // 주문건수
     private Integer unpaidCount; // 미수건수
+
+    
+
+
 }
