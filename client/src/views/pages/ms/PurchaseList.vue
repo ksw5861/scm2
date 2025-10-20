@@ -40,17 +40,30 @@ const page = ref({ page: 1, size: 10, totalElements: 0 });
 
 //검색필드
 const searchFilter = ref({
-  stardDate: '',
-  endDate: '',
-  metName: '',
-  vendor: ''
+  startDate: null,
+  endDate: null,
+  vendorName: ''
 });
 
+//datePicker날짜변환
+const formatDate = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toISOString().slice(0, 10); // '2025-10-18'
+};
+
+
 const pageLoad = async () => {
-  const pageParam = { page: page.value.page, size: page.value.size };
+  const params = {
+    page: page.value.page,
+    size: page.value.size,
+    startDate: formatDate(searchFilter.value.startDate),
+    endDate: formatDate(searchFilter.value.endDate),
+    vendorName: searchFilter.value.vendorName,
+  };
 
   try {
-    const res = await axios.get('/api/mat/purchaseList', { params: pageParam });
+    const res = await axios.get('/api/mat/purchaseList', { params });
     const { list, page: pageInfo } = res.data;
     purchaseList.value = list.map((row) => ({
       id: row.purId,
@@ -114,6 +127,15 @@ const loadStatusCodes = async () => {
   }
 };
 
+const resetSearch = () => {
+  searchFilter.value = {
+    startDate: '',
+    endDate: '',
+    vendorName: ''
+  };
+  pageLoad();
+};
+
 onMounted(() => {
   pageLoad();
   loadStatusCodes();
@@ -145,28 +167,28 @@ const statusColumn = [
     </div>
     <!--검색영역-->
     <div class="card flex flex-col gap-4">
-      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+      <SearchCard title="발주 조회" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
-              <label for="searchStart">시작일</label>
+              <DatePicker v-model="searchFilter.startDate" inputId="searchStartDate" />
+              <label for="searchStart">기간(시작일)</label>
+            </IftaLabel>
+          </InputGroup>
+
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
+            <IftaLabel>
+              <DatePicker v-model="searchFilter.endDate" inputId="searchEndDate" />
+              <label for="searchEnd">기간(종료일)</label>
             </IftaLabel>
           </InputGroup>
 
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
-              <label for="searchEnd">종료일</label>
-            </IftaLabel>
-          </InputGroup>
-
-          <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-            <IftaLabel>
-              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <InputText v-model="searchFilter.vendorName" inputId="searchVendor" />
               <label for="searchVendor">공급처</label>
             </IftaLabel>
           </InputGroup>

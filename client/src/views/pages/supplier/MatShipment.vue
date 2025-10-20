@@ -20,8 +20,6 @@ const userStore = useUserStore();
 const vendorId = userStore.code;
 const vanEmpName = '배송담당';
 
-console.log(userStore);
-
 const route = useRoute();
 const { toast } = useAppToast();
 
@@ -61,32 +59,48 @@ const shipDetailList = ref([
 ]);
 //검색필드
 const searchFilter = ref({
-  stardDate: '',
+  startDate: '',
   endDate: '',
   matName: '',
-  warehouse: ''
+  toWarehouse: ''
 });
+
+//datePicker날짜변환
+const formatDate = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toISOString().slice(0, 10);
+};
 
 //페이지로드시 목록출력
 const pageLoad = async () => {
-  try {
-    const list = await axios.get(`/api/supplier/ApprovedList/${vendorId}`);
-    console.log(list);
 
-    approveShipData.value = list.data.map((item) => ({
-      id: item.purStatusId,
-      expectDate: useDateFormat(item.expectDate).value, // Date → 문자열 변환
-      shipOrderNo: item.logShipOrderNo, //출고지시번호
-      matId: item.matId,
-      matName: item.matName,
-      buyerName: item.empName,
-      ortQty: item.outQty, // 출고수량
-      unit: item.stockUnit, // VO에서 unit
-      vendorId: item.vendorId, // 거래처코드
-      purId: item.purId, // 주문테이블아이디
-      toWarehouse: item.warehouseName
+    const params = {
+        startDate: formatDate(searchFilter.value.startDate),
+        endDate: formatDate(searchFilter.value.endDate),
+        matName: searchFilter.value.matName,
+        toWarehouse: searchFilter.value.toWarehouse
+    }
+    try {
+      const list = await axios.get(`/api/supplier/ApprovedList/${vendorId}`, { params });
+      console.log(list);
+
+      approveShipData.value = list.data.map((item) => ({
+        id: item.purStatusId,
+        expectDate: useDateFormat(item.expectDate).value, // Date → 문자열 변환
+        shipOrderNo: item.logShipOrderNo, //출고지시번호
+        matId: item.matId,
+        matName: item.matName,
+        buyerName: item.empName,
+        ortQty: item.outQty, // 출고수량
+        unit: item.stockUnit, // VO에서 unit
+        vendorId: item.vendorId, // 거래처코드
+        purId: item.purId, // 주문테이블아이디
+        toWarehouse: item.warehouseName
     }));
+
     page.value.totalElements = approveShipData.value.length;
+
   } catch (error) {
     toast('error', '리스트 로드 실패', '리스트 불러오기 실패:', '3000');
   }
@@ -183,6 +197,16 @@ const onPage = (event) => {
   pageLoad({startRow, endRow});
 };
 
+const resetSearch = () => {
+  searchFilter.value = {
+    startDate: '',
+    endDate: '',
+    matName: '',
+    toWarehouse: ''
+  };
+  pageLoad();
+};
+
 onMounted(() => {
   pageLoad();
   warehouseList();
@@ -217,13 +241,13 @@ const addShipColumns = [
 
     <!--검색영역-->
       <div class="card flex flex-col gap-4">
-        <SearchCard title="출고 검색" @search="fetchMatList" @reset="resetSearch">
+        <SearchCard title="출고 검색" @search="pageLoad" @reset="resetSearch">
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
                 <InputGroup>
                     <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
                     <IftaLabel>
-                        <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+                        <DatePicker v-model="searchFilter.startDate" inputId="searchStart" />
                         <label for="searchStart">시작일</label>
                     </IftaLabel>
                 </InputGroup>
@@ -231,7 +255,7 @@ const addShipColumns = [
                 <InputGroup>
                     <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
                     <IftaLabel>
-                        <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+                        <DatePicker v-model="searchFilter.endDate" inputId="searchEnd" />
                         <label for="searchEnd">종료일</label>
                     </IftaLabel>
                 </InputGroup>
@@ -239,16 +263,16 @@ const addShipColumns = [
                 <InputGroup>
                     <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
                     <IftaLabel>
-                        <InputText v-model="searchFilter.vendor" inputId="searchMa" />
-                        <label for="searchVendor">자재명</label>
+                        <InputText v-model="searchFilter.matName" inputId="searchMatName" />
+                        <label for="searchMatName">자재명</label>
                     </IftaLabel>
                 </InputGroup>
 
                  <InputGroup>
                     <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
                     <IftaLabel>
-                        <InputText v-model="searchFilter.vendor" inputId="searchMa" />
-                        <label for="searchVendor">도착지</label>
+                        <InputText v-model="searchFilter.toWarehouse" inputId="searchTowarehouse" />
+                        <label for="searchTowarehouse">도착지</label>
                     </IftaLabel>
                 </InputGroup>
 

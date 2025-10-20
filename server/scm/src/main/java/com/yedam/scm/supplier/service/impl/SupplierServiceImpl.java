@@ -7,6 +7,8 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.yedam.scm.dto.ApproveMatSearchDTO;
+import com.yedam.scm.dto.matSupplySearchDTO;
 import com.yedam.scm.supplier.mapper.SupplierMapper;
 import com.yedam.scm.supplier.service.SupplierService;
 import com.yedam.scm.vo.InboundDetailVO;
@@ -24,8 +26,8 @@ public class SupplierServiceImpl implements SupplierService  {
 
     //발주목록
     @Override
-    public List<PurchaseMatVO> getMatOerderList(String vendorId) {
-        return mapper.getMatOerderList(vendorId);
+    public List<PurchaseMatVO> getMatOerderList(String vendorId, ApproveMatSearchDTO searchDTO) {
+        return mapper.getMatOerderList(vendorId, searchDTO);
     }
 
     //발주승인
@@ -58,8 +60,8 @@ public class SupplierServiceImpl implements SupplierService  {
 
     //출고지시대기목록
     @Override
-    public List<PurchaseMatVO> getMatWReleaseList(String vendorId) {
-        return mapper.getMatWReleaseList(vendorId);
+    public List<PurchaseMatVO> getMatWReleaseList(String vendorId, matSupplySearchDTO searchDTO) {
+        return mapper.getMatWReleaseList(vendorId, searchDTO);
     }
 
     //출고지시 (출고수량 + 출고예정일 + 출고상태값 변경)
@@ -84,8 +86,8 @@ public class SupplierServiceImpl implements SupplierService  {
 
     //출고승인목록
     @Override
-    public List<PurchaseMatVO> getApprovedShipmentList(String vendorId) {
-        return mapper.getApprovedShipmentList(vendorId);
+    public List<PurchaseMatVO> getApprovedShipmentList(String vendorId, ApproveMatSearchDTO searchDTO) {
+        return mapper.getApprovedShipmentList(vendorId, searchDTO);
     }
 
     //출고등록
@@ -122,8 +124,8 @@ public class SupplierServiceImpl implements SupplierService  {
 
     //공급목록
     @Override
-    public List<InboundVO> getSupplyList(String vendorId) {
-       return mapper.getSupplyList(vendorId);
+    public List<InboundVO> getSupplyList(String vendorId, matSupplySearchDTO searchDTO) {
+       return mapper.getSupplyList(vendorId, searchDTO);
     }
 
     @Override

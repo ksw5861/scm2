@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.dto.PurchaseListSearchDTO;
 import com.yedam.scm.purchaseMat.mapper.PurchaseMatMapper;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
 import com.yedam.scm.vo.MatStatusVO;
@@ -87,9 +88,10 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
 
     //자재주문목록
     @Override
-    public Map<String, Object> getPurchaseList(PageDTO pageDTO) {
-        List<PurchaseMatVO> list = mapper.getPurchaseList(pageDTO.getStartRow(), pageDTO.getEndRow());
-        Long total = mapper.getPurchaseMasterCount();
+    public Map<String, Object> getPurchaseList(PurchaseListSearchDTO searchDTO, PageDTO pageDTO) {
+        List<PurchaseMatVO> list = mapper.getPurchaseList(pageDTO, searchDTO);
+
+        Long total = mapper.getPurchaseMasterCount(searchDTO);
 
         pageDTO.updatePageInfo(total);
 

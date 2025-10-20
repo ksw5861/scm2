@@ -22,9 +22,9 @@ import DatePicker from 'primevue/datepicker';
 // Pinia Store
 const userStore = useUserStore();
 const empName = userStore.name;
+
 const route = useRoute();
 const { toast } = useAppToast();
-console.log(userStore.name);
 
 // breadcrumb
 const breadcrumbHome = { icon: useIcon('home'), to: '/' };
@@ -59,10 +59,10 @@ const selectedFile = ref(null);
 const page = ref({ page: 1, size: 10, totalElements: 0 });
 //검색필드
 const searchFilter = ref({
-  stardDate: '',
+  startDate: '',
   endDate: '',
-  vendor: ''
-  //   lotStatus: ''
+  vendorName: '',
+  status: ''
 });
 
 //불량정보를 백단에서 받을 inboundLogVO랑 바로 매핑가능하도록 사용!
@@ -74,11 +74,27 @@ const defectForm = ref({
   logName: empName
 });
 
+//datePicker날짜변환
+const formatDate = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toISOString().slice(0, 10);
+};
+
 const pageLoad = async () => {
-  const pageParam = { page: page.value.page, size: page.value.size };
+
+    const params = {
+        page: page.value.page,
+        size: page.value.size,
+        startDate: formatDate(searchFilter.value.startDate),
+        endDate: formatDate(searchFilter.value.endDate),
+        vendorName: searchFilter.value.vendorName,
+        status:searchFilter.value.status
+    };
+
 
   try {
-    const res = await axios.get('/api/mat/unloadList', { params: pageParam });
+    const res = await axios.get('/api/mat/unloadList', { params });
     const { list, page: pageInfo } = res.data;
     approveUnloadList.value = list.map((item) => ({
       id: item.inboundId,
@@ -254,6 +270,15 @@ const onPage = (event) => {
   pageLoad({ startRow, endRow }); // 여기서 axios 호출
 };
 
+const resetSearch = () => {
+  searchFilter.value = {
+    startDate: '',
+    endDate: '',
+    vendorName: ''
+  };
+  pageLoad();
+};
+
 onMounted(() => {
   pageLoad();
   loadStatusCodes();
@@ -284,12 +309,12 @@ const approveUnloadDetaiColumn = [
     </div>
     <!--검색영역-->
     <div class="card flex flex-col gap-4">
-      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+      <SearchCard title="입고 조회" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <DatePicker v-model="searchFilter.startDate" inputId="searchStart" />
               <label for="searchStart">시작일</label>
             </IftaLabel>
           </InputGroup>
@@ -297,7 +322,7 @@ const approveUnloadDetaiColumn = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <DatePicker v-model="searchFilter.endDate" inputId="searchEnd" />
               <label for="searchEnd">종료일</label>
             </IftaLabel>
           </InputGroup>
@@ -305,7 +330,7 @@ const approveUnloadDetaiColumn = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <InputText v-model="searchFilter.vendorName" inputId="searchVenName" />
               <label for="searchVendor">공급처</label>
             </IftaLabel>
           </InputGroup>
@@ -313,7 +338,7 @@ const approveUnloadDetaiColumn = [
           <div class="flex flex-col w-full">
             <InputGroup>
               <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-              <Select v-model="searchFilter.lotStatus" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="입고 상태" class="w-full h-[48px] text-base" />
+              <Select v-model="searchFilter.status" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="입고 상태" class="w-full h-[48px] text-base" />
             </InputGroup>
           </div>
         </div>

@@ -3,7 +3,6 @@ import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import btn from '@/components/common/Btn.vue';
 import selectTable from '@/components/common/checkBoxTable.vue';
-import SearchField from '@/components/common/SearchBox.vue';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
@@ -43,14 +42,27 @@ const page = ref({ page: 1, size: 10, totalElements: 0 });
 const searchFilter = ref({
   startDate: '',
   endDate: '',
-  vendor: ''
+  vendorName: ''
 });
 
+//datePicker날짜변환
+const formatDate = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toISOString().slice(0, 10);
+};
+
 const pageLoad = async () => {
-  const pageParam = { page: page.value.page, size: page.value.size };
+  const params = {
+    page: page.value.page,
+    size: page.value.size,
+    startDate: formatDate(searchFilter.value.startDate),
+    endDate: formatDate(searchFilter.value.endDate),
+    vendorName: searchFilter.value.vendorName
+  };
 
   try {
-    const res = await axios.get(`/api/mat/shipedList`, { params: pageParam });
+    const res = await axios.get(`/api/mat/shipedList`, { params });
     const { list, page: pageInfo } = res.data;
     shipedListData.value = list.map((item) => ({
       id: item.inboundId,
@@ -108,11 +120,31 @@ const returnSubmit = async () => {
   }
 };
 
+const openShipmentReport = () => {
+  console.log(selectedRows.value.id);
+  if (!selectedRows.value || !selectedRows.value.id) {
+    toast('info', '선택 필요', '명세서를 출력할 출고건을 선택해주세요.', '3000');
+    return;
+  }
+
+  const inboundId = selectedRows.value.id;
+  window.open(`/api/mat/shipment/${inboundId}`, '_blank');
+};
+
 const onPage = (event) => {
   const startRow = event.page * event.rows + 1;
   const endRow = (event.page + 1) * event.rows;
 
   pageLoad({ startRow, endRow }); // 여기서 axios 호출
+};
+
+const resetSearch = () => {
+  searchFilter.value = {
+    startDate: '',
+    endDate: '',
+    vendorName: ''
+  };
+  pageLoad();
 };
 
 onMounted(() => {
@@ -157,12 +189,12 @@ const shipDetailColumn = [
     </div>
 
     <div class="card flex flex-col gap-4">
-      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+      <SearchCard title="입고 조회" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <DatePicker v-model="searchFilter.startDate" inputId="searchStart" />
               <label for="searchStart">시작일</label>
             </IftaLabel>
           </InputGroup>
@@ -170,7 +202,7 @@ const shipDetailColumn = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <DatePicker v-model="searchFilter.endDate" inputId="searchEnd" />
               <label for="searchEnd">종료일</label>
             </IftaLabel>
           </InputGroup>
@@ -178,46 +210,45 @@ const shipDetailColumn = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
+              <InputText v-model="searchFilter.vendorName" inputId="searchVendor" />
               <label for="searchVendor">공급처</label>
             </IftaLabel>
           </InputGroup>
         </div>
       </SearchCard>
     </div>
-    <!--테이블영역-->
+
     <div class="flex flex-col md:flex-row gap-8">
-      <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4 h-full">
-          <!-- h-full 고정 -->
-          <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">하차대기 목록</div>
-            <Divider />
-            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" :page="page" @page-change="onPage" />
-          </div>
-        </div>
-      </div>
-      <!--하단우측-->
+      <!-- 왼쪽 카드 -->
       <div class="md:w-1/2">
         <div class="card flex flex-col gap-4">
-          <!-- 버튼 + 제목을 같은 행에 배치 -->
           <div class="flex items-center justify-between my-3">
-            <!-- 왼쪽: 제목 -->
+            <div class="font-semibold text-m">하차대기 목록</div>
+            <div class="flex gap-2">
+              <btn color="info" icon="pi pi-file-pdf" label="출고명세서" @click="openShipmentReport" />
+            </div>
+          </div>
+          <Divider />
+          <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" :page="page" @page-change="onPage" />
+        </div>
+      </div>
+
+      <!-- 오른쪽 카드 -->
+      <div class="md:w-1/2">
+        <div class="card flex flex-col gap-4">
+          <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-m">상세정보</div>
-            <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
               <btn color="warn" icon="cancel" label="반송" @click="openRetrunModal" />
               <btn color="info" icon="add" label="승인" @click="approve" />
             </div>
           </div>
-
           <Divider />
           <selectTable v-model:selection="selectedDeRow" :selectionMode="'single'" :columns="shipDetailColumn" :data="shipDetailListData" :paginator="false" :showCheckbox="false" />
         </div>
       </div>
     </div>
   </div>
-
   <!--반품모달-->
   <Dialog v-model:visible="returnModal" modal header="반송 사유" :style="{ width: '500px' }">
     <div class="card flex justify-center">

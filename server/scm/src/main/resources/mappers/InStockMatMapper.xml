@@ -81,18 +81,42 @@ SELECT * FROM (
             FROM inbound i
             JOIN vendor v
             ON i.vendor_id = v.vendor_id
-            WHERE i.inbound_status = 'm1'
-            ORDER BY i.vendor_out_date DESC
-        ) a
-    WHERE ROWNUM &lt;= #{endRow}
+            WHERE 1=1
+          AND i.inbound_status = 'm1'
+
+          <if test="search.startDate != null">
+            AND i.vendor_out_date &gt;= #{search.startDate}
+          </if>
+          <if test="search.endDate != null">
+            AND i.vendor_out_date &lt;= #{search.endDate}
+          </if>
+          <if test="search.vendorName != null and search.vendorName != ''">
+            AND v.company_name LIKE '%' || #{search.vendorName} || '%'
+          </if>
+        ORDER BY i.vendor_out_date DESC
+    ) a
+    WHERE ROWNUM &lt;= #{page.endRow}
 )
-WHERE rnum &gt;= #{startRow}
+WHERE rnum &gt;= #{page.startRow}
 </select>
+
 <!--입고마스터T 데이터 count-->
 <select id="getVenShipListCount" resultType="long">
 SELECT count(DISTINCT inbound_id)
-FROM inbound 
-WHERE inbound_status = 'm1'
+FROM inbound i
+JOIN vendor v
+ON i.vendor_id = v.vendor_id
+WHERE 1=1
+  AND i.inbound_status = 'm1'
+  <if test="search.startDate != null">
+    AND .vendor_out_date &gt;= #{search.startDate}
+  </if>
+  <if test="search.endDate != null">
+    AND i.vendor_out_date &lt;= #{search.endDate}
+  </if>
+  <if test="search.vendorName != null and search.vendorName != ''">
+    AND v.company_name LIKE '%' || #{search.vendorName} || '%'
+  </if>
 </select>
 
 <!--입고상세T 출력-->
@@ -128,30 +152,57 @@ WHERE id.inbound_id = #{inboundId}
 </select>
 
 <!--입고대기목록-->
-<select id = "getApproveUnload" resultMap="inboundResultMap">
+<select id="getApproveUnload" resultMap="inboundResultMap">
 SELECT * FROM (
-    SELECT a.*, ROWNUM rnum
-    FROM (
-            SELECT i.inbound_id,
-                i.inbound_no,
-                i.unload_date,
-                i.unload_emp,
-                i.inbound_status,
-                v.company_name
-            FROM inbound i
-            JOIN vendor v
-            ON i.vendor_id = v.vendor_id
-            WHERE inbound_status in ('app', 'm2')
-    ) a
-    WHERE ROWNUM &lt;= #{endRow}
+  SELECT a.*, ROWNUM rnum
+  FROM (
+    SELECT i.inbound_id,
+           i.inbound_no,
+           i.unload_date,
+           i.unload_emp,
+           i.inbound_status,
+           v.company_name
+    FROM inbound i
+    JOIN vendor v ON i.vendor_id = v.vendor_id
+    WHERE 1=1
+      AND i.inbound_status IN ('app', 'm2')
+      <if test="search.startDate != null">
+        AND i.unload_date &gt;= TO_DATE(#{search.startDate}, 'YYYY-MM-DD')
+      </if>
+      <if test="search.endDate != null">
+        AND i.unload_date &lt;= TO_DATE(#{search.endDate}, 'YYYY-MM-DD')
+      </if>
+      <if test="search.vendorName != null and search.vendorName != ''">
+        AND v.company_name LIKE '%' || #{search.vendorName} || '%'
+      </if>
+      <if test="search.status != null and search.status != ''">
+        AND i.inbound_status LIKE '%' || #{search.status} || '%'
+      </if>
+    ORDER BY i.unload_date DESC
+  ) a
+  WHERE ROWNUM &lt;= #{page.endRow}
 )
-WHERE rnum &gt;= #{startRow}
+WHERE rnum &gt;= #{page.startRow}
 </select>
 <!--입고대기목록데이터 수-->
 <select id="getApproveUnloadListCount" resultType="long">
 SELECT count(DISTINCT inbound_id)
-FROM inbound
-WHERE inbound_status in ('app', 'm2')
+FROM inbound i
+JOIN vendor v ON i.vendor_id = v.vendor_id
+WHERE 1=1
+AND i.inbound_status IN ('app', 'm2')
+<if test="search.startDate != null">
+  AND i.unload_date &gt;= TO_DATE(#{search.startDate}, 'YYYY-MM-DD')
+</if>
+<if test="search.endDate != null">
+  AND i.unload_date &lt;= TO_DATE(#{search.endDate}, 'YYYY-MM-DD')
+</if>
+<if test="search.vendorName != null and search.vendorName != ''">
+  AND v.company_name LIKE '%' || #{search.vendorName} || '%'
+</if>
+<if test="search.status != null and search.status != ''">
+  AND i.inbound_status LIKE '%' || #{search.status} || '%'
+</if>
 </select>
 
 <!--입고대기목록상세-->
@@ -210,6 +261,7 @@ SELECT * FROM (
     SELECT a.*, ROWNUM rnum
     FROM (
         SELECT
+          ml.lot_id,
           ml.mat_id,
           m.mat_name,
           SUM(ml.curr_weight) AS curr_weight,
@@ -231,7 +283,7 @@ SELECT * FROM (
         <if test="lotStatus != null and lotStatus != ''">
             AND ml.lot_status = #{lotStatus}
         </if>
-        GROUP BY ml.mat_id, m.mat_name, m.unit, m.stock_unit
+        GROUP BY ml.mat_id, m.mat_name, m.unit, m.stock_unit, ml.lot_id
         ORDER BY ml.mat_id
     ) a
     WHERE ROWNUM &lt;= #{endRow}
@@ -276,6 +328,32 @@ JOIN material m
 ON ml.mat_id = m.mat_id
 where ml.mat_id = #{matId}
 ORDER BY ml.lot_id
+</select>
+
+<!--재고조정등록-->
+<select id="callProcAdjustStock" statementType="CALLABLE" parameterType="com.yedam.scm.vo.MatLotStockAdjVO">
+    { call PROC_MAT_ADJUST_STOCK(
+        #{lotId, mode=IN, jdbcType=NUMERIC},
+        #{inOut, mode=IN, jdbcType=VARCHAR},
+        #{weight, mode=IN, jdbcType=NUMERIC},
+        #{reason, mode=IN, jdbcType=VARCHAR},
+        #{name, mode=IN, jdbcType=VARCHAR},
+        #{adjStockId, mode=OUT, jdbcType=NUMERIC}
+      ) }
+</select>
+<!--조정이력-->
+<select id="selectAdjustHistoryByLotId" parameterType="long" resultType="com.yedam.scm.vo.MatLotStockAdjVO">
+SELECT adj_stock_id, 
+        re_date, 
+        in_out,
+        weight,
+        before_weight, 
+        after_weight,
+        name, reason,
+        lot_id
+FROM mat_lotstock_adj
+WHERE lot_id = #{lotId}
+ ORDER BY re_date DESC
 </select>
 
 </mapper>

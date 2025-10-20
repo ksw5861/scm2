@@ -42,20 +42,35 @@ const codeMap = ref({}); // codeId → codeName 매핑용
 //이미지모달
 const imgModal = ref(false);
 const defectImg = ref();
-
+//pagenation
 const page = ref({ page: 1, size: 10, totalElements: 0 });
 
 //검색필드
 const searchFilter = ref({
-  stardDate: '',
+  startDate: '',
   endDate: '',
-  vendor: ''
-  //   lotStatus: ''
+  matName: '',
+  status: ''
 });
 
+//datePicker날짜변환
+const formatDate = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  return d.toISOString().slice(0, 10);
+};
+
 const fetchSuppliyList = async () => {
+
+    const params = {
+            startDate: formatDate(searchFilter.value.startDate),
+            endDate: formatDate(searchFilter.value.endDate),
+            matName: searchFilter.value.matName,
+            status:searchFilter.value.status
+        };
+
   try {
-    const list = await axios.get(`/api/supplier/supplyList/${vendorId}`);
+    const list = await axios.get(`/api/supplier/supplyList/${vendorId}`, { params });
     console.log(list);
     // flatMap으로 평탄화
     const flattened = list.data.flatMap((row) =>
@@ -138,7 +153,24 @@ const closeRejModal = () => {
 const onPage = (event) => {
   const startRow = event.page * event.rows + 1;
   const endRow = (event.page + 1) * event.rows;
-  fetchSuppliyList({ startRow, endRow });
+  fetchSuppliyList({
+    startRow,
+    endRow,
+    startDate: formatDate(searchFilter.value.startDate),
+    endDate: formatDate(searchFilter.value.endDate),
+    matName: searchFilter.value.matName,
+    status:searchFilter.value.status
+ });
+};
+
+const resetSearch = () => {
+  searchFilter.value = {
+    startDate: '',
+    endDate: '',
+    matName: '',
+    status: ''
+  };
+  fetchSuppliyList();
 };
 
 onMounted(() => {
@@ -170,12 +202,12 @@ const statusColumn = [
     </div>
     <!--검색영역-->
     <div class="card flex flex-col gap-4">
-      <SearchCard title="입고 조회" @search="fetchMatList" @reset="resetSearch">
+      <SearchCard title="공급 조회" @search="fetchSuppliyList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.sartDate" inputId="searchMatId" />
+              <DatePicker v-model="searchFilter.startDate" inputId="searchStart" />
               <label for="searchStart">시작일</label>
             </IftaLabel>
           </InputGroup>
@@ -183,7 +215,7 @@ const statusColumn = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
+              <DatePicker v-model="searchFilter.endDate" inputId="searchEnd" />
               <label for="searchEnd">종료일</label>
             </IftaLabel>
           </InputGroup>
@@ -191,15 +223,15 @@ const statusColumn = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <InputText v-model="searchFilter.vendor" inputId="searchMa" />
-              <label for="searchVendor">자재명</label>
+              <InputText v-model="searchFilter.matName" inputId="searchMatName" />
+              <label for="searchMatName">자재명</label>
             </IftaLabel>
           </InputGroup>
 
           <div class="flex flex-col w-full">
             <InputGroup>
               <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-              <Select v-model="searchFilter.lotStatus" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="출고 상태" class="w-full h-[48px] text-base" />
+              <Select v-model="searchFilter.status" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="출고 상태" class="w-full h-[48px] text-base" />
             </InputGroup>
           </div>
         </div>
