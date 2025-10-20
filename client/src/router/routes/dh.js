@@ -13,6 +13,18 @@ const dh = {
       }
     },
     {
+      path: '/notice',
+      name: '공지사항',
+      component: () => import('@/views/pages/dh/Notice.vue'),
+      meta: {
+        breadcrumb: {
+          parent: '홈'
+        },
+        requiresAuth: true,
+        roles: ['admin', 'employee', 'customer', 'supplier']
+      }
+    },
+    {
       path: '/employees',
       name: '사원 관리',
       component: () => import('@/views/pages/dh/EmployeeManagement.vue'),

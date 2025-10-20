@@ -25,7 +25,18 @@ const router = createRouter({
         {
           path: '/',
           name: 'dashboard',
-          component: () => import('@/views/Dashboard.vue')
+          component: () => {
+            const userStore = useUserStore();
+            const role = userStore.role;
+
+            if (role.includes('admin', 'employee')) {
+                return import('@/views/pages/dw/LedgerDashboard.vue');
+            } else if (role.includes('customer')) {
+                return import('@/views/pages/eg/BranchDash.vue');
+            } else {role.includes('supplier')} {
+                // return import('@/views/pages/ms/');
+            }
+          }
         }
       ]
     },
