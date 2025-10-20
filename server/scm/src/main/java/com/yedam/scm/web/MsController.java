@@ -24,11 +24,23 @@ import com.yedam.scm.vo.PurchaseMatVO;
 import com.yedam.scm.vo.WareHouseVO;
 
 import lombok.RequiredArgsConstructor;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.sql.DataSource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -36,7 +48,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
+import java.io.InputStream;
+import java.sql.Connection;
 
 
 @RestController
@@ -46,6 +62,8 @@ public class MsController {
     
     final PurchaseMatService purchaseMatService;  //자재주문
     final InStockMatService inStockMatService;    //자재입고
+    private final DataSource dataSource;   // jasper
+    private final ResourceLoader resourceLoader;
     
     //======================================================================주문part
     //생산계획등록
@@ -207,6 +225,35 @@ public class MsController {
     public List<MatStatusVO> selectCodeList(@PathVariable String groupId) {
         return purchaseMatService.selectCodeList(groupId);
     }
+
+    /*==============================================
+     * 재스퍼 출고명세서
+     ===============================================*/
+    @GetMapping("/shipment/{inboundId}")
+    public ResponseEntity<byte[]> exportShipment(@PathVariable Long inboundId) throws Exception {
+    Map<String, Object> params = new HashMap<>();
+    params.put("InboundId", inboundId);
+
+    Resource resource = resourceLoader.getResource("classpath:reports/ship.jrxml");
+    System.out.println("📦 exists: " + resource.exists());
+    System.out.println("📁 URL: " + resource.getURL());
+
+    try (InputStream jrxmlStream = resource.getInputStream();
+         Connection conn = dataSource.getConnection()) {
+
+        JasperReport jasperReport = JasperCompileManager.compileReport(jrxmlStream);
+        JasperPrint print = JasperFillManager.fillReport(jasperReport, params, conn);
+        byte[] pdf = JasperExportManager.exportReportToPdf(print);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("filename", "shipment_" + inboundId + ".pdf");
+
+        return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
+        }
+    }
+
+
 
 }
 

@@ -53,14 +53,13 @@ const formatDate = (date) => {
 };
 
 const pageLoad = async () => {
-
-    const params = {
-        page: page.value.page,
-        size: page.value.size,
-        startDate: formatDate(searchFilter.value.startDate),
-        endDate: formatDate(searchFilter.value.endDate),
-        vendorName: searchFilter.value.vendorName
-    };
+  const params = {
+    page: page.value.page,
+    size: page.value.size,
+    startDate: formatDate(searchFilter.value.startDate),
+    endDate: formatDate(searchFilter.value.endDate),
+    vendorName: searchFilter.value.vendorName
+  };
 
   try {
     const res = await axios.get(`/api/mat/shipedList`, { params });
@@ -121,6 +120,17 @@ const returnSubmit = async () => {
   }
 };
 
+const openShipmentReport = () => {
+  console.log(selectedRows.value.id);
+  if (!selectedRows.value || !selectedRows.value.id) {
+    toast('info', '선택 필요', '명세서를 출력할 출고건을 선택해주세요.', '3000');
+    return;
+  }
+
+  const inboundId = selectedRows.value.id;
+  window.open(`/api/mat/shipment/${inboundId}`, '_blank');
+};
+
 const onPage = (event) => {
   const startRow = event.page * event.rows + 1;
   const endRow = (event.page + 1) * event.rows;
@@ -136,7 +146,6 @@ const resetSearch = () => {
   };
   pageLoad();
 };
-
 
 onMounted(() => {
   pageLoad();
@@ -208,39 +217,38 @@ const shipDetailColumn = [
         </div>
       </SearchCard>
     </div>
-    <!--테이블영역-->
+
     <div class="flex flex-col md:flex-row gap-8">
-      <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4 h-full">
-          <!-- h-full 고정 -->
-          <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">하차대기 목록</div>
-            <Divider />
-            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" :page="page" @page-change="onPage" />
-          </div>
-        </div>
-      </div>
-      <!--하단우측-->
+      <!-- 왼쪽 카드 -->
       <div class="md:w-1/2">
         <div class="card flex flex-col gap-4">
-          <!-- 버튼 + 제목을 같은 행에 배치 -->
           <div class="flex items-center justify-between my-3">
-            <!-- 왼쪽: 제목 -->
+            <div class="font-semibold text-m">하차대기 목록</div>
+            <div class="flex gap-2">
+              <btn color="info" icon="pi pi-file-pdf" label="출고명세서" @click="openShipmentReport" />
+            </div>
+          </div>
+          <Divider />
+          <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" :page="page" @page-change="onPage" />
+        </div>
+      </div>
+
+      <!-- 오른쪽 카드 -->
+      <div class="md:w-1/2">
+        <div class="card flex flex-col gap-4">
+          <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-m">상세정보</div>
-            <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
               <btn color="warn" icon="cancel" label="반송" @click="openRetrunModal" />
               <btn color="info" icon="add" label="승인" @click="approve" />
             </div>
           </div>
-
           <Divider />
           <selectTable v-model:selection="selectedDeRow" :selectionMode="'single'" :columns="shipDetailColumn" :data="shipDetailListData" :paginator="false" :showCheckbox="false" />
         </div>
       </div>
     </div>
   </div>
-
   <!--반품모달-->
   <Dialog v-model:visible="returnModal" modal header="반송 사유" :style="{ width: '500px' }">
     <div class="card flex justify-center">

@@ -71,7 +71,7 @@ const fetchMatList = async () => {
     const { list, page: pageInfo } = res.data;
 
     matStockList.value = list.map((item) => ({
-      id: item.matId,
+      id: item.lotId,
       matId: item.matId,
       matName: item.materialVO.matName,
       currWeight: item.currWeight,
@@ -87,35 +87,34 @@ const fetchMatList = async () => {
 };
 
 const detailInfo = async () => {
+  selectedLotRow.value = null;
 
-    selectedLotRow.value = null;
+  adjustForm.value = {
+    lotNo: '',
+    adjustWeight: 0,
+    unit: '',
+    adjustReason: '',
+    lotId: '',
+    type: ''
+  };
 
-    adjustForm.value = {
-      lotNo: '',
-      adjustWeight: 0,
-      unit: '',
-      adjustReason: '',
-      lotId: '',
-      type: ''
-    };
-
-    adjustHistoryList.value = [];
+  adjustHistoryList.value = [];
 
   try {
     //LOT 상세
-    const list = await axios.get('/api/mat/matLotList', { params: { matId: selectedRows.value.id } });
+    const list = await axios.get('/api/mat/matLotList', { params: { matId: selectedRows.value.matId } });
     matLotList.value = list.data.map((item) => ({
-        regDate: useDateFormat(item.regDate).value,
-        lotNo: item.lotNo,
-        matName: item.materialVO.matName,
-        currWeight: item.currWeight,
-        unit: item.materialVO.unit,
-        currQty: item.currQty,
-        stockUnit: item.materialVO.stockUnit,
-        expDate: useDateFormat(item.expDate).value,
-        status: codeMap.value[item.lotStatus]
+      id: item.lotId,
+      regDate: useDateFormat(item.regDate).value,
+      lotNo: item.lotNo,
+      matName: item.materialVO.matName,
+      currWeight: item.currWeight,
+      unit: item.materialVO.unit,
+      currQty: item.currQty,
+      stockUnit: item.materialVO.stockUnit,
+      expDate: useDateFormat(item.expDate).value,
+      status: codeMap.value[item.lotStatus]
     }));
-
   } catch (error) {
     toast('error', '리스트 로드 실패', 'LOT 리스트 불러오기 실패', '3000');
     return { items: [] };
@@ -124,25 +123,24 @@ const detailInfo = async () => {
 
 //조정이력History
 const onLotSelect = async (lotRow) => {
-    if (!lotRow) return;
+  if (!lotRow) return;
 
-    try {
+  adjustForm.value.lotNo = lotRow.lotNo;
+  adjustForm.value.unit = lotRow.unit;
+  adjustForm.value.lotId = lotRow.id || lotRow.id || '';
 
-        const res = await axios.get('/api/mat/adjustHistory', { params: { lotId: lotRow.lotId } });
-        adjustHistoryList.value = res.data.map((item) => ({
-            adjDate: useDateFormat(item.reDate).value,
-            adjWeight: item.weight,
-            inOut: item.inOut,
-            reason: item.reson,
-            name: item.name,
-            beforeWeight: item.beforeWeight,
-            afterWeight: item.afterWeight
-        }));
-
-    adjustForm.value.lotNo = lotRow.lotNo;
-    adjustForm.value.unit = lotRow.unit;
-    adjustForm.value.lotId = lotRow.lotId || lotRow.id || '';
-
+  try {
+    const res = await axios.get('/api/mat/adjustHistory', { params: { lotId: lotRow.id } });
+    adjustHistoryList.value = res.data.map((item) => ({
+      adjDate: useDateFormat(item.reDate).value,
+      adjWeight: item.weight,
+      inOut: item.inOut,
+      reason: item.reson,
+      name: item.name,
+      beforeWeight: item.beforeWeight,
+      afterWeight: item.afterWeight,
+      unit: lotRow.unit
+    }));
   } catch (error) {
     toast('error', '조정이력 불러오기 실패', '이력조회 실패', '3000');
   }
@@ -161,11 +159,11 @@ const submitAdjustStock = async () => {
   }
 
   const payload = {
-    lotId:  adjustForm.value.lotId,
-    weight: adjustForm.value.adjustWeight,                // 양수
-    inOut:  adjustForm.value.type.toUpperCase(),          // 'IN' | 'OUT'
+    lotId: adjustForm.value.lotId,
+    weight: adjustForm.value.adjustWeight, // 양수
+    inOut: adjustForm.value.type.toUpperCase(), // 'IN' | 'OUT'
     reason: adjustForm.value.adjustReason,
-    name:   empName
+    name: empName
   };
 
   try {
@@ -174,7 +172,7 @@ const submitAdjustStock = async () => {
 
     // 이력 새로고침 (현재 선택 LOT 기준)
     await onLotSelect(selectedLotRow.value);
-
+    await fetchMatList();
   } catch (e) {
     toast('error', '조정등록 실패', e?.response?.data?.message || '서버 오류', 3000);
   }
@@ -238,7 +236,7 @@ const matLotColumns = [
 ];
 
 const adjustHistoryColumns = [
-  { field: 'adjDate', label: '조정일시', style: 'width:10rem'  },
+  { field: 'adjDate', label: '조정일시', style: 'width:10rem' },
   { field: 'inOut', label: '유형', style: 'width: 8rem' },
   { field: 'adjWeight', label: '조정중량', style: 'width: 10rem' },
   { field: 'unit', label: '단위', style: 'width: 8rem' },
@@ -299,61 +297,75 @@ const adjustHistoryColumns = [
       <!--오른쪽-->
       <div class="md:w-1/2 h-full">
         <div class="card flex flex-col gap-4 h-full">
-            <!-- 상단 헤더 -->
-             <div class="flex items-center justify-between my-3">
-                <div class="font-semibold text-m">상세정보</div>
-                <div class="flex gap-2">
-                    <btn color="warn" icon="pi pi-save" @click="submitAdjustStock" label="조정등록" />
-                </div>
+          <!-- 상단 헤더 -->
+          <div class="flex items-center justify-between my-3">
+            <div class="font-semibold text-m">상세정보</div>
+            <div class="flex gap-2">
+              <btn color="warn" icon="pi pi-save" @click="submitAdjustStock" label="조정등록" />
             </div>
-            <Divider />
-            <!-- 메인 콘텐츠 -->
-            <div class="flex flex-col gap-4 h-[600px]">
+          </div>
+          <Divider />
+          <!-- 메인 콘텐츠 -->
+          <div class="flex flex-col gap-4 h-[600px]">
             <!-- LOT 상세 -->
-             <div class="flex-[4] overflow-auto">
-                <selectTable v-model:selection="selectedLotRow" :selectionMode="'single'" :columns="matLotColumns" :data="matLotList" :paginator="false" :showCheckbox="false" @row-select="onLotSelect"/>
+            <div class="flex-[4] overflow-auto">
+              <selectTable v-model:selection="selectedLotRow" :selectionMode="'single'" :columns="matLotColumns" :data="matLotList" :paginator="false" :showCheckbox="false" @row-select="onLotSelect" />
             </div>
             <!-- 조정 입력 -->
             <div class="flex-[2] card !p-4">
-                <div class="font-semibold text-m mb-3">조정입력</div>
-                <Divider class="my-2" />
-                <div class="flex items-end mb-3">
-                    <div class="flex flex-1 items-end gap-1">
-                        <div class="w-[6rem]">
-                        <SearchField type="dropDown" label="유형" v-model="adjustForm.type" :options="[ { name: '감소', value: 'out' },
-                                                                                                        { name: '증감', value: 'in' }]"/>
-                        </div>
-                        <div class="flex-1">
-                            <SearchField type="number" label="조정중량" v-model="adjustForm.adjustWeight"/>
-                        </div>
-                        <!-- 단위 -->
-                        <div class="w-[5rem]">
-                            <SearchField type="readOnly" label="단위" v-model="adjustForm.unit"/>
-                        </div>
-                    </div>
-                    <!-- 조정사유 -->
-                    <div class="flex-1 ml-3">
-                        <SearchField type="dropDown" label="조정사유" v-model="adjustForm.adjustReason" :options="[ { name: '파손', value: 'adjrs1' },
-                                                                                                                   { name: '습기', value: 'adjrs2' },
-                                                                                                                   { name: '감모', value: 'adjrs3' },
-                                                                                                                   { name: '기타', value: 'adjrs4' }]"/>
-                    </div>
+              <div class="font-semibold text-m mb-3">조정입력</div>
+              <Divider class="my-2" />
+              <div class="flex items-end mb-3">
+                <div class="flex flex-1 items-end gap-1">
+                  <div class="w-[6rem]">
+                    <SearchField
+                      type="dropDown"
+                      label="유형"
+                      v-model="adjustForm.type"
+                      :options="[
+                        { name: '감소', value: 'out' },
+                        { name: '증감', value: 'in' }
+                      ]"
+                    />
+                  </div>
+                  <div class="flex-1">
+                    <SearchField type="number" label="조정중량" v-model="adjustForm.adjustWeight" />
+                  </div>
+                  <!-- 단위 -->
+                  <div class="w-[5rem]">
+                    <SearchField type="readOnly" label="단위" v-model="adjustForm.unit" />
+                  </div>
                 </div>
-                <!-- 두 번째 줄: 담당자 / LOT번호 -->
+                <!-- 조정사유 -->
+                <div class="flex-1 ml-3">
+                  <SearchField
+                    type="dropDown"
+                    label="조정사유"
+                    v-model="adjustForm.adjustReason"
+                    :options="[
+                      { name: '파손', value: 'adjrs1' },
+                      { name: '습기', value: 'adjrs2' },
+                      { name: '감모', value: 'adjrs3' },
+                      { name: '기타', value: 'adjrs4' }
+                    ]"
+                  />
+                </div>
+              </div>
+              <!-- 두 번째 줄: 담당자 / LOT번호 -->
               <div class="grid grid-cols-2 gap-4">
-                <SearchField type="readOnly" label="담당자" v-model="empName"/>
-                <SearchField type="readOnly" label="선택 LOT번호" v-model="adjustForm.lotNo"/>
+                <SearchField type="readOnly" label="담당자" v-model="empName" />
+                <SearchField type="readOnly" label="선택 LOT번호" v-model="adjustForm.lotNo" />
               </div>
             </div>
             <!-- 조정이력 -->
             <div class="flex-[4] card !p-0 overflow-auto">
-                <div class="font-semibold text-m p-4 pb-2">조정이력</div>
-                <Divider class="m-0" />
-                <selectTable :columns="adjustHistoryColumns" :data="adjustHistoryList" :paginator="false" :showCheckbox="false"/>
+              <div class="font-semibold text-m p-4 pb-2">조정이력</div>
+              <Divider class="m-0" />
+              <selectTable :columns="adjustHistoryColumns" :data="adjustHistoryList" :paginator="false" :showCheckbox="false" />
             </div>
+          </div>
         </div>
+      </div>
     </div>
-</div>
-</div>
-</div>
+  </div>
 </template>
