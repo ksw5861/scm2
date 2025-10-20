@@ -19,6 +19,7 @@ import com.yedam.scm.vo.ReturnDetailVO;
 import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.SalesOrderDetailVO;
 import com.yedam.scm.vo.SalesOrderVO;
+import com.yedam.scm.vo.VendorVO;
 // import com.yedam.scm.vo.ShipOrderVO;
 import com.yedam.scm.vo.WareHouseVO;
 
@@ -126,7 +127,7 @@ public class InboundServiceImpl implements InboundService {
         return inboundMapper.selectReturnDetails(returnId);
     }
 
-    // 반품승인 
+    // 반품승인
     @Override
     @Transactional
     public int approveReturnDetails(List<String> ids) {
@@ -144,8 +145,8 @@ public class InboundServiceImpl implements InboundService {
         if (ids == null || ids.isEmpty())
             return 0;
 
-         int result = inboundMapper.rejectReturnDetails(ids, reason);
-         inboundMapper.updateReturnStatus(ids.get(0));
+        int result = inboundMapper.rejectReturnDetails(ids, reason);
+        inboundMapper.updateReturnStatus(ids.get(0));
         return result;
     }
 
@@ -224,6 +225,33 @@ public class InboundServiceImpl implements InboundService {
         map.put("totalPayment", vo.getTotalPayment());
         map.put("totalAr", vo.getTotalAr());
         return map;
+    }
+
+    // 거래처원장 페이지 모달
+    @Override
+    public Map<String, Object> getVendorList(String keyword, int page, int size) {
+        PageDTO paging = new PageDTO(page, size);
+
+        long total = inboundMapper.selectVendorCountByCondition(keyword);
+        paging.updatePageInfo(total);
+
+        List<VendorVO> list = inboundMapper.selectVendorListByCondition(keyword, paging);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", list);
+        result.put("page", paging);
+        return result;
+    }
+
+    // 주문승인 페이지 모달
+    @Override
+    public List<Map<String, Object>> getVendorModalList(String keyword, int page, int size) { // 판매처명 모달
+        return inboundMapper.getVendorModalList(keyword, page, size);
+    }
+
+    @Override
+    public List<Map<String, Object>> getOrderModalList(String keyword, int page, int size) { // 주문번호 모달
+        return inboundMapper.getOrderModalList(keyword, page, size);
     }
 
 } // end

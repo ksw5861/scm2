@@ -1,6 +1,5 @@
 package com.yedam.scm.vo;
 
-
 import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
@@ -39,7 +38,7 @@ public class SalesOrderVO {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     Date paydueDate;
-    
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     Long returnPrice;
 
@@ -49,7 +48,7 @@ public class SalesOrderVO {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     BigDecimal finalAmount;
 
-    private String failReason;  
+    private String failReason;
     // 추가된 대표 제품명 필드
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String prodName;
@@ -106,11 +105,9 @@ public class SalesOrderVO {
     private Date lastOrderDate;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
-    private BigDecimal prevTotalPrice; // 이전 금엑
-
-
+    private BigDecimal prevTotalPrice; // 이전 금액
 
     // 1018 추가
-    private Integer orderCount;   // 주문건수
-    private Integer unpaidCount;  // 미수건수
+    private Integer orderCount; // 주문건수
+    private Integer unpaidCount; // 미수건수
 }
