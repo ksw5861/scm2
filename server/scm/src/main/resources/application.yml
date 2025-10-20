@@ -49,6 +49,8 @@ file:
     employee-dir: C:/uploads/employee # 개발 환경
     # employee-dir: /home/app/uploads/employee  # 배포 환경
     defect-dir: C:/uploads/defect/
+    notice-dir: C:/uploads/notice/
+
 
 jwt:
   secret: ENC(dzfcQtWysP6YaJ/3ZshuUyeqb/Jqc23jSsctfL6ZfFEZHFBIOtIJIvjoknh2MiWnPQN3a2bYnUxzSV51QCoQ0A==)

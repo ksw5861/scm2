@@ -5,8 +5,10 @@ import customerOrder from './menu/customerOrder';
 import production from './menu/production';
 import logistics from './menu/logistics';
 import stock from './menu/stock';
+import home from './menu/home';
 
 const sideBar = [
+    home,
     master,
     logistics,
     customerOrder,

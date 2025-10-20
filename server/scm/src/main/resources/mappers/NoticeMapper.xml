@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.yedam.scm.notice.mapper.NoticeMapper">
+
+  <!-- 공지사항 목록 (검색 + 페이징) -->
+  <select id="selectNoticeListByConditionAndPaging" resultType="NoticeVO">
+    SELECT
+      notice_no,
+      title,
+      author,
+      created_at
+    FROM (
+      SELECT
+        n.*,
+        ROW_NUMBER() OVER (
+          ORDER BY notice_no DESC
+        ) AS rn
+      FROM notice n
+      WHERE 1 = 1
+    <if test="condition.title != null and condition.title != ''">
+      AND LOWER(title) LIKE '%' || LOWER(#{condition.title}) || '%'
+    </if>
+    )
+    WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
+  </select>
+
+  <!-- 공지사항 총 개수 -->
+  <select id="selectNoticeTotalCountByCondition" parameterType="NoticeSearchDTO" resultType="long">
+    SELECT COUNT(*)
+    FROM notice
+    WHERE 1 = 1
+    <if test="title != null and title != ''">
+      AND title LIKE '%' || #{title} || '%'
+    </if>
+  </select>
+
+  <!-- 공지사항 단건 조회 -->
+  <select id="selectNoticeByNoticeNo" parameterType="string" resultType="NoticeVO">
+    SELECT
+      notice_no,
+      title,
+      author,
+      content,
+      created_at
+    FROM notice
+    WHERE notice_no = #{noticeNo}
+  </select>
+
+  <!-- 공지사항 등록 -->
+  <insert id="insertNotice" parameterType="NoticeVO">
+    INSERT INTO notice (
+      next_code('notice'), title, author, content, created_at
+    ) VALUES (
+      #{noticeNo},
+      #{title},
+      #{author},
+      #{content},
+      SYSDATE
+    )
+  </insert>
+
+  <!-- 공지사항 수정 -->
+  <update id="updateNotice" parameterType="NoticeVO">
+    UPDATE notice
+    SET
+      title = #{title},
+      author = #{author},
+      content = #{content},
+    WHERE notice_no = #{noticeNo}
+  </update>
+
+  <!-- 공지사항 삭제 -->
+  <delete id="deleteNoticeByNoticeNo" parameterType="string">
+    DELETE FROM notice
+    WHERE notice_no = #{noticeNo}
+  </delete>
+
+</mapper>
