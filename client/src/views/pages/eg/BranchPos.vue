@@ -144,12 +144,22 @@
           </template>
         </Column>
         <Column field="salePayType" header="결제방법">
-          <template #body="{ data }">
-            <span class="method">
-              {{ data.salePayType === 'CARD' ? '카드' : '현금' }}
-            </span>
-          </template>
-        </Column>
+  <template #body="{ data }">
+    <span
+      class="method"
+      :style="{
+        backgroundColor: data.salePayType === 'CARD' ? '#93c5fd' : '#c7d2fe',
+        color: '#1e293b',                // 글씨는 가독성 좋은 딥그레이
+        padding: '4px 8px',
+        borderRadius: '8px',
+        fontWeight: '400'
+      }"
+    >
+      {{ data.salePayType === 'CARD' ? '카드' : '현금' }}
+    </span>
+  </template>
+</Column>
+
       </DataTable>
     </div>
 

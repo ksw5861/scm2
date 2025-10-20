@@ -13,6 +13,7 @@ import com.yedam.scm.order.service.SalesMarginService;
 import com.yedam.scm.vo.SalesDetailVO;
 import com.yedam.scm.vo.SalesMarginVO;
 import com.yedam.scm.vo.SalesMasterVO;
+import com.yedam.scm.vo.SalesOrderVO;
 
 @Service
 public class SalesMarginServiceImpl implements SalesMarginService {
@@ -117,24 +118,23 @@ public class SalesMarginServiceImpl implements SalesMarginService {
     }
 @Override
 public List<Map<String, Object>> getSalesTrend(String vendorId, String range) {
-    if ("monthly".equals(range)) {
-        // 최근 6개월 매출
-        return mapper.getSalesTrendMonthly(vendorId);
+    if ("monthly".equalsIgnoreCase(range)) {
+        return mapper.getSalesTrendMonthly(vendorId, range); // ✅ range까지 전달
     } else {
-        // 기본은 최근 7일 매출
-        return mapper.getSalesTrendDaily(vendorId);
+        return mapper.getSalesTrendDaily(vendorId, range);   // ✅ range까지 전달
     }
 }
+
 @Override
-public Map<String, Object> getSalesCompare(String vendorId) {
+public Map<String, Object> getSalesCompare(String vendorId, String range) {
     Map<String, Object> result = new HashMap<>();
-    List<Map<String, Object>> data = mapper.getSalesCompare(vendorId);
-    result.put("compareData", data);
+    result.put("compareData", mapper.getSalesCompare(vendorId, range));
     return result;
 }
+
 @Override
-public List<Map<String, Object>> getCoffeeRank(String vendorId) {
-    return mapper.getCoffeeRank(vendorId);
+public List<Map<String, Object>> getCoffeeRank(String vendorId, String range) {
+    return mapper.getCoffeeRank(vendorId, range);
 }
 
 // 매출 성장률
@@ -166,6 +166,26 @@ private double calcGrowth(Object curr, Object prev) {
     if (p == 0) return 0;
     return Math.round(((c - p) / p * 100) * 10) / 10.0;
 }
+
+   // ✅ 결제수단별 매출 조회 (CARD / CASH)
+    
+    @Override
+    public List<Map<String, Object>> getPayMethod(String vendorId, String range) {
+        return mapper.selectPayMethod(vendorId, range);
+    }
+
+
+    // 대시보드에 1일부터 말일까지 출고완료,배송완료에 결제대기인건, 15일자 기준 미수금 계산
+    @Override
+    public SalesOrderVO getNextDueAmount(String vendorId) {
+        return mapper.selectNextDueAmount(vendorId);
+    }
+
+    // 대시보드에 여신한도 잔액
+     @Override
+    public SalesOrderVO getSalesFinanceSummary(String vendorId) {
+        return mapper.selectSalesFinanceSummary(vendorId);
+    }
 
 
 }

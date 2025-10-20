@@ -1,5 +1,6 @@
 package com.yedam.scm.web;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +13,7 @@ import com.yedam.scm.order.service.SalesMarginService;
 import com.yedam.scm.vo.SalesDetailVO;
 import com.yedam.scm.vo.SalesMarginVO;
 import com.yedam.scm.vo.SalesMasterVO;
+import com.yedam.scm.vo.SalesOrderVO;
 
 @RestController
 @RequestMapping
@@ -95,18 +97,23 @@ public ResponseEntity<List<Map<String, Object>>> getSalesTrend(
     return ResponseEntity.ok(list);
 }
 
-// 📊 작년 vs 올해 매출 비교
+// 📊 작년 vs 올해 매출 비교 (일별/월별 선택 가능)
 @GetMapping("/branch/salescompare")
-public ResponseEntity<Map<String, Object>> getSalesCompare(@RequestParam String vendorId) {
-    Map<String, Object> result = service.getSalesCompare(vendorId);
+public ResponseEntity<Map<String, Object>> getSalesCompare(
+        @RequestParam String vendorId,
+        @RequestParam String range   // ✅ 일별(daily) 또는 월별(monthly)
+) {
+    Map<String, Object> result = service.getSalesCompare(vendorId, range);
     return ResponseEntity.ok(result);
 }
 
+
 // ✅ 원두 랭킹
 @GetMapping("/branch/coffeerank")
-public ResponseEntity<List<Map<String, Object>>> getCoffeeRank(@RequestParam String vendorId) {
-    List<Map<String, Object>> result = service.getCoffeeRank(vendorId);
-    return ResponseEntity.ok(result);
+public ResponseEntity<List<Map<String,Object>>> getCoffeeRank(
+        @RequestParam String vendorId,
+        @RequestParam(defaultValue = "monthly") String range) {
+    return ResponseEntity.ok(service.getCoffeeRank(vendorId, range));
 }
 
 // 매출 성장률 (오늘vs어제, 이번달vs지난달, 올해vs작년)
@@ -115,11 +122,26 @@ public Map<String, Object> getSalesGrowth(@RequestParam String vendorId) {
     return service.getSalesGrowth(vendorId);
 }
 
+// ✅ 결제수단별 매출 비중
+@GetMapping("/branch/paymethod")
+    public List<Map<String, Object>> getPayMethod(
+            @RequestParam String vendorId,
+            @RequestParam(defaultValue = "daily") String range
+    ) {
+        return service.getPayMethod(vendorId, range);
+    }
 
+// 대시보드에 1일부터 말일까지 출고완료,배송완료에 결제대기인건, 15일자 기준 미수금 계산
+@GetMapping("/sales/next-due-amount")
+    public SalesOrderVO getNextDueAmount(@RequestParam String vendorId) {
+        return service.getNextDueAmount(vendorId);
+    }
 
-
-
-
+// 대시보드에 여신한도 잔액
+@GetMapping("/sales/finance-summary")
+    public SalesOrderVO getSalesFinanceSummary(@RequestParam String vendorId) {
+        return service.getSalesFinanceSummary(vendorId);
+    }
 
 
 
