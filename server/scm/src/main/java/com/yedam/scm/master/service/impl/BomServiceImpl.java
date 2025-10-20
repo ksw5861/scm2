@@ -82,6 +82,8 @@ public class BomServiceImpl implements BomService {
 
     @Override
     public List<String> autoCompletePrdName(String keyword) {
-  return bomMapper.autoCompletePrdName(keyword);
-}
+        return bomMapper.autoCompletePrdName(keyword);
+    }
+
+    
 }

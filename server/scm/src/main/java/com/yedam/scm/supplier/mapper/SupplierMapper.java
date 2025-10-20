@@ -6,6 +6,8 @@ import java.util.List;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.yedam.scm.dto.ApproveMatSearchDTO;
+import com.yedam.scm.dto.matSupplySearchDTO;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
@@ -14,7 +16,7 @@ import com.yedam.scm.vo.PurchaseMatVO;
 @Mapper
 public interface SupplierMapper {
     //발주목록
-    List <PurchaseMatVO> getMatOerderList(String vendorId);
+    List <PurchaseMatVO> getMatOerderList(@Param("vendorId")String vendorId, @Param("search")ApproveMatSearchDTO searchDTO);
     //발주승인상태변경
     int updateOrderApprove(Integer purId);
     //발주승인상태이력남김
@@ -22,13 +24,13 @@ public interface SupplierMapper {
     //발주반려
     void callUpdateOrderReject(@Param("p_pur_id")Long purId, @Param("p_rej_memo")String rejMemo, @Param("p_staff")String staff);
     //출고지시대기목록
-    List <PurchaseMatVO> getMatWReleaseList(String vendorId);
+    List <PurchaseMatVO> getMatWReleaseList(@Param("vendorId")String vendorId, @Param("search")matSupplySearchDTO searchDTO);
     //출고지시등록
     void callReleaseMatPoc(@Param("purId")Long purId, @Param("outQty")Long outQty, @Param("vendorId")String vendorId, @Param("expectDate")Date expectDate, @Param("vendorEmp")String vendorEmp);
     
     //출고등록화면
     //1)출고대기리스트
-    List <PurchaseMatVO>getApprovedShipmentList(String vendorId);
+    List <PurchaseMatVO>getApprovedShipmentList(@Param("vendorId")String vendorId, @Param("search")ApproveMatSearchDTO searchDTO);
     
     //출고등록
     /*
@@ -43,7 +45,7 @@ public interface SupplierMapper {
     void callShipmentDetailPoc(InboundDetailVO detail);
 
     //공급목록
-    List<InboundVO> getSupplyList(String vendorId);
+    List<InboundVO> getSupplyList(@Param("vendorId")String vendorId, @Param("search")matSupplySearchDTO searchDTO);
     //출고상세목록
     List<InboundLogVO> getSupplyDetailList(Long inboundDetId);
     

@@ -15,14 +15,18 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.yedam.scm.config.FileUploadProperties;
+import com.yedam.scm.dto.AdjStockDTO;
 import com.yedam.scm.dto.MatStockSearchDTO;
 import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.dto.PurchaseListSearchDTO;
 import com.yedam.scm.instockMat.mapper.InStockMatMapper;
 import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
+import com.yedam.scm.vo.MatLotStockAdjVO;
 import com.yedam.scm.vo.MatLotVO;
+import com.yedam.scm.web.MatUnloadSearchDTO;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,10 +38,10 @@ public class InStockMatServiceImpl implements InStockMatService {
     final FileUploadProperties fileUploadProperties;   //환경설정으로 지정한 첨부파일저장경로 주입 [application.yml에 경로지정됨.]
 
     @Override
-    public Map<String, Object> getVenShipList(PageDTO pageDTO) {
+    public Map<String, Object> getVenShipList(PageDTO pageDTO, PurchaseListSearchDTO searchDTO) {
 
-       List<InboundVO> list = mapper.getVenShipList(pageDTO.getStartRow(), pageDTO.getEndRow());
-       Long total = mapper.getVenShipListCount();
+       List<InboundVO> list = mapper.getVenShipList(pageDTO, searchDTO);
+       Long total = mapper.getVenShipListCount(searchDTO);
 
        pageDTO.updatePageInfo(total);
 
@@ -64,9 +68,9 @@ public class InStockMatServiceImpl implements InStockMatService {
     }
 
     @Override
-    public Map<String, Object> getApproveUnload(PageDTO pageDTO) {
-       List<InboundVO> list = mapper.getApproveUnload(pageDTO.getStartRow(), pageDTO.getEndRow());
-       Long total = mapper.getApproveUnloadListCount();
+    public Map<String, Object> getApproveUnload(MatUnloadSearchDTO searchDTO, PageDTO pageDTO) {
+       List<InboundVO> list = mapper.getApproveUnload(pageDTO, searchDTO);
+       Long total = mapper.getApproveUnloadListCount(searchDTO);
 
        pageDTO.updatePageInfo(total);
 
@@ -88,7 +92,7 @@ public class InStockMatServiceImpl implements InStockMatService {
     }
 
     @Override
-public Map<String, Object> getMatStockList(PageDTO pageDTO, MatStockSearchDTO searchDTO) {
+    public Map<String, Object> getMatStockList(PageDTO pageDTO, MatStockSearchDTO searchDTO) {
 
     List<MatLotVO> list = mapper.getMatStockList(
         pageDTO.getStartRow(),
@@ -112,13 +116,34 @@ public Map<String, Object> getMatStockList(PageDTO pageDTO, MatStockSearchDTO se
     result.put("list", list);
     result.put("page", pageDTO);
     return result;
-}
+   }
 
     @Override
     public List<MatLotVO> getMatLotList(String matId) {
        return mapper.getMatLotList(matId);
     }
 
+    //재고조정
+    @Override
+    public Long adjustMatStock(AdjStockDTO dto) {
+
+        MatLotStockAdjVO vo = new MatLotStockAdjVO();
+        vo.setLotId(dto.getLotId());
+        vo.setWeight(dto.getWeight());
+        vo.setInOut(dto.getInOut());
+        vo.setReason(dto.getReason());
+        vo.setName(dto.getName());
+
+        mapper.callProcAdjustStock(vo);
+
+        return vo.getAdjStockId(); // 프로시저에서 OUT 값으로 받은 PK 리턴
+    }
+    //조정이력
+    @Override
+    public List<MatLotStockAdjVO> getAdjustHistoryByLotId(Long lotId) {
+        return mapper.selectAdjustHistoryByLotId(lotId);
+    }
+    //입고시 불량등록
     @Transactional
     @Override
     public ResponseEntity<?> callRegMatDefect(InboundLogVO defectData, MultipartFile file) {

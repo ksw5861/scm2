@@ -47,6 +47,19 @@ JOIN warehouse w
 ON pm.to_warehouse = w.wh_id
 WHERE pur_mat_status = 'ms1'
 AND pm.vendor_id = #{vendorId}
+  <if test="search.startDate != null">
+    AND pm.reg_date &gt;= #{search.startDate}
+  </if>
+  <if test="search.endDate != null">
+    AND pm.reg_date &lt;= #{search.endDate}
+  </if>
+  <if test="search.matName != null and search.matName != ''">
+    AND m.mat_name LIKE '%' || #{search.matName} || '%'
+  </if>
+  <if test="search.toWarehouse != null and search.toWarehouse != ''">
+    AND w.wh_name LIKE '%' || #{search.toWarehouse} || '%'
+  </if>
+ORDER BY pm.reg_date DESC
 </select>
 
 <!--발주승인상태변경-->
@@ -93,8 +106,21 @@ JOIN (
   ON pm.pur_id = psl.log_pur_id
 WHERE pm.vendor_id = #{vendorId}
   AND pm.pur_mat_status in ('ms2', 'ms5')
-</select>
+  <if test="search.startDate != null">
+    AND pm.due_date &gt;= #{search.startDate}
+  </if>
+  <if test="search.endDate != null">
+    AND pm.due_date &lt;= #{search.endDate}
+  </if>
+  <if test="search.matName != null and search.matName != ''">
+    AND m.mat_name LIKE '%' || #{search.matName} || '%'
+  </if>
+  <if test="search.status != null and search.status != ''">
+    AND pm.pur_mat_status = #{search.status}
+  </if>
 
+ORDER BY psl.re_date DESC
+</select>
 
 <!--공급처 출고지시[출고수량/출고일 등록]-->
 <!--1)purchase_mat출고상태값 변경[부분출고], 출고수량누적합 + 상태log테이블 insert-->
@@ -136,7 +162,20 @@ WHERE pm.pur_mat_status IN ('ms4','ms5')
   AND psl.log_pur_mat_status IN ('ms4','ms5')
   AND psl.final_ship_con = 'N'
   AND pm.vendor_id = #{vendorId}
-ORDER BY pm.expect_date ASC, psl.re_date ASC
+
+  <if test="search.startDate != null">
+    AND psl.log_expect_date &gt;= #{search.startDate}
+  </if>
+  <if test="search.endDate != null">
+    AND psl.log_expect_date &lt;= #{search.endDate}
+  </if>
+  <if test="search.matName != null and search.matName != ''">
+    AND m.mat_name LIKE '%' || #{search.matName} || '%'
+  </if>
+  <if test="search.toWarehouse != null and search.toWarehouse != ''">
+    AND w.wh_name LIKE '%' || #{search.toWarehouse} || '%'
+  </if>
+ORDER BY psl.log_expect_date ASC, psl.re_date ASC
 </select>
 
 <!--출고등록-->
@@ -185,8 +224,21 @@ ON i.inbound_id = id.inbound_id
 JOIN material m
 ON id.mat_id = m.mat_id
 WHERE i.vendor_id = #{vendorId}
+  <if test="search.startDate != null">
+    AND i.vendor_out_date &gt;= #{search.startDate}
+  </if>
+  <if test="search.endDate != null">
+    AND i.vendor_out_date &lt;= #{search.endDate}
+  </if>
+  <if test="search.matName != null and search.matName != ''">
+    AND m.mat_name LIKE '%' || #{search.matName} || '%'
+  </if>
+  <if test="search.status != null and search.status != ''">
+    AND id.in_status = #{search.status}
+  </if>
 ORDER BY i.vendor_out_date DESC
 </select>
+
 <!--공급목록상세-->
 <select id="getSupplyDetailList" parameterType="Long" resultMap="com.yedam.scm.common.CommonMapper.InboundLogResultMap">
 SELECT il.in_log_id,

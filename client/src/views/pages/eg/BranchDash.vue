@@ -74,55 +74,94 @@
       </Card>
 
       <Card class="kpi">
-        <template #title>미배송 주문</template>
-        <template #content>
-          <div class="kpi-value">{{ kpi.unshipped }}건</div>
-          <div class="kpi-sub"><i class="pi pi-truck"></i> 미배송 수량</div>
-        </template>
-      </Card>
-
-      <Card class="kpi">
         <template #title>다음 결제기한 금액</template>
         <template #content>
           <div class="kpi-value">{{ asKRW(kpi.nextDueAmount) }}</div>
           <div class="kpi-sub"><i class="pi pi-clock"></i> 기준일: {{ formatDate(kpi.nextDueDate) }}</div>
         </template>
       </Card>
-    </div>
 
-    <!-- 매출 분석 (탭) -->
+      <Card class="kpi">
+      <template #title>여신한도 잔액</template>
+      <template #content>
+        <div class="kpi-value">{{ asKRW(kpi.remainCredit) }}</div>  
+        <div class="kpi-sub">
+          <i class="pi pi-truck"></i>
+          여신한도: {{ asKRW(kpi.creditLimit) }}
+        </div> 
+      </template>
+    </Card>
+  </div>
+
+    <!-- 매출 분석 (탭 + 공통 Range 컨트롤) -->
     <Card class="chart-card">
       <template #title>
         매출 분석
-        <Dropdown
-          v-model="selectedRange"
-          :options="rangeOptions"
-          optionLabel="label"
-          optionValue="value"
-          class="ml-2"
-          size="small"
-          @change="fetchAllCharts"
-        />
+        <div class="flex items-center gap-2 ml-2">
+          <Dropdown
+            v-model="selectedRange"
+            :options="rangeOptions"
+            optionLabel="label"
+            optionValue="value"
+            size="small"
+            @change="onRangeChange"
+          />
+
+          <!-- 일별: 7/15/21 버튼 -->
+          <template v-if="selectedRange === 'daily'">
+            <div class="flex gap-1 ml-2">
+              <Button
+                v-for="d in dayOptions"
+                :key="d"
+                :label="`최근 ${d}일`"
+                size="small"
+                :severity="selectedDays === d ? 'primary' : 'secondary'"
+                @click="updateDays(d)"
+              />
+            </div>
+          </template>
+
+          <!-- 월별: 연/월 드롭다운 -->
+          <template v-else-if="selectedRange === 'monthly'">
+            <div class="flex items-center gap-2 ml-2">
+              <Dropdown
+                v-model="selectedYear"
+                :options="yearOptions"
+                size="small"
+                @change="updateMonth"
+              />
+              <Dropdown
+                v-model="selectedMonth"
+                :options="monthOptions"
+                size="small"
+                @change="updateMonth"
+              >
+                <template #option="slotProps">
+                  <span>{{ slotProps.option }}월</span>
+                </template>
+                <template #value="slotProps">
+                  <span>{{ slotProps.value }}월</span>
+                </template>
+              </Dropdown>
+            </div>
+          </template>
+        </div>
       </template>
 
       <template #content>
         <TabView>
-          <!-- ① 매출 추이 (본사 주문금액 vs 실제 매출) -->
           <TabPanel header="매출 추이">
             <Chart type="line" :data="trendData" :options="trendOptions" />
           </TabPanel>
 
-          <!-- ② 순이익(영업이익) = 실제매출 - 본사주문 -->
           <TabPanel header="매출-주문">
             <Chart type="bar" :data="profitData" :options="profitOptions" />
           </TabPanel>
 
-          <!-- ③ 작년 vs 올해 매출 비교 -->
           <TabPanel header="작년 vs 올해">
             <Chart type="bar" :data="compareData" :options="compareOptions" />
           </TabPanel>
 
-          <!-- ④ 원두 판매 랭킹 (Progress Bar) -->
           <TabPanel header="원두 판매 랭킹">
             <div v-if="beanRank.length" class="bean-rank-wrap">
               <div v-for="bean in beanRank" :key="bean.LABEL ?? bean.name" class="bean-rank">
@@ -133,22 +172,22 @@
                   </div>
                   <div class="bean-percent">{{ roundRate(bean.RATE ?? bean.rate) }}%</div>
                 </div>
-                <ProgressBar
-                  :value="roundRate(bean.RATE ?? bean.rate)"
-                  :showValue="false"
-                  style="height:10px"
-                />
+                <ProgressBar :value="roundRate(bean.RATE ?? bean.rate)" :showValue="false" style="height:10px" />
               </div>
             </div>
             <Message v-else severity="info" class="mt-2">표시할 랭킹 데이터가 없습니다.</Message>
+          </TabPanel>
+
+          <TabPanel header="결제수단별">
+            <Chart type="bar" :data="payMethodData" :options="payMethodOptions" />
           </TabPanel>
         </TabView>
       </template>
     </Card>
 
-    <!-- 미결제 주문/반품 요약 -->
+    <!-- 미결제 주문건 리스트 -->
     <Card class="table-card">
-      <template #title>미결제 주문/반품 요약</template>
+      <template #title>미결제 주문건</template>
       <template #content>
         <div class="table-toolbar">
           <span class="p-input-icon-left">
@@ -177,30 +216,6 @@
 
     <!-- 재고 / 공지 -->
     <div class="two-col">
-      <Card class="table-card">
-        <template #title>재고 현황 <span class="muted">(안전재고 대비)</span></template>
-        <template #content>
-          <DataTable :value="stock" paginator :rows="8" class="p-datatable-sm">
-            <Column field="sku" header="SKU" style="width:120px" />
-            <Column field="name" header="품목명" />
-            <Column field="qty" header="현재고" style="width:90px" />
-            <Column field="safety" header="안전재고" style="width:100px" />
-            <Column header="발주 필요" style="width:120px">
-              <template #body="{ data }">
-                <Tag :value="data.qty < data.safety ? '필요' : '정상'" :severity="data.qty < data.safety ? 'danger' : 'success'" />
-              </template>
-            </Column>
-            <Column field="price" header="단가" style="width:120px">
-              <template #body="{ data }">{{ asKRW(data.price) }}</template>
-            </Column>
-          </DataTable>
-          <Message v-if="lowItems.length" severity="warn" class="mt-3">
-            <i class="pi pi-exclamation-triangle mr-2"></i>안전재고 미만 품목:
-            {{ lowItems.map(i => i.name).join(', ') }}
-          </Message>
-        </template>
-      </Card>
-
       <Card class="notice-card">
         <template #title>공지사항</template>
         <template #content>
@@ -217,14 +232,6 @@
           <div class="more"><Button label="모든 공지 보기" class="p-button-text" /></div>
         </template>
       </Card>
-    </div>
-
-    <!-- 하단 CTA -->
-    <div class="footer-cta">
-      <Message severity="info" icon="pi pi-info-circle">
-        수기 입력보다 <b>발주 템플릿</b>을 사용하면 편합니다.
-      </Message>
-      <Button label="발주 템플릿 다운로드" icon="pi pi-download" />
     </div>
   </div>
 </template>
@@ -253,11 +260,11 @@ ChartJS.register(
 const userStore = useUserStore();
 const vendorId = userStore.code;
 
-// 선택 매장 (옵션 준비시 사용)
+// 선택 매장
 const selectedStore = ref(null)
 const stores = ref([])
 
-// 날짜/금액/상태 유틸
+// 유틸
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   const date = new Date(dateStr)
@@ -277,11 +284,11 @@ const statusColor = (status) => {
   }
 }
 
-// ===== KPI (POS 기준 계산) =====
+// ===== KPI =====
 const kpi = ref({
   todaySales: 0,
   monthSales: 0,
-  unshipped: 0,
+  creditLimit: 0,
   nextDueAmount: 0,
   nextDueDate: '',
   dailyRate: 0,
@@ -290,42 +297,39 @@ const kpi = ref({
 
 const fetchKpi = async () => {
   try {
-    // 오늘/어제
-    const { data: daily } = await axios.get('/api/sales/daily-summary', {
-      params: { vendorId }
-    })
+    const { data: daily } = await axios.get('/api/sales/daily-summary', { params: { vendorId } })
     const todaySales = Number(daily.today || 0)
     const yesterdaySales = Number(daily.yesterday || 0)
-    const dailyRate = yesterdaySales > 0
-      ? (((todaySales - yesterdaySales) / yesterdaySales) * 100).toFixed(1)
-      : 0
+    const dailyRate = yesterdaySales > 0 ? (((todaySales - yesterdaySales) / yesterdaySales) * 100).toFixed(1) : 0
 
-    // 이번달/지난달 (BranchPOS의 월별 요약)
     const now = new Date()
     const { data: monthly } = await axios.get('/api/sales/monthly-summary', {
       params: { vendorId, year: now.getFullYear(), month: now.getMonth() + 1 }
     })
     const monthSales = Number(monthly.total || 0)
     const lastMonthSales = Number(monthly.lastMonthTotal || 0)
-    const monthRate = lastMonthSales > 0
-      ? (((monthSales - lastMonthSales) / lastMonthSales) * 100).toFixed(1)
-      : 0
+    const monthRate = lastMonthSales > 0 ? (((monthSales - lastMonthSales) / lastMonthSales) * 100).toFixed(1) : 0
+
+    // ✅ 여기! 최종 금융 요약 정보 호출
+    const { data: finance } = await axios.get('/api/sales/finance-summary', { params: { vendorId } })
 
     kpi.value = {
       todaySales,
       monthSales,
       dailyRate,
       monthRate,
-      unshipped: 0,
-      nextDueAmount: 0,
-      nextDueDate: ''
+      creditLimit: Number(finance.creditLimit || 0),  // 여신한도
+      nextDueAmount: Number(finance.nextDueAmount || 0),  // 납부 예정금
+      nextDueDate: finance.nextDueDate || '',            // 납부 예정일
+      remainCredit: Number(finance.remainCredit || 0)    // 여신잔액 ✅
     }
   } catch (err) {
     console.error('❌ KPI 불러오기 오류:', err)
   }
 }
 
-// ===== 주문 표 =====
+
+// ===== 주문 목록 결제안한것들....꼭 필요한가?=====
 const orders = ref([])
 const orderQuery = ref('')
 const fetchOrders = async () => {
@@ -344,17 +348,7 @@ const filteredOrders = computed(() =>
   )
 )
 
-// ===== 재고/공지 =====
-const stock = ref([])
-const lowItems = computed(() => stock.value.filter(s => s.qty < s.safety))
-const fetchStock = async () => {
-  try {
-    const { data } = await axios.get('/api/dashboard/stock', { params: { vendorId } })
-    stock.value = data
-  } catch (err) {
-    console.error('재고 조회 오류:', err)
-  }
-}
+// ===== 공지 =====
 const notices = ref([])
 const fetchNotices = async () => {
   try {
@@ -364,139 +358,123 @@ const fetchNotices = async () => {
     console.error('공지사항 조회 오류:', err)
   }
 }
+const noticeColor = (cat) => (cat === '공지' ? 'info' : cat === '업데이트' ? 'success' : 'secondary')
 
-// ===== 매출 분석 (탭) =====
+// ===== Range 공통 상태 =====
 const selectedRange = ref('daily')
 const rangeOptions = [
   { label: '일별', value: 'daily' },
   { label: '월별', value: 'monthly' }
 ]
 
-// ① 매출 추이
+// 일별 버튼
+const selectedDays = ref(7)
+const dayOptions = [7, 15, 21]
+
+// 월별 드롭다운
+const selectedYear = ref(new Date().getFullYear())
+const selectedMonth = ref(new Date().getMonth() + 1)
+// 필요 연도만 넣으세요(예시)
+const yearOptions = [new Date().getFullYear() - 2, new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1]
+const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1)
+
+// ===== 차트: 매출 추이 =====
 const trendData = ref({ labels: [], datasets: [] })
 const trendOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
-  layout: { padding: 0 },
   plugins: { legend: { position: 'bottom' } },
   scales: {
-    x: {
-      type: selectedRange.value === 'daily' ? 'time' : 'category',
-      time: selectedRange.value === 'daily' ? { unit: 'day' } : undefined
-    },
-    y: {
-      beginAtZero: true,
-      ticks: { callback: (v) => (v / 10000).toLocaleString() + '만 원' }
-    }
+    x: { type: selectedRange.value === 'daily' ? 'time' : 'category', time: selectedRange.value === 'daily' ? { unit: 'day' } : undefined, ticks: { autoSkip: true, maxTicksLimit: 8 } },
+    y: { beginAtZero: true, ticks: { callback: (v) => (v / 10000).toLocaleString() + '만 원' } }
   },
   elements: { line: { tension: 0.35 }, point: { radius: 2 } }
 }))
 
-// ② 순이익(영업이익)
+const fetchTrend = async () => {
+  try {
+    const { data } = await axios.get('/api/branch/salestrend', { params: { vendorId, range: selectedRange.value } })
+    let labels = (data || []).map(d => d.LABEL)
+    let orderAmt = (data || []).map(d => Number(d.ORDER_AMT ?? 0))
+    let salesAmt = (data || []).map(d => Number(d.SALES_AMT ?? 0))
+
+    // 프론트 슬라이싱
+    ;({ labels, datasets: [orderAmt, salesAmt] } = applyTimeFilter(labels, [orderAmt, salesAmt]))
+
+    trendData.value = {
+      labels,
+      datasets: [
+        { label: '본사 주문금액', data: orderAmt, borderColor: '#93c5fd', backgroundColor: 'rgba(147,197,253,0.20)', fill: true },
+        { label: '실제 매출금액', data: salesAmt, borderColor: '#4F46E5', backgroundColor: 'rgba(79,70,229,0.10)', fill: true }
+      ]
+    }
+  } catch (err) {
+    console.error('매출 추이 조회 오류:', err)
+    trendData.value = { labels: [], datasets: [] }
+  }
+}
+
+// ===== 차트: 순이익 =====
 const profitData = ref({ labels: [], datasets: [] })
 const profitOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
   plugins: { legend: { display: false } },
   scales: {
-    x: {
-      type: selectedRange.value === 'daily' ? 'time' : 'category',
-      time: selectedRange.value === 'daily' ? { unit: 'day' } : undefined
-    },
-    y: {
-      beginAtZero: true,
-      ticks: { callback: (v) => (v / 10000).toLocaleString() + '만 원' }
-    }
+    x: { type: selectedRange.value === 'daily' ? 'time' : 'category', time: selectedRange.value === 'daily' ? { unit: 'day' } : undefined, ticks: { autoSkip: true, maxTicksLimit: 8 } },
+    y: { beginAtZero: true, ticks: { callback: (v) => (v / 10000).toLocaleString() + '만 원' } }
   }
 }))
-
-const fetchTrend = async () => {
+const fetchProfit = async () => {
   try {
-    const { data } = await axios.get('/api/branch/salestrend', {
-      params: { vendorId, range: selectedRange.value } // 기대 필드: LABEL, ORDER_AMT, SALES_AMT
-    })
+    const { data } = await axios.get('/api/branch/salestrend', { params: { vendorId, range: selectedRange.value } })
+    let labels = (data || []).map(d => d.LABEL)
+    let orderAmt = (data || []).map(d => Number(d.ORDER_AMT ?? 0))
+    let salesAmt = (data || []).map(d => Number(d.SALES_AMT ?? 0))
+    let profit = salesAmt.map((v, i) => v - (orderAmt[i] ?? 0))
 
-    const labels = (data || []).map(d => d.LABEL)
-    const orderAmt = (data || []).map(d => Number(d.ORDER_AMT ?? 0))
-    const salesAmt = (data || []).map(d => Number(d.SALES_AMT ?? 0))
-    const profits = salesAmt.map((v, i) => v - (orderAmt[i] ?? 0))
+    ;({ labels, datasets: [profit] } = applyTimeFilter(labels, [profit]))
 
-    // 매출 추이 라인차트
-    trendData.value = {
-      labels,
-      datasets: [
-        {
-          label: '본사 주문금액',
-          data: orderAmt,
-          borderColor: '#93c5fd',
-          backgroundColor: 'rgba(147,197,253,0.20)',
-          fill: true
-        },
-        {
-          label: '실제 매출금액',
-          data: salesAmt,
-          borderColor: '#4F46E5',
-          backgroundColor: 'rgba(79,70,229,0.10)',
-          fill: true
-        }
-      ]
-    }
-
-    // 순이익 막대차트 (동일 응답 재활용)
     profitData.value = {
       labels,
-      datasets: [
-        {
-          label: '순이익',
-          data: profits,
-          backgroundColor: profits.map(v => v >= 0 ? '#22c55e' : '#ef4444')
-        }
-      ]
+      datasets: [{ label: '순이익', data: profit, backgroundColor: profit.map(v => v >= 0 ? '#22c55e' : '#ef4444') }]
     }
   } catch (err) {
-    console.error('매출 추이/순이익 조회 오류:', err)
-    trendData.value = { labels: [], datasets: [] }
+    console.error('순이익 조회 오류:', err)
     profitData.value = { labels: [], datasets: [] }
   }
 }
 
-// ③ 작년 vs 올해 매출 비교
+// ===== 차트: 작년 vs 올해 =====
 const compareData = ref({ labels: [], datasets: [] })
 const compareOptions = computed(() => ({
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: { legend: { position: 'bottom' } },
-  scales: {
-    x: { type: 'category' },
-    y: {
-      beginAtZero: true,
-      ticks: { callback: (v) => (v / 10000).toLocaleString() + '만 원' }
-    }
-  }
+  responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } },
+  scales: { x: { type: 'category', ticks: { autoSkip: true, maxTicksLimit: 8 } }, y: { beginAtZero: true, ticks: { callback: (v) => (v / 10000).toLocaleString() + '만 원' } } }
 }))
-
 const fetchCompare = async () => {
   try {
-    const { data } = await axios.get('/api/branch/salescompare', {
-      params: { vendorId, range: selectedRange.value }
-    })
-    const list = data?.compareData ?? []
-    const labels = list.map(d => d.LABEL)
+    const { data } = await axios.get('/api/branch/salescompare', { params: { vendorId, range: selectedRange.value } })
+    let list = data?.compareData ?? []
+    let labels = list.map(d => d.LABEL)
+    let lastYear = list.map(d => Number(d.LAST_YEAR ?? 0))
+    let thisYear = list.map(d => Number(d.THIS_YEAR ?? 0))
+
+    ;({ labels, datasets: [lastYear, thisYear] } = applyTimeFilter(labels, [lastYear, thisYear]))
 
     compareData.value = {
       labels,
       datasets: [
-        { label: '작년', data: list.map(d => Number(d.LAST_YEAR ?? 0)), backgroundColor: '#93c5fd' },
-        { label: '올해', data: list.map(d => Number(d.THIS_YEAR ?? 0)), backgroundColor: '#4F46E5' }
+        { label: '작년', data: lastYear, backgroundColor: '#93c5fd' },
+        { label: '올해', data: thisYear, backgroundColor: '#4F46E5' }
       ]
     }
   } catch (err) {
-    console.error('작년 vs 올해 매출 비교 조회 오류:', err)
+    console.error('작년 vs 올해 조회 오류:', err)
     compareData.value = { labels: [], datasets: [] }
   }
 }
 
-// ④ 원두 랭킹
+// ===== 원두 랭킹 =====
 const beanRank = ref([])
 const roundRate = (v) => {
   if (v === null || v === undefined) return 0
@@ -505,32 +483,95 @@ const roundRate = (v) => {
 }
 const fetchCoffeeRank = async () => {
   try {
-    const { data } = await axios.get('/api/branch/coffeerank', {
-      params: { vendorId, range: selectedRange.value }
-    })
+    const { data } = await axios.get('/api/branch/coffeerank', { params: { vendorId, range: selectedRange.value } })
     const list = Array.isArray(data) ? data : (data?.list ?? data?.items ?? [])
-    beanRank.value = list.map(r => ({
-      LABEL: r.LABEL ?? r.name ?? '',
-      RATE: roundRate(r.RATE ?? r.rate ?? 0)
-    }))
+    // 랭킹은 서버에서 이미 기간 반영한다고 가정 → 추가 슬라이싱 없음
+    beanRank.value = list.map(r => ({ LABEL: r.LABEL ?? r.name ?? '', RATE: roundRate(r.RATE ?? r.rate ?? 0) }))
   } catch (e) {
     console.error('원두 랭킹 조회 오류:', e)
     beanRank.value = []
   }
 }
 
-// 공통 fetch
-const fetchAllCharts = () => {
-  fetchTrend()
-  fetchCompare()
-  fetchCoffeeRank()
+// ===== 결제수단별 =====
+const payMethodData = ref({ labels: [], datasets: [] })
+const payMethodOptions = computed(() => ({
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { position: 'bottom' },
+    tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toLocaleString('ko-KR')}원` } }
+  },
+  scales: {
+    x: { stacked: true, type: selectedRange.value === 'daily' ? 'time' : 'category', time: selectedRange.value === 'daily' ? { unit: 'day' } : undefined, ticks: { autoSkip: true, maxTicksLimit: 8 } },
+    y: { stacked: true, beginAtZero: true, ticks: { callback: (v) => (v / 10000).toLocaleString() + '만 원' } }
+  }
+}))
+const fetchPayMethod = async () => {
+  try {
+    const { data } = await axios.get('/api/branch/paymethod', { params: { vendorId, range: selectedRange.value } })
+    let labels = (data || []).map(d => d.LABEL)
+    let cardAmt = (data || []).map(d => Number(d.CARD ?? 0))
+    let cashAmt = (data || []).map(d => Number(d.CASH ?? 0))
+
+    ;({ labels, datasets: [cardAmt, cashAmt] } = applyTimeFilter(labels, [cardAmt, cashAmt]))
+
+    payMethodData.value = {
+      labels,
+      datasets: [
+        { label: '카드', data: cardAmt, backgroundColor: '#93c5fd' },
+        { label: '현금', data: cashAmt, backgroundColor: '#c7d2fe' }
+      ]
+    }
+  } catch (err) {
+    console.error('결제수단별 매출 조회 오류:', err)
+    payMethodData.value = { labels: [], datasets: [] }
+  }
 }
 
-// 최초 로드
+// ===== 공통 슬라이싱 유틸 =====
+// labels: ['YYYY-MM-DD' or 'YYYY-MM'] 가정
+// datasets: [arr1, arr2, ...] 각 원소 길이 = labels 길이
+const applyTimeFilter = (labels, datasets) => {
+  if (selectedRange.value === 'daily') {
+    const n = selectedDays.value
+    const start = Math.max(labels.length - n, 0)
+    return { labels: labels.slice(start), datasets: datasets.map(d => d.slice(start)) }
+  } else {
+    const target = `${selectedYear.value}-${String(selectedMonth.value).padStart(2, '0')}`
+    const idx = labels.findIndex(l => l === target)
+    if (idx >= 0) {
+      return { labels: [labels[idx]], datasets: datasets.map(d => [d[idx]]) }
+    } else {
+      return { labels: [target], datasets: datasets.map(() => [0]) }
+    }
+  }
+}
+
+// ===== 이벤트 핸들러 =====
+const onRangeChange = () => {
+  // 일별로 바꾸면 기본 7일, 월별로 바꾸면 현재연/월 유지
+  if (selectedRange.value === 'daily') selectedDays.value = 7
+  fetchAllCharts()
+}
+const updateDays = (days) => { selectedDays.value = days; fetchAllCharts() }
+const updateMonth = () => { fetchAllCharts() }
+
+// ===== 공통 fetch =====
+const fetchAllCharts = async () => {
+   await Promise.all([
+     fetchTrend(),
+     fetchProfit(),
+     fetchCompare(),
+     fetchCoffeeRank(),
+     fetchPayMethod()
+   ])
+ }
+
+ // 최초 로드
 onMounted(() => {
   fetchKpi()
   fetchOrders()
-  fetchStock()
   fetchNotices()
   fetchAllCharts()
 })
@@ -557,39 +598,15 @@ onMounted(() => {
 .quick-card:active { transform: scale(0.97); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08); }
 
 /* 차트 카드 */
-.chart-card {
-  margin-bottom: 16px;
-}
-
-/* 카드 콘텐츠 영역 */
+.chart-card { margin-bottom: 16px; }
 .chart-card :deep(.p-card-content) {
-  position: relative;
-  height: 380px;              /* ✅ 전체 탭 동일 높이 */
-  padding: 24px 16px 16px;    /* ✅ 위쪽 약간 여백 추가 (제목이 안 짤리게) */
-  overflow: hidden;           /* ✅ 그래프 삐져나오는 현상 차단 */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  position: relative; height: 380px; padding: 24px 16px 16px;
+  overflow: hidden; display: flex; flex-direction: column; justify-content: center;
 }
-
-/* Chart.js 캔버스 영역 */
 .chart-card :deep(canvas) {
-  flex: 1;                    /* ✅ 자동 비율로 높이 채우기 */
-  width: 100% !important;
-  height: auto !important;
-  max-height: 340px !important; /* ✅ 그래프가 너무 커지지 않도록 상한 고정 */
-  display: block;
+  flex: 1; width: 100% !important; height: auto !important; max-height: 340px !important; display: block;
 }
-
-/* Chart.js 내부 여백 완전 제거 */
-.chart-card :deep(.p-chart) canvas {
-  padding: 0 !important;
-  margin: 0 !important;
-}
-
-
-
-
+.chart-card :deep(.p-chart) canvas { padding: 0 !important; margin: 0 !important; }
 
 /* 원두 랭킹 */
 .bean-rank-wrap { display:flex; flex-direction:column; gap:10px; }
@@ -614,9 +631,6 @@ onMounted(() => {
 .notice-card .title{ font-weight:700; margin-top:4px; }
 .notice-card .desc{ color:#6b7280; margin:.25rem 0 0; font-size:14px; }
 .more{ text-align:right; margin-top:8px; }
-
-/* 하단 CTA */
-.footer-cta { margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
 
 /* 반응형 */
 @media (max-width: 1200px){

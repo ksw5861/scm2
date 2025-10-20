@@ -1,10 +1,13 @@
 package com.yedam.scm.purchaseMat.mapper;
 
+import java.sql.Date;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.dto.PurchaseListSearchDTO;
 import com.yedam.scm.vo.MatStatusVO;
 import com.yedam.scm.vo.MatVendorVO;
 import com.yedam.scm.vo.MrpDetailVO;
@@ -40,8 +43,8 @@ public interface PurchaseMatMapper {
     void callReqestMatProc(PurchaseMatVO requestList);
    
     //자재주문목록
-    List<PurchaseMatVO> getPurchaseList(@Param("startRow")int startRow, @Param("endRow")int endRow);
-    Long getPurchaseMasterCount();
+    List<PurchaseMatVO> getPurchaseList(@Param("page")PageDTO PageDTO, @Param("search")PurchaseListSearchDTO searchDTO);
+    Long getPurchaseMasterCount(@Param("search")PurchaseListSearchDTO searchDTO);
 
     //자재주문상태목록
      List<PurStatusLogVO> getPurchaseStatus(Long purId);

@@ -81,7 +81,7 @@
 
 
 <!-- 판매 상세 등록 -->
-<insert id="insertSaleDetail" parameterType="com.yedam.scm.vo.SalesDetailVO">
+<insert id="insertSaleDetail" parameterType="SalesDetailVO">
 
   <!-- 🧩 1. 판매 상세 ID 자동 생성 -->
   <selectKey keyProperty="sdetailId" resultType="string" order="BEFORE">
@@ -187,134 +187,327 @@
 
 
 
-  
-<!-- ✅ 최근 7일: 본사 주문금액 vs 실제 매출금액 (두 라인) -->
-<select id="getSalesTrendDaily" resultType="hashmap">
-  SELECT 
+  <!-- =========================================================
+       그래프 ① 매출 추이 (주문 vs 매출)
+       - 일별: 최근 180일
+       - 월별: 최근 24개월
+       LABEL, ORDER_AMT(=sales_order.total_price), SALES_AMT(=sales_master.sale_total_amount)
+  ========================================================== -->
+  <!-- 일별 -->
+  <select id="getSalesTrendDaily" resultType="hashmap">
+    SELECT
       d.LABEL,
-      NVL(s.SALES_AMT, 0)  AS SALES_AMT,  
-      NVL(o.ORDER_AMT, 0)  AS ORDER_AMT  
-  FROM (
-     
+      NVL(s.SALES_AMT, 0) AS SALES_AMT,
+      NVL(o.ORDER_AMT, 0) AS ORDER_AMT
+    FROM (
       SELECT TO_CHAR(TRUNC(sale_date), 'YYYY-MM-DD') AS LABEL
         FROM sales_master
-       WHERE TRUNC(sale_date) <![CDATA[>=]]> TRUNC(SYSDATE - 6)
+       WHERE TRUNC(sale_date) <![CDATA[>=]]> TRUNC(SYSDATE - 179)
+         AND vendor_id = #{vendorId}
        GROUP BY TRUNC(sale_date)
       UNION
       SELECT TO_CHAR(TRUNC(order_date), 'YYYY-MM-DD') AS LABEL
         FROM sales_order
-       WHERE TRUNC(order_date) <![CDATA[>=]]> TRUNC(SYSDATE - 6)
+       WHERE TRUNC(order_date) <![CDATA[>=]]> TRUNC(SYSDATE - 179)
+         AND vendor_id = #{vendorId}
        GROUP BY TRUNC(order_date)
-  ) d
-  LEFT JOIN (
+    ) d
+    LEFT JOIN (
       SELECT TO_CHAR(TRUNC(sale_date), 'YYYY-MM-DD') AS LABEL,
              SUM(sale_total_amount) AS SALES_AMT
         FROM sales_master
-       WHERE vendor_id = #{vendorId}
-         AND TRUNC(sale_date) <![CDATA[>=]]> TRUNC(SYSDATE - 6)
+       WHERE TRUNC(sale_date) <![CDATA[>=]]> TRUNC(SYSDATE - 179)
+         AND vendor_id = #{vendorId}
        GROUP BY TRUNC(sale_date)
-  ) s ON s.LABEL = d.LABEL
-  LEFT JOIN (
+    ) s ON s.LABEL = d.LABEL
+    LEFT JOIN (
       SELECT TO_CHAR(TRUNC(order_date), 'YYYY-MM-DD') AS LABEL,
              SUM(total_price) AS ORDER_AMT
         FROM sales_order
-       WHERE vendor_id = #{vendorId}
-         AND TRUNC(order_date) <![CDATA[>=]]> TRUNC(SYSDATE - 6)
+       WHERE TRUNC(order_date) <![CDATA[>=]]> TRUNC(SYSDATE - 179)
+         AND vendor_id = #{vendorId}
        GROUP BY TRUNC(order_date)
-  ) o ON o.LABEL = d.LABEL
-  ORDER BY d.LABEL
-</select>
+    ) o ON o.LABEL = d.LABEL
+    ORDER BY d.LABEL
+  </select>
 
-<!-- ✅ 최근 6개월: 본사 주문금액 vs 실제 매출금액 (두 라인) -->
-<select id="getSalesTrendMonthly" resultType="hashmap">
-  SELECT 
+  <!-- 월별 -->
+  <select id="getSalesTrendMonthly" resultType="hashmap">
+    SELECT
       d.LABEL,
-      NVL(s.SALES_AMT, 0)  AS SALES_AMT,  
-      NVL(o.ORDER_AMT, 0)  AS ORDER_AMT   
-  FROM (
-     
+      NVL(s.SALES_AMT, 0) AS SALES_AMT,
+      NVL(o.ORDER_AMT, 0) AS ORDER_AMT
+    FROM (
       SELECT TO_CHAR(TRUNC(sale_date, 'MM'), 'YYYY-MM') AS LABEL
         FROM sales_master
-       WHERE TRUNC(sale_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -5)
+       WHERE TRUNC(sale_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -23)
+         AND vendor_id = #{vendorId}
        GROUP BY TRUNC(sale_date, 'MM')
       UNION
       SELECT TO_CHAR(TRUNC(order_date, 'MM'), 'YYYY-MM') AS LABEL
         FROM sales_order
-       WHERE TRUNC(order_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -5)
+       WHERE TRUNC(order_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -23)
+         AND vendor_id = #{vendorId}
        GROUP BY TRUNC(order_date, 'MM')
-  ) d
-  LEFT JOIN (
+    ) d
+    LEFT JOIN (
       SELECT TO_CHAR(TRUNC(sale_date, 'MM'), 'YYYY-MM') AS LABEL,
              SUM(sale_total_amount) AS SALES_AMT
         FROM sales_master
-       WHERE vendor_id = #{vendorId}
-         AND TRUNC(sale_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -5)
+       WHERE TRUNC(sale_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -23)
+         AND vendor_id = #{vendorId}
        GROUP BY TRUNC(sale_date, 'MM')
-  ) s ON s.LABEL = d.LABEL
-  LEFT JOIN (
+    ) s ON s.LABEL = d.LABEL
+    LEFT JOIN (
       SELECT TO_CHAR(TRUNC(order_date, 'MM'), 'YYYY-MM') AS LABEL,
              SUM(total_price) AS ORDER_AMT
         FROM sales_order
-       WHERE vendor_id = #{vendorId}
-         AND TRUNC(order_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -5)
+       WHERE TRUNC(order_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -23)
+         AND vendor_id = #{vendorId}
        GROUP BY TRUNC(order_date, 'MM')
-  ) o ON o.LABEL = d.LABEL
-  ORDER BY d.LABEL
-</select>
+    ) o ON o.LABEL = d.LABEL
+    ORDER BY d.LABEL
+  </select>
 
-<!-- ✅ 작년 vs 올해 월별 매출 비교 -->
-<select id="getSalesCompare" resultType="hashmap">
-  SELECT 
-    TO_CHAR(TRUNC(sale_date, 'MM'), 'MM') AS LABEL,
-    SUM(CASE WHEN TO_CHAR(sale_date, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY') 
-             THEN sale_total_amount ELSE 0 END) AS THIS_YEAR,
-    SUM(CASE WHEN TO_CHAR(sale_date, 'YYYY') = TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYY')
-             THEN sale_total_amount ELSE 0 END) AS LAST_YEAR
-  FROM sales_master
- WHERE vendor_id = #{vendorId}
-  AND sale_date <![CDATA[>=]]> ADD_MONTHS(SYSDATE, -24)
+  <!-- =========================================================
+       그래프 ② 작년 vs 올해 비교 (range: daily|monthly)
+       - daily: 최근 180일 (YYYY-MM-DD 단위)
+         THIS_YEAR = 해당일자 금년, LAST_YEAR = 동일 일자 전년
+       - monthly: 최근 24개월 (YYYY-MM)
+         THIS_YEAR = 해당월 금년, LAST_YEAR = 동일 월 전년
+  ========================================================== -->
+  <select id="getSalesCompare" resultType="hashmap">
+    <choose>
+      <!-- 일별 비교 -->
+      <when test="range == 'daily'">
+        SELECT
+          d.LABEL,
+          NVL(s_this.AMT, 0) AS THIS_YEAR,
+          NVL(s_last.AMT, 0) AS LAST_YEAR
+        FROM (
+          SELECT TO_CHAR(TRUNC(sale_date), 'YYYY-MM-DD') AS LABEL
+            FROM sales_master
+           WHERE TRUNC(sale_date) <![CDATA[>=]]> TRUNC(SYSDATE - 179)
+             AND vendor_id = #{vendorId}
+           GROUP BY TRUNC(sale_date)
+        ) d
+        LEFT JOIN (
+          SELECT TO_CHAR(TRUNC(sale_date), 'YYYY-MM-DD') AS LABEL,
+                 SUM(sale_total_amount) AS AMT
+            FROM sales_master
+           WHERE TRUNC(sale_date) <![CDATA[>=]]> TRUNC(SYSDATE - 179)
+             AND vendor_id = #{vendorId}
+           GROUP BY TRUNC(sale_date)
+        ) s_this ON s_this.LABEL = d.LABEL
+        LEFT JOIN (
+          SELECT TO_CHAR(TRUNC(ADD_MONTHS(sale_date, +12)), 'YYYY-MM-DD') AS LABEL,
+                 SUM(sale_total_amount) AS AMT
+            FROM sales_master
+           WHERE TRUNC(sale_date) <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE - 179), -12)
+             AND TRUNC(sale_date) <![CDATA[<]]>  ADD_MONTHS(TRUNC(SYSDATE + 1), -12)
+             AND vendor_id = #{vendorId}
+           GROUP BY TRUNC(ADD_MONTHS(sale_date, +12))
+        ) s_last ON s_last.LABEL = d.LABEL
+        ORDER BY d.LABEL
+      </when>
 
-  GROUP BY TO_CHAR(TRUNC(sale_date, 'MM'), 'MM')
-  ORDER BY LABEL
-</select>
+      <!-- 월별 비교 -->
+      <otherwise>
+        SELECT
+          d.LABEL,
+          NVL(s_this.AMT, 0) AS THIS_YEAR,
+          NVL(s_last.AMT, 0) AS LAST_YEAR
+        FROM (
+          SELECT TO_CHAR(TRUNC(sale_date, 'MM'), 'YYYY-MM') AS LABEL
+            FROM sales_master
+           WHERE TRUNC(sale_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -23)
+             AND vendor_id = #{vendorId}
+           GROUP BY TRUNC(sale_date, 'MM')
+        ) d
+        LEFT JOIN (
+          SELECT TO_CHAR(TRUNC(sale_date, 'MM'), 'YYYY-MM') AS LABEL,
+                 SUM(sale_total_amount) AS AMT
+            FROM sales_master
+           WHERE TRUNC(sale_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -23)
+             AND vendor_id = #{vendorId}
+           GROUP BY TRUNC(sale_date, 'MM')
+        ) s_this ON s_this.LABEL = d.LABEL
+        LEFT JOIN (
+          SELECT TO_CHAR(ADD_MONTHS(TRUNC(sale_date, 'MM'), +12), 'YYYY-MM') AS LABEL,
+                 SUM(sale_total_amount) AS AMT
+            FROM sales_master
+           WHERE TRUNC(sale_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -35)
+             AND TRUNC(sale_date, 'MM') <![CDATA[<]]>  ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -11)
+             AND vendor_id = #{vendorId}
+           GROUP BY ADD_MONTHS(TRUNC(sale_date, 'MM'), +12)
+        ) s_last ON s_last.LABEL = d.LABEL
+        ORDER BY d.LABEL
+      </otherwise>
+    </choose>
+  </select>
 
-<!-- ✅ 원두 판매 랭킹 (최근 3개월 / 자동 비율 계산 TOP 5 ) -->
-<select id="getCoffeeRank" resultType="hashmap">
+  <!-- =========================================================
+       그래프 ③ 원두 판매 랭킹 (최근 3개월, TOP5)
+  ========================================================== -->
+  <select id="getCoffeeRank" parameterType="map" resultType="hashmap">
+  <choose>
+    <!-- 일별: 최근 30일 -->
+    <when test="range == 'daily'">
+      SELECT * FROM (
+        SELECT sd.sale_prod_name AS LABEL,
+               ROUND( SUM(sd.sale_total_price) /
+                      NULLIF( (SELECT SUM(sd2.sale_total_price)
+                                 FROM sales_detail sd2
+                                 JOIN sales_master sm2 ON sd2.sale_id = sm2.sale_id
+                                WHERE sm2.vendor_id = #{vendorId}
+                                  AND TRUNC(sm2.sale_date) <![CDATA[>=]]> TRUNC(SYSDATE - 30)
+                              ), 0) * 100, 1) AS RATE
+          FROM sales_detail sd
+          JOIN sales_master sm ON sd.sale_id = sm.sale_id
+         WHERE sm.vendor_id = #{vendorId}
+           AND TRUNC(sm.sale_date) <![CDATA[>=]]> TRUNC(SYSDATE - 30)
+         GROUP BY sd.sale_prod_name
+         ORDER BY RATE DESC
+      ) WHERE ROWNUM <![CDATA[<=]]> 5
+    </when>
+
+    <!-- 월별: 최근 3개월 -->
+<otherwise>
   SELECT * FROM (
-    SELECT 
-      sd.sale_prod_name AS LABEL,
-      ROUND(
-        (SUM(sd.sale_total_price) /
-         (SELECT SUM(sd2.sale_total_price)
-            FROM sales_detail sd2
-            JOIN sales_master sm2 ON sd2.sale_id = sm2.sale_id
-           WHERE sm2.vendor_id = #{vendorId}
-             AND sm2.sale_date <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE), -3)
-         ) * 100
-        ), 1
-      ) AS RATE
-    FROM sales_detail sd
-    JOIN sales_master sm ON sd.sale_id = sm.sale_id
-    WHERE sm.vendor_id = #{vendorId}
-      AND sm.sale_date <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE), -3)
-    GROUP BY sd.sale_prod_name
-    ORDER BY RATE DESC
-  ) 
-  WHERE ROWNUM <![CDATA[<=]]> 5
+    SELECT sd.sale_prod_name AS LABEL,
+           ROUND(
+             SUM(sd.sale_total_price) /
+             NULLIF(
+               (SELECT SUM(sd2.sale_total_price)
+                  FROM sales_detail sd2
+                  JOIN sales_master sm2 ON sd2.sale_id = sm2.sale_id
+                 WHERE sm2.vendor_id = #{vendorId}
+                   AND sm2.sale_date <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE), -3)
+               ), 0
+             ) * 100, 1
+           ) AS RATE
+      FROM sales_detail sd
+      JOIN sales_master sm ON sd.sale_id = sm.sale_id
+     WHERE sm.vendor_id = #{vendorId}
+       AND sm.sale_date <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE), -3)
+     GROUP BY sd.sale_prod_name
+     ORDER BY RATE DESC
+  ) WHERE ROWNUM <![CDATA[<=]]> 5
+</otherwise>
+  </choose>
 </select>
 
-<!-- 매출성장률 -->
-<select id="selectSalesGrowth" resultType="hashmap">
-  SELECT
+
+  <!-- =========================================================
+       그래프 ④ 결제수단별 매출 (CARD / CASH)
+       - 일별: 최근 180일 일단위
+       - 월별: 최근 24개월 월단위
+  ========================================================== -->
+  <select id="selectPayMethod" parameterType="map" resultType="map">
+    SELECT
+      <choose>
+        <when test="range == 'daily'">
+          TO_CHAR(TRUNC(s.sale_date), 'YYYY-MM-DD') AS LABEL
+        </when>
+        <otherwise>
+          TO_CHAR(TRUNC(s.sale_date, 'MM'), 'YYYY-MM') AS LABEL
+        </otherwise>
+      </choose>,
+      SUM(CASE WHEN s.sale_pay_type = 'CARD' THEN s.sale_total_amount ELSE 0 END) AS CARD,
+      SUM(CASE WHEN s.sale_pay_type = 'CASH' THEN s.sale_total_amount ELSE 0 END) AS CASH
+      FROM SALES_MASTER s
+     WHERE s.vendor_id = #{vendorId}
+       <choose>
+         <when test="range == 'daily'">
+           AND TRUNC(s.sale_date) <![CDATA[>=]]> TRUNC(SYSDATE - 179)
+         </when>
+         <otherwise>
+           AND TRUNC(s.sale_date, 'MM') <![CDATA[>=]]> ADD_MONTHS(TRUNC(SYSDATE, 'MM'), -23)
+         </otherwise>
+       </choose>
+     GROUP BY
+      <choose>
+        <when test="range == 'daily'">
+          TO_CHAR(TRUNC(s.sale_date), 'YYYY-MM-DD')
+        </when>
+        <otherwise>
+          TO_CHAR(TRUNC(s.sale_date, 'MM'), 'YYYY-MM')
+        </otherwise>
+      </choose>
+     ORDER BY LABEL
+  </select>
+
+  <!-- =========================================================
+       매출 성장률 (KPI용)
+  ========================================================== -->
+  <select id="selectSalesGrowth" resultType="hashmap">
+    SELECT
       NVL(SUM(CASE WHEN TRUNC(SALE_DATE) = TRUNC(SYSDATE) THEN SALE_TOTAL_AMOUNT END), 0) AS TODAY,
       NVL(SUM(CASE WHEN TRUNC(SALE_DATE) = TRUNC(SYSDATE - 1) THEN SALE_TOTAL_AMOUNT END), 0) AS YESTERDAY,
       NVL(SUM(CASE WHEN TO_CHAR(SALE_DATE, 'YYYYMM') = TO_CHAR(SYSDATE, 'YYYYMM') THEN SALE_TOTAL_AMOUNT END), 0) AS CURR_MONTH,
       NVL(SUM(CASE WHEN TO_CHAR(SALE_DATE, 'YYYYMM') = TO_CHAR(ADD_MONTHS(SYSDATE, -1), 'YYYYMM') THEN SALE_TOTAL_AMOUNT END), 0) AS PREV_MONTH,
       NVL(SUM(CASE WHEN TO_CHAR(SALE_DATE, 'YYYY') = TO_CHAR(SYSDATE, 'YYYY') THEN SALE_TOTAL_AMOUNT END), 0) AS THIS_YEAR,
       NVL(SUM(CASE WHEN TO_CHAR(SALE_DATE, 'YYYY') = TO_CHAR(ADD_MONTHS(SYSDATE, -12), 'YYYY') THEN SALE_TOTAL_AMOUNT END), 0) AS LAST_YEAR
-  FROM SALES_MASTER
-  WHERE VENDOR_ID = #{vendorId}
-</select>
+      FROM SALES_MASTER
+     WHERE VENDOR_ID = #{vendorId}
+  </select>
+
+
+<!-- 대시보드에 미수금 합계  -->
+<select id="selectNextDueAmount" parameterType="string" resultType="com.yedam.scm.vo.SalesOrderVO">
+    SELECT
+      NVL(SUM(total_price), 0) AS next_due_amount,
+      TO_CHAR(
+        CASE
+          WHEN <![CDATA[ TO_NUMBER(TO_CHAR(SYSDATE, 'DD')) <= 15 ]]> 
+            THEN TRUNC(SYSDATE, 'MM') + 14
+          ELSE
+            ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1) + 14
+        END,
+        'YYYY-MM-DD'
+      ) AS next_due_date
+    FROM SALES_ORDER
+    WHERE VENDOR_ID  = #{vendorId}
+      AND STATUS     IN ('출고완료', '배송완료')
+      AND PAY_STATUS = '대기'
+      AND TRUNC(SEND_DATE) BETWEEN
+        CASE
+          WHEN <![CDATA[ TO_NUMBER(TO_CHAR(SYSDATE, 'DD')) <= 15 ]]> 
+            THEN TRUNC(ADD_MONTHS(SYSDATE, -1), 'MM')
+          ELSE
+            TRUNC(SYSDATE, 'MM')
+        END
+        AND
+        CASE
+          WHEN <![CDATA[ TO_NUMBER(TO_CHAR(SYSDATE, 'DD')) <= 15 ]]> 
+            THEN LAST_DAY(ADD_MONTHS(SYSDATE, -1))
+          ELSE
+            TRUNC(SYSDATE)
+        END
+  </select>
+
+<!-- 대시보드에 여신한도 잔액-->
+  <select id="selectSalesFinanceSummary" parameterType="string" resultType="SalesOrderVO">
+    SELECT
+      NVL(SUM(s.total_price), 0) AS nextDueAmount,        
+      TO_CHAR(
+        CASE
+          WHEN <![CDATA[ TO_NUMBER(TO_CHAR(SYSDATE, 'DD')) <= 15 ]]>
+            THEN TRUNC(SYSDATE, 'MM') + 14               
+          ELSE
+            ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1) + 14     
+        END,
+        'YYYY-MM-DD'
+      ) AS nextDueDate,                                  
+      MAX(v.credit_limit) AS creditLimit,               
+      NVL(SUM(s.return_price), 0) AS totalReturn,        
+      (MAX(v.credit_limit) - (NVL(SUM(s.total_price), 0) - NVL(SUM(s.return_price), 0))) AS remainCredit
+    FROM SALES_ORDER s
+    JOIN VENDOR v ON s.vendor_id = v.vendor_id
+    WHERE s.vendor_id = #{vendorId}
+      AND s.status IN ('처리완료', '출고완료', '배송완료')
+      AND s.pay_status = '대기'
+  </select>
 
 
 </mapper>
