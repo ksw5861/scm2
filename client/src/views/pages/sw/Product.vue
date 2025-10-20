@@ -3,6 +3,7 @@ import { ref, reactive, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import InputText from 'primevue/inputtext';
+import InputNumber from 'primevue/inputnumber'; // InputNumber 컴포넌트 import
 import { useIcon } from '@/composables/useIcon';
 import { useAppToast } from '@/composables/useAppToast';
 import AutoComplete from 'primevue/autocomplete';
@@ -46,16 +47,6 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const displayPrice = computed({
-  get: () => {
-    if (!productForm.prodUnitPrice) return '';
-    return productForm.prodUnitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  },
-  set: (val) => {
-    productForm.prodUnitPrice = val.replace(/,/g, '').replace(/[^0-9.]/g, '');
-  }
-});
-
 // 검색 파라미터
 const searchParams = reactive({
   prodId: '',
@@ -74,10 +65,10 @@ const productDetail = reactive({
   prodStoreCond: '',
   spec: '',
   unit: '',
-  safeStock: '',
+  safeStock: null, // 숫자 타입
   status: '',
   exp: '',
-  prodUnitPrice: ''
+  prodUnitPrice: null // 숫자 타입
 });
 
 const productForm = reactive({ ...productDetail });
@@ -123,7 +114,6 @@ const fetchProductList = async () => {
     products.value = data;
     page.value.totalElements = products.value.length;
 
-    // 현재 페이지가 비면 앞쪽 페이지로 보정
     if (products.value.length > 0 && pagedProducts.value.length === 0) {
       page.value.page = maxPages.value;
     }
@@ -148,17 +138,17 @@ const fetchProductDetail = async (id) => {
         prodStoreCond: data.prodStoreCond ?? data.PROD_STORE_COND ?? '',
         spec: data.spec ?? data.SPEC ?? '',
         unit: data.unit ?? data.UNIT ?? '',
-        safeStock: data.safeStock ?? data.SAFE_STOCK ?? '',
+        safeStock: data.safeStock ? Number(data.safeStock) : null,
         status: data.status ?? data.STATUS ?? '',
         exp: data.exp ?? data.EXP ?? '',
-        prodUnitPrice: data.prodUnitPrice ?? data.PROD_UNIT_PRICE ?? ''
+        prodUnitPrice: data.prodUnitPrice ? Number(data.prodUnitPrice) : null
       });
       Object.assign(productForm, productDetail);
       selectedProduct.value = data;
       mode.value = 'view';
     } else {
-      Object.keys(productDetail).forEach((k) => (productDetail[k] = ''));
-      Object.keys(productForm).forEach((k) => (productForm[k] = ''));
+      Object.keys(productDetail).forEach((k) => (productDetail[k] = k === 'safeStock' || k === 'prodUnitPrice' ? null : ''));
+      Object.keys(productForm).forEach((k) => (productForm[k] = k === 'safeStock' || k === 'prodUnitPrice' ? null : ''));
       selectedProduct.value = null;
       mode.value = 'create';
     }
@@ -173,7 +163,6 @@ const addProduct = async () => {
   if (!productForm.prodName) return toast('warn', '등록 실패', '제품명을 입력하세요.');
   try {
     const payload = { ...productForm };
-    payload.prodUnitPrice = payload.prodUnitPrice.replace(/[^0-9.]/g, '');
     delete payload.prodId;
     const res = await axios.post('/api/product', payload);
     toast('success', '등록 성공', '제품이 등록되었습니다.');
@@ -184,7 +173,7 @@ const addProduct = async () => {
       mode.value = 'view';
       selectedProduct.value = products.value.find((p) => (p.prodId ?? p.PROD_ID) === newId) ?? null;
     } else {
-      Object.keys(productForm).forEach((k) => (productForm[k] = ''));
+      Object.keys(productForm).forEach((k) => (productForm[k] = k === 'safeStock' || k === 'prodUnitPrice' ? null : ''));
       mode.value = 'create';
     }
   } catch (e) {
@@ -213,8 +202,8 @@ const deleteProduct = async () => {
   try {
     await axios.delete(`/api/product/${productDetail.prodId}`);
     toast('success', '삭제 성공', '제품이 삭제되었습니다.');
-    Object.keys(productDetail).forEach((k) => (productDetail[k] = ''));
-    Object.keys(productForm).forEach((k) => (productForm[k] = ''));
+    Object.keys(productDetail).forEach((k) => (productDetail[k] = k === 'safeStock' || k === 'prodUnitPrice' ? null : ''));
+    Object.keys(productForm).forEach((k) => (productForm[k] = k === 'safeStock' || k === 'prodUnitPrice' ? null : ''));
     selectedProduct.value = null;
     mode.value = 'create';
     await fetchProductList();
@@ -237,14 +226,14 @@ const handleRowSelect = async (row) => {
 };
 const handleUnselect = () => {
   selectedProduct.value = null;
-  Object.keys(productDetail).forEach((k) => (productDetail[k] = ''));
-  Object.keys(productForm).forEach((k) => (productForm[k] = ''));
+  Object.keys(productDetail).forEach((k) => (productDetail[k] = k === 'safeStock' || k === 'prodUnitPrice' ? null : ''));
+  Object.keys(productForm).forEach((k) => (productForm[k] = k === 'safeStock' || k === 'prodUnitPrice' ? null : ''));
   mode.value = 'create';
 };
 const handleEdit = () => (mode.value = 'edit');
 const handleResetForm = () => {
   if (mode.value === 'view' && productDetail.prodId) Object.assign(productForm, productDetail);
-  else Object.keys(productForm).forEach((k) => (productForm[k] = ''));
+  else Object.keys(productForm).forEach((k) => (productForm[k] = k === 'safeStock' || k === 'prodUnitPrice' ? null : ''));
 };
 
 // 검색 / 초기화
@@ -254,13 +243,13 @@ const handleSearch = () => {
   }
   page.value.page = 1;
   selectedProduct.value = null;
-  Object.keys(productDetail).forEach((k) => (productDetail[k] = ''));
-  Object.keys(productForm).forEach((k) => (productForm[k] = ''));
+  Object.keys(productDetail).forEach((k) => (productDetail[k] = k === 'safeStock' || k === 'prodUnitPrice' ? null : ''));
+  Object.keys(productForm).forEach((k) => (productForm[k] = k === 'safeStock' || k === 'prodUnitPrice' ? null : ''));
   mode.value = 'create';
   fetchProductList();
 };
 const handleReset = () => {
-  Object.assign(searchParams, { prodId: '', prodName: '', status: '', unit: '', exp: '', prodUnitPrice: '' });
+  Object.assign(searchParams, { prodId: '', prodName: '', status: '', unit: '' });
   handleSearch();
 };
 
@@ -303,14 +292,10 @@ onMounted(() => fetchProductList());
     </SearchCard>
 
     <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
-      <!-- 목록 -->
       <div class="w-full xl:w-5/12">
         <div class="card flex flex-col">
           <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
-            <div class="flex items-center gap-4">
-              <span :class="[iconList, 'text-xl']"></span>
-              제품 목록
-            </div>
+            <div class="flex items-center gap-4"><span :class="[iconList, 'text-xl']"></span> 제품 목록</div>
             <div class="text-sm text-gray-400">
               총 <span class="font-semibold text-sm text-gray-700">{{ page.totalElements }}</span> 건
             </div>
@@ -320,7 +305,6 @@ onMounted(() => fetchProductList());
         </div>
       </div>
 
-      <!-- 상세 / 폼 -->
       <div class="w-full xl:w-7/12">
         <div class="card flex flex-col">
           <div class="flex items-center justify-between h-10">
@@ -358,10 +342,17 @@ onMounted(() => fetchProductList());
                 <label><input type="radio" value="N" v-model="productForm.status" /> 미사용</label>
               </div>
             </div>
-            <div><label class="text-sm block mb-1">만료일</label><InputText :value="productForm.exp" @input="(e) => (productForm.exp = e.target.value.replace(/[^0-9]/g, ''))" class="w-full h-10" placeholder="숫자만 입력" /></div>
+            <div>
+              <label class="text-sm block mb-1">만료일</label>
+              <InputNumber v-model="productForm.exp" class="w-full h-10" placeholder="숫자만 입력" mode="decimal" :useGrouping="false" :minFractionDigits="0" />
+            </div>
             <div>
               <label class="text-sm block mb-1">단가</label>
-              <InputText v-model="displayPrice" class="w-full h-10" placeholder="숫자만 입력"/>
+              <InputNumber v-model="productForm.prodUnitPrice" class="w-full h-10" placeholder="숫자만 입력" mode="decimal" :useGrouping="true" :minFractionDigits="0" />
+            </div>
+            <div>
+              <label class="text-sm block mb-1">안전재고</label>
+              <InputNumber v-model="productForm.safeStock" class="w-full h-10" placeholder="숫자만 입력" mode="decimal" :useGrouping="false" :minFractionDigits="0" />
             </div>
             <div><label class="text-sm block mb-1">제품코드</label><InputText v-model="productForm.prodId" class="w-full h-10" disabled /></div>
           </div>
