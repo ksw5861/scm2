@@ -1,8 +1,9 @@
 <script setup>
-import { ref, reactive, computed, onMounted, watch, nextTick } from 'vue';
+import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import axios from 'axios';
 import InputText from 'primevue/inputtext';
+import InputNumber from 'primevue/inputnumber'; // InputNumber import 유지
 import { useIcon } from '@/composables/useIcon';
 import { useAppToast } from '@/composables/useAppToast';
 import AutoComplete from 'primevue/autocomplete';
@@ -10,9 +11,11 @@ import AutoComplete from 'primevue/autocomplete';
 const route = useRoute();
 const { toast } = useAppToast();
 
-const onlyNumber = (e) => {
-  e.target.value = e.target.value.replace(/[^0-9.]/g, '');
-};
+// onlyNumber 함수는 InputNumber 사용으로 인해 matUnitPrice, matUnitConv, leadTime, safeStock에는 불필요하므로 제거.
+// 만약 다른 InputText 필드에 숫자만 입력 제한이 필요하다면 유지할 수 있지만, 여기서는 숫자 필드 전체에 InputNumber를 적용했으므로 제거.
+// const onlyNumber = (e) => {
+//   e.target.value = e.target.value.replace(/[^0-9.]/g, '');
+// };
 
 // icons
 const iconList = useIcon('list');
@@ -51,7 +54,7 @@ const searchMatSuggestions = async (event) => {
   }
 };
 
-// 모달 (더이상 거래처 모달은 사용하지 않지만 기존 변수 유지)
+// 모달
 const showVendorModal = ref(false);
 
 // 자재-거래처 폼 (필드명 DB 기준으로 변경)
@@ -86,10 +89,10 @@ const detail = reactive({
   matName: '',
   matType: '',
   matStoreCond: '',
-  matUnitConv: null,
-  matUnitPrice: '',
-  leadTime: null,
-  safeStock: null,
+  matUnitConv: null, // 숫자 타입 초기값
+  matUnitPrice: null, // 숫자 타입 초기값
+  leadTime: null, // 숫자 타입 초기값
+  safeStock: null, // 숫자 타입 초기값
   status: '',
   spec: '',
   unit: ''
@@ -130,8 +133,8 @@ const isDuplicateName = (name) => {
   return materials.value.some((m) => normalize(m.matName ?? m.MAT_NAME) === inputName && (m.matId ?? m.MAT_ID) !== (detail.matId ?? detail.MAT_ID));
 };
 
-// 숫자만
-const sanitizeNumber = (val) => (val == null ? '' : String(val).replace(/[^0-9.]/g, ''));
+// ✨ sanitizeNumber 함수 제거 (InputNumber 사용으로 불필요)
+const sanitizeNumber = (val) => (val == null ? '' : String(val).replace(/[^0-9.]/g, '')); // 다만, 혹시 모를 대비책으로 남겨두고 등록/수정 로직에서만 제거합니다.
 
 // API: 목록 (서버 페이징 X)
 const fetchList = async () => {
@@ -143,24 +146,19 @@ const fetchList = async () => {
       matType: searchParams.matType || undefined,
       matStoreCond: searchParams.matStoreCond || undefined,
       status: searchParams.status || undefined
-      // page, size 절대 안보냄 (프론트 페이징이므로)
     };
     const res = await axios.get('/api/material', { params });
 
-    // 다양한 응답 형태 대응
     const data = Array.isArray(res.data) ? res.data : (res.data?.data ?? res.data?.items ?? []);
 
     materials.value = data;
-    // 총 건수는 '실제 배열 길이'
     page.value.totalElements = materials.value.length;
 
-    // 선택행이 목록에 없으면 해제
     if (selectedMaterial.value) {
       const found = materials.value.find((m) => (m.matId ?? m.MAT_ID) === (selectedMaterial.value.matId ?? selectedMaterial.value.MAT_ID));
       if (!found) handleUnselect();
     }
 
-    // 현재 페이지가 비면 앞쪽 페이지로 보정 (예: 삭제 후 마지막 페이지 비는 경우)
     if (materials.value.length > 0 && pagedMaterials.value.length === 0) {
       page.value.page = maxPages.value;
     }
@@ -190,7 +188,7 @@ const fetchDetail = async (id) => {
         matType: data.matType ?? data.MAT_TYPE ?? '',
         matStoreCond: data.matStoreCond ?? data.MAT_STORE_COND ?? '',
         matUnitConv: data.matUnitConv ?? data.MAT_UNIT_CONV ?? null,
-        matUnitPrice: data.matUnitPrice ?? data.MAT_UNIT_PRICE ?? '',
+        matUnitPrice: data.matUnitPrice ?? data.MAT_UNIT_PRICE ?? null,
         leadTime: data.leadTime ?? data.LEAD_TIME ?? null,
         safeStock: data.safeStock ?? data.SAFE_STOCK ?? null,
         status: data.status ?? data.STATUS ?? '',
@@ -201,8 +199,9 @@ const fetchDetail = async (id) => {
       selectedMaterial.value = data;
       mode.value = 'view';
     } else {
-      Object.keys(detail).forEach((k) => (detail[k] = ''));
-      Object.keys(form).forEach((k) => (form[k] = ''));
+      Object.keys(detail).forEach((k) => (detail[k] = null));
+      detail.matId = detail.matName = detail.matType = detail.matStoreCond = detail.status = detail.spec = detail.unit = '';
+      Object.assign(form, detail);
       selectedMaterial.value = null;
       mode.value = 'create';
     }
@@ -218,7 +217,14 @@ const addMaterial = async () => {
   if (isDuplicateName(form.matName)) return toast('warn', '중복', '이미 존재하는 자재명입니다.');
 
   try {
-    const payload = { ...form, matUnitConv: sanitizeNumber(form.matUnitConv), leadTime: sanitizeNumber(form.leadTime), safeStock: sanitizeNumber(form.safeStock), matUnitPrice: sanitizeNumber(form.matUnitPrice) };
+    // ✨ InputNumber 사용으로 sanitizeNumber 호출 모두 제거
+    const payload = {
+      ...form,
+      matUnitConv: form.matUnitConv,
+      leadTime: form.leadTime,
+      safeStock: form.safeStock,
+      matUnitPrice: form.matUnitPrice
+    };
     delete payload.matId;
 
     const { data } = await axios.post('/api/material', payload);
@@ -227,7 +233,7 @@ const addMaterial = async () => {
       await fetchList();
       const newId = data?.matId ?? data?.MAT_ID ?? null;
       if (newId) await fetchDetail(newId);
-      else Object.keys(form).forEach((k) => (form[k] = ''));
+      else Object.keys(form).forEach((k) => (form[k] = null));
     } else toast('error', '등록 실패', '자재 등록에 실패했습니다.');
   } catch (e) {
     console.error('addMaterial error', e);
@@ -241,7 +247,14 @@ const modifyMaterial = async () => {
   if (isDuplicateName(form.matName)) return toast('warn', '중복', '이미 존재하는 자재명입니다.');
 
   try {
-    const payload = { ...form, matUnitConv: sanitizeNumber(form.matUnitConv), leadTime: sanitizeNumber(form.leadTime), safeStock: sanitizeNumber(form.safeStock), matUnitPrice: sanitizeNumber(form.matUnitPrice) };
+    // ✨ InputNumber 사용으로 sanitizeNumber 호출 모두 제거
+    const payload = {
+      ...form,
+      matUnitConv: form.matUnitConv,
+      leadTime: form.leadTime,
+      safeStock: form.safeStock,
+      matUnitPrice: form.matUnitPrice
+    };
     await axios.put(`/api/material/${detail.matId}`, payload);
     toast('success', '수정 성공', '자재가 수정되었습니다.');
     await fetchList();
@@ -263,8 +276,9 @@ const deleteMaterial = async () => {
     toast('success', '삭제 성공', '자재가 삭제되었습니다.');
 
     // 폼 초기화
-    Object.keys(detail).forEach((k) => (detail[k] = ''));
-    Object.keys(form).forEach((k) => (form[k] = ''));
+    Object.keys(detail).forEach((k) => (detail[k] = null));
+    detail.matId = detail.matName = detail.matType = detail.matStoreCond = detail.status = detail.spec = detail.unit = '';
+    Object.assign(form, detail);
     selectedMaterial.value = null;
     mode.value = 'create';
 
@@ -272,7 +286,6 @@ const deleteMaterial = async () => {
   } catch (e) {
     console.error('deleteMaterial error', e);
 
-    // 409 Conflict 응답 처리
     if (e.response?.status === 409) {
       toast('warn', '삭제 불가', e.response.data?.message || '다른 테이블에서 사용 중인 자재입니다.');
     } else {
@@ -292,13 +305,15 @@ const handleRowSelect = async (row) => {
 };
 const handleUnselect = () => {
   selectedMaterial.value = null;
-  Object.keys(detail).forEach((k) => (detail[k] = ''));
-  Object.keys(form).forEach((k) => (form[k] = ''));
+  Object.keys(detail).forEach((k) => (detail[k] = null));
+  detail.matId = detail.matName = detail.matType = detail.matStoreCond = detail.status = detail.spec = detail.unit = '';
+  Object.assign(form, detail);
   mode.value = 'create';
 };
 const handleEdit = () => (mode.value = 'edit');
 const handleResetForm = () => {
-  Object.keys(form).forEach((k) => (form[k] = ''));
+  Object.keys(form).forEach((k) => (form[k] = null));
+  form.matName = form.matType = form.matStoreCond = form.status = form.spec = form.unit = '';
   if (mode.value === 'view' && detail.matId) Object.assign(form, detail);
 };
 
@@ -323,7 +338,7 @@ const vendorLoading = ref(false);
 const vendorPage = ref({ page: 1, size: 10, totalElements: 0 });
 const vendorColumns = [
   { label: '거래처ID', field: 'vendorId' },
-  { label: '거래처명', field: 'vendorName' },
+  { label: '거래처명', field: 'companyName' },
   { label: '계약단가', field: 'contractPrice' },
   { label: '상태', field: 'status' }
 ];
@@ -456,16 +471,7 @@ const selectVendorFromModal = (vendor) => {
   showVendorSelectModal.value = false;
 };
 
-// 숫자포맷팅
-const displayPrice = computed({
-  get: () => {
-    if (!form.matUnitPrice) return '';
-    return form.matUnitPrice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  },
-  set: (val) => {
-    form.matUnitPrice = val.replace(/,/g, '');
-  }
-});
+// ✨ displayPrice computed 속성 제거됨 (InputNumber 사용)
 
 onMounted(() => fetchList());
 </script>
@@ -474,7 +480,6 @@ onMounted(() => fetchList());
   <Fluid>
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
 
-    <!-- 검색 -->
     <SearchCard title="자재 검색" @search="handleSearch" @reset="handleReset">
       <div class="flex flex-wrap w-full gap-2">
         <div class="p-2 w-full md:w-1/4">
@@ -507,7 +512,6 @@ onMounted(() => fetchList());
     </SearchCard>
 
     <div class="flex flex-col md:flex-row w-full gap-4 mt-4">
-      <!-- 목록 -->
       <div class="w-full xl:w-5/12">
         <div class="card flex flex-col">
           <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
@@ -520,12 +524,10 @@ onMounted(() => fetchList());
             </div>
           </div>
           <Divider />
-          <!-- 프론트 페이징: pagedMaterials 를 바인딩 -->
           <DTable :columns="columns" :data="pagedMaterials" :page="page" :loading="loading" dataKey="matId" v-model:selected="selectedMaterial" @row-select="handleRowSelect" @row-unselect="handleUnselect" @page-change="handlePageChange" />
         </div>
       </div>
 
-      <!-- 상세 / 폼 + 탭 -->
       <div class="w-full xl:w-7/12">
         <div class="card flex flex-col">
           <div class="flex items-center justify-between h-10">
@@ -543,9 +545,7 @@ onMounted(() => fetchList());
           </div>
           <Divider />
 
-          <!-- 탭 -->
           <TabView v-model:activeIndex="activeTab">
-            <!-- 자재 상세정보 -->
             <TabPanel header="자재 상세정보">
               <div class="w-full flex flex-row mb-2 gap-2">
                 <div class="flex-1 ml-6 flex flex-col justify-center gap-0">
@@ -568,7 +568,7 @@ onMounted(() => fetchList());
                 </div>
                 <div>
                   <label class="text-sm block mb-1">단위환산</label>
-                  <InputText :value="form.matUnitConv" @input="(e) => (form.matUnitConv = e.target.value.replace(/[^0-9.]/g, ''))" placeholder="숫자만 입력" />
+                  <InputNumber v-model="form.matUnitConv" :class="'w-full h-10'" placeholder="숫자만 입력" mode="decimal" :useGrouping="false" :minFractionDigits="0" />
                 </div>
                 <div>
                   <label class="text-sm block mb-1">단위</label>
@@ -576,15 +576,15 @@ onMounted(() => fetchList());
                 </div>
                 <div>
                   <label class="text-sm block mb-1">안전재고(EA)</label>
-                  <InputText :value="form.safeStock" @input="(e) => (form.safeStock = e.target.value.replace(/[^0-9.]/g, ''))" placeholder="숫자만 입력" />
+                  <InputNumber v-model="form.safeStock" :class="'w-full h-10'" placeholder="숫자만 입력" mode="decimal" :useGrouping="false" :minFractionDigits="0" />
                 </div>
                 <div>
                   <label class="text-sm block mb-1">리드타임(일)</label>
-                  <InputText :value="form.leadTime" @input="(e) => (form.leadTime = e.target.value.replace(/[^0-9.]/g, ''))" placeholder="숫자만 입력" />
+                  <InputNumber v-model="form.leadTime" :class="'w-full h-10'" placeholder="숫자만 입력" mode="decimal" :useGrouping="false" :minFractionDigits="0" />
                 </div>
                 <div>
                   <label class="text-sm block mb-1">단가(원)</label>
-                  <InputText v-model="displayPrice" class="w-full h-10" placeholder="숫자만 입력"/>
+                  <InputNumber v-model="form.matUnitPrice" :class="'w-full h-10'" placeholder="숫자만 입력" mode="decimal" :useGrouping="true" :minFractionDigits="0" />
                 </div>
                 <div>
                   <label class="text-sm block mb-1">상태</label>
@@ -596,13 +596,11 @@ onMounted(() => fetchList());
               </div>
             </TabPanel>
 
-            <!-- 거래처 정보 -->
             <TabPanel header="거래처 정보">
               <div v-if="!selectedMaterial">자재를 선택해야 거래처 정보를 볼 수 있습니다.</div>
 
               <div v-else class="w-full">
                 <div class="grid grid-cols-2 gap-4">
-                  <!-- 왼쪽: 거래처 목록 -->
                   <div class="col-span-1">
                     <div class="flex items-center justify-between mb-2">
                       <div class="font-semibold">거래처 목록</div>
@@ -625,7 +623,6 @@ onMounted(() => fetchList());
                     />
                   </div>
 
-                  <!-- 오른쪽: 거래처 등록/수정 폼 -->
                   <div class="col-span-1">
                     <div class="font-semibold mb-2">거래처 등록/수정 ({{ vendorMode === 'create' ? '신규' : '수정' }})</div>
 
@@ -671,7 +668,6 @@ onMounted(() => fetchList());
       </div>
     </div>
 
-    <!-- 거래처 선택 모달 -->
     <Dialog v-model:visible="showVendorSelectModal" modal header="거래처 선택" :style="{ width: '600px' }">
       <div class="mb-2 flex gap-2">
         <InputText v-model="vendorSearch" placeholder="거래처명 검색" @keyup.enter="fetchVendorListForModal" />

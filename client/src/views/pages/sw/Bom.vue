@@ -12,6 +12,7 @@ import Fieldset from 'primevue/fieldset';
 import Dialog from 'primevue/dialog';
 import InputNumber from 'primevue/inputnumber';
 import Calendar from 'primevue/calendar';
+import Breadcrumb from 'primevue/breadcrumb'; // 👈 PrimeVue Breadcrumb import 추가
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
@@ -59,7 +60,7 @@ const prodList = ref([]);
 const selectedProd = ref(null);
 
 // Form
-const form = ref({ prodId: '', prodName: '', spec: '', unit: '', createdAt: '' });
+const form = ref({ prodId: '', prodName: '', spec: '', unit: '', createdAt: '', lastUpdateDate: '' });
 
 // BOM
 const bomList = ref([]);
@@ -77,29 +78,41 @@ const currentBom = ref({
   qty: 0,
   mixingRate: 0,
   material: { unit: '' },
-  createdAt: new Date()
+  createdAt: new Date(),
+  lastUpdateDate: new Date()
 });
 
 // 자재 선택 모달
 const materialList = ref([]);
 const materialDialogVisible = ref(false);
 
-// // 단위 선택 모달
-// const unitList = ref([]);
-// const unitDialogVisible = ref(false);
-
 // 페이징
 const prodRows = 5;
 const bomRows = 5;
 
 // --- 날짜 포맷 함수 ---
-const formatDate = (date) => {
+const formatDateOnly = (date) => {
   if (!date) return '';
   const d = new Date(date);
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+const formatDate = formatDateOnly;
+
+// --- 날짜 + 시간 포맷 함수 (lastUpdateDate 표시용) ---
+const formatDateTime = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hour = String(d.getHours()).padStart(2, '0');
+  const minute = String(d.getMinutes()).padStart(2, '0');
+  const second = String(d.getSeconds()).padStart(2, '0');
+
+  return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 };
 
 // --- 제품 목록 fetch ---
@@ -119,7 +132,7 @@ const fetchProdList = async () => {
 // --- 제품 선택 ---
 const selectProduct = async (prod) => {
   selectedProd.value = prod || null;
-  form.value = selectedProd.value ? { prodId: prod.prodId, prodName: prod.prodName, spec: prod.spec, unit: prod.unit, createdAt: prod.createdAt } : { prodId: '', prodName: '', spec: '', unit: '', createdAt: '' };
+  form.value = selectedProd.value ? { prodId: prod.prodId, prodName: prod.prodName, spec: prod.spec, unit: prod.unit, createdAt: prod.createdAt, lastUpdateDate: '' } : { prodId: '', prodName: '', spec: '', unit: '', createdAt: '', lastUpdateDate: '' };
 
   if (selectedProd.value) await fetchBomList(selectedProd.value.prodId);
   else bomList.value = [];
@@ -131,10 +144,27 @@ const fetchBomList = async (prodId) => {
   try {
     const res = await axios.get(`/api/bom/${prodId}`);
     bomList.value = Array.isArray(res.data) ? res.data : [];
+    let latestDate = null;
     bomList.value.forEach((b) => {
       b.effectiveDate = b.effectiveDate ? new Date(b.effectiveDate) : null;
       b.expireDate = b.expireDate ? new Date(b.expireDate) : null;
+
+      // 수정 부분 1: matId가 최상위 속성에 확실히 존재하도록 설정
+      if (!b.matId && b.material?.matId) {
+        b.matId = b.material.matId;
+      }
+      // material 객체가 없으면 초기화하여 material?.xxx 에러 방지
+      if (!b.material) {
+        b.material = { matName: '', unit: '', matId: b.matId || '' };
+      }
+      if (b.lastUpdateDate) {
+        const currentUpdateDate = new Date(b.lastUpdateDate);
+        if (!latestDate || currentUpdateDate > latestDate) {
+          latestDate = currentUpdateDate;
+        }
+      }
     });
+    form.value.lastUpdateDate = latestDate ? formatDateTime(latestDate) : '';
   } catch (e) {
     toast('error', '조회 실패', 'BOM 정보를 가져오지 못했습니다.');
     bomList.value = [];
@@ -168,8 +198,10 @@ const initNewBom = () => {
     prodId: selectedProd.value ? selectedProd.value.prodId : '',
     matId: '',
     mixingRate: 0,
-    material: { unit: '' },
-    createdAt: ''
+    qty: 0, // qty 초기화 추가
+    material: { matName: '', unit: '', matId: '' }, // material 초기화
+    createdAt: '',
+    lastUpdateDate: ''
   };
 };
 
@@ -181,7 +213,25 @@ const openBomDialog = async (bom = null) => {
   }
   if (bom) {
     isEditing.value = true;
-    currentBom.value = { ...bom };
+    currentBom.value = {
+      ...bom,
+      // Dialog 입력 필드에 바인딩되는 핵심 필드들을 명시적으로 설정
+      matId: bom.matId,
+      qty: bom.qty,
+
+      // mixingRate는 bomDetail 객체 안에서 가져와 currentBom 최상위로 설정
+      mixingRate: bom.bomDetail?.mixingRate ?? 0,
+
+      // material 객체는 자재명/단위 표시를 위해 복사
+      material: bom.material ? { ...bom.material } : { matName: '', unit: '' },
+
+      // bomDetail 원본은 서버 전송을 위해 유지 (bomDeId 획득)
+      bomDetail: bom.bomDetail
+    };
+
+    // 날짜 객체로 변환
+    currentBom.value.effectiveDate = new Date(currentBom.value.effectiveDate);
+    currentBom.value.expireDate = new Date(currentBom.value.expireDate);
   } else {
     initNewBom();
   }
@@ -201,8 +251,8 @@ const saveBom = async () => {
       bom: {
         bomId: currentBom.value.bomId || null, // 신규면 null/blank
         bomVersion: currentBom.value.bomVersion || 'V1',
-        effectiveDate: formatDate(currentBom.value.effectiveDate),
-        expireDate: formatDate(currentBom.value.expireDate),
+        effectiveDate: formatDateOnly(currentBom.value.effectiveDate),
+        expireDate: formatDateOnly(currentBom.value.expireDate),
         prodId: selectedProd.value.prodId,
         matId: currentBom.value.matId,
         qty: currentBom.value.qty ?? 0,
@@ -240,8 +290,6 @@ const deleteBom = async (bomId) => {
   if (!confirm('정말 삭제하시겠습니까?')) return;
   try {
     const res = await axios.delete(`/api/bom/${bomId}`);
-    console.log(res);
-    console.log(res.data);
     if (res.data > 0) {
       toast('success', '삭제 완료', 'BOM이 삭제되었습니다.');
       await fetchBomList(selectedProd.value.prodId);
@@ -292,7 +340,6 @@ onMounted(() => fetchProdList());
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <div class="main-wrapper">
       <div class="main-container">
-        <!-- 좌측 제품 목록 -->
         <div class="panel left-panel">
           <Card class="flex-column">
             <template #title><div class="text-xl">제품 목록</div></template>
@@ -319,12 +366,10 @@ onMounted(() => fetchProdList());
           </Card>
         </div>
 
-        <!-- 우측 상세정보 -->
         <div class="panel right-panel">
           <Card class="flex-column">
             <template #content>
               <TabView v-model:activeIndex="activeTabIndex" class="h-full flex flex-column" :key="selectedProd ? selectedProd.prodId : 'empty'">
-                <!-- 제품 상세정보 -->
                 <TabPanel header="제품 상세정보">
                   <div class="flex flex-column h-full">
                     <Fieldset legend="제품 상세정보">
@@ -345,75 +390,69 @@ onMounted(() => fetchProdList());
                           <label>등록날짜</label>
                           <InputText v-model="form.createdAt" class="w-full h-10" :disabled="!selectedProd" readonly />
                         </div>
+                        <div class="flex flex-column">
+                          <label>BOM 마지막 수정날짜</label>
+                          <InputText v-model="form.lastUpdateDate" class="w-full h-10" :disabled="!selectedProd" readonly />
+                        </div>
                       </div>
                     </Fieldset>
                   </div>
                 </TabPanel>
 
-                <!-- BOM 관리: 수정/삭제 -->
                 <TabPanel header="BOM 관리" class="flex flex-column h-full">
                   <div v-if="selectedProd" class="flex flex-column h-full">
                     <Fieldset legend="BOM 상세정보" class="flex flex-column h-full">
                       <div class="flex-grow-1 overflow-auto">
                         <DataTable :value="bomList" paginator :rows="bomRows" dataKey="bomId" :loading="loading" class="h-full">
-                          <!-- bom코드 -->
                           <Column header="BOM코드">
                             <template #body="slotProps">
                               {{ slotProps.data.bomId || '' }}
                             </template>
                           </Column>
 
-                          <!-- 자재코드 -->
                           <Column header="자재코드">
                             <template #body="slotProps">
-                              {{ slotProps.data.material?.matId || '' }}
+                              {{ slotProps.data.matId || '' }}
                             </template>
                           </Column>
 
-                          <!-- 자재명 -->
                           <Column header="자재명">
                             <template #body="slotProps">
                               {{ slotProps.data.material?.matName || '' }}
                             </template>
                           </Column>
 
-                          <!-- 배합비율 -->
                           <Column header="비율(%)">
                             <template #body="slotProps">
                               {{ slotProps.data.bomDetail?.mixingRate || '-' }}
                             </template>
                           </Column>
 
-                          <!-- 수량 -->
                           <Column header="수량">
                             <template #body="slotProps">
                               {{ slotProps.data.qty || 0 }}
                             </template>
                           </Column>
 
-                          <!-- 단위 -->
                           <Column header="단위">
                             <template #body="slotProps">
                               {{ slotProps.data.material?.unit || '' }}
                             </template>
                           </Column>
 
-                          <!-- 시작일 -->
                           <Column header="시작일">
                             <template #body="slotProps">
                               {{ formatDate(slotProps.data.effectiveDate) }}
                             </template>
                           </Column>
 
-                          <!-- 종료일 -->
                           <Column header="종료일">
                             <template #body="slotProps">
                               {{ formatDate(slotProps.data.expireDate) }}
                             </template>
                           </Column>
 
-                          <!-- 액션 -->
-                          <Column header="액션">
+                          <Column header="수정 | 삭제">
                             <template #body="slotProps">
                               <div class="flex gap-1">
                                 <Button icon="pi pi-pencil" class="p-button-text p-button-sm" @click="openBomDialog(slotProps.data)" />
@@ -428,7 +467,6 @@ onMounted(() => fetchProdList());
                   <div v-else>제품 선택 필요</div>
                 </TabPanel>
 
-                <!-- 신규 BOM 등록용 탭 -->
                 <TabPanel header="신규 BOM">
                   <div v-if="selectedProd" class="flex flex-column h-full">
                     <div class="mb-2">
@@ -488,11 +526,11 @@ onMounted(() => fetchProdList());
                             "
                           />
                         </div>
-
+                        <!--
                         <div>
                           <label class="block text-sm mb-1">BOM 버전</label>
                           <InputText v-model="currentBom.bomVersion" class="w-full h-10" />
-                        </div>
+                        </div>-->
 
                         <div>
                           <label class="block text-sm mb-1">시작일</label>
@@ -519,7 +557,6 @@ onMounted(() => fetchProdList());
         </div>
       </div>
 
-      <!-- BOM 등록/수정 (수정/등록 공용) -->
       <Dialog v-model:visible="bomDialogVisible" :header="isEditing ? 'BOM 수정' : 'BOM 등록'" modal>
         <div class="p-fluid grid gap-2">
           <div class="flex flex-column">
@@ -555,6 +592,23 @@ onMounted(() => fetchProdList());
             />
           </div>
           <div class="flex flex-column">
+            <label>비율</label>
+            <InputNumber
+              v-model="currentBom.mixingRate"
+              class="w-full"
+              mode="decimal"
+              :min="1"
+              :max="100"
+              :useGrouping="false"
+              @input="
+                (e) => {
+                  if (currentBom.mixingRate < 1) currentBom.mixingRate = 1;
+                  if (currentBom.mixingRate > 100) currentBom.mixingRate = 100;
+                }
+              "
+            />
+          </div>
+          <div class="flex flex-column">
             <label>시작일</label>
             <Calendar v-model="currentBom.effectiveDate" dateFormat="yy-mm-dd" />
           </div>
@@ -572,7 +626,6 @@ onMounted(() => fetchProdList());
         </template>
       </Dialog>
 
-      <!-- 자재 선택 -->
       <Dialog v-model:visible="materialDialogVisible" header="자재 선택" modal>
         <DataTable :value="materialList" selectionMode="single" dataKey="matId" @row-click="selectMaterial($event.data)" paginator :rows="8">
           <Column field="matId" header="자재코드" />

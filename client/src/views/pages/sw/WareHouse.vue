@@ -319,7 +319,7 @@ onMounted(() => fetchList());
 
             <div>
               <label class="text-sm block mb-1">전화번호</label>
-              <InputText v-model="form.ownerTel" class="w-full h-10" placeholder="숫자만 입력" @input="(e) => (form.ownerTel = e.target.value.replace(/[^0-9-]/g, ''))" />
+              <InputText v-model="form.ownerTel" class="w-full h-10" placeholder="ex) 010-0000-0000" />
             </div>
 
             <div>

@@ -138,11 +138,17 @@ const fmtDate = (d) => (d ? useDateFormat(d).value : null);
 const loadRequestList = async () => {
   loading.value = true;
   try {
+    // 1. 단일 날짜 값만 추출 (배열이 아닐 경우)
+    const singleDate = Array.isArray(search.value.regDate) ? search.value.regDate[0] : search.value.regDate;
+
+    const formattedDate = singleDate ? fmtDate(singleDate) : null;
+
+    // 2. dateFrom과 dateTo를 같은 단일 날짜로 설정하여 '하루'만 조회하도록 함
     const params = {
       plId: search.value.plId || null,
       prodNo: search.value.prodNo || null,
-      dateFrom: Array.isArray(search.value.regDate) && search.value.regDate[0] ? fmtDate(search.value.regDate[0]) : search.value.regDate ? fmtDate(search.value.regDate) : null,
-      dateTo: Array.isArray(search.value.regDate) && search.value.regDate[1] ? fmtDate(search.value.regDate[1]) : null,
+      dateFrom: formattedDate, // 시작일 = 선택한 날짜
+      dateTo: formattedDate, // 종료일 = 선택한 날짜
       page: page.value,
       size: pageSize
     };
@@ -383,11 +389,11 @@ const submitIssueViaProc = async () => {
         <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <label class="text-sm block mb-2">생산번호</label>
-            <InputText v-model="search.prodNo" placeholder="PROD_NO" class="w-full" />
+            <InputText v-model="search.prodNo" placeholder="ex) PNO20251018-001" class="w-full" />
           </div>
           <div>
             <label class="text-sm block mb-2">생산일자</label>
-            <Calendar v-model="search.regDate" selectionMode="range" dateFormat="yy-mm-dd" showIcon class="w-full" />
+            <Calendar v-model="search.regDate" selectionMode="single" dateFormat="yy-mm-dd" showIcon class="w-full" />
           </div>
           <div class="md:col-span-2 flex items-end gap-2">
             <btn icon="pi pi-search" :loading="loading" label="조회" @click="doSearch" />

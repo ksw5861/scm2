@@ -12,10 +12,11 @@
         <result property="prodId" column="PROD_ID"/>
         <result property="matId" column="MAT_ID"/>
         <result property="qty" column="QTY"/>
-        <result property="lossRate" column="LOSS_RATE"/>   <!-- ✅ 추가 -->
+        <result property="lossRate" column="LOSS_RATE"/>  
         <result property="createdAt" column="CREATED_AT"/>
         <result property="effectiveDate" column="EFFECTIVE_DATE"/>
         <result property="expireDate" column="EXPIRE_DATE"/>
+        <result property="lastUpdateDate" column="LAST_UPDATE_DATE"/>
 
         <!-- BOM_DETAIL (옵션 매핑) -->
         <association property="bomDetail" javaType="com.yedam.scm.vo.BomDetailVO">
@@ -62,6 +63,7 @@
             b.CREATED_AT, 
             b.QTY,
             b.LOSS_RATE,
+            b.LAST_UPDATE_DATE,
 
             --  BOM_DETAIL
             bd.BOM_DE_ID,
@@ -152,7 +154,8 @@
                PROD_ID        = #{prodId},
                MAT_ID         = #{matId},
                QTY            = #{qty},
-               LOSS_RATE      = #{lossRate}
+               LOSS_RATE      = #{lossRate},
+               LAST_UPDATE_DATE = SYSDATE
          WHERE BOM_ID = #{bomId}
     </update>
 
