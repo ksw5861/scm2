@@ -2,6 +2,7 @@ import matShipment from "./supply/matShipment";
 import matSupply from "./supply/matSupply";
 import requestList from "./supply/requestList";
 import supplyList from "./supply/supplyList";
+import spDashboard from "./supply/dashboard";
 
 const supplier = {
   label: '공급처',
@@ -9,7 +10,8 @@ const supplier = {
     requestList,
     matSupply,
     matShipment,
-    supplyList
+    supplyList,
+    spDashboard
   ]
 };
 

@@ -24,11 +24,11 @@ import com.yedam.scm.vo.PurchaseMatVO;
 import com.yedam.scm.vo.WareHouseVO;
 
 import lombok.RequiredArgsConstructor;
-import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
 import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.util.JRLoader;
 
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -229,19 +229,21 @@ public class MsController {
     /*==============================================
      * 재스퍼 출고명세서
      ===============================================*/
-    @GetMapping("/shipment/{inboundId}")
-    public ResponseEntity<byte[]> exportShipment(@PathVariable Long inboundId) throws Exception {
+  @GetMapping("/shipment/{inboundId}")
+  public ResponseEntity<byte[]> exportShipment(@PathVariable Long inboundId) throws Exception {
     Map<String, Object> params = new HashMap<>();
     params.put("InboundId", inboundId);
 
-    Resource resource = resourceLoader.getResource("classpath:reports/ship.jrxml");
+    Resource resource = resourceLoader.getResource("classpath:/reports/ship.jasper");
     System.out.println("📦 exists: " + resource.exists());
     System.out.println("📁 URL: " + resource.getURL());
 
-    try (InputStream jrxmlStream = resource.getInputStream();
+    try (InputStream jasperStream = resource.getInputStream();
          Connection conn = dataSource.getConnection()) {
 
-        JasperReport jasperReport = JasperCompileManager.compileReport(jrxmlStream);
+        // ✅ 수정 부분: compileReport → JRLoader.loadObject 로 변경
+        JasperReport jasperReport = (JasperReport) JRLoader.loadObject(jasperStream);
+
         JasperPrint print = JasperFillManager.fillReport(jasperReport, params, conn);
         byte[] pdf = JasperExportManager.exportReportToPdf(print);
 
@@ -250,8 +252,8 @@ public class MsController {
         headers.setContentDispositionFormData("filename", "shipment_" + inboundId + ".pdf");
 
         return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
-        }
     }
+}
 
 
 

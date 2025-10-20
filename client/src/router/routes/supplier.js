@@ -50,6 +50,18 @@ const supplier = {
         requiresAuth: true,
         roles: ['supplier']
       }
+    },
+    {
+      path: '/supplyDash',
+      name: '공급처 대시보드',
+      component: () => import('@/views/pages/supplier/SupplierDashboard.vue'),
+      meta: {
+        breadcrumb: {
+          parent: '공급처'
+        },
+        requiresAuth: true,
+        roles: ['supplier']
+      }
     }
   ]
 };

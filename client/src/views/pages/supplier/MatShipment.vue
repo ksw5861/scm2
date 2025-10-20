@@ -10,7 +10,6 @@ import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import { useUserStore } from '@/stores/user';
 import SearchCard from '@/components/card/SearchCard.vue';
-import Select from 'primevue/select';
 import DatePicker from 'primevue/datepicker';
 
 // Pinia Store

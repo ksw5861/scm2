@@ -85,5 +85,10 @@ public class SupplierController {
     public List<InboundLogVO> getSupplyDetailList(@RequestParam Long inboundDetId) {
         return service.getSupplyDetailList(inboundDetId);
     }
+    //대시보드
+    @GetMapping("/dashboard/{vendorId}")
+    public Map<String, Object> getVendorDashboard(@PathVariable String vendorId) {
+        return service.getVendorDashboard(vendorId);
+    }
 }
 

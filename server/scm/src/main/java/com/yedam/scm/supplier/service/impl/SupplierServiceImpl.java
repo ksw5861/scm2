@@ -1,6 +1,7 @@
 package com.yedam.scm.supplier.service.impl;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -8,6 +9,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.yedam.scm.dto.ApproveMatSearchDTO;
+import com.yedam.scm.dto.VendorDashboardSummaryDTO;
+import com.yedam.scm.dto.VendorRecentListDTO;
 import com.yedam.scm.dto.matSupplySearchDTO;
 import com.yedam.scm.supplier.mapper.SupplierMapper;
 import com.yedam.scm.supplier.service.SupplierService;
@@ -131,6 +134,19 @@ public class SupplierServiceImpl implements SupplierService  {
     @Override
     public List<InboundLogVO> getSupplyDetailList(Long inboundDetId) {
        return mapper.getSupplyDetailList(inboundDetId);
+    }
+
+    @Override
+    public Map<String, Object> getVendorDashboard(String vendorId) {
+        Map<String, Object> result = new HashMap<>();
+
+        VendorDashboardSummaryDTO summary = mapper.getVendorDashboardSummary(vendorId);
+        List<VendorRecentListDTO> recentList = mapper.getVendorRecentList(vendorId);
+
+        result.put("summary", summary);
+        result.put("recentList", recentList);
+
+        return result;
     }
 
 }
