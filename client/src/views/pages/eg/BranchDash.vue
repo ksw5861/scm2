@@ -558,15 +558,17 @@ const updateDays = (days) => { selectedDays.value = days; fetchAllCharts() }
 const updateMonth = () => { fetchAllCharts() }
 
 // ===== 공통 fetch =====
-const fetchAllCharts = () => {
-  fetchTrend()
-  fetchProfit()
-  fetchCompare()
-  fetchCoffeeRank()
-  fetchPayMethod()
-}
+const fetchAllCharts = async () => {
+   await Promise.all([
+     fetchTrend(),
+     fetchProfit(),
+     fetchCompare(),
+     fetchCoffeeRank(),
+     fetchPayMethod()
+   ])
+ }
 
-// 최초 로드
+ // 최초 로드
 onMounted(() => {
   fetchKpi()
   fetchOrders()
