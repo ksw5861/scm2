@@ -252,4 +252,61 @@ WHERE il.inbound_det_id = #{inboundDetId}
 ORDER BY il.in_log_id DESC
 </select>
 
+
+<!--대시보드용-->
+<!--summary-->
+<select id="getVendorDashboardSummary" parameterType="string" resultType="VendorDashboardSummaryDTO">
+SELECT
+  (SELECT COUNT(*) 
+   FROM purchase_mat 
+   WHERE vendor_id = #{vendorId}
+   AND reg_date BETWEEN ADD_MONTHS(SYSDATE, -6) AND SYSDATE) AS total_order,
+  (SELECT COUNT(*) 
+     FROM inbound 
+     WHERE vendor_id = #{vendorId}
+     AND inbound.vendor_out_date BETWEEN ADD_MONTHS(SYSDATE, -6) AND SYSDATE) AS total_inbound,   
+  (SELECT NVL(SUM(total), 0)
+     FROM purchase_mat
+     WHERE vendor_id = #{vendorId}
+     AND reg_date BETWEEN ADD_MONTHS(SYSDATE, -6) AND SYSDATE) AS total_amount,    
+   (SELECT count(*)
+    FROM PURCHASE_MAT
+    WHERE vendor_id = #{vendorId}
+    AND pur_mat_status = 'ms1') AS before_approve,  
+   (SELECT count(*)
+    FROM PURCHASE_MAT
+    WHERE vendor_id = #{vendorId}
+    AND pur_mat_status IN ('ms2', 'ms5')) AS before_ship_order
+FROM dual
+</select>
+
+<!--최근 공급처 입출고 7건-->
+<select id="getVendorRecentList" parameterType="string" resultType="VendorRecentListDTO">
+SELECT *
+FROM (
+  SELECT 
+    '주문' AS type,
+    pur_no AS ref_no,
+    mat_id,
+    reg_date AS reg_date,
+    req_qty AS qty
+  FROM purchase_mat
+  WHERE vendor_id = #{vendorId}
+
+  UNION ALL
+
+  SELECT 
+    '출고' AS type,
+    ven_out_no AS ref_no,
+    mat_id,
+    vendor_out_date AS reg_date,
+    out_qty AS qty
+  FROM inbound_detail d
+  JOIN inbound i ON d.inbound_id = i.inbound_id
+  WHERE i.vendor_id = #{vendorId}
+  ORDER BY reg_date DESC
+)
+WHERE ROWNUM &lt; 8
+</select>
+<!---->
 </mapper>

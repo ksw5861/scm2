@@ -28,4 +28,6 @@ public interface SupplierService {
     List<InboundVO> getSupplyList(String vendorId, matSupplySearchDTO searchDTO);
     //출고상세목록
     List<InboundLogVO> getSupplyDetailList(Long inboundDetId);
+    //대시보드
+    Map<String, Object> getVendorDashboard(String vendorId);
 }

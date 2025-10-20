@@ -77,7 +77,7 @@
          AND (p.prod_id LIKE '%' || #{condition} || '%'
               OR p.prod_name LIKE '%' || #{condition} || '%')
        </if>
-
+</select>
   <select id="selectDashboardSummary" resultType="SalesOrderVO">
   SELECT
       NVL(SUM(s.total_price), 0) AS totalPrice,
@@ -92,10 +92,7 @@
       FROM payment
       GROUP BY vendor_id
   ) p ON s.vendor_id = p.vendor_id
-</select>dd
-
-
-  </select>
+</select>
 
   <!-- 창고 모달 -->
   <select id="selectWarehouseListByCondition" resultType="WareHouseVO">

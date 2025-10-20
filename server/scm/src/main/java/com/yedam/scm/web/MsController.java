@@ -24,7 +24,6 @@ import com.yedam.scm.vo.PurchaseMatVO;
 import com.yedam.scm.vo.WareHouseVO;
 
 import lombok.RequiredArgsConstructor;
-import net.sf.jasperreports.engine.JasperCompileManager;
 import net.sf.jasperreports.engine.JasperExportManager;
 import net.sf.jasperreports.engine.JasperFillManager;
 import net.sf.jasperreports.engine.JasperPrint;
@@ -235,7 +234,7 @@ public class MsController {
     Map<String, Object> params = new HashMap<>();
     params.put("InboundId", inboundId);
 
-    Resource resource = resourceLoader.getResource("classpath:reports/ship.jasper");
+    Resource resource = resourceLoader.getResource("classpath:/reports/ship.jasper");
     System.out.println("📦 exists: " + resource.exists());
     System.out.println("📁 URL: " + resource.getURL());
 
