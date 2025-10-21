@@ -245,13 +245,29 @@ public class InboundServiceImpl implements InboundService {
 
     // 주문승인 페이지 모달
     @Override
-    public List<Map<String, Object>> getVendorModalList(String keyword, int page, int size) { // 판매처명 모달
-        return inboundMapper.getVendorModalList(keyword, page, size);
+    public Map<String, Object> getApprovalVendorModal(String condition, int page, int size) {
+        PageDTO paging = new PageDTO(page, size);
+        long total = inboundMapper.countApprovalVendorModal(condition);
+        paging.updatePageInfo(total);
+        List<VendorVO> list = inboundMapper.selectApprovalVendorModal(condition, paging);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", list);
+        result.put("page", paging);
+        return result;
     }
 
     @Override
-    public List<Map<String, Object>> getOrderModalList(String keyword, int page, int size) { // 주문번호 모달
-        return inboundMapper.getOrderModalList(keyword, page, size);
+    public Map<String, Object> getApprovalOrderModal(String condition, int page, int size) {
+        PageDTO paging = new PageDTO(page, size);
+        long total = inboundMapper.countApprovalOrderModal(condition);
+        paging.updatePageInfo(total);
+        List<SalesOrderVO> list = inboundMapper.selectApprovalOrderModal(condition, paging);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("data", list);
+        result.put("page", paging);
+        return result;
     }
 
-} // end
+}// end

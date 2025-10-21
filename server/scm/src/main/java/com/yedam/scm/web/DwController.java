@@ -238,33 +238,34 @@ public class DwController {
     }
 
     /* ===================== 거래처원장 페이지 모달 ===================== */
+
     // ✅ 판매처 모달 조회 (원장페이지 전용)
     @GetMapping("/wonjang/modal-list")
+
     public Map<String, Object> getVendorList(
             @RequestParam(required = false) String keyword,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return service.getVendorList(keyword, page, size);
+
     }
-    
 
-
-    
     /* ===================== 주문승인 페이지 모달 ===================== */
-    @GetMapping("/approval/vendor-list") // 판매처명 모달
-    public List<Map<String, Object>> getVendorModalList(
-            @RequestParam(required = false) String keyword,
+
+    @GetMapping("/approval-modal/vendor")
+    public Map<String, Object> getApprovalVendorModal(
+            @RequestParam(required = false) String condition,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return service.getVendorModalList(keyword, page, size);
+        return service.getApprovalVendorModal(condition, page, size);
     }
 
-    @GetMapping("/approval/order-list") // 주문번호 모달
-    public List<Map<String, Object>> getOrderModalList(
-            @RequestParam(required = false) String keyword,
+    // ✅ 주문번호 모달
+    @GetMapping("/approval-modal/order")
+    public Map<String, Object> getApprovalOrderModal(
+            @RequestParam(required = false) String condition,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return service.getOrderModalList(keyword, page, size);
+        return service.getApprovalOrderModal(condition, page, size);
     }
-
 }// end

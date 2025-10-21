@@ -6,7 +6,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import lombok.Data;
 
-
 @Data
 public class AccountLedgerSearchDTO {
 
@@ -15,10 +14,7 @@ public class AccountLedgerSearchDTO {
 
         @DateTimeFormat(pattern = "yyyy-MM-dd")
         private Date endDate;
-        
+
         private String vendorId;
-
-        
-
 
 }

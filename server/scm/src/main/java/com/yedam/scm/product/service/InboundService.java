@@ -75,9 +75,10 @@ public interface InboundService {
     // 거래처원장 페이지 모달
     Map<String, Object> getVendorList(String keyword, int page, int size);
 
-    // 주문승인 페이지 모달
-    List<Map<String, Object>> getVendorModalList(String keyword, int page, int size); // companyName만
+    /* ==============주문승인 페이지 모달 ============ */
+    // ✅ 주문승인 - 판매처 모달
+    Map<String, Object> getApprovalVendorModal(String condition, int page, int size);
 
-    List<Map<String, Object>> getOrderModalList(String keyword, int page, int size); // orderId만
-
+    // ✅ 주문승인 - 주문번호 모달
+    Map<String, Object> getApprovalOrderModal(String condition, int page, int size);
 }

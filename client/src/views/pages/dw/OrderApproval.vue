@@ -11,7 +11,7 @@ import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
 
 /* 상태 */
-const search = ref({ fromDate: null, toDate: null, vendorName: '', orderId: '' });
+const search = ref({ fromDate: null, toDate: null, vendorId: '', orderId: '' });
 const orderList = ref([]);
 const selectedOrders = ref([]);
 const detailRows = ref([]);
@@ -27,12 +27,18 @@ const vendorDialog = ref(false);
 const vendorKeyword = ref('');
 const vendorList = ref([]);
 const selectedVendor = ref(null);
+const vendorPage = ref(1);
+const vendorRows = ref(10);
+const vendorTotal = ref(0);
 
 /* 주문번호 모달 */
 const orderDialog = ref(false);
 const orderKeyword = ref('');
 const orderListModal = ref([]);
 const selectedOrderModal = ref(null);
+const orderPage = ref(1);
+const orderRows = ref(10);
+const orderTotal = ref(0);
 
 /* 유틸 */
 function fmtDate(value) {
@@ -54,32 +60,65 @@ function fmtCurrency(n) {
 }
 
 /* 판매처 모달 */
+async function loadVendorList() {
+  try {
+    const { data } = await axios.get('/api/approval-modal/vendor', {
+      params: {
+        condition: vendorKeyword.value,
+        page: vendorPage.value,
+        size: vendorRows.value
+      }
+    });
+    vendorList.value = data.items ?? data.data ?? [];
+    vendorTotal.value = data.totalCount ?? 0;
+  } catch {
+    vendorList.value = [];
+  }
+}
+
 async function openVendorModal() {
   vendorDialog.value = true;
-  vendorList.value = [];
-  try {
-    const { data } = await axios.get('/api/approval/vendor-list', { params: { keyword: vendorKeyword.value } });
-    vendorList.value = Array.isArray(data) ? data : (data?.data ?? []);
-  } catch {
-    /* 서버 없어도 표시됨 */
-  }
+  vendorPage.value = 1;
+  await loadVendorList();
+}
+function onVendorPageChange(e) {
+  vendorPage.value = e.page + 1;
+  vendorRows.value = e.rows;
+  loadVendorList();
 }
 function selectVendor(e) {
   const v = e.data;
-  search.value.vendorName = v.companyName;
+  search.value.vendorName = v.companyName; // 판매처명 표시용
+  search.value.vendorId = v.vendorId; // ✅ 검색용 id
   vendorDialog.value = false;
 }
 
 /* 주문번호 모달 */
+async function loadOrderList() {
+  try {
+    const { data } = await axios.get('/api/approval-modal/order', {
+      params: {
+        condition: orderKeyword.value,
+        page: orderPage.value,
+        size: orderRows.value
+      }
+    });
+    orderListModal.value = data.items ?? data.data ?? [];
+    orderTotal.value = data.totalCount ?? 0;
+  } catch {
+    orderListModal.value = [];
+  }
+}
+
 async function openOrderModal() {
   orderDialog.value = true;
-  orderListModal.value = [];
-  try {
-    const { data } = await axios.get('/api/approval/order-list', { params: { keyword: orderKeyword.value } });
-    orderListModal.value = Array.isArray(data) ? data : (data?.data ?? []);
-  } catch {
-    /* 서버 없어도 표시됨 */
-  }
+  orderPage.value = 1;
+  await loadOrderList();
+}
+function onOrderPageChange(e) {
+  orderPage.value = e.page + 1;
+  orderRows.value = e.rows;
+  loadOrderList();
 }
 function selectOrder(e) {
   const o = e.data;
@@ -115,13 +154,10 @@ async function loadDetails(row) {
 /* 목록 조회 */
 async function applySearch() {
   const params = {
-    fromDate: search.value.fromDate ? fmtDate(search.value.fromDate) : '',
-    toDate: search.value.toDate ? fmtDate(search.value.toDate) : '',
-    companyName: search.value.vendorName || '',
-    orderId: search.value.orderId || '',
-    prodStatus: '대기',
-    page: 1,
-    size: 10
+    startDate: search.value.fromDate ? fmtDate(search.value.fromDate) : '',
+    endDate: search.value.toDate ? fmtDate(search.value.toDate) : '',
+    vendorId: search.value.vendorId || '',
+    orderId: search.value.orderId || '' // ✅ 추가됨 (주문번호 필터용)
   };
   try {
     const { data } = await axios.get('/api/approval-list', { params });
@@ -135,10 +171,9 @@ async function applySearch() {
   currentOrderId.value = null;
 }
 function resetSearch() {
-  search.value = { fromDate: null, toDate: null, vendorName: '', orderId: '' };
+  search.value = { fromDate: null, toDate: null, vendorId: '', vendorId: '', orderId: '' };
   applySearch();
 }
-
 /* 선택 변경 */
 async function onOrderSelectionChange(e) {
   const arr = Array.isArray(e?.value) ? e.value : [];
@@ -304,10 +339,10 @@ onMounted(() => applySearch());
     <!-- 판매처 모달 -->
     <Dialog v-model:visible="vendorDialog" header="판매처 검색" modal closable :style="{ width: '600px' }">
       <div class="p-inputgroup mb-3">
-        <InputText v-model="vendorKeyword" placeholder="판매처명 검색" @keyup.enter="openVendorModal" />
-        <Button icon="pi pi-search" @click="openVendorModal" />
+        <InputText v-model="vendorKeyword" placeholder="판매처명 검색" @keyup.enter="loadVendorList" />
+        <Button icon="pi pi-search" @click="() => loadVendorList()" />
       </div>
-      <DataTable :value="vendorList" dataKey="companyName" selectionMode="single" v-model:selection="selectedVendor" @row-dblclick="selectVendor">
+      <DataTable :value="vendorList" dataKey="companyName" selectionMode="single" v-model:selection="selectedVendor" @row-dblclick="selectVendor" paginator :rows="vendorRows" :totalRecords="vendorTotal" @page="onVendorPageChange">
         <Column field="companyName" header="판매처명" />
       </DataTable>
     </Dialog>
@@ -315,10 +350,10 @@ onMounted(() => applySearch());
     <!-- 주문번호 모달 -->
     <Dialog v-model:visible="orderDialog" header="주문번호 검색" modal closable :style="{ width: '600px' }">
       <div class="p-inputgroup mb-3">
-        <InputText v-model="orderKeyword" placeholder="주문번호 검색" @keyup.enter="openOrderModal" />
-        <Button icon="pi pi-search" @click="openOrderModal" />
+        <InputText v-model="orderKeyword" placeholder="주문번호 검색" @keyup.enter="loadOrderList" />
+        <Button icon="pi pi-search" @click="() => loadOrderList()" />
       </div>
-      <DataTable :value="orderListModal" dataKey="orderId" selectionMode="single" v-model:selection="selectedOrderModal" @row-dblclick="selectOrder">
+      <DataTable :value="orderListModal" dataKey="orderId" selectionMode="single" v-model:selection="selectedOrderModal" @row-dblclick="selectOrder" paginator :rows="orderRows" :totalRecords="orderTotal" @page="onOrderPageChange">
         <Column field="orderId" header="주문번호" />
       </DataTable>
     </Dialog>
