@@ -38,20 +38,19 @@ const purchaseList = ref([
   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
 ]);
-
-const warehouseOptions = ref([]);
-const codeMap = ref({}); //공통코드용
+const warehouseOptions = ref([]); //창고옵션
+const codeMap = ref({}); //공통코드용(생산유형)
+const monthCodeMap = ref({}); //공통코드용(월)
+const weekCodeMap = ref({}); //공통코드용(주차)
 
 //모달
 const showPlanModal = ref(false);
 const selectedPlan = ref(null);
 
-// 모달 열기
 const openPlanModal = () => {
   showPlanModal.value = true;
 };
 
-// 모달 닫기
 const closePlanModal = () => {
   showPlanModal.value = false;
 };
@@ -68,30 +67,19 @@ const fetchPlanMaster = async () => {
     return {
       items: res.data.map((item) => ({
         ...item,
-        startDate: useDateFormat(item.startDate).value,
-        endDate: useDateFormat(item.endDate).value,
+        startDate: monthCodeMap.value[item.startDate],
+        endDate: weekCodeMap.value[item.endDate],
         planType: codeMap.value[item.planType] || item.planType
       }))
     };
+
   } catch (error) {
     toast('error', '리스트 로드 실패', '생산계획 리스트 불러오기 실패', '3000');
     return { items: [] };
   }
 };
 
-//공통코드
-const loadStatusCodes = async () => {
-  try {
-    const res = await axios.get('/api/mat/status/p03');
-    // {"pt1": "정규생산", "pt2": "특별생산", ...} 형태로 변환
-    codeMap.value = res.data.reduce((acc, cur) => {
-      acc[cur.codeId] = cur.codeName;
-      return acc;
-    }, {});
-  } catch (err) {
-    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
-  }
-};
+
 
 //모달내부 계획선택
 const onSelectPlan = async (plan) => {
@@ -142,12 +130,6 @@ const pageLoadMrp = async () => {
     leadTime: item.leadTime
   }));
 };
-
-onMounted(() => {
-  pageLoadMrp();
-  loadWarehouseList();
-  loadStatusCodes();
-});
 
 //자재별 공급처
 const selectVendor = async (row) => {
@@ -245,7 +227,52 @@ const reqSubmit = async () => {
   }
 };
 
-//테이블 컬럼
+
+//공통코드
+const loadStatusCodes = async () => {
+  try {
+    const res = await axios.get('/api/mat/status/p03');
+    // {"pt1": "정규생산", "pt2": "특별생산", ...} 형태로 변환
+    codeMap.value = res.data.reduce((acc, cur) => {
+      acc[cur.codeId] = cur.codeName;
+      return acc;
+    }, {});
+  } catch (err) {
+    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
+  }
+};
+
+const monthCodes = async () => {
+  try {
+    const res = await axios.get('/api/mat/status/month');
+    monthCodeMap.value = res.data.reduce((acc, cur) => {
+      acc[cur.codeId] = cur.codeName;
+      return acc;
+    }, {});
+  } catch (err) {
+    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
+  }
+};
+
+const weekCodes = async () => {
+  try {
+    const res = await axios.get('/api/mat/status/week');
+    weekCodeMap.value = res.data.reduce((acc, cur) => {
+      acc[cur.codeId] = cur.codeName;
+      return acc;
+    }, {});
+  } catch (err) {
+    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
+  }
+};
+
+onMounted(() => {
+  pageLoadMrp();
+  loadWarehouseList();
+  loadStatusCodes();
+  monthCodes();
+  weekCodes();
+});
 
 const planMasterColumns = [
   { field: 'planNo', label: '계획번호', style: 'width: 10rem' },
@@ -287,32 +314,18 @@ const purchaseColumns = [
 
 <template>
   <div class="container">
-    <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
-    </div>
-
-    <div class="flex flex-col gap-8">
-      <!-- 상단 -->
-      <div class="header">
-        <div class="card flex flex-col gap-4">
-          <div class="flex items-center justify-between font-semibold text-m">
-            <span>MRP 산출 및 자재 발주</span>
-            <btn color="secondary" icon="pi pi-file-excel" @click="reqSubmit" label="주문" />
-          </div>
-          <Divider />
-          <selectTable :columns="purchaseColumns" :scrollable="true" :data="purchaseList" :paginator="false" :showCheckbox="false" @row-select="selectVendor" />
-        </div>
-      </div>
+    <div class="flex flex-col gap-8 mt-4">
 
       <!-- 하단 -->
       <div class="flex flex-col md:flex-row gap-8">
         <div class="md:w-1/2 planList">
-          <div class="card flex flex-col gap-4 h-full">
+          <div class="card flex flex-col gap-4 h-full" >
             <div class="flex items-center justify-between font-semibold text-m">
               <span>생산계획 상세</span>
               <div class="flex gap-2">
-                <btn color="secondary" icon="pi pi-search" label="생산계획불러오기" @click="openPlanModal" />
-                <btn color="secondary" icon="pi pi-cog" label="MRP산출" @click="calculatMrp" />
+                <btn color="secondary" icon="check" label="생산계획불러오기" class="whitespace-nowrap" outlined @click="openPlanModal" />
+                <btn color="secondary" icon="check" label="MRP계산" class="whitespace-nowrap" outlined @click="calculatMrp" />
               </div>
             </div>
             <Divider />
@@ -322,11 +335,22 @@ const purchaseColumns = [
 
         <!-- 우측 -->
         <div class="md:w-1/2">
-          <div class="card flex flex-col gap-4 h-full">
+          <div class="card flex flex-col gap-4 h-full" >
             <div class="font-semibold text-m">MRP 합산 자재 소요량</div>
             <Divider />
             <selectTable :columns="mrpColumns" :data="mrpList" :paginator="false" :showCheckbox="false" @row-select="addToPurchase" />
           </div>
+        </div>
+      </div>
+       <!-- 상단 -->
+      <div class="header">
+        <div class="card flex flex-col gap-4">
+          <div class="flex items-center justify-between font-semibold text-m">
+            <span>MRP 산출 및 자재 발주</span>
+            <btn color="secondary" icon="check" label="자재주문"  @click="reqSubmit" class="whitespace-nowrap" outlined/>
+          </div>
+          <Divider />
+          <selectTable :columns="purchaseColumns" :scrollable="true" :data="purchaseList" :paginator="false" :showCheckbox="false" @row-select="selectVendor" />
         </div>
       </div>
     </div>

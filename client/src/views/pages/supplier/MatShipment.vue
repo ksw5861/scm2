@@ -234,12 +234,9 @@ const addShipColumns = [
 
 <template>
   <div class="container">
-    <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
-    </div>
-
     <!--검색영역-->
-      <div class="card flex flex-col gap-4">
+      <div class="card flex flex-col gap-4 mt-4">
         <SearchCard title="출고 검색" @search="pageLoad" @reset="resetSearch">
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
@@ -295,7 +292,7 @@ const addShipColumns = [
             <div class="flex items-center justify-between my-3">
                 <div class="font-semibold text-m">상세정보</div>
                 <div class="flex gap-2">
-                    <btn color="warn" icon="pi pi-file-excel" @click="submit" label="배송등록" />
+                    <btn color="info" icon="check" label="배송 등록" class="whitespace-nowrap" outlined @click="submit" />
                 </div>
             </div>
             <Divider />

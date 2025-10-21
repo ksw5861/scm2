@@ -182,11 +182,9 @@ const matOrderColumns = [
 
 <template>
   <div class="container">
-    <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
-    </div>
     <!--검색영역-->
-    <div class="card flex flex-col gap-4">
+    <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="주문 검색" @search="fetchList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
@@ -228,8 +226,8 @@ const matOrderColumns = [
     <!--중간버튼영역-->
     <div class="card flex flex-col gap-4">
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="secondary" icon="cancel" label="주문 거부" @click="oepnRejModal" outlined />
-        <btn color="info" icon="add" label="주문 승인" class="whitespace-nowrap" outlined @click="approve" />
+        <btn color="warn" icon="cancel" label="주문 거부" @click="oepnRejModal" outlined class="whitespace-nowrap"/>
+        <btn color="info" icon="check" label="주문 승인"  @click="approve" class="whitespace-nowrap" outlined/>
       </div>
       <div class="font-semibold text-xl mb-5">조회 내역</div>
       <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" @page-change="onPage" :page="page" />

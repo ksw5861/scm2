@@ -181,10 +181,8 @@ const matOutColumns = [
 
 <template>
   <div class="container">
-    <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
-    </div>
-    <div class="card flex flex-col gap-4">
+    <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="주문 검색" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
@@ -223,7 +221,7 @@ const matOutColumns = [
     <!--테이블영역--><!--테이블영역-->
     <div class="card flex flex-col gap-4">
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="info" icon="pi pi-file-pdf" @click="approvedShip" label="승인" />
+        <btn color="info" icon="check" label="출고 승인" class="whitespace-nowrap" outlined @click="approvedShip" />
       </div>
       <div class="font-semibold text-xl mb-5">출고대기 목록</div>
       <selectTable v-model:selection="selectedRows" :columns="matOutColumns" :data="matOutData" :paginator="true" :rows="15" :page="page" @page-change="onPage" />
