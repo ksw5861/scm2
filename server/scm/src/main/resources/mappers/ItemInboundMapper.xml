@@ -77,7 +77,8 @@
          AND (p.prod_id LIKE '%' || #{condition} || '%'
               OR p.prod_name LIKE '%' || #{condition} || '%')
        </if>
-</select>
+    </select>
+
   <select id="selectDashboardSummary" resultType="SalesOrderVO">
   SELECT
       NVL(SUM(s.total_price), 0) AS totalPrice,
@@ -93,6 +94,9 @@
       GROUP BY vendor_id
   ) p ON s.vendor_id = p.vendor_id
 </select>
+
+
+
 
   <!-- 창고 모달 -->
   <select id="selectWarehouseListByCondition" resultType="WareHouseVO">
@@ -402,6 +406,12 @@
   ) u ON v.vendor_id = u.vendor_id
 
   WHERE v.type IN (0, 2)
+   <!-- ✅ 🔽🔽🔽 여기에 추가 -->
+  <if test="vendorId != null and vendorId != ''">
+    AND v.vendor_id = #{vendorId}
+  </if>
+  <!-- ✅ 🔼🔼🔼 이 위치임 -->
+
 
   <!-- ✅ 핵심: 실제 출력 범위를 “최근거래일자 기준”으로 필터링 -->
   <if test="startDate != null and endDate != null">
@@ -443,9 +453,9 @@
              ROW_NUMBER() OVER (ORDER BY v.vendor_id DESC) AS rn
         FROM vendor v
        WHERE 1=1
-         <if test="keyword != null and keyword != ''">
-           AND (v.vendor_id LIKE '%' || #{keyword} || '%'
-            OR v.company_name LIKE '%' || #{keyword} || '%')
+         <if test="condition != null and condition != ''">
+           AND (v.vendor_id LIKE '%' || #{condition} || '%'
+            OR v.company_name LIKE '%' || #{condition} || '%')
          </if>
     )
    WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
@@ -456,9 +466,9 @@
   SELECT COUNT(*)
     FROM vendor v
    WHERE 1=1
-     <if test="keyword != null and keyword != ''">
-       AND (v.vendor_id LIKE '%' || #{keyword} || '%'
-        OR v.company_name LIKE '%' || #{keyword} || '%')
+     <if test="condition != null and condition != ''">
+       AND (v.vendor_id LIKE '%' || #{condition} || '%'
+        OR v.company_name LIKE '%' || #{condition} || '%')
      </if>
 </select>
 
@@ -467,32 +477,65 @@
 
 
  <!-- ===================== 주문승인 페이지 모달  ===================== -->
- <select id="getVendorModalList" resultType="map"> <!-- 판매처명 모달 -->
+<!-- ✅ 판매처 모달 -->
+
+<select id="selectApprovalVendorModal" resultType="com.yedam.scm.vo.VendorVO">
   SELECT *
     FROM (
-      SELECT v.company_name AS companyName,
-             ROW_NUMBER() OVER (ORDER BY v.vendor_id DESC) AS rn
+      SELECT
+          v.vendor_id AS vendorId,
+          v.company_name AS companyName,
+          ROW_NUMBER() OVER (ORDER BY v.company_name) AS rn
         FROM vendor v
        WHERE v.type IN (0, 2)
-         <if test="keyword != null and keyword != ''">
-           AND v.company_name LIKE '%' || #{keyword} || '%'
+         <if test="condition != null and condition != ''">
+           AND (v.company_name LIKE '%' || #{condition} || '%'
+            OR v.vendor_id LIKE '%' || #{condition} || '%')
          </if>
     )
-   WHERE rn BETWEEN ((#{page}-1)*#{size}+1) AND (#{page}*#{size})
+   WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
 </select>
 
-<select id="getOrderModalList" resultType="map"> <!-- 주문번호 모달 -->
+<select id="countApprovalVendorModal" resultType="long">
+  SELECT COUNT(*)
+    FROM vendor v
+   WHERE v.type IN (0, 2)
+     <if test="condition != null and condition != ''">
+       AND (v.company_name LIKE '%' || #{condition} || '%'
+        OR v.vendor_id LIKE '%' || #{condition} || '%')
+     </if>
+</select>
+
+
+<!-- ✅ 주문번호 모달 -->
+<select id="selectApprovalOrderModal" resultType="com.yedam.scm.vo.SalesOrderVO">
   SELECT *
     FROM (
-      SELECT s.order_id AS orderId,
-             ROW_NUMBER() OVER (ORDER BY s.order_id DESC) AS rn
+      SELECT
+          s.order_id AS orderId,
+          s.order_date AS orderDate,
+          v.company_name AS companyName,
+          ROW_NUMBER() OVER (ORDER BY s.order_date DESC) AS rn
         FROM sales_order s
-       WHERE 1=1
-         <if test="keyword != null and keyword != ''">
-           AND s.order_id LIKE '%' || #{keyword} || '%'
+        JOIN vendor v ON s.vendor_id = v.vendor_id
+       WHERE s.status IN ('대기', '처리중')
+         <if test="condition != null and condition != ''">
+           AND (s.order_id LIKE '%' || #{condition} || '%'
+            OR v.company_name LIKE '%' || #{condition} || '%')
          </if>
     )
-   WHERE rn BETWEEN ((#{page}-1)*#{size}+1) AND (#{page}*#{size})
+   WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
+</select>
+
+<select id="countApprovalOrderModal" resultType="long">
+  SELECT COUNT(*)
+    FROM sales_order s
+    JOIN vendor v ON s.vendor_id = v.vendor_id
+   WHERE s.status IN ('대기', '처리중')
+     <if test="condition != null and condition != ''">
+       AND (s.order_id LIKE '%' || #{condition} || '%'
+        OR v.company_name LIKE '%' || #{condition} || '%')
+     </if>
 </select>
 
 

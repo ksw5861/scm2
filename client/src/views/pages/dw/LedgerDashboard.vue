@@ -29,23 +29,24 @@ const icons = {
   refresh: useIcon('refresh'),
   save: useIcon('save'),
   register: useIcon('register'),
-  address: useIcon('address'),
+  address: useIcon('address')
 };
 
-/* breadcrumbH */
+/* breadcrumb */
 const breadcrumbHome = { icon: icons.home, to: '/' };
 const breadcrumbItems = computed(() => {
-  const matched = route.matched.filter(r => r.meta);
+  const matched = route.matched.filter((r) => r.meta);
   if (!matched.length) return [];
-  const current = matched[matched.length - 1];
-  return [
-    { label: '홈' },
-    { label: '대시보드' }
-  ];
+  return [{ label: '홈' }, { label: '대시보드' }];
 });
 
 /* 상태 */
-const summary = ref({ totalPrice: 0, returnPrice: 0, totalPayment: 0, totalAr: 0 });
+const summary = ref({
+  totalPrice: 0,
+  returnPrice: 0,
+  totalPayment: 0,
+  totalAr: 0
+});
 const list = ref([]);
 
 /* 차트 참조 */
@@ -79,9 +80,16 @@ function renderDonutChart() {
     type: 'doughnut',
     data: {
       labels: ['총 입금', '총 미수금'],
-      datasets: [{ data: [summary.value.totalPayment, summary.value.totalAr], backgroundColor: ['#4BAF7D', '#D84C4C'] }]
+      datasets: [
+        {
+          data: [summary.value.totalPayment, summary.value.totalAr],
+          backgroundColor: ['#4BAF7D', '#D84C4C']
+        }
+      ]
     },
-    options: { plugins: { legend: { position: 'bottom' } } }
+    options: {
+      plugins: { legend: { position: 'bottom' } }
+    }
   });
 }
 
@@ -95,11 +103,21 @@ function renderBarChart() {
     data: {
       labels: top5.map((v) => v.companyName),
       datasets: [
-        { label: '매출', data: top5.map((v) => v.totalPrice), backgroundColor: '#1976d2' },
-        { label: '미수금', data: top5.map((v) => v.totalAr), backgroundColor: '#ff9800' }
+        {
+          label: '매출',
+          data: top5.map((v) => v.totalPrice),
+          backgroundColor: '#1976d2'
+        },
+        {
+          label: '미수금',
+          data: top5.map((v) => v.totalAr),
+          backgroundColor: '#ff9800'
+        }
       ]
     },
-    options: { plugins: { legend: { position: 'bottom' } } }
+    options: {
+      plugins: { legend: { position: 'bottom' } }
+    }
   });
 }
 
@@ -109,8 +127,9 @@ onMounted(() => loadDashboard());
 <template>
   <Fluid>
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
-    <div class="flex gap-4 mt-4">
 
+    <!-- 요약 카드 -->
+    <div class="flex gap-4 mt-4">
       <div
         class="card"
         v-for="(v, i) in [
@@ -120,16 +139,26 @@ onMounted(() => loadDashboard());
           { label: '총미수금', val: summary.totalAr }
         ]"
         :key="i"
-        style="width: 25%; height: 128px; margin-bottom: 0;"
+        style="width: 25%; height: 128px; margin-bottom: 0"
       >
         <p>{{ v.label }}</p>
         <h4>{{ fmt(v.val) }}</h4>
       </div>
     </div>
 
+    <!-- 그래프 영역 -->
     <div class="flex gap-4 mt-4">
-      <div class="card w-1/3" style="margin-bottom: 0;"><canvas ref="chartRefDonut"></canvas></div>
-      <div class="card w-2/3" style="margin-bottom: 0;"><canvas ref="chartRefBar"></canvas></div>
+      <!-- 도넛 차트 -->
+      <div class="card w-1/3" style="margin-bottom: 0">
+        <h3 class="text-center text-[22px] font-extrabold tracking-wide mb-4 select-none" style="font-family: 'Poppins', 'Pretendard', sans-serif; color: #1e3a8a; /* ✅ 파란 막대보다 한톤 어두운 blue-900 */ letter-spacing: 0.6px">입금·미수금 현황</h3>
+        <canvas ref="chartRefDonut"></canvas>
+      </div>
+
+      <!-- 막대 차트 -->
+      <div class="card w-2/3" style="margin-bottom: 0">
+        <h3 class="text-center text-[22px] font-extrabold tracking-wide mb-4 select-none" style="font-family: 'Poppins', 'Pretendard', sans-serif; color: #1e3a8a; /* ✅ 동일 톤 적용 */ letter-spacing: 0.6px">매출 상위 5개 판매처</h3>
+        <canvas ref="chartRefBar"></canvas>
+      </div>
     </div>
   </Fluid>
 </template>

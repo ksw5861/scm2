@@ -106,9 +106,16 @@ public interface InboundMapper {
 
         long selectVendorCountByCondition(@Param("condition") String condition);
 
-        // 주문승인 페이지 모달
-        List<Map<String, Object>> getVendorModalList(String keyword, int page, int size); // 판매처명 모달
+        /* ============주문승인 페이지 모달============ */
+        List<VendorVO> selectApprovalVendorModal(
+                        @Param("condition") String condition,
+                        @Param("paging") PageDTO paging);
 
-        List<Map<String, Object>> getOrderModalList(String keyword, int page, int size); // 주문번호 모달
+        long countApprovalVendorModal(@Param("condition") String condition);
 
+        List<SalesOrderVO> selectApprovalOrderModal(
+                        @Param("condition") String condition,
+                        @Param("paging") PageDTO paging);
+
+        long countApprovalOrderModal(@Param("condition") String condition);
 }
