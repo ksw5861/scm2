@@ -315,5 +315,39 @@ FROM (
 )
 WHERE ROWNUM &lt; 8
 </select>
-<!---->
+
+<!--파이차트-->
+<select id="getVendorChartData" parameterType="string" resultType="VendorChartDTO">
+SELECT m.mat_name AS matName,
+       SUM(d.out_qty) AS qty
+FROM inbound i
+JOIN inbound_detail d 
+ON i.inbound_id = d.inbound_id
+JOIN material m 
+ON d.mat_id = m.mat_id
+WHERE i.vendor_id = #{vendorId}                
+  AND i.unload_date >= ADD_MONTHS(SYSDATE, -3)
+  AND d.inbound_status = 'd2'
+GROUP BY m.mat_name
+ORDER BY qty DESC
+</select>
+
+<select id="getVendorDefectList" parameterType="string" resultType="VendorDefectDTO">
+select l.log_rej_qty,
+       m.mat_name,
+       i.vendor_out_date,
+       l.log_memo,
+       i.ven_out_no
+from inbound_log l
+join inbound_detail d
+on l.inbound_det_id = d.inbound_det_id
+join inbound i
+on i.inbound_id = d.inbound_id
+join material m
+on d.mat_id = m.mat_id
+where l.log_rej_qty is not null
+and i.vendor_id = 'EMP088'
+order by i.vendor_out_date desc
+</select>
+
 </mapper>

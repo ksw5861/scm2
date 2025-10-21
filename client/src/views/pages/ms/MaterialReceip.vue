@@ -304,11 +304,9 @@ const approveUnloadDetaiColumn = [
 
 <template>
   <div class="container">
-    <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
-    </div>
     <!--검색영역-->
-    <div class="card flex flex-col gap-4">
+    <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="입고 조회" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
@@ -347,9 +345,9 @@ const approveUnloadDetaiColumn = [
     <!--테이블영역--><!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4 h-full">
+        <div class="card flex flex-col gap-4 h-full" style="height: 800px;">
           <!-- h-full 고정 -->
-          <div class="card flex flex-col gap-4">
+          <div class="card flex flex-col gap-4" style="height: 800px;">
             <div class="font-semibold text-m">입고대기 목록</div>
             <Divider />
             <selectTable v-model:selection="selectedMaster" :selectionMode="'single'" :columns="approveUnloadColumn" :data="approveUnloadList" :paginator="true" :showCheckbox="false" :page="page" @row-select="detailInfo" @page-change="onPage" />
@@ -358,15 +356,15 @@ const approveUnloadDetaiColumn = [
       </div>
       <!--하단우측-->
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4">
+        <div class="card flex flex-col gap-4" >
           <!-- 버튼 + 제목을 같은 행에 배치 -->
           <div class="flex items-center justify-between my-3">
             <!-- 왼쪽: 제목 -->
             <div class="font-semibold text-m">상세정보</div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
-              <btn color="warn" icon="pi pi-file-excel" label="불량등록" @click="opendefectModal" />
-              <btn color="info" icon="pi pi-file-pdf" label="입고등록" @click="submit" />
+              <btn color="warn" icon="check" label="불량등록"  @click="opendefectModal" class="whitespace-nowrap" outlined/>
+              <btn color="info" icon="check" label="입고등록" @click="submit" lass="whitespace-nowrap" outlined/>
             </div>
           </div>
 

@@ -10,6 +10,9 @@ import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import { useUserStore } from '@/stores/user';
 import SearchCard from '@/components/card/SearchCard.vue';
 import Select from 'primevue/select';
+import Breadcrumb from 'primevue/breadcrumb';
+import Divider from 'primevue/divider';
+import Btn from '@/components/common/Btn.vue';
 
 // Pinia Store
 const userStore = useUserStore();
@@ -249,11 +252,9 @@ const adjustHistoryColumns = [
 
 <template>
   <div class="container">
-    <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
-    </div>
     <!--검색영역-->
-    <div class="card flex flex-col gap-4">
+    <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="재고 조회" @search="fetchMatList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
@@ -287,7 +288,7 @@ const adjustHistoryColumns = [
       <div class="md:w-1/2">
         <div class="card flex flex-col gap-4 h-full">
           <!-- h-full 고정 -->
-          <div class="card flex flex-col gap-4">
+          <div class="card flex flex-col gap-4" >
             <div class="font-semibold text-m">목록</div>
             <Divider />
             <selectTable v-model:selection="selectedRows" selectionMode="single" :columns="matStock" :data="matStockList" :paginator="true" :page="page" :showCheckbox="false" @page-change="onPage" @row-select="detailInfo" />
@@ -296,12 +297,12 @@ const adjustHistoryColumns = [
       </div>
       <!--오른쪽-->
       <div class="md:w-1/2 h-full">
-        <div class="card flex flex-col gap-4 h-full">
+        <div class="card flex flex-col gap-4 h-full" >
           <!-- 상단 헤더 -->
           <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-m">상세정보</div>
             <div class="flex gap-2">
-              <btn color="warn" icon="pi pi-save" @click="submitAdjustStock" label="조정등록" />
+              <btn color="info" icon="check" label="재고 조정" class="whitespace-nowrap" outlined @click="submitAdjustStock" />
             </div>
           </div>
           <Divider />

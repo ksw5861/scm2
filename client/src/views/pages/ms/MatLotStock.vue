@@ -162,11 +162,9 @@ const matLotColumns = [
 
 <template>
   <div class="container">
-    <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
-    </div>
     <!--검색영역-->
-    <div class="card flex flex-col gap-4">
+    <div class="card flex flex-col gap-4 mt-4" >
       <SearchCard title="재고 조회" @search="fetchMatList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
@@ -198,7 +196,7 @@ const matLotColumns = [
     <!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4 h-full">
+        <div class="card flex flex-col gap-4 h-full" style="height: 850px;">
           <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">목록</div>
@@ -209,7 +207,7 @@ const matLotColumns = [
       </div>
       <!--하단우측-->
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4">
+        <div class="card flex flex-col gap-4" >
           <!-- 버튼 + 제목을 같은 행에 배치 -->
           <div class="flex items-center justify-between my-3">
             <!-- 왼쪽: 제목 -->

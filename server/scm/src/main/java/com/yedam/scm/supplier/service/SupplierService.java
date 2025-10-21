@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.yedam.scm.dto.ApproveMatSearchDTO;
+import com.yedam.scm.dto.VendorChartDTO;
 import com.yedam.scm.dto.matSupplySearchDTO;
 import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
@@ -30,4 +31,5 @@ public interface SupplierService {
     List<InboundLogVO> getSupplyDetailList(Long inboundDetId);
     //대시보드
     Map<String, Object> getVendorDashboard(String vendorId);
+
 }
