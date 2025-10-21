@@ -10,5 +10,5 @@ public class VendorRecentListDTO {
     private String matId;       // 자재코드
     private String regDate;     // 일자
     private double qty;         // 수량
-
+    private String matName;    // 자재명
 }

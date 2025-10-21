@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.yedam.scm.dto.ApproveMatSearchDTO;
+import com.yedam.scm.dto.VendorChartDTO;
 import com.yedam.scm.dto.VendorDashboardSummaryDTO;
+import com.yedam.scm.dto.VendorDefectDTO;
 import com.yedam.scm.dto.VendorRecentListDTO;
 import com.yedam.scm.dto.matSupplySearchDTO;
 import com.yedam.scm.supplier.mapper.SupplierMapper;
@@ -142,11 +144,16 @@ public class SupplierServiceImpl implements SupplierService  {
 
         VendorDashboardSummaryDTO summary = mapper.getVendorDashboardSummary(vendorId);
         List<VendorRecentListDTO> recentList = mapper.getVendorRecentList(vendorId);
+        List<VendorChartDTO> pieList = mapper.getVendorChartData(vendorId);
+        List<VendorDefectDTO> defectList = mapper.getVendorDefectList(vendorId);
 
         result.put("summary", summary);
         result.put("recentList", recentList);
+        result.put("pieList", pieList);
+        result.put("defectList", defectList);
 
         return result;
     }
+
 
 }

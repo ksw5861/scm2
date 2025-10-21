@@ -7,7 +7,9 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import com.yedam.scm.dto.ApproveMatSearchDTO;
+import com.yedam.scm.dto.VendorChartDTO;
 import com.yedam.scm.dto.VendorDashboardSummaryDTO;
+import com.yedam.scm.dto.VendorDefectDTO;
 import com.yedam.scm.dto.VendorRecentListDTO;
 import com.yedam.scm.dto.matSupplySearchDTO;
 import com.yedam.scm.vo.InboundDetailVO;
@@ -54,4 +56,8 @@ public interface SupplierMapper {
     VendorDashboardSummaryDTO getVendorDashboardSummary(@Param("vendorId")String vendorId);
     //대시보드 최근 7건
     List<VendorRecentListDTO> getVendorRecentList(@Param("vendorId")String vendorId);
+    //파이차트
+    List<VendorChartDTO> getVendorChartData(@Param("vendorId")String vendorId);
+    //불량목록
+    List<VendorDefectDTO> getVendorDefectList(@Param("vendorId")String vendorId);
 }

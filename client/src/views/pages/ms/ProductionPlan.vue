@@ -41,7 +41,9 @@ const getNowDate = () => {
 const dateRange = ref({ start: null, end: null });
 const resDate = ref(getNowDate());
 const memo = ref('');
-const statusOptions = ref([]);
+const statusOptions = ref([]); //생산옵션
+const monthOptions = ref([]); //월옵션
+const weekOptions = ref([]); //주차옵션
 const planType = ref('');
 
 //테이블 행 key값
@@ -70,6 +72,8 @@ const pageLoad = async () => {
 onMounted(() => {
   pageLoad();
   planTypeList();
+  monthList();
+  weekList();
 });
 
 const planTypeList = async () => {
@@ -83,6 +87,33 @@ const planTypeList = async () => {
     toast('error', '상태값 로드 실패', '코드 불러오기 실패', '3000');
   }
 };
+
+//월코드
+const monthList = async () => {
+  try {
+    const res = await axios.get('/api/mat/status/month');
+    monthOptions.value = res.data.map((item) => ({
+      name: item.codeName, // 화면 표시용
+      value: item.codeId // 실제 값
+    }));
+  } catch (error) {
+    toast('error', '상태값 로드 실패', '코드 불러오기 실패', '3000');
+  }
+};
+
+//주차코드
+const weekList = async () => {
+  try {
+    const res = await axios.get('/api/mat/status/week');
+    weekOptions.value = res.data.map((item) => ({
+      name: item.codeName, // 화면 표시용
+      value: item.codeId // 실제 값
+    }));
+  } catch (error) {
+    toast('error', '상태값 로드 실패', '코드 불러오기 실패', '3000');
+  }
+};
+
 
 //옵션선택시 컬럼반영
 const selectOpt = (row, value) => {
@@ -122,6 +153,8 @@ const deleteRow = () => {
 
 // 계획등록 함수
 const submit = async () => {
+
+    console.log(dateRange.value.start);
   // 마스터 + 디테일 묶기
   const plan = {
     //vo필드명 : vue 바인드
@@ -156,30 +189,73 @@ const submit = async () => {
 
 <template>
   <div class="container">
-    <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
-    </div>
     <!--(master)상단박스 start-->
-    <div class="card flex flex-col gap-4">
+    <div class="card flex flex-col gap-4 mt-4 pb-6">
       <div class="font-semibold text-xl">생산계획 등록</div>
       <Divider />
       <!--인풋박스s-->
       <div class="flex flex-col gap-6 mt-5 mb-10">
         <!-- 1행 -->
         <div class="flex flex-col gap-4 md:flex-row md:gap-10">
-          <searchField type="dropDown" label="계획유형" v-model="planType" class="w-64" :options="statusOptions" />
+          <!-- <searchField type="dropDown" label="계획유형" v-model="planType" class="w-64" :options="statusOptions" />
           <searchField type="dateRange" label="생산계획기간" v-model="dateRange" class="w-100" />
           <searchField type="text" label="비고" v-model="memo" class="w-96" />
           <searchField type="readOnly" label="등록일" v-model="resDate" class="w-45" />
-          <searchField type="readOnly" label="담당자" v-model="empName" class="w-45" />
+          <searchField type="readOnly" label="담당자" v-model="empName" class="w-45" /> -->
+
+          <!--생산계획-->
+          <div class="flex flex-col w-full">
+            <InputGroup>
+              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <Select v-model="planType" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="계획유형" class="w-full h-[48px] text-base" />
+            </InputGroup>
+          </div>
+
+          <!--생산계획기간/월-->
+          <div class="flex flex-col w-full">
+            <InputGroup>
+              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <Select v-model="dateRange.start" :options="monthOptions" optionLabel="name" optionValue="value" placeholder="월" class="w-full h-[48px] text-base" />
+            </InputGroup>
+          </div>
+          <!--주-->
+          <div class="flex flex-col w-full">
+            <InputGroup>
+              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <Select v-model="dateRange.end" :options="weekOptions" optionLabel="name" optionValue="value" placeholder="주차" class="w-full h-[48px] text-base" />
+            </InputGroup>
+          </div>
+            <!--비고-->
+           <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="memo" inputId="memo" />
+              <label for="searchMatName">비고</label>
+            </IftaLabel>
+          </InputGroup>
+          <!--등록일-->
+            <InputGroup>
+                <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                <IftaLabel>
+                <InputText v-model="resDate" inputId="resDate" readonly />
+                <label for="searchMatName">등록일</label>
+                </IftaLabel>
+            </InputGroup>
+            <!--담당자-->
+            <InputGroup>
+                <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                <IftaLabel>
+                <InputText v-model="empName" inputId="empName" readonly />
+                <label for="searchMatName">담당자</label>
+                </IftaLabel>
+            </InputGroup>
         </div>
       </div>
       <div class="flex sm:justify-end justify-start gap-2 mt-4">
-        <div class="w-1/2 sm:w-32">
-          <Btn color="secondary" class="w-full" icon="refresh" label="초기화" @click="resetForm" outlined />
-        </div>
-        <div class="w-1/2 sm:w-32">
-          <Btn class="w-full" icon="add" severity="success" label="등록" variant="outlined" @click="submit" />
+        <div class="flex gap-2">
+            <btn color="secondary" icon="check" label="초기화" class="whitespace-nowrap" outlined @click="resetForm" />
+            <btn color="info" icon="check" label="생산계획등록" class="whitespace-nowrap" outlined @click="submit" />
         </div>
       </div>
     </div>

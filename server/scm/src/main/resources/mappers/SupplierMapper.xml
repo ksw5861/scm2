@@ -286,27 +286,68 @@ SELECT *
 FROM (
   SELECT 
     '주문' AS type,
-    pur_no AS ref_no,
-    mat_id,
-    reg_date AS reg_date,
-    req_qty AS qty
-  FROM purchase_mat
-  WHERE vendor_id = #{vendorId}
+    p.pur_no AS ref_no,
+    p.mat_id,
+    m.mat_name,
+    p.reg_date AS reg_date,
+    p.req_qty AS qty
+  FROM purchase_mat p
+  JOIN material m 
+  ON p.mat_id = m.mat_id
+  WHERE p.vendor_id = #{vendorId}
 
   UNION ALL
 
   SELECT 
     '출고' AS type,
-    ven_out_no AS ref_no,
-    mat_id,
-    vendor_out_date AS reg_date,
-    out_qty AS qty
+    i.ven_out_no AS ref_no,
+    d.mat_id,
+    m.mat_name,
+    i.vendor_out_date AS reg_date,
+    d.out_qty AS qty
   FROM inbound_detail d
-  JOIN inbound i ON d.inbound_id = i.inbound_id
+  JOIN inbound i 
+  ON d.inbound_id = i.inbound_id
+  JOIN material m
+  ON d.mat_id = m.mat_id
   WHERE i.vendor_id = #{vendorId}
   ORDER BY reg_date DESC
 )
 WHERE ROWNUM &lt; 8
 </select>
-<!---->
+
+<!--파이차트-->
+<select id="getVendorChartData" parameterType="string" resultType="VendorChartDTO">
+SELECT m.mat_name AS matName,
+       SUM(d.out_qty) AS qty
+FROM inbound i
+JOIN inbound_detail d 
+ON i.inbound_id = d.inbound_id
+JOIN material m 
+ON d.mat_id = m.mat_id
+WHERE i.vendor_id = #{vendorId}                
+  AND i.unload_date >= ADD_MONTHS(SYSDATE, -3)
+  AND d.inbound_status = 'd2'
+GROUP BY m.mat_name
+ORDER BY qty DESC
+</select>
+
+<select id="getVendorDefectList" parameterType="string" resultType="VendorDefectDTO">
+select l.log_rej_qty,
+       m.mat_name,
+       i.vendor_out_date,
+       l.log_memo,
+       i.ven_out_no
+from inbound_log l
+join inbound_detail d
+on l.inbound_det_id = d.inbound_det_id
+join inbound i
+on i.inbound_id = d.inbound_id
+join material m
+on d.mat_id = m.mat_id
+where l.log_rej_qty is not null
+and i.vendor_id = 'EMP088'
+order by i.vendor_out_date desc
+</select>
+
 </mapper>

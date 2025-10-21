@@ -184,11 +184,8 @@ const shipDetailColumn = [
 
 <template>
   <div class="container">
-    <div class="p-4">
       <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
-    </div>
-
-    <div class="card flex flex-col gap-4">
+    <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="입고 조회" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
@@ -221,11 +218,11 @@ const shipDetailColumn = [
     <div class="flex flex-col md:flex-row gap-8">
       <!-- 왼쪽 카드 -->
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4">
+        <div class="card flex flex-col gap-4" style="height: 800px;">
           <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-m">하차대기 목록</div>
             <div class="flex gap-2">
-              <btn color="info" icon="pi pi-file-pdf" label="출고명세서" @click="openShipmentReport" />
+              <btn color="secondary" icon="file" label="출고명세서" class="whitespace-nowrap" outlined @click="openShipmentReport" />
             </div>
           </div>
           <Divider />
@@ -235,12 +232,12 @@ const shipDetailColumn = [
 
       <!-- 오른쪽 카드 -->
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4">
+        <div class="card flex flex-col gap-4" style="height: 800px;">
           <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-m">상세정보</div>
             <div class="flex gap-2">
-              <btn color="warn" icon="cancel" label="반송" @click="openRetrunModal" />
-              <btn color="info" icon="add" label="승인" @click="approve" />
+              <btn color="warn" icon="cancel" label="반송" class="whitespace-nowrap" outlined @click="openRetrunModal" />
+              <btn color="info" icon="check" label="입고승인" class="whitespace-nowrap" outlined @click="approve" />
             </div>
           </div>
           <Divider />
