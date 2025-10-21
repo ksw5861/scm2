@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
-import { useNumberFormat } from '@/composables/useFormat';
+import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import { useUserStore } from '@/stores/user';
 import SelectTable from '@/components/common/checkBoxTable.vue';
 
@@ -25,8 +25,8 @@ const breadcrumbItems = computed(() => {
 });
 
 // reactive state
-const summaryCards = ref([])
-const recentList = ref()
+const summaryCards = ref([]);
+const recentList = ref();
 
 function fmt(v) {
   const n = Number(v);
@@ -38,8 +38,8 @@ onMounted(async () => {
     const { data } = await axios.get(`/api/supplier/dashboard/${vendorId}`);
 
     console.log(data);
-    console.log(data.summary.beforeApprove)
-    console.log(data.recentList[0].type)
+    console.log(data.summary.beforeApprove);
+    console.log(data.recentList[0].type);
 
     //summaryDTO 기반
     summaryCards.value = [
@@ -55,9 +55,10 @@ onMounted(async () => {
       type: item.type,
       refNo: item.refNo,
       matId: item.matId,
+      matName: item.matName,
       qty: item.qty,
       unit: 'EA',
-      regDate: item.regDate
+      regDate: useDateFormat(item.regDate)
     }));
 
     //차트 데이터 (임시 예시 — chartDTO 생기면 교체)
@@ -67,9 +68,9 @@ onMounted(async () => {
         {
           label: '건수',
           data: [12, 8, 5, 10, 2], // chartDTO 오면 여기에 바인딩
-          backgroundColor: '#60A5FA',
-        },
-      ],
+          backgroundColor: '#60A5FA'
+        }
+      ]
     };
 
     // chartOptions.value = {
@@ -90,46 +91,49 @@ onMounted(async () => {
 });
 
 const tableColumns = [
-      { field: 'type', label: '구분', style: 'width:10px; text-align: center' },
-      { field: 'refNo', label: '번호', style: 'width: 100px; text-align: center' },
-      { field: 'matId', label: '자재코드', style: 'width: 80px; text-align: center' },
-      { field: 'qty', label: '수량', style: 'width: 50px; text-align: right' },
-      { field: 'unit', label: '단위', style: 'width: 25px; text-align: right' },
-      { field: 'regDate', label: '일자', style: 'width: 140px; text-align: center' }
-    ]
+  { field: 'type', label: '구분', style: 'width: 25px; text-align: center' },
+  { field: 'refNo', label: '번호', style: 'width: 90px; text-align: center' },
+  //{ field: 'matId', label: '자재코드', style: 'width: 30px; text-align: center' },
+  { field: 'matName', label: '자재명', style: 'width: 150px; text-align: center' },
+  { field: 'qty', label: '수량', style: 'width: 50px; text-align: right' },
+  { field: 'unit', label: '단위', style: 'width: 25px; text-align: right' },
+  { field: 'regDate', label: '일자', style: 'width: 100px; text-align: center' }
+];
 </script>
 
 <template>
   <Fluid>
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <div class="flex gap-4 mt-4">
-        <div class="p-6 space-y-6 w-full">
+      <div class="p-6 space-y-6 w-full">
         <!-- 요약 카드 -->
         <div class="grid grid-cols-5 gap-4">
-            <div v-for="(item, i) in summaryCards" :key="i" class="card flex flex-col justify-center text-center p-6 shadow-md" style="height: 128px;">
-                <p class="text-gray-500 text-l mb-2 font-large">{{ item.label }}</p>
-                <!-- 금액(₩)인 경우만 fmt 적용 -->
-                <h4 class="text-3xl font-bold text-gray-900">
-                    {{ item.label.includes('금액') ? fmt(item.value) : useNumberFormat(item.value).value }}
-                </h4>
-            </div>
+          <div v-for="(item, i) in summaryCards" :key="i" class="card flex flex-col justify-center text-center p-6 shadow-md" style="height: 128px">
+            <p class="text-gray-500 text-l mb-2 font-large">{{ item.label }}</p>
+            <!-- 금액(₩)인 경우만 fmt 적용 -->
+            <h4 class="text-3xl font-bold text-gray-900">
+              {{ item.label.includes('금액') ? fmt(item.value) : useNumberFormat(item.value).value }}
+            </h4>
+          </div>
         </div>
-
-
-    <!-- 상태별 현황 차트 -->
-    <div class="card shadow-md p-4">
-      <!-- <h3 class="text-lg font-semibold mb-4">공급 진행 현황</h3>
+        <div class="flex flex-col md:flex-row gap-8">
+          <!-- 상태별 현황 차트 -->
+          <div class="md:w-1/2">
+            <div class="card shadow-md p-4">
+              <!-- <h3 class="text-lg font-semibold mb-4">공급 진행 현황</h3>
       <Chart type="bar" :data="chartData" :options="chartOptions" class="h-80" /> -->
+            </div>
+          </div>
+          <!-- 최근 주문 / 출고 내역 -->
+          <div class="md:w-1/2">
+            <div class="card shadow-md p-4">
+              <h3 class="text-lg font-semibold mb-4">최근 주문 / 출고 내역</h3>
+              <Divider />
+              <selectTable v-model:selection="selectedDetail" :selectionMode="'single'" :columns="tableColumns" :data="recentList" :paginator="false" :showCheckbox="false" />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-
-    <!-- 최근 주문 / 출고 내역 -->
-    <div class="card shadow-md p-4">
-      <h3 class="text-lg font-semibold mb-4">최근 주문 / 출고 내역</h3>
-      <Divider />
-      <selectTable v-model:selection="selectedDetail" :selectionMode="'single'" :columns="tableColumns" :data="recentList" :paginator="false" :showCheckbox="false" />
-    </div>
-  </div>
-</div>
-
-</Fluid>
+  </Fluid>
 </template>
