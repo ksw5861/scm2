@@ -65,9 +65,22 @@ public class InboundServiceImpl implements InboundService {
     }
 
     /* ===================== 주문승인 ===================== */
+    // @Override
+    // public List<SalesOrderVO> getApprovalList(SalesOrderVO vo) {
+    // return inboundMapper.selectApprovalOrders(vo);
+    // }
+    // @Override
+    // public List<SalesOrderVO> getApprovalList(AccountLedgerSearchDTO dto) {
+    // return inboundMapper.selectApprovalOrders(dto);
+    // }
+    // @Override
+    // public List<SalesOrderVO> getApprovalList(AccountLedgerSearchDTO dto, String
+    // orderId) {
+    // return inboundMapper.selectApprovalOrders(dto, orderId);
+    // }
     @Override
-    public List<SalesOrderVO> getApprovalList(SalesOrderVO vo) {
-        return inboundMapper.selectApprovalOrders(vo);
+    public List<SalesOrderVO> getApprovalList(AccountLedgerSearchDTO dto, SalesOrderVO vo) {
+        return inboundMapper.selectApprovalOrders(dto, vo);
     }
 
     @Override

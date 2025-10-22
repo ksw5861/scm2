@@ -49,7 +49,14 @@ public interface InboundMapper {
         /* ===================== 주문승인 ===================== */
 
         // 주문승인 목록
-        List<SalesOrderVO> selectApprovalOrders(SalesOrderVO vo);
+        // List<SalesOrderVO> selectApprovalOrders(SalesOrderVO vo);
+        // List<SalesOrderVO> selectApprovalOrders(AccountLedgerSearchDTO dto);
+        // List<SalesOrderVO> selectApprovalOrders(
+        // @Param("dto") AccountLedgerSearchDTO dto,
+        // @Param("orderId") String orderId);
+        List<SalesOrderVO> selectApprovalOrders(
+                        @Param("dto") AccountLedgerSearchDTO dto,
+                        @Param("vo") SalesOrderVO vo);
 
         // 주문승인 상세
         List<SalesOrderDetailVO> selectApprovalDetails(@Param("orderId") String orderId);
