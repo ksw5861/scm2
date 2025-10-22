@@ -56,7 +56,7 @@ import java.sql.Connection;
 
 
 @RestController
-@RequestMapping("/mat")
+@RequestMapping("${api.base-path:/}mat")
 @RequiredArgsConstructor
 public class MsController {
     

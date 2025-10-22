@@ -1,8 +1,6 @@
 server:
   address: 0.0.0.0
   port: 8080
-  servlet:
-    context-path: /api
 
 spring:
   datasource:
@@ -45,6 +43,9 @@ logging:
       resultset: OFF
       sqltiming: WARN
     com.zaxxer.hikari: WARN
+
+api:
+  base-path: /api
 
 file:
   upload:
