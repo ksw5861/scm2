@@ -32,6 +32,6 @@ export default defineConfig({
     }
   },
   build: {
-    // outDir: '../../server/public' # 빌드 경로
+    outDir: '../server/scm/src/main/resources/static'
   }
 });

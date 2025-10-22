@@ -2,7 +2,7 @@ server:
   address: 0.0.0.0
   port: 8080
   servlet:
-    context-path: /
+    context-path: /api
 
 spring:
   datasource:
@@ -48,10 +48,9 @@ logging:
 
 file:
   upload:
-    employee-dir: C:/uploads/employee # 개발 환경
-    # employee-dir: /home/app/uploads/employee  # 배포 환경
-    defect-dir: C:/uploads/defect/
-    notice-dir: C:/uploads/notice/
+    employee-dir: /home/app/uploads/employee
+    defect-dir: /home/app/uploads/defect/
+    notice-dir: /home/app/uploads/notice/
 
 
 jwt:

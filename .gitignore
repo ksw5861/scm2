@@ -60,8 +60,8 @@ logs/
 Thumbs.db        # Windows
 
 # 환경설정 파일 → 민감정보(DB, API Key) 포함 가능
-application-*.yml
-application-*.properties
+# application-*.yml
+# application-*.properties
 
 
 ############################
