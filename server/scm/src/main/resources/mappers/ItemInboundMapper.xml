@@ -77,7 +77,26 @@
          AND (p.prod_id LIKE '%' || #{condition} || '%'
               OR p.prod_name LIKE '%' || #{condition} || '%')
        </if>
-  </select>
+    </select>
+
+  <select id="selectDashboardSummary" resultType="SalesOrderVO">
+  SELECT
+      NVL(SUM(s.total_price), 0) AS totalPrice,
+      NVL(SUM(s.return_price), 0) AS returnPrice,
+      NVL(SUM(p.pay_amount), 0) AS totalPayment,
+      NVL(SUM(s.total_price), 0)
+        - NVL(SUM(s.return_price), 0)
+        - NVL(SUM(p.pay_amount), 0) AS totalAr
+  FROM sales_order s
+  LEFT JOIN (
+      SELECT vendor_id, SUM(pay_amount) AS pay_amount
+      FROM payment
+      GROUP BY vendor_id
+  ) p ON s.vendor_id = p.vendor_id
+</select>
+
+
+
 
   <!-- 창고 모달 -->
   <select id="selectWarehouseListByCondition" resultType="WareHouseVO">
@@ -284,106 +303,126 @@
 
 
 <!-- ===================== 거래처원장 페이지 ===================== -->
-<select id="selectAccountLedgerList" parameterType="AccountLedgerSearchDTO" resultType="SalesOrderVO">
+<select id="selectAccountLedgerList"
+        parameterType="AccountLedgerSearchDTO"
+        resultType="SalesOrderVO">
+
   SELECT
-      v.vendor_id AS vendorId,
-      v.company_name AS companyName,
-      NVL(prev.total_price, 0) AS prevTotalPrice,
-      NVL(s.total_price, 0) AS totalPrice,
-      NVL(r.return_price, 0) AS returnPrice,
-      NVL(p.pay_amount, 0) AS totalPayment,
-      NVL(s.total_price, 0) - NVL(r.return_price, 0) - NVL(p.pay_amount, 0) AS totalAr,
-      MAX_SO.last_order_date AS lastOrderDate,
-      NVL(o.order_cnt, 0) AS orderCount,          -- ✅ 추가
-      NVL(u.unpaid_cnt, 0) AS unpaidCount         -- ✅ 추가
+      v.vendor_id                                           AS vendorId,
+      v.company_name                                        AS companyName,
+      NVL(prev.total_price, 0)                              AS prevTotalPrice,
+      NVL(s.total_price, 0)                                 AS totalPrice,
+      NVL(r.return_price, 0)                                AS returnPrice,
+      NVL(p.pay_amount, 0)                                  AS totalPayment,
+      NVL(s.total_price, 0)
+        - NVL(r.return_price, 0)
+        - NVL(p.pay_amount, 0)                              AS totalAr,
+      MAX_SO.last_order_date                                AS lastOrderDate,
+      NVL(o.order_cnt, 0)                                   AS orderCount,
+      NVL(u.unpaid_cnt, 0)                                  AS unpaidCount
+
   FROM vendor v
 
-  <!-- 이월금액 -->
+  <!-- 🔹 이월금액 (조회 시작일 이전 미수금 기준) -->
   LEFT JOIN (
       SELECT vendor_id, SUM(total_price) AS total_price
       FROM sales_order
       WHERE pay_status = '대기'
         AND status IN ('출고완료', '배송완료')
         <if test="startDate != null">
-          AND order_date &lt; #{startDate}
+          AND TRUNC(order_date) &lt; TRUNC(#{startDate,jdbcType=DATE})
         </if>
       GROUP BY vendor_id
   ) prev ON v.vendor_id = prev.vendor_id
 
-  <!-- 기간 매출 -->
+  <!-- 🔹 기간 내 매출 -->
   LEFT JOIN (
       SELECT vendor_id, SUM(total_price) AS total_price
       FROM sales_order
       WHERE status IN ('출고완료', '배송완료')
         <if test="startDate != null and endDate != null">
-          AND order_date BETWEEN #{startDate} AND #{endDate}
-        </if>
-        <if test="startDate != null and endDate == null">
-          AND order_date &gt;= #{startDate}
-        </if>
-        <if test="startDate == null and endDate != null">
-          AND order_date &lt;= #{endDate}
+          AND TRUNC(order_date)
+            BETWEEN TRUNC(#{startDate,jdbcType=DATE})
+                AND TRUNC(#{endDate,jdbcType=DATE})
         </if>
       GROUP BY vendor_id
   ) s ON v.vendor_id = s.vendor_id
 
-  <!-- 반품금액 -->
+  <!-- 🔹 기간 내 반품 -->
   LEFT JOIN (
       SELECT r.vendor_id, SUM(rd.return_qty * rd.prod_unit_price) AS return_price
       FROM return r
       JOIN return_detail rd ON r.return_id = rd.return_id
       WHERE rd.rdetail_status = '승인'
         <if test="startDate != null and endDate != null">
-          AND r.return_date BETWEEN #{startDate} AND #{endDate}
+          AND TRUNC(r.return_date)
+            BETWEEN TRUNC(#{startDate,jdbcType=DATE})
+                AND TRUNC(#{endDate,jdbcType=DATE})
         </if>
       GROUP BY r.vendor_id
   ) r ON v.vendor_id = r.vendor_id
 
-  <!-- 입금금액 -->
+  <!-- 🔹 기간 내 결제 -->
   LEFT JOIN (
       SELECT vendor_id, SUM(pay_amount) AS pay_amount
       FROM payment
       WHERE 1=1
         <if test="startDate != null and endDate != null">
-          AND pay_date BETWEEN #{startDate} AND #{endDate}
+          AND TRUNC(pay_date)
+            BETWEEN TRUNC(#{startDate,jdbcType=DATE})
+                AND TRUNC(#{endDate,jdbcType=DATE})
         </if>
       GROUP BY vendor_id
   ) p ON v.vendor_id = p.vendor_id
 
-  <!-- 최근거래일 -->
+  <!-- 🔹 최근 거래일 -->
   LEFT JOIN (
       SELECT vendor_id, MAX(order_date) AS last_order_date
       FROM sales_order
+      WHERE status IN ('출고완료', '배송완료')
       GROUP BY vendor_id
   ) MAX_SO ON v.vendor_id = MAX_SO.vendor_id
 
-  <!-- ✅ 주문건수 -->
- LEFT JOIN (
-    SELECT vendor_id, COUNT(*) AS order_cnt
-    FROM sales_order
-    WHERE status IN ('출고완료', '배송완료')  
-      <if test="startDate != null and endDate != null">
-        AND order_date BETWEEN #{startDate} AND #{endDate}
-      </if>
-    GROUP BY vendor_id
-) o ON v.vendor_id = o.vendor_id
-
-  <!-- ✅ 미수건수 -->
+  <!-- 🔹 기간 내 주문건수 -->
   LEFT JOIN (
-  SELECT vendor_id, COUNT(*) AS unpaid_cnt
-  FROM sales_order
-  WHERE status IN ('출고완료','배송완료')
-    AND pay_status = '대기'
-  GROUP BY vendor_id
-) u ON v.vendor_id = u.vendor_id
+      SELECT vendor_id, COUNT(*) AS order_cnt
+      FROM sales_order
+      WHERE status IN ('출고완료', '배송완료')
+        <if test="startDate != null and endDate != null">
+          AND TRUNC(order_date)
+            BETWEEN TRUNC(#{startDate,jdbcType=DATE})
+                AND TRUNC(#{endDate,jdbcType=DATE})
+        </if>
+      GROUP BY vendor_id
+  ) o ON v.vendor_id = o.vendor_id
 
-  <where>
-          v.type IN (0,2)
-    <if test="vendorId != null and vendorId != ''">
-        AND v.vendor_id = #{vendorId}
-    </if>
-  </where>
+  <!-- 🔹 미수건수 (누적 기준) -->
+  LEFT JOIN (
+      SELECT vendor_id, COUNT(*) AS unpaid_cnt
+      FROM sales_order
+      WHERE status IN ('출고완료', '배송완료')
+        AND pay_status = '대기'
+      GROUP BY vendor_id
+  ) u ON v.vendor_id = u.vendor_id
+
+  WHERE v.type IN (0, 2)
+   <!-- ✅ 🔽🔽🔽 여기에 추가 -->
+  <if test="vendorId != null and vendorId != ''">
+    AND v.vendor_id = #{vendorId}
+  </if>
+  <!-- ✅ 🔼🔼🔼 이 위치임 -->
+
+
+  <!-- ✅ 핵심: 실제 출력 범위를 “최근거래일자 기준”으로 필터링 -->
+  <if test="startDate != null and endDate != null">
+    AND TRUNC(MAX_SO.last_order_date)
+        BETWEEN TRUNC(#{startDate,jdbcType=DATE})
+            AND TRUNC(#{endDate,jdbcType=DATE})
+  </if>
+
+  ORDER BY v.company_name
 </select>
+
 
 
 
@@ -406,64 +445,97 @@
 
 
  <!-- ✅ 판매처(원장페이지 전용) 모달 목록 -->
-  <select id="selectVendorListByCondition" resultType="com.yedam.scm.vo.VendorVO">
-    SELECT *
-      FROM (
-        SELECT v.vendor_id AS vendorId,
-               v.company_name AS companyName,
-               ROW_NUMBER() OVER (ORDER BY v.vendor_id DESC) AS rn
-          FROM vendor v
-         WHERE 1=1
-           <if test="condition != null and condition != ''">
-             AND (v.vendor_id LIKE '%' || #{condition} || '%'
-              OR v.company_name LIKE '%' || #{condition} || '%')
-           </if>
-      )
-     WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
-  </select>
+<select id="selectVendorListByCondition" resultType="com.yedam.scm.vo.VendorVO">
+  SELECT *
+    FROM (
+      SELECT v.vendor_id AS vendorId,
+             v.company_name AS companyName,
+             ROW_NUMBER() OVER (ORDER BY v.vendor_id DESC) AS rn
+        FROM vendor v
+       WHERE 1=1
+         <if test="condition != null and condition != ''">
+           AND (v.vendor_id LIKE '%' || #{condition} || '%'
+            OR v.company_name LIKE '%' || #{condition} || '%')
+         </if>
+    )
+   WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
+</select>
 
-  <!-- ✅ 총 개수 -->
-  <select id="selectVendorCountByCondition" resultType="long">
-    SELECT COUNT(*)
-      FROM vendor v
-     WHERE 1=1
-       <if test="condition != null and condition != ''">
-         AND (v.vendor_id LIKE '%' || #{condition} || '%'
-          OR v.company_name LIKE '%' || #{condition} || '%')
-       </if>
-  </select>
+<!-- ✅ 총 개수 -->
+<select id="selectVendorCountByCondition" resultType="long">
+  SELECT COUNT(*)
+    FROM vendor v
+   WHERE 1=1
+     <if test="condition != null and condition != ''">
+       AND (v.vendor_id LIKE '%' || #{condition} || '%'
+        OR v.company_name LIKE '%' || #{condition} || '%')
+     </if>
+</select>
 
 
 
 
 
  <!-- ===================== 주문승인 페이지 모달  ===================== -->
- <select id="getVendorModalList" resultType="map"> <!-- 판매처명 모달 -->
+<!-- ✅ 판매처 모달 -->
+
+<select id="selectApprovalVendorModal" resultType="com.yedam.scm.vo.VendorVO">
   SELECT *
     FROM (
-      SELECT v.company_name AS companyName,
-             ROW_NUMBER() OVER (ORDER BY v.vendor_id DESC) AS rn
+      SELECT
+          v.vendor_id AS vendorId,
+          v.company_name AS companyName,
+          ROW_NUMBER() OVER (ORDER BY v.company_name) AS rn
         FROM vendor v
        WHERE v.type IN (0, 2)
-         <if test="keyword != null and keyword != ''">
-           AND v.company_name LIKE '%' || #{keyword} || '%'
+         <if test="condition != null and condition != ''">
+           AND (v.company_name LIKE '%' || #{condition} || '%'
+            OR v.vendor_id LIKE '%' || #{condition} || '%')
          </if>
     )
-   WHERE rn BETWEEN ((#{page}-1)*#{size}+1) AND (#{page}*#{size})
+   WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
 </select>
 
-<select id="getOrderModalList" resultType="map"> <!-- 주문번호 모달 -->
+<select id="countApprovalVendorModal" resultType="long">
+  SELECT COUNT(*)
+    FROM vendor v
+   WHERE v.type IN (0, 2)
+     <if test="condition != null and condition != ''">
+       AND (v.company_name LIKE '%' || #{condition} || '%'
+        OR v.vendor_id LIKE '%' || #{condition} || '%')
+     </if>
+</select>
+
+
+<!-- ✅ 주문번호 모달 -->
+<select id="selectApprovalOrderModal" resultType="com.yedam.scm.vo.SalesOrderVO">
   SELECT *
     FROM (
-      SELECT s.order_id AS orderId,
-             ROW_NUMBER() OVER (ORDER BY s.order_id DESC) AS rn
+      SELECT
+          s.order_id AS orderId,
+          s.order_date AS orderDate,
+          v.company_name AS companyName,
+          ROW_NUMBER() OVER (ORDER BY s.order_date DESC) AS rn
         FROM sales_order s
-       WHERE 1=1
-         <if test="keyword != null and keyword != ''">
-           AND s.order_id LIKE '%' || #{keyword} || '%'
+        JOIN vendor v ON s.vendor_id = v.vendor_id
+       WHERE s.status IN ('대기', '처리중')
+         <if test="condition != null and condition != ''">
+           AND (s.order_id LIKE '%' || #{condition} || '%'
+            OR v.company_name LIKE '%' || #{condition} || '%')
          </if>
     )
-   WHERE rn BETWEEN ((#{page}-1)*#{size}+1) AND (#{page}*#{size})
+   WHERE rn BETWEEN #{paging.startRow} AND #{paging.endRow}
+</select>
+
+<select id="countApprovalOrderModal" resultType="long">
+  SELECT COUNT(*)
+    FROM sales_order s
+    JOIN vendor v ON s.vendor_id = v.vendor_id
+   WHERE s.status IN ('대기', '처리중')
+     <if test="condition != null and condition != ''">
+       AND (s.order_id LIKE '%' || #{condition} || '%'
+        OR v.company_name LIKE '%' || #{condition} || '%')
+     </if>
 </select>
 
 
