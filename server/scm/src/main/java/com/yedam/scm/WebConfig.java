@@ -28,15 +28,6 @@ public class WebConfig implements WebMvcConfigurer {
                 .addResourceLocations("file:///" + defectUploadDir + "/");
     }
 
-    @Override
-    public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/{spring:\\w+}")
-                .setViewName("forward:/index.html");
-        registry.addViewController("/**")
-                .setViewName("forward:/index.html");
-    }
-
-
     @Bean
     public WebClient.Builder webClientBuilder() {
         return WebClient.builder();
