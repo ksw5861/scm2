@@ -94,28 +94,30 @@ public class InStockMatServiceImpl implements InStockMatService {
     @Override
     public Map<String, Object> getMatStockList(PageDTO pageDTO, MatStockSearchDTO searchDTO) {
 
-    List<MatLotVO> list = mapper.getMatStockList(
-        pageDTO.getStartRow(),
-        pageDTO.getEndRow(),
-        searchDTO.getMaterialId(),
-        searchDTO.getMaterialName(),
-        searchDTO.getLotNo(),
-        searchDTO.getLotStatus()
-    );
+        //if ("CLOSE".equalsIgnoreCase(searchDTO.getLotStatus()))
 
-    Long total = mapper.getMatStockCount(
-        searchDTO.getMaterialId(),
-        searchDTO.getMaterialName(),
-        searchDTO.getLotNo(),
-        searchDTO.getLotStatus()
-    );
+        List<MatLotVO> list = mapper.getMatStockList(
+            pageDTO.getStartRow(),
+            pageDTO.getEndRow(),
+            searchDTO.getMaterialId(),
+            searchDTO.getMaterialName(),
+            searchDTO.getLotNo(),
+            searchDTO.getLotStatus()
+        );
 
-    pageDTO.updatePageInfo(total);
+        Long total = mapper.getMatStockCount(
+            searchDTO.getMaterialId(),
+            searchDTO.getMaterialName(),
+            searchDTO.getLotNo(),
+            searchDTO.getLotStatus()
+        );
 
-    Map<String, Object> result = new HashMap<>();
-    result.put("list", list);
-    result.put("page", pageDTO);
-    return result;
+        pageDTO.updatePageInfo(total);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("list", list);
+        result.put("page", pageDTO);
+        return result;
    }
 
     @Override

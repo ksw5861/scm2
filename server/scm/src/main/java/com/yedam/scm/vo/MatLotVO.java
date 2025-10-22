@@ -11,8 +11,8 @@ public class MatLotVO {
     private String matId;
     private String lotNo;
     private Date regDate;
-    private Integer initQty;
-    private Integer currQty;
+    private Double initQty;
+    private Double currQty;
     private Date expDate;
     private String warehouse;
     private String empName;

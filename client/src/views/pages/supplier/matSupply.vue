@@ -40,6 +40,10 @@ const matOutData = ref();
 const selectedRows = ref();
 const page = ref({ page: 1, size: 10, totalElements: 0 });
 
+//공통코드
+const codeMap = ref();
+const statusOptions = ref([]);
+
 //검색필드
 const searchFilter = ref({
   startDate: '',
@@ -56,15 +60,14 @@ const formatDate = (date) => {
 };
 
 const pageLoad = async () => {
+  const params = {
+    startDate: formatDate(searchFilter.value.startDate),
+    endDate: formatDate(searchFilter.value.endDate),
+    matName: searchFilter.value.matName,
+    status: searchFilter.value.status
+  };
 
-    const params = {
-        startDate: formatDate(searchFilter.value.startDate),
-        endDate: formatDate(searchFilter.value.endDate),
-        matName: searchFilter.value.matName,
-        status:searchFilter.value.status
-    };
-
-    try {
+  try {
     const list = await axios.get(`/api/supplier/releaseList/${vendorId}`, { params });
     console.log(list);
 
@@ -99,7 +102,7 @@ const onPage = (event) => {
     startDate: formatDate(searchFilter.value.startDate),
     endDate: formatDate(searchFilter.value.endDate),
     matName: searchFilter.value.matName,
-    status:searchFilter.value.status
+    status: searchFilter.value.status
   });
 };
 
@@ -138,13 +141,30 @@ const approvedShip = async () => {
     empName: vanEmpName
   }));
 
-   try {
+  try {
     const res = await axios.post('/api/supplier/shipMaterial', payload);
     toast('info', '등록 성공', '출고등록  성공:', '3000');
     selectedRows.value = [];
     await pageLoad();
   } catch (error) {
     toast('error', '등록 실패', '출고등록  실패:', '3000');
+  }
+};
+
+const loadStatusCodes = async () => {
+  try {
+    const res = await axios.get('/api/mat/status/searchSupply');
+    codeMap.value = res.data.reduce((acc, cur) => {
+      acc[cur.codeId] = cur.codeName;
+      return acc;
+    }, {});
+
+    statusOptions.value = res.data.map((item) => ({
+      name: item.codeName, // 화면 표시용
+      value: item.codeId // 실제 값
+    }));
+  } catch (err) {
+    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
   }
 };
 
@@ -160,6 +180,7 @@ const resetSearch = () => {
 
 onMounted(() => {
   pageLoad();
+  loadStatusCodes();
 });
 
 const matOutColumns = [
@@ -181,7 +202,7 @@ const matOutColumns = [
 
 <template>
   <div class="container">
-      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="주문 검색" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
