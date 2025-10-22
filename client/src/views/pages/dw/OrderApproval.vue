@@ -43,9 +43,16 @@ const orderTotal = ref(0);
 /* 유틸 */
 function fmtDate(value) {
   if (!value) return '';
-  const dt = new Date(value);
-  if (isNaN(dt)) return '';
-  return dt.toISOString().split('T')[0];
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return '';
+
+  // ✅ UTC → 로컬 보정 (하루 밀림 방지)
+  const local = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
+
+  const y = local.getFullYear();
+  const m = String(local.getMonth() + 1).padStart(2, '0');
+  const d = String(local.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 function toNumber(n) {
   if (n === null || n === undefined) return 0;
@@ -171,7 +178,7 @@ async function applySearch() {
   currentOrderId.value = null;
 }
 function resetSearch() {
-  search.value = { fromDate: null, toDate: null, vendorId: '', vendorId: '', orderId: '' };
+  search.value = { fromDate: null, toDate: null, vendorId: '', vendorName: '', orderId: '' };
   applySearch();
 }
 /* 선택 변경 */

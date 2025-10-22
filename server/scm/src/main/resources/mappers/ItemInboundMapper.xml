@@ -127,16 +127,38 @@
 
 
   <!-- ===================== 주문승인 ===================== -->
-  <select id="selectApprovalOrders" resultType="com.yedam.scm.vo.SalesOrderVO">
-    SELECT so.order_id,
-           so.order_date,
-           v.company_name,
-           so.status prod_status
-      FROM sales_order so
-      LEFT JOIN vendor v ON so.vendor_id = v.vendor_id
-     WHERE so.status in ('대기', '처리중')
-     ORDER BY so.order_date DESC
-  </select>
+<select id="selectApprovalOrders"
+        resultType="com.yedam.scm.vo.SalesOrderVO"
+        parameterType="map">
+
+  SELECT 
+         so.order_id,
+         so.order_date,
+         v.company_name,
+         so.status AS prod_status
+    FROM sales_order so
+    LEFT JOIN vendor v ON so.vendor_id = v.vendor_id
+   WHERE so.status IN ('대기', '처리중')
+
+   <if test="vo.vendorId != null and vo.vendorId != ''">
+     AND so.vendor_id = #{vo.vendorId}
+   </if>
+
+   <if test="vo.orderId != null and vo.orderId != ''">
+     AND so.order_id = #{vo.orderId}
+   </if>
+
+   <!-- ✅ 날짜 필터: TRUNC 제거, endDate + 1 로 당일 포함 -->
+   <if test="dto.startDate != null and dto.endDate != null">
+     <![CDATA[
+       AND so.order_date >= #{dto.startDate,jdbcType=DATE}
+       AND so.order_date <  #{dto.endDate,jdbcType=DATE} + 1
+     ]]>
+   </if>
+
+   ORDER BY so.order_date DESC
+</select>
+
 
   <resultMap id="SalesOrderDetailMap" type="com.yedam.scm.vo.SalesOrderDetailVO">
     <id     column="odetail_id"      property="odetailId"/>

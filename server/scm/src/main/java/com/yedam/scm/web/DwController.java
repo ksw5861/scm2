@@ -91,9 +91,27 @@ public class DwController {
 
     /* ===================== 주문승인 ===================== */
 
+    // @GetMapping("/approval-list")
+    // public List<SalesOrderVO> getApprovalList(SalesOrderVO vo) {
+    // return service.getApprovalList(vo);
+    // }
+    // @GetMapping("/approval-list")
+    // public List<SalesOrderVO> getApprovalList(AccountLedgerSearchDTO dto) {
+    // return service.getApprovalList(dto);
+    // }
+
+    // @GetMapping("/approval-list")
+    // public List<SalesOrderVO> getApprovalList(
+    // @ModelAttribute AccountLedgerSearchDTO dto,
+    // @RequestParam(required = false) String orderId) {
+    // return service.getApprovalList(dto, orderId);
+    // }
     @GetMapping("/approval-list")
-    public List<SalesOrderVO> getApprovalList(SalesOrderVO vo) {
-        return service.getApprovalList(vo);
+    public List<SalesOrderVO> getApprovalList(
+            @ModelAttribute AccountLedgerSearchDTO dto, // 날짜만 있음
+            @ModelAttribute SalesOrderVO vo // vendorId, orderId 포함
+    ) {
+        return service.getApprovalList(dto, vo);
     }
 
     @GetMapping("/approval/details")

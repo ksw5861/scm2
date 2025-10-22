@@ -30,7 +30,13 @@ public interface InboundService {
     WarehouseListRes getWarehouseList(String condition, PageDTO paging);
 
     /* ===================== 주문승인 ===================== */
-    List<SalesOrderVO> getApprovalList(SalesOrderVO vo);
+    // List<SalesOrderVO> getApprovalList(SalesOrderVO vo);
+    // List<SalesOrderVO> getApprovalList(AccountLedgerSearchDTO dto);
+    // List<SalesOrderVO> getApprovalList(AccountLedgerSearchDTO dto, String
+    // orderId);
+
+    // 주문승인 목록 조회
+    List<SalesOrderVO> getApprovalList(AccountLedgerSearchDTO dto, SalesOrderVO vo);
 
     List<SalesOrderDetailVO> getApprovalDetails(String orderId);
 
