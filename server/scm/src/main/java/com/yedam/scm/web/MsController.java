@@ -196,7 +196,7 @@ public class MsController {
         List<MatLotStockAdjVO> history = inStockMatService.getAdjustHistoryByLotId(lotId);
         return ResponseEntity.ok(history);
     }
-
+    
     /*======================
     드롭다운/모달용   
     ======================*/

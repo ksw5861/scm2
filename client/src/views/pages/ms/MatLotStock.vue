@@ -44,15 +44,6 @@ const searchFilter = ref({
 });
 // pagination
 const page = ref({ page: 1, size: 10, totalElements: 0 });
-// 모달 열기
-const openPlanModal = () => {
-  showMat.value = true;
-};
-
-// 모달 닫기
-const closePlanModal = () => {
-  showMat.value = false;
-};
 
 const fetchMatList = async () => {
   const params = {
@@ -103,7 +94,7 @@ const detailInfo = async () => {
 
 const loadStatusCodes = async () => {
   try {
-    const res = await axios.get('/api/mat/status/lcnd');
+    const res = await axios.get('/api/mat/status/searchStock');
     codeMap.value = res.data.reduce((acc, cur) => {
       acc[cur.codeId] = cur.codeName;
       return acc;
@@ -162,9 +153,9 @@ const matLotColumns = [
 
 <template>
   <div class="container">
-      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--검색영역-->
-    <div class="card flex flex-col gap-4 mt-4" >
+    <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="재고 조회" @search="fetchMatList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
@@ -196,7 +187,7 @@ const matLotColumns = [
     <!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4 h-full" style="height: 850px;">
+        <div class="card flex flex-col gap-4 h-full" style="height: 850px">
           <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">목록</div>
@@ -207,7 +198,7 @@ const matLotColumns = [
       </div>
       <!--하단우측-->
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4" >
+        <div class="card flex flex-col gap-4">
           <!-- 버튼 + 제목을 같은 행에 배치 -->
           <div class="flex items-center justify-between my-3">
             <!-- 왼쪽: 제목 -->

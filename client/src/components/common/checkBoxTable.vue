@@ -5,7 +5,7 @@ import Column from 'primevue/column';
 import InputText from 'primevue/inputtext';
 import InputNumber from 'primevue/inputnumber';
 import Select from 'primevue/select';
-import DatePicker from 'primevue/datepicker'
+import DatePicker from 'primevue/datepicker';
 
 // Props 정의
 const props = defineProps({
@@ -58,7 +58,7 @@ const onSort = (event) => {
 </script>
 
 <template>
-  <DataTable v-model:selection="selectedRows" dataKey="id" :scrollable="true" scrollDirection="both" scroll-height="400px" scrollWidth="100%" :selectionMode="selectionMode" :value="localData" :paginator="props.paginator" :rows="props.page.size" :totalRecords="props.page.totalElements" :lazy="false" :loading="loading" :first="(props.page.page - 1) * props.page.size" :sortField="sortField" :sortOrder="sortOrder" :stripedRows="true" :rowHover="true" showGridlines @row-select="onRowSelect" @selection-change="onSelectionChange" @page-change="onPage" @sort="onSort" @page="onPage">
+  <DataTable v-model:selection="selectedRows" dataKey="id" :scrollable="true" scrollDirection="both" scroll-height="450px" scrollWidth="100%" :selectionMode="selectionMode" :value="localData" :paginator="props.paginator" :rows="props.page.size" :totalRecords="props.page.totalElements" :lazy="false" :loading="loading" :first="(props.page.page - 1) * props.page.size" :sortField="sortField" :sortOrder="sortOrder" :stripedRows="true" :rowHover="true" showGridlines @row-select="onRowSelect" @selection-change="onSelectionChange" @page-change="onPage" @sort="onSort" @page="onPage">
     <!-- 행 선택 체크박스 -->
     <Column v-if="showCheckbox" :selectionMode="selectionMode" headerStyle="width: 3rem" />
 
@@ -111,9 +111,9 @@ const onSort = (event) => {
       <!-- InputNumber 열 -->
       <Column v-else-if="col.inputNumber" :field="col.field" :header="col.label" :style="col.style" :sortable="col.sortable ?? false">
         <template #body="slotProps">
-            <div class="inline-block" :style="col.inputStyle || { width: '8rem' }">
-              <InputNumber v-model="slotProps.data[col.field]" :min="0" :showButtons="false"  inputClass="w-full text-right" />
-            </div>
+          <div class="inline-block" :style="col.inputStyle || { width: '8rem' }">
+            <InputNumber v-model="slotProps.data[col.field]" :min="0" :showButtons="false" inputClass="w-full text-right" />
+          </div>
         </template>
       </Column>
 

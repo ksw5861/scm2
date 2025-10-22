@@ -61,13 +61,12 @@ const formatDate = (date) => {
 };
 
 const fetchSuppliyList = async () => {
-
-    const params = {
-            startDate: formatDate(searchFilter.value.startDate),
-            endDate: formatDate(searchFilter.value.endDate),
-            matName: searchFilter.value.matName,
-            status:searchFilter.value.status
-        };
+  const params = {
+    startDate: formatDate(searchFilter.value.startDate),
+    endDate: formatDate(searchFilter.value.endDate),
+    matName: searchFilter.value.matName,
+    status: searchFilter.value.status
+  };
 
   try {
     const list = await axios.get(`/api/supplier/supplyList/${vendorId}`, { params });
@@ -159,8 +158,8 @@ const onPage = (event) => {
     startDate: formatDate(searchFilter.value.startDate),
     endDate: formatDate(searchFilter.value.endDate),
     matName: searchFilter.value.matName,
-    status:searchFilter.value.status
- });
+    status: searchFilter.value.status
+  });
 };
 
 const resetSearch = () => {
@@ -197,7 +196,7 @@ const statusColumn = [
 
 <template>
   <div class="container">
-      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--검색영역-->
     <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="공급 조회" @search="fetchSuppliyList" @reset="resetSearch">
@@ -226,12 +225,12 @@ const statusColumn = [
             </IftaLabel>
           </InputGroup>
 
-          <div class="flex flex-col w-full">
+          <!-- <div class="flex flex-col w-full">
             <InputGroup>
               <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
               <Select v-model="searchFilter.status" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="출고 상태" class="w-full h-[48px] text-base" />
             </InputGroup>
-          </div>
+          </div> -->
         </div>
       </SearchCard>
     </div>
