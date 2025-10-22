@@ -46,6 +46,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * DhController
@@ -56,6 +57,7 @@ import org.springframework.web.bind.annotation.RequestBody;
  */
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("${api.base-path:/}")
 public class DhController {
 
   private final EmployeeService employeeSvc;

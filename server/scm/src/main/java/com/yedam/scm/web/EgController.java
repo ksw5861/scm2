@@ -44,7 +44,7 @@ import com.yedam.scm.vo.PaymentVO;
  * ============================================================
  */
 @RestController
-@RequestMapping 
+@RequestMapping("${api.base-path:/}")
 public class EgController {
 
     @Autowired

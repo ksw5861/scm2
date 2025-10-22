@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
-@RequestMapping("/supplier")
+@RequestMapping("${api.base-path:/}supplier")
 @RequiredArgsConstructor
 public class SupplierController {
 

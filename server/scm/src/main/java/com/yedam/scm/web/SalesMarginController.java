@@ -16,7 +16,7 @@ import com.yedam.scm.vo.SalesMasterVO;
 import com.yedam.scm.vo.SalesOrderVO;
 
 @RestController
-@RequestMapping
+@RequestMapping("${api.base-path:/}")
 public class SalesMarginController {
 
     @Autowired
