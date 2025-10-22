@@ -32,11 +32,10 @@ public class WebConfig implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addViewController("/{spring:\\w+}")
                 .setViewName("forward:/index.html");
-        registry.addViewController("/**/{spring:\\w+}")
-                .setViewName("forward:/index.html");
-        registry.addViewController("/{spring:\\w+}/**{spring:?!(\\.js|\\.css)$}")
+        registry.addViewController("/**")
                 .setViewName("forward:/index.html");
     }
+
 
     @Bean
     public WebClient.Builder webClientBuilder() {
