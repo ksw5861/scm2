@@ -22,6 +22,7 @@ export default defineConfig({
     }
   },
   server: {
+    historyApiFallback: true,
     host: '0.0.0.0',
     proxy: {
       '/api': {
