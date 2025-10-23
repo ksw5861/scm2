@@ -288,4 +288,44 @@ public class DwController {
             @RequestParam(defaultValue = "10") int size) {
         return service.getApprovalOrderModal(condition, page, size);
     }
+
+
+
+    /* ===================== 제품반품 승인 페이지 모달 ===================== */
+
+    
+    // ===================== 1️⃣ 반품일자 모달 =====================
+    @GetMapping("/returnApproval/modal/searchByDate")
+    public Map<String, Object> searchByDate(AccountLedgerSearchDTO dto, PageDTO paging) {
+        return service.searchByDate(dto, paging);
+    }
+
+    // ===================== 2️⃣ 판매처명 모달 =====================
+    @GetMapping("/returnApproval/modal/searchByVendor")
+    public Map<String, Object> searchByVendor(
+            @RequestParam(required = false) String condition,
+            PageDTO paging) {
+        return service.searchByVendor(condition, paging);
+    }
+
+    // ===================== 3️⃣ 반품코드 모달 =====================
+    @GetMapping("/returnApproval/modal/searchByCode")
+    public Map<String, Object> searchByCode(
+            @RequestParam(required = false) String condition,
+            PageDTO paging) {
+        return service.searchByCode(condition, paging);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
 }// end
