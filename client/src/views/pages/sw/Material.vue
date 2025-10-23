@@ -47,7 +47,7 @@ const searchMatSuggestions = async (event) => {
   }
 
   try {
-    const { data } = await axios.get(`http://localhost:8080/api/material/autocomplete?keyword=${keyword}`);
+    const { data } = await axios.get(`http://13.124.12.49/api/material/autocomplete?keyword=${keyword}`);
     suggestions.value = data;
   } catch (e) {
     suggestions.value = [];

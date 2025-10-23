@@ -19,7 +19,7 @@
     FROM PRODUCT
     <where>
       <if test="prodId != null and prodId != ''">
-        AND PROD_ID = #{prodId}
+        AND PROD_ID LIKE '%' ||  #{prodId} || '%'
       </if>
       <if test="prodName != null and prodName != ''">
         AND PROD_NAME LIKE '%' || #{prodName} || '%'
@@ -40,7 +40,7 @@
   <select id="getProductDetail" parameterType="string" resultType="ProductVO">
     SELECT *
     FROM PRODUCT
-    WHERE PROD_ID = #{prodId}
+    WHERE PROD_ID LIKE '%' || #{prodId} || '%'
   </select>
 
   <!-- 참조 여부 먼저 확인-->
