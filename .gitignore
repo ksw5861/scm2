@@ -118,3 +118,9 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+
+# 배포 폴더
+server/scm/src/main/resources/static/*
+
+server/*/.gitignore
