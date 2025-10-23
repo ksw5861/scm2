@@ -9,4 +9,7 @@ public class BomDetailVO {
     private String matId;
     private Double mixingRate;
     private String baseUnit;
+
+    private MaterialVO material; // 자재 정보 포함
+
 }
