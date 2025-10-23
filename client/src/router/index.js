@@ -23,7 +23,7 @@ const router = createRouter({
       component: AppLayout,
       children: [
         {
-          path: '/',
+          path: '',
           name: 'dashboard',
           component: () => {
             const userStore = useUserStore();
@@ -34,7 +34,7 @@ const router = createRouter({
             } else if (role.includes('customer')) {
                 return import('@/views/pages/eg/BranchDash.vue');
             } else {role.includes('supplier')} {
-                // return import('@/views/pages/ms/');
+                return import('@/views/pages/supplier/SupplierDashboard.vue');
             }
           }
         }
