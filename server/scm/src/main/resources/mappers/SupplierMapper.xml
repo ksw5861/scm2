@@ -26,7 +26,7 @@
 </resultMap>
 
 
-<!--발주구매목록-->
+<!--발주목록-->
 <select id="getMatOerderList" parameterType="string" resultMap="purchaseMatMap">
 SELECT pm.pur_id,
        pm.req_qty,
@@ -346,7 +346,7 @@ on i.inbound_id = d.inbound_id
 join material m
 on d.mat_id = m.mat_id
 where l.log_rej_qty is not null
-and i.vendor_id = 'EMP088'
+and i.vendor_id = #{vendorId}
 order by i.vendor_out_date desc
 </select>
 

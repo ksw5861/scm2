@@ -8,13 +8,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.yedam.scm.dto.AdjStockDTO;
 import com.yedam.scm.dto.MatStockSearchDTO;
+import com.yedam.scm.dto.MatUnloadSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.PurchaseListSearchDTO;
 import com.yedam.scm.vo.InboundDetailVO;
 import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.MatLotStockAdjVO;
 import com.yedam.scm.vo.MatLotVO;
-import com.yedam.scm.web.MatUnloadSearchDTO;
 
 public interface InStockMatService {
     //하차대기(마스터)

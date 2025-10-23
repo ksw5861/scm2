@@ -82,19 +82,17 @@ const formatDate = (date) => {
 };
 
 const pageLoad = async () => {
-
-    const params = {
-        page: page.value.page,
-        size: page.value.size,
-        startDate: formatDate(searchFilter.value.startDate),
-        endDate: formatDate(searchFilter.value.endDate),
-        vendorName: searchFilter.value.vendorName,
-        status:searchFilter.value.status
-    };
-
+  const params = {
+    page: page.value.page,
+    size: page.value.size,
+    startDate: formatDate(searchFilter.value.startDate),
+    endDate: formatDate(searchFilter.value.endDate),
+    vendorName: searchFilter.value.vendorName,
+    status: searchFilter.value.status
+  };
 
   try {
-    const res = await axios.get('/api/mat/unloadList', { params });
+    const res = await axios.get('/api/munloadList', { params });
     const { list, page: pageInfo } = res.data;
     approveUnloadList.value = list.map((item) => ({
       id: item.inboundId,
@@ -114,7 +112,7 @@ const pageLoad = async () => {
 const detailInfo = async () => {
   try {
     console.log(selectedMaster.value.id);
-    const list = await axios.get('/api/mat/unloadDetailList', { params: { inboundId: selectedMaster.value.id } });
+    const list = await axios.get('/api/munloadDetailList', { params: { inboundId: selectedMaster.value.id } });
     console.log(list);
     //상세테이블
     approveUnloadDetailList.value = list.data.map((item) => ({
@@ -169,7 +167,7 @@ const submit = async () => {
   };
   console.log(payload);
   try {
-    await axios.post('/api/mat/matInStock', payload);
+    await axios.post('/api/mmatInStock', payload);
     await detailInfo();
     toast('success', '입고등록 성공', '입고등록 성공:', '3000');
     expDate.value = null;
@@ -241,9 +239,10 @@ const defectSubmit = async () => {
 
   defectPayload.get('data').text().then(console.log);
   try {
-    await axios.post('/api/mat/defect', defectPayload);
+    await axios.post('/api/mdefect', defectPayload);
     toast('success', '불량 등록 완료', '불량 정보가 성공적으로 저장되었습니다.');
     closeDefectModal();
+    await detailInfo();
   } catch (error) {
     toast('error', '불량 등록 실패', '서버 오류가 발생했습니다.');
   }
@@ -252,7 +251,7 @@ const defectSubmit = async () => {
 //공통코드
 const loadStatusCodes = async () => {
   try {
-    const res = await axios.get('/api/mat/status/inm');
+    const res = await axios.get('/api/mstatus/inm');
     // {"ms1":"요청등록","ms2":"요청승인",...} 형태로 변환
     codeMap.value = res.data.reduce((acc, cur) => {
       acc[cur.codeId] = cur.codeName;
@@ -304,7 +303,7 @@ const approveUnloadDetaiColumn = [
 
 <template>
   <div class="container">
-      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--검색영역-->
     <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="입고 조회" @search="pageLoad" @reset="resetSearch">
@@ -345,9 +344,9 @@ const approveUnloadDetaiColumn = [
     <!--테이블영역--><!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4 h-full" style="height: 800px;">
+        <div class="card flex flex-col gap-4 h-full" style="height: 800px">
           <!-- h-full 고정 -->
-          <div class="card flex flex-col gap-4" style="height: 800px;">
+          <div class="card flex flex-col gap-4" style="height: 800px">
             <div class="font-semibold text-m">입고대기 목록</div>
             <Divider />
             <selectTable v-model:selection="selectedMaster" :selectionMode="'single'" :columns="approveUnloadColumn" :data="approveUnloadList" :paginator="true" :showCheckbox="false" :page="page" @row-select="detailInfo" @page-change="onPage" />
@@ -356,15 +355,15 @@ const approveUnloadDetaiColumn = [
       </div>
       <!--하단우측-->
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4" >
+        <div class="card flex flex-col gap-4">
           <!-- 버튼 + 제목을 같은 행에 배치 -->
           <div class="flex items-center justify-between my-3">
             <!-- 왼쪽: 제목 -->
             <div class="font-semibold text-m">상세정보</div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
-              <btn color="warn" icon="check" label="불량등록"  @click="opendefectModal" class="whitespace-nowrap" outlined/>
-              <btn color="info" icon="check" label="입고등록" @click="submit" lass="whitespace-nowrap" outlined/>
+              <btn color="warn" icon="check" label="불량등록" @click="opendefectModal" class="whitespace-nowrap" outlined />
+              <btn color="info" icon="check" label="입고등록" @click="submit" lass="whitespace-nowrap" outlined />
             </div>
           </div>
 

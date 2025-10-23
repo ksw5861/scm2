@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.yedam.scm.config.FileUploadProperties;
 import com.yedam.scm.dto.AdjStockDTO;
 import com.yedam.scm.dto.MatStockSearchDTO;
+import com.yedam.scm.dto.MatUnloadSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.PurchaseListSearchDTO;
 import com.yedam.scm.instockMat.mapper.InStockMatMapper;
@@ -26,7 +27,6 @@ import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatLotStockAdjVO;
 import com.yedam.scm.vo.MatLotVO;
-import com.yedam.scm.web.MatUnloadSearchDTO;
 
 import lombok.RequiredArgsConstructor;
 

@@ -52,18 +52,17 @@ const formatDate = (date) => {
   return d.toISOString().slice(0, 10); // '2025-10-18'
 };
 
-
 const pageLoad = async () => {
   const params = {
     page: page.value.page,
     size: page.value.size,
     startDate: formatDate(searchFilter.value.startDate),
     endDate: formatDate(searchFilter.value.endDate),
-    vendorName: searchFilter.value.vendorName,
+    vendorName: searchFilter.value.vendorName
   };
 
   try {
-    const res = await axios.get('/api/mat/purchaseList', { params });
+    const res = await axios.get('/api/mpurchaseList', { params });
     const { list, page: pageInfo } = res.data;
     purchaseList.value = list.map((row) => ({
       id: row.purId,
@@ -85,7 +84,7 @@ const detailInfo = async () => {
   const purId = selectedRows.value.id; //주문테이블 id get!
   console.log(purId);
   try {
-    const list = await axios.get('/api/mat/purchaseListStatus', { params: { purId } });
+    const list = await axios.get('/api/mpurchaseListStatus', { params: { purId } });
     console.log(list);
     //타임라인
     events.value = list.data.map((item) => ({
@@ -116,7 +115,7 @@ const onPage = (event) => {
 
 const loadStatusCodes = async () => {
   try {
-    const res = await axios.get('/api/mat/status/m01');
+    const res = await axios.get('/api/mstatus/m01');
     // {"ms1":"요청등록","ms2":"요청승인",...} 형태로 변환
     codeMap.value = res.data.reduce((acc, cur) => {
       acc[cur.codeId] = cur.codeName;
@@ -162,7 +161,7 @@ const statusColumn = [
 
 <template>
   <div class="container">
-      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--검색영역-->
     <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="발주 조회" @search="pageLoad" @reset="resetSearch">

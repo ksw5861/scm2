@@ -39,8 +39,13 @@ const matLotList = ref();
 const selectedLotRow = ref(null);
 const adjustHistoryList = ref([]);
 //공통코드
-const codeMap = ref();
 const statusOptions = ref([]);
+const codeMap = ref();
+const adjustTypeOptions = ref([]);
+const adjTypeMap = ref();
+const adjustReasonOptions = ref([]);
+const adjustReasonMap = ref();
+
 //검색조건
 const searchFilter = ref({
   materialId: '',
@@ -70,7 +75,7 @@ const fetchMatList = async () => {
   };
   console.log('요청 params:', params);
   try {
-    const res = await axios.get('/api/mat/matStockList', { params });
+    const res = await axios.get('/api/mmatStockList', { params });
     const { list, page: pageInfo } = res.data;
 
     matStockList.value = list.map((item) => ({
@@ -105,7 +110,7 @@ const detailInfo = async () => {
 
   try {
     //LOT 상세
-    const list = await axios.get('/api/mat/matLotList', { params: { matId: selectedRows.value.matId } });
+    const list = await axios.get('/api/mmatLotList', { params: { matId: selectedRows.value.matId } });
     matLotList.value = list.data.map((item) => ({
       id: item.lotId,
       regDate: useDateFormat(item.regDate).value,
@@ -133,17 +138,18 @@ const onLotSelect = async (lotRow) => {
   adjustForm.value.lotId = lotRow.id || lotRow.id || '';
 
   try {
-    const res = await axios.get('/api/mat/adjustHistory', { params: { lotId: lotRow.id } });
+    const res = await axios.get('/api/madjustHistory', { params: { lotId: lotRow.id } });
     adjustHistoryList.value = res.data.map((item) => ({
       adjDate: useDateFormat(item.reDate).value,
       adjWeight: item.weight,
-      inOut: item.inOut,
-      reason: item.reson,
+      inOut: adjTypeMap.value[item.inOut],
+      reason: adjustReasonMap.value[item.reason],
       name: item.name,
       beforeWeight: item.beforeWeight,
       afterWeight: item.afterWeight,
       unit: lotRow.unit
     }));
+    loadStatusCodes();
   } catch (error) {
     toast('error', '조정이력 불러오기 실패', '이력조회 실패', '3000');
   }
@@ -161,6 +167,10 @@ const submitAdjustStock = async () => {
     return toast('warn', '조정등록', '증감 유형(IN/OUT)을 선택해 주세요', 2500);
   }
 
+  if (!confirm('정말 재고 조정을 등록하시겠습니까?')) {
+    return;
+  }
+
   const payload = {
     lotId: adjustForm.value.lotId,
     weight: adjustForm.value.adjustWeight, // 양수
@@ -170,12 +180,13 @@ const submitAdjustStock = async () => {
   };
 
   try {
-    const { data } = await axios.post('/api/mat/adjustStock', payload);
+    const { data } = await axios.post('/api/madjustStock', payload);
     toast('success', '조정등록', `등록 성공 (ID: ${data.adjStockId})`, 2500);
 
     // 이력 새로고침 (현재 선택 LOT 기준)
     await onLotSelect(selectedLotRow.value);
     await fetchMatList();
+    await detailInfo();
   } catch (e) {
     toast('error', '조정등록 실패', e?.response?.data?.message || '서버 오류', 3000);
   }
@@ -183,16 +194,45 @@ const submitAdjustStock = async () => {
 
 const loadStatusCodes = async () => {
   try {
-    const res = await axios.get('/api/mat/status/searchStock');
+    const res = await axios.get('/api/mstatus/searchStock');
+    const adjType = await axios.get('/api/mstatus/stAdjT');
+    const adjReason = await axios.get('/api/mstatus/stAdjR');
+
+    //검색용 상태코드 맵핑
     codeMap.value = res.data.reduce((acc, cur) => {
       acc[cur.codeId] = cur.codeName;
       return acc;
     }, {});
 
+    //상태옵션
     statusOptions.value = res.data.map((item) => ({
       name: item.codeName, // 화면 표시용
       value: item.codeId // 실제 값
     }));
+
+    //조정유형
+    adjustTypeOptions.value = adjType.data.map((item) => ({
+      name: item.codeName,
+      value: item.codeId
+    }));
+
+    //조정유형 매핑
+    adjTypeMap.value = adjType.data.reduce((acc, cur) => {
+      acc[cur.codeId] = cur.codeName;
+      return acc;
+    }, {});
+
+    //조정사유
+    adjustReasonOptions.value = adjReason.data.map((item) => ({
+      name: item.codeName,
+      value: item.codeId
+    }));
+
+    //조정사유 매핑
+    adjustReasonMap.value = adjReason.data.reduce((acc, cur) => {
+      acc[cur.codeId] = cur.codeName;
+      return acc;
+    }, {});
   } catch (err) {
     toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
   }
@@ -214,9 +254,9 @@ const onPage = (event) => {
   fetchMatList({ startRow, endRow });
 };
 
-onMounted(() => {
-  fetchMatList();
-  loadStatusCodes();
+onMounted(async () => {
+  await loadStatusCodes();
+  await fetchMatList();
 });
 
 const matStock = [
@@ -319,15 +359,7 @@ const adjustHistoryColumns = [
               <div class="flex items-end mb-3">
                 <div class="flex flex-1 items-end gap-1">
                   <div class="w-[6rem]">
-                    <SearchField
-                      type="dropDown"
-                      label="유형"
-                      v-model="adjustForm.type"
-                      :options="[
-                        { name: '감소', value: 'out' },
-                        { name: '증감', value: 'in' }
-                      ]"
-                    />
+                    <SearchField type="dropDown" label="유형" v-model="adjustForm.type" :options="adjustTypeOptions" />
                   </div>
                   <div class="flex-1">
                     <SearchField type="number" label="조정중량" v-model="adjustForm.adjustWeight" />
@@ -339,17 +371,7 @@ const adjustHistoryColumns = [
                 </div>
                 <!-- 조정사유 -->
                 <div class="flex-1 ml-3">
-                  <SearchField
-                    type="dropDown"
-                    label="조정사유"
-                    v-model="adjustForm.adjustReason"
-                    :options="[
-                      { name: '파손', value: 'adjrs1' },
-                      { name: '습기', value: 'adjrs2' },
-                      { name: '감모', value: 'adjrs3' },
-                      { name: '기타', value: 'adjrs4' }
-                    ]"
-                  />
+                  <SearchField type="dropDown" label="조정사유" v-model="adjustForm.adjustReason" :options="adjustReasonOptions" />
                 </div>
               </div>
               <!-- 두 번째 줄: 담당자 / LOT번호 -->

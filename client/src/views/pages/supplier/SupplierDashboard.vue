@@ -38,7 +38,7 @@ function fmt(v) {
 
 onMounted(async () => {
   try {
-    const { data } = await axios.get(`/api/supplier/dashboard/${vendorId}`);
+    const { data } = await axios.get(`/api/sdashboard/${vendorId}`);
 
     console.log(data);
     console.log(data.pieList);

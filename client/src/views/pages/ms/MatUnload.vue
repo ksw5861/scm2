@@ -62,7 +62,7 @@ const pageLoad = async () => {
   };
 
   try {
-    const res = await axios.get(`/api/mat/shipedList`, { params });
+    const res = await axios.get(`/api/mshipedList`, { params });
     const { list, page: pageInfo } = res.data;
     shipedListData.value = list.map((item) => ({
       id: item.inboundId,
@@ -80,7 +80,7 @@ const pageLoad = async () => {
 
 const detailInfo = async () => {
   try {
-    const list = await axios.get('/api/mat/shipedDetailList', { params: { inboundId: selectedRows.value.id } });
+    const list = await axios.get('/api/mshipedDetailList', { params: { inboundId: selectedRows.value.id } });
     console.log(list);
     //상세테이블
     shipDetailListData.value = list.data.map((item) => ({
@@ -99,9 +99,10 @@ const detailInfo = async () => {
 
 const approve = async () => {
   try {
-    await axios.post('/api/mat/approveUnload', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName } });
+    await axios.post('/api/mapproveUnload', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName } });
     toast('info', '하차승인 성공', '하차승인 성공:', '3000');
     await pageLoad();
+    await detailInfo();
     shipDetailListData.value = [{ matId: '', matName: '', ortQty: null, unit: '' }];
   } catch (error) {
     toast('error', '하차승인 실패', '하차승인 실패:', '3000');
@@ -111,7 +112,7 @@ const approve = async () => {
 const returnSubmit = async () => {
   //사유, 담당자, 하차등록시 해당 마스터와 디테일 모두 상태값 변경하고 기록해줘야함. [입고마스터 + 디테일 + 상태변경로그] + @ 발주상태값 반품으로도 가능??/??
   try {
-    await axios.post('/api/mat/unloadReturn', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName, rejMemo: returnMemo.value } });
+    await axios.post('/api/munloadReturn', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName, rejMemo: returnMemo.value } });
     toast('info', '반품등록 성공', '반품등록 성공:', '3000');
     await pageLoad();
     closeReturnModal();
@@ -184,7 +185,7 @@ const shipDetailColumn = [
 
 <template>
   <div class="container">
-      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="입고 조회" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -218,7 +219,7 @@ const shipDetailColumn = [
     <div class="flex flex-col md:flex-row gap-8">
       <!-- 왼쪽 카드 -->
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4" style="height: 800px;">
+        <div class="card flex flex-col gap-4" style="height: 800px">
           <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-m">하차대기 목록</div>
             <div class="flex gap-2">
@@ -232,12 +233,12 @@ const shipDetailColumn = [
 
       <!-- 오른쪽 카드 -->
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4" style="height: 800px;">
+        <div class="card flex flex-col gap-4" style="height: 800px">
           <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-m">상세정보</div>
             <div class="flex gap-2">
               <btn color="warn" icon="cancel" label="반송" class="whitespace-nowrap" outlined @click="openRetrunModal" />
-              <btn color="info" icon="check" label="입고승인" class="whitespace-nowrap" outlined @click="approve" />
+              <btn color="info" icon="check" label="승인" class="whitespace-nowrap" outlined @click="approve" />
             </div>
           </div>
           <Divider />

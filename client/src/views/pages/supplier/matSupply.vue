@@ -68,7 +68,7 @@ const pageLoad = async () => {
   };
 
   try {
-    const list = await axios.get(`/api/supplier/releaseList/${vendorId}`, { params });
+    const list = await axios.get(`/api/sreleaseList/${vendorId}`, { params });
     console.log(list);
 
     matOutData.value = list.data.map((item) => ({
@@ -142,7 +142,7 @@ const approvedShip = async () => {
   }));
 
   try {
-    const res = await axios.post('/api/supplier/shipMaterial', payload);
+    const res = await axios.post('/api/sshipMaterial', payload);
     toast('info', '등록 성공', '출고등록  성공:', '3000');
     selectedRows.value = [];
     await pageLoad();
@@ -153,7 +153,7 @@ const approvedShip = async () => {
 
 const loadStatusCodes = async () => {
   try {
-    const res = await axios.get('/api/mat/status/searchSupply');
+    const res = await axios.get('/api/mstatus/searchSupply');
     codeMap.value = res.data.reduce((acc, cur) => {
       acc[cur.codeId] = cur.codeName;
       return acc;

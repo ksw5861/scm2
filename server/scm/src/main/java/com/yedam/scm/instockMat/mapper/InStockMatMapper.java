@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import com.yedam.scm.dto.MatUnloadSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.PurchaseListSearchDTO;
 import com.yedam.scm.vo.InboundDetailVO;
@@ -13,7 +14,6 @@ import com.yedam.scm.vo.InboundLogVO;
 import com.yedam.scm.vo.InboundVO;
 import com.yedam.scm.vo.MatLotStockAdjVO;
 import com.yedam.scm.vo.MatLotVO;
-import com.yedam.scm.web.MatUnloadSearchDTO;
 
 @Mapper
 public interface InStockMatMapper {
