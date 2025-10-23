@@ -3,11 +3,6 @@ server:
   port: 8080
 
 spring:
-  mvc:
-    throw-exception-if-no-handler-found: true
-  web:
-    resources:
-      add-mappings: true
   datasource:
     driver-class-name: net.sf.log4jdbc.sql.jdbcapi.DriverSpy
     url: ENC(vAsvZ1mSBtSB+7c6R+z5irmCN3mdtJRC4bx4luOiLFI7hWaaVgmiFLxqqQFRKKh4YpE4He94Bdc=)
