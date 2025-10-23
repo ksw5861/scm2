@@ -10,7 +10,7 @@
     FROM WAREHOUSE
     <where>
       <if test="whId != null and whId != ''">
-        AND WH_ID = #{whId}
+        AND WH_ID LIKE '%' || #{whId} || '%'
       </if>
       <if test="whName != null and whName != ''">
         AND WH_NAME LIKE '%' || #{whName} || '%'
@@ -26,7 +26,7 @@
   <select id="getWareHouseDetail" parameterType="string" resultType="WareHouseVO">
     SELECT *
     FROM WAREHOUSE
-    WHERE WH_ID = #{whId}
+    WHERE WH_ID LIKE '%' || #{whId} || '%'
   </select>
 
   <!-- 3. 창고 삭제 -->

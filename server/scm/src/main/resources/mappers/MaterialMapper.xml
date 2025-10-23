@@ -11,7 +11,7 @@
   FROM MATERIAL
   <where>
     <if test="matId != null and matId != ''">
-      AND MAT_ID = #{matId}
+      AND MAT_ID LIKE '%' || #{matId} || '%'
     </if>
     <if test="matName != null and matName != ''">
       AND MAT_NAME LIKE '%' || #{matName} || '%'
@@ -29,7 +29,7 @@
   <select id="getMaterialDetail" parameterType="string" resultType="MaterialVO">
     SELECT *
     FROM MATERIAL
-    WHERE MAT_ID = #{matId}
+    WHERE MAT_ID LIKE '%' || #{matId} || '%'
   </select>
 
   <!-- 참조 여부 먼저 확인-->
