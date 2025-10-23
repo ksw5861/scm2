@@ -1,6 +1,8 @@
 package com.yedam.scm.vo;
 
 import lombok.Data;
+
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -27,13 +29,20 @@ public class PaymentVO {
 
     private Long outstandingAmount;  // 미수금(결제전:납부조회페이지 플로우형식)
     private Long finalBalance;       // 최종 잔액(결제후:납부조회페이지 플로우형식)
-    private Long creditBalance;      // 여신 잔액
+    private Long creditBalance;      // 여신 잔액 (납부조회페이지 플로우형식)
 
     
     private String impUid;        // 아임포트 결제번호
     private String merchantUid;   // 가맹점 주문번호
    // 총 결제 금액
     private String memo;          // 메모
+
+    private Long creditLimit;    // 당시 원본 여신한도
+    private Long payPreAr;       // 결제 전 미수금
+    private Long payAfterAr;     // 결제 후 미수금
+    private Long payPreLimit;    // 결제 전 잔여 여신한도
+    private Long payAfterLimit;  // 결제 후 잔여 여신한도
+
   
 
     private List<OrderItem> orders; // 주문 리스트 [{orderId, totalPrice}...]

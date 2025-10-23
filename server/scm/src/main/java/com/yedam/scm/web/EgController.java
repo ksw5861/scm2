@@ -331,11 +331,7 @@ public class EgController {
         }
     }
 
-    // =================================================================
-    // 6. 대금 결제 등록 (보류/미사용)
-    // =================================================================
-    // @PostMapping("/payments")
-    // public ResponseEntity<Map<String, Object>> insertPayment(@RequestBody PaymentVO paymentVO) { ... }
+    
 
     // =================================================================
     // 7. 납부 내역 조회
@@ -344,15 +340,17 @@ public class EgController {
     public ResponseEntity<Map<String, Object>> selectPaymentList(
             @RequestParam(required = false) String paymentNo,
             @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) {
+            @RequestParam(required = false) String endDate,
+            @RequestParam(required = false) String vendorId) {
 
         Map<String, Object> response = new HashMap<>();
         try {
-            List<Map<String, Object>> list = paymentSvc.selectPaymentList(paymentNo, startDate, endDate);
+            List<Map<String, Object>> list = paymentSvc.selectPaymentList(paymentNo, startDate, endDate, vendorId);
 
             response.put("status", "success");
             response.put("count", list.size());
             response.put("list", list);
+            
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {

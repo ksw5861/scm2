@@ -15,23 +15,56 @@
       FROM payment
       WHERE pay_id LIKE 'PM' || TO_CHAR(SYSDATE, 'YYYYMMDD') || '-%'
     </selectKey>
+      INSERT INTO payment (
+          pay_id,
+          pay_rmk,
+          pay_amount,
+          vendor_id,
+          pay_date,
+          pay_type,
+          credit_limit,     
+          pay_pre_ar,       
+          pay_after_ar,     
+          pay_pre_limit,   
+          pay_after_limit   
+        ) VALUES (
+          #{payId},
+          #{payRmk},
+          #{payAmount},
+          #{vendorId},
+          SYSDATE,
+          #{payType},
+          #{creditLimit},    
+          #{payPreAr},       
+          #{payAfterAr},    
+          #{payPreLimit},    
+          #{payAfterLimit}   
+        )
+      </insert>
 
-    INSERT INTO payment (
-      pay_id,
-      pay_rmk,
-      pay_amount,
-      vendor_id,
-      pay_date,
-      pay_type
-    ) VALUES (
-      #{payId},
-      #{payRmk},
-      #{payAmount},
-      #{vendorId},
-      SYSDATE,
-      #{payType}
-    )
-  </insert>
+  <!-- 당시 여신한도 -->
+  <select id="getCreditLimitByVendorId" resultType="long">
+      SELECT NVL(v.credit_limit, 0)
+      FROM vendor v
+      WHERE v.vendor_id = #{vendorId}
+  </select>
+
+  <!-- 결제 전 미수금 -->
+  <select id="getPreArBalanceByVendorId" resultType="long">
+      SELECT NVL(so_sum, 0) - NVL(pay_sum, 0) AS pre_ar
+      FROM (
+          SELECT SUM(NVL(so.total_price,0) - NVL(so.return_price,0)) AS so_sum
+          FROM sales_order so
+          WHERE so.vendor_id = #{vendorId}
+            AND so.send_date IS NOT NULL
+            AND so.status IN ('출고완료','배송완료')
+      ),
+      (
+          SELECT SUM(NVL(p.pay_amount,0)) AS pay_sum
+          FROM payment p
+          WHERE p.vendor_id = #{vendorId}
+      )
+  </select>
 
   <!-- ============================================================= -->
   <!-- 2. 결제 상세 등록 (payment_detail 테이블) -->
@@ -75,7 +108,7 @@
       so.pay_status    AS payStatus,
       so.status        AS status,
       so.paydue_date   AS paydueDate,
-      /* 상품명은 상세 서브쿼리로 계산 (JOIN으로 집합을 줄이지 않음) */
+      
       (
         SELECT
           CASE
@@ -100,77 +133,6 @@
 </select>
 
 
-  <!-- ============================================================= -->
-  <!-- 4. 결제 목록 조회 -->
-  <!-- ============================================================= -->
-  <!-- <select id="selectPaymentList" resultType="map">
-    SELECT
-      p.pay_id AS paymentNo,                         
-      TO_CHAR(p.pay_date, 'YYYY-MM-DD') AS payDate,   
-
-      
-      (
-        NVL((SELECT SUM(so.total_price)
-             FROM sales_order so
-             WHERE so.pay_status = '대기'), 0)
-        -
-        NVL((SELECT SUM(r.return_price)
-             FROM return r
-             WHERE r.return_status = '승인'), 0)
-      ) AS outstandingAmount,
-
-     
-      SUM(
-        CASE
-          WHEN pd.return_price > 0 THEN -pd.return_price
-          ELSE pd.total_price
-        END
-      ) AS payAmount,
-
-     
-      (
-        NVL((SELECT SUM(so.total_price)
-             FROM sales_order so
-             WHERE so.pay_status = '대기'), 0)
-        -
-        NVL((SELECT SUM(r.return_price)
-             FROM return r
-             WHERE r.return_status = '승인'), 0)
-        -
-        SUM(
-          CASE
-            WHEN pd.return_price > 0 THEN -pd.return_price
-            ELSE pd.total_price
-          END
-        )
-      ) AS finalBalance,
-
-      
-      (10000000 -
-        (
-          NVL((SELECT SUM(so.total_price)
-               FROM sales_order so
-               WHERE so.pay_status = '대기'), 0)
-          -
-          NVL((SELECT SUM(r.return_price)
-               FROM return r
-               WHERE r.return_status = '승인'), 0)
-          -
-          SUM(
-            CASE
-              WHEN pd.return_price > 0 THEN -pd.return_price
-              ELSE pd.total_price
-            END
-          )
-        )
-      ) AS creditBalance,
-
-      p.pay_rmk AS payRmk                              
-    FROM payment p
-    JOIN payment_detail pd ON p.pay_id = pd.pay_id
-    GROUP BY p.pay_id, p.pay_date, p.pay_rmk
-    ORDER BY p.pay_date DESC
-  </select> -->
 
   <!-- ============================================================= -->
   <!-- 5. 결제 상세 조회 -->
@@ -296,90 +258,20 @@
   <!-- ============================================================= -->
 <select id="selectPaymentList" resultType="PaymentVO">
   SELECT
-      p.pay_id        AS payId,
-      p.vendor_id     AS vendorId,
-      p.pay_date      AS payDate,
-      p.pay_amount    AS payAmount,
-      p.pay_type      AS payType,
-      p.pay_rmk       AS payRmk,
-
-      
-      (
-        NVL((
-          SELECT SUM(so.total_price)
-          FROM sales_order so
-          WHERE so.vendor_id = p.vendor_id
-            AND so.pay_status = '대기'
-            AND so.send_date <![CDATA[<=]]> p.pay_date
-        ), 0)
-        -
-        NVL((
-          SELECT SUM(pd2.total_price)
-          FROM payment_detail pd2
-          JOIN payment p2 ON pd2.pay_id = p2.pay_id
-          WHERE p2.vendor_id = p.vendor_id
-            AND p2.pay_date <![CDATA[<]]> p.pay_date
-        ), 0)
-      ) AS outstandingAmount,
-
-     
-      NVL(SUM(pd.total_price), 0) AS payAmount,
-
-      
-      (
-        (
-          NVL((
-            SELECT SUM(so.total_price)
-            FROM sales_order so
-            WHERE so.vendor_id = p.vendor_id
-              AND so.pay_status = '대기'
-              AND so.send_date <![CDATA[<=]]> p.pay_date
-          ), 0)
-          -
-          NVL((
-            SELECT SUM(pd2.total_price)
-            FROM payment_detail pd2
-            JOIN payment p2 ON pd2.pay_id = p2.pay_id
-            WHERE p2.vendor_id = p.vendor_id
-              AND p2.pay_date <![CDATA[<]]> p.pay_date
-          ), 0)
-        )
-        - NVL(SUM(pd.total_price), 0)
-      ) AS finalBalance,
-
-      
-      (
-        v.credit_limit
-        -
-        (
-          (
-            NVL((
-              SELECT SUM(so.total_price)
-              FROM sales_order so
-              WHERE so.vendor_id = p.vendor_id
-                AND so.pay_status = '대기'
-                AND so.send_date <![CDATA[<=]]> p.pay_date
-            ), 0)
-            -
-            NVL((
-              SELECT SUM(pd2.total_price)
-              FROM payment_detail pd2
-              JOIN payment p2 ON pd2.pay_id = p2.pay_id
-              WHERE p2.vendor_id = p.vendor_id
-                AND p2.pay_date <![CDATA[<]]> p.pay_date
-            ), 0)
-          )
-          - NVL(SUM(pd.total_price), 0)
-        )
-      ) AS creditBalance
-
-  FROM payment p
-  JOIN payment_detail pd ON p.pay_id = pd.pay_id
-  JOIN vendor v ON p.vendor_id = v.vendor_id
-  GROUP BY 
-      p.pay_id, p.vendor_id, p.pay_date, p.pay_amount, p.pay_type, p.pay_rmk, v.credit_limit
-  ORDER BY p.pay_date DESC
+    pay_id          AS payId,
+    vendor_id       AS vendorId,
+    pay_date        AS payDate,
+    pay_type        AS payType,
+    pay_rmk         AS payRmk,
+    pay_amount      AS payAmount,
+    pay_pre_ar      AS outstandingAmount,   
+    pay_after_ar    AS finalBalance,        
+    pay_after_limit AS creditBalance        
+  FROM payment
+  WHERE vendor_id = #{vendorId}
+  ORDER BY pay_date DESC
 </select>
+
 
 
 

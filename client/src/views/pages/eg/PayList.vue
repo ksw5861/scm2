@@ -128,6 +128,7 @@ import InputText from 'primevue/inputtext'
 import Calendar from 'primevue/calendar'
 import { useToast } from 'primevue/usetoast'
 import { useUserStore } from '@/stores/user'
+import vendor from '@/config/menus/menu/dh/vendor'
 
 const userStore = useUserStore()
 const toast = useToast()
@@ -167,7 +168,8 @@ const searchPayments = async () => {
     const params = {
       paymentNo: filters.value.paymentNo || '',
       startDate: filters.value.startDate ? formatDate(filters.value.startDate) : '',
-      endDate: filters.value.endDate ? formatDate(filters.value.endDate) : ''
+      endDate: filters.value.endDate ? formatDate(filters.value.endDate) : '',
+      vendorId: userStore.code
     }
 
     const res = await axios.get('/api/payments', { params })

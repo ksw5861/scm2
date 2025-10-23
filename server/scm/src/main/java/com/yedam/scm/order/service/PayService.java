@@ -21,7 +21,7 @@ public interface PayService {
     // =============================================================
     // 납부 내역 조회
     // =============================================================
-    List<Map<String, Object>> selectPaymentList(String paymentNo, String startDate, String endDate);
+    List<Map<String, Object>> selectPaymentList(String paymentNo, String startDate, String endDate, String vendorId);
 
     // =============================================================
     // 납부 상세 조회
