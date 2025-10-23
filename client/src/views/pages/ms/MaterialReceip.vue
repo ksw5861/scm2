@@ -181,30 +181,30 @@ const submit = async () => {
 };
 
 //반품모달open
-const opendefectModal = () => {
-  const row = selectedDetail.value;
-  if (!row) {
-    toast('info', '선택 필요', '반품할 자재를 선택하세요.', '3000');
-    return;
-  }
+// const opendefectModal = () => {
+//   const row = selectedDetail.value;
+//   if (!row) {
+//     toast('info', '선택 필요', '반품할 자재를 선택하세요.', '3000');
+//     return;
+//   }
 
-  if (result.value === 'Y') {
-    toast('info', '확인 필요', '검수결과 불합격자재만 입고가능합니다.', '3000');
-    return;
-  }
-  defectForm.value = {
-    matName: row.matName,
-    inboundDetId: row.id,
-    logRejQty: '',
-    logMemo: '',
-    logName: empName
-  };
-  defectModal.value = true;
-};
+//   if (result.value === 'Y') {
+//     toast('info', '확인 필요', '검수결과 불합격자재만 입고가능합니다.', '3000');
+//     return;
+//   }
+//   defectForm.value = {
+//     matName: row.matName,
+//     inboundDetId: row.id,
+//     logRejQty: '',
+//     logMemo: '',
+//     logName: empName
+//   };
+//   defectModal.value = true;
+// };
 
-const closeDefectModal = () => {
-  defectModal.value = false;
-};
+// const closeDefectModal = () => {
+//   defectModal.value = false;
+// };
 //이미지
 const onFileSelect = (event) => {
   // PrimeVue는 배열 형태로 전달됨
@@ -218,6 +218,27 @@ const onFileSelect = (event) => {
 };
 
 const defectSubmit = async () => {
+    if(!defectForm.value.logRejQty || isNaN(defectForm.value.logRejQty) || Number(defectForm.value.logRejQty) <= 0){
+        toast('warn', '유효성 검사', '불량수량은 0보다 큰 숫자로 입력해주세요.', '3000');
+        return;
+    }
+    if(Number(defectForm.value.logRejQty) > (selectedDetail.value.outQty - selectedDetail.value.inTotalQty)){
+        toast('warn', '유효성 검사', '불량수량은 입고잔여수량을 초과할 수 없습니다.', '3000');
+        return;
+    }
+    if(!defectForm.value.logMemo){
+        toast('warn', '유효성 검사', '불량사유를 입력해주세요.', '3000');
+        return;
+    }
+    if(!selectedFile.value){
+        toast('warn', '유효성 검사', '불량 이미지 파일을 선택해주세요.', '3000');
+        return;
+    }
+
+    if (!confirm('불량등록을 진행하시겠습니까?')) {
+        return;
+    }
+
   //[메모, 불량수량, 상세아이디, 담당자]
   const defectPayload = new FormData();
 
@@ -363,7 +384,7 @@ const approveUnloadDetaiColumn = [
             <div class="font-semibold text-m">상세정보</div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
-              <btn color="warn" icon="check" label="불량등록" @click="opendefectModal" class="whitespace-nowrap" outlined />
+              <btn color="warn" icon="check" label="불량등록" @click="defectSubmit" class="whitespace-nowrap" outlined />
               <btn color="info" icon="check" label="입고등록" @click="submit" lass="whitespace-nowrap" outlined />
             </div>
           </div>
@@ -373,7 +394,7 @@ const approveUnloadDetaiColumn = [
           <Divider />
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
             <SearchField type="readOnly" label="자재명" v-model="inputMatName" />
-            <SearchField type="date" label="유통기한" v-model="expDate" />
+            <SearchField type="date" label="유통기한" v-model="expDate"  width="30rem"/>
             <SearchField type="text" label="입고수량" v-model="inQty" />
             <searchField
               type="dropDown"
@@ -386,12 +407,21 @@ const approveUnloadDetaiColumn = [
               ]"
             />
           </div>
+          <!--검수결과가 불합격시-->
+          <div v-if ="result === 'N'" class="text-black-500 mt-5">
+            검수결과 불합격 시 입고등록이 불가능하며, 불량등록을 진행해주세요.
+            <Textarea type="text" label="불량사유" v-model="defectForm.logMemo" placeholder="불량사유를 입력하세요" rows="5" cols="95" class="mt-5"/>
+            <FileUpload mode="basic" name="file" chooseLabel="파일 선택" accept="image/*" @select="onFileSelect" class="mt-3 flex justify-center"/>
+            <div v-if="previewUrl" class="mt-2">
+                <img :src="previewUrl" alt="미리보기" class="w-32 rounded-lg border" />
+            </div>
         </div>
+    </div>
+</div>
       </div>
     </div>
-  </div>
 
-  <!-- 반품 모달 -->
+  <!-- 반품 모달
   <Dialog v-model:visible="defectModal" modal header="불량등록" :style="{ width: '500px' }">
     <div class="flex justify-center gap-2 mb-3">
       <SearchField type="readOnly" label="자재명" v-model="defectForm.matName" />
@@ -412,7 +442,7 @@ const approveUnloadDetaiColumn = [
       <btn color="contrast" label="취소" @click="closeDefectModal" />
       <btn color="warn" label="등록" @click="defectSubmit" />
     </template>
-  </Dialog>
+  </Dialog> -->
 </template>
 
 <scoped>
