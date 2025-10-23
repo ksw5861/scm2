@@ -5,6 +5,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.yedam.scm.dto.AdjStockDTO;
 import com.yedam.scm.dto.MatStockSearchDTO;
+import com.yedam.scm.dto.MatUnloadSearchDTO;
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.PurchaseListSearchDTO;
 import com.yedam.scm.instockMat.service.InStockMatService;
@@ -56,7 +57,7 @@ import java.sql.Connection;
 
 
 @RestController
-@RequestMapping("${api.base-path:/}mat")
+@RequestMapping("${api.base-path:/}")
 @RequiredArgsConstructor
 public class MsController {
     
@@ -67,43 +68,43 @@ public class MsController {
     
     //======================================================================주문part
     //생산계획등록
-     @PostMapping("/productionPlan")
+     @PostMapping("/mproductionPlan")
      public int insertProductionPlan(@RequestBody ProductionPlanVO productionPlan) {
          return purchaseMatService.insertProductionPlan(productionPlan);
      }
 
     //생산계획마스터목록(모달)
-    @GetMapping("/planMasterList")
+    @GetMapping("/mplanMasterList")
     public List<ProductionPlanVO > getPlanMasterList() {
         return purchaseMatService.getPlanMasterList();
     }
 
      // 생산계획 상세조회 (MRP 모달에서 선택 시)
-    @GetMapping("/planDetailList/{plId}")
+    @GetMapping("/mplanDetailList/{plId}")
     public List<PrdPlanDetailVO> getPlanDetailList(@PathVariable Long plId) {
         return purchaseMatService.getPlanDetailList(plId);
     }
     //MRP산출
-    @PostMapping("/calcMrp/{plId}")
+    @PostMapping("/mcalcMrp/{plId}")
     public ResponseEntity<String> calcMrp(@PathVariable Long plId, @RequestParam String empName) {
         purchaseMatService.callCalcMrpProc(plId, empName);
         return ResponseEntity.ok("MRP 산출 완료");
     }
 
     //map 자재소요량
-    @GetMapping("/mrpList")
+    @GetMapping("/mmrpList")
     public List<MrpDetailVO> getMrpList() {
     return purchaseMatService.getMrpList();
     }
 
     //자재발주등록
-    @PostMapping("/reqMaterial")
+    @PostMapping("/mreqMaterial")
     public void callReqestMaterial(@RequestBody List<PurchaseMatVO> requestList) {      
         purchaseMatService.callReqestMatProc(requestList);
     }
     
     //발주목록
-    @GetMapping("/purchaseList")
+    @GetMapping("/mpurchaseList")
     public ResponseEntity<Map<String, Object>> getPurchaseList(PurchaseListSearchDTO searchDTO, PageDTO pageDTO) {
 
         Map<String, Object> result = purchaseMatService.getPurchaseList(searchDTO, pageDTO);
@@ -111,51 +112,51 @@ public class MsController {
     }
     
     //발주상세조회
-    @GetMapping("/purchaseListStatus")
+    @GetMapping("/mpurchaseListStatus")
     public List<PurStatusLogVO> getPurchaseStatus(@RequestParam Long purId) {
         return purchaseMatService.getPurchaseStatus(purId);
     }
     //============================================================================ 입고Part
     //하차대기목록(마스터)
-    @GetMapping("/shipedList")
+    @GetMapping("/mshipedList")
     public ResponseEntity<Map<String, Object>> getVenShipList(PageDTO pageDTO, PurchaseListSearchDTO searchDTO) {
        
        Map<String, Object> result = inStockMatService.getVenShipList(pageDTO, searchDTO);
        return ResponseEntity.ok(result);
     }
     //하차대기목록(상세)
-    @GetMapping("/shipedDetailList")
+    @GetMapping("/mshipedDetailList")
     public List<InboundDetailVO> getVenShipDetailList(@RequestParam Long inboundId) {
         return inStockMatService.getVenShipDetailList(inboundId);
     }
     //하차승인
-    @PostMapping("/approveUnload")
+    @PostMapping("/mapproveUnload")
     public void callApproveUnload(@RequestParam Long inboundId, @RequestParam String unloadEmp ) {      
         inStockMatService.callApproveUnload(inboundId, unloadEmp);
     }
     //하차반품
-    @PostMapping("/unloadReturn")
+    @PostMapping("/munloadReturn")
     public void callUnloadReturn(@RequestParam Long inboundId, @RequestParam String unloadEmp, @RequestParam String rejMemo) {
         inStockMatService.callUnloadReturn(inboundId, unloadEmp, rejMemo);
     }
     //입고대기목록
-    @GetMapping("/unloadList")
+    @GetMapping("/munloadList")
     public ResponseEntity<Map<String, Object>> getApproveUnload(MatUnloadSearchDTO searchDTO, PageDTO pageDTO) {
         Map<String, Object> result = inStockMatService.getApproveUnload(searchDTO, pageDTO);
         return ResponseEntity.ok(result);
     }
     //입고대기목록(상세)
-    @GetMapping("/unloadDetailList")
+    @GetMapping("/munloadDetailList")
     public List<InboundDetailVO> getApproveUnloadDetailList(@RequestParam Long inboundId) {
         return inStockMatService.getApproveUnloadDetailList(inboundId);
     }
     //입고등록
-    @PostMapping("/matInStock")
+    @PostMapping("/mmatInStock")
     public void callMatInboundStock(@RequestBody InboundDetailVO inStockInfo) {      
         inStockMatService.callMatInboundStock(inStockInfo);
     }
     //불량등록
-    @PostMapping("/defect")
+    @PostMapping("/mdefect")
     public ResponseEntity<?> callRegMatDefect( @RequestPart("data") InboundLogVO defectData, @RequestPart(value = "file", required = false) MultipartFile file) {       
         try {
             // 서비스 호출
@@ -174,24 +175,24 @@ public class MsController {
 
     //=============================================================================================재고part
     //자재재고현황
-    @GetMapping("/matStockList")
+    @GetMapping("/mmatStockList")
     public ResponseEntity<Map<String, Object>> getMatStockList(MatStockSearchDTO searchDTO, PageDTO pageDTO) {
         Map<String, Object> result = inStockMatService.getMatStockList(pageDTO, searchDTO);
         return ResponseEntity.ok(result);
     }
     //자재별LOT현황
-    @GetMapping("/matLotList")
+    @GetMapping("/mmatLotList")
     public List<MatLotVO> getMatLotList(@RequestParam String matId) {
         return inStockMatService.getMatLotList(matId);
     }
     //재고조정
-    @PostMapping("/adjustStock")
+    @PostMapping("/madjustStock")
     public ResponseEntity<?> adjustStock(@RequestBody AdjStockDTO dto) {
         Long id = inStockMatService.adjustMatStock(dto);
         return ResponseEntity.ok().body(id);
     }
     //조정이력
-    @GetMapping("/adjustHistory")
+    @GetMapping("/madjustHistory")
     public ResponseEntity<List<MatLotStockAdjVO>> getAdjustHistory(@RequestParam Long lotId) {
         List<MatLotStockAdjVO> history = inStockMatService.getAdjustHistoryByLotId(lotId);
         return ResponseEntity.ok(history);
@@ -201,19 +202,19 @@ public class MsController {
     드롭다운/모달용   
     ======================*/
     //생산계획시 제품 드롭다운
-    @GetMapping("/productsList")
+    @GetMapping("/mproductsList")
     public List<ProductVO> getProductList(){
         return purchaseMatService.getProductList();
     }
 
      //자재주문시 계약된 공급처 드롭다운
-    @GetMapping("/matVendorList")
+    @GetMapping("/mmatVendorList")
     public List<MatVendorVO> getMatVendor(@RequestParam String matId) {
         return purchaseMatService.getMatVendorList(matId);
     }
 
     //창고리스트 드롭다운 
-    @GetMapping("/warehouseList")
+    @GetMapping("/mwarehouseList")
     public List<WareHouseVO> getWarehouseList(){
         return purchaseMatService.getWarehouseList();
     }
@@ -221,7 +222,7 @@ public class MsController {
     /*======================================
      * 공통코드 상태값
      * ======================================*/
-    @GetMapping("/status/{groupId}")
+    @GetMapping("/mstatus/{groupId}")
     public List<MatStatusVO> selectCodeList(@PathVariable String groupId) {
         return purchaseMatService.selectCodeList(groupId);
     }
@@ -229,7 +230,7 @@ public class MsController {
     /*==============================================
      * 재스퍼 출고명세서
      ===============================================*/
-  @GetMapping("/shipment/{inboundId}")
+  @GetMapping("/mshipment/{inboundId}")
   public ResponseEntity<byte[]> exportShipment(@PathVariable Long inboundId) throws Exception {
     Map<String, Object> params = new HashMap<>();
     params.put("InboundId", inboundId);

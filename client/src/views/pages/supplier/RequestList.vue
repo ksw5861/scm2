@@ -61,16 +61,15 @@ const formatDate = (date) => {
 
 //주문목록(페이지로드시)
 const fetchList = async () => {
-
-    const params = {
-        startDate: formatDate(searchFilter.value.startDate),
-        endDate: formatDate(searchFilter.value.endDate),
-        matName: searchFilter.value.matName,
-        toWarehouse:searchFilter.value.toWarehouse
+  const params = {
+    startDate: formatDate(searchFilter.value.startDate),
+    endDate: formatDate(searchFilter.value.endDate),
+    matName: searchFilter.value.matName,
+    toWarehouse: searchFilter.value.toWarehouse
   };
 
   try {
-    const list = await axios.get(`/api/supplier/OrderList/${vendorId}`, { params });
+    const list = await axios.get(`/api/sOrderList/${vendorId}`, { params });
     console.log(list);
     matOrderData.value = list.data.map((item) => ({
       id: item.purId,
@@ -112,7 +111,7 @@ const approve = async () => {
   const idList = list.map((row) => row.id);
 
   try {
-    await axios.post('/api/supplier/approve', { purId: idList, vId: vendorId, name: vendorName });
+    await axios.post('/api/sapprove', { purId: idList, vId: vendorId, name: vendorName });
     toast('info', '승인 성공', '주문 승인 성공:', '3000');
 
     fetchList();
@@ -120,32 +119,15 @@ const approve = async () => {
     toast('error', '승인 실패', '주문 승인 실패:', '3000');
   }
 };
-
-//반려모달
-const oepnRejModal = () => {
-  const selectedCount = selectedRows.value.length;
-
-  if (selectedCount === 0) {
-    toast('warn', '선택 필요', '반려할 항목을 선택해주세요:', '3000');
-    return;
-  }
-
-  if (selectedCount > 1) {
-    toast('info', '반려 불가', '1건씩만 처리 가능합니다:', '3000');
-    return;
-  }
-
-  rejModal.value = true;
-};
-
-const closeRejModal = () => {
-  rejModal.value = false;
-};
-
+//반려
 const rejectPurchase = async () => {
   try {
-    await axios.post('/api/supplier/reject', null, { params: { purId: selectedRows.value[0].id, rejMemo: rejMemo.value, staff: vendorName.value } });
+    await axios.post('/api/sreject', null, { params: { purId: selectedRows.value[0].id, rejMemo: rejMemo.value, staff: vendorName } });
     rejModal.value = false;
+    rejMemo.value = '';
+    toast('info', '등록 성공', '주문 거부 성공:', '3000');
+    fetchList();
+    selectedRows.value = [];
   } catch (error) {
     toast('error', '등록 실패', '주문 승인 실패:', '3000');
   }
@@ -161,6 +143,26 @@ const resetSearch = () => {
   fetchList();
 };
 
+//모달(열기)
+const oepnRejModal = () => {
+  const selectedCount = selectedRows.value.length;
+
+  if (selectedCount === 0) {
+    toast('warn', '선택 필요', '반려할 항목을 선택해주세요:', '3000');
+    return;
+  }
+
+  if (selectedCount > 1) {
+    toast('info', '반려 불가', '1건씩만 처리 가능합니다:', '3000');
+    return;
+  }
+
+  rejModal.value = true;
+};
+//모달(닫기)
+const closeRejModal = () => {
+  rejModal.value = false;
+};
 
 onMounted(() => {
   fetchList();
@@ -182,7 +184,7 @@ const matOrderColumns = [
 
 <template>
   <div class="container">
-      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--검색영역-->
     <div class="card flex flex-col gap-4 mt-4">
       <SearchCard title="주문 검색" @search="fetchList" @reset="resetSearch">
@@ -226,8 +228,8 @@ const matOrderColumns = [
     <!--중간버튼영역-->
     <div class="card flex flex-col gap-4">
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="warn" icon="cancel" label="주문 거부" @click="oepnRejModal" outlined class="whitespace-nowrap"/>
-        <btn color="info" icon="check" label="주문 승인"  @click="approve" class="whitespace-nowrap" outlined/>
+        <btn color="warn" icon="cancel" label="주문 거부" @click="oepnRejModal" outlined class="whitespace-nowrap" />
+        <btn color="info" icon="check" label="주문 승인" @click="approve" class="whitespace-nowrap" outlined />
       </div>
       <div class="font-semibold text-xl mb-5">조회 내역</div>
       <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" @page-change="onPage" :page="page" />
@@ -240,8 +242,8 @@ const matOrderColumns = [
       <Textarea v-model="rejMemo" rows="5" cols="100" />
     </div>
     <div class="flex justify-center gap-2">
-      <btn color="warn" icon="pi pi-file-excel" label="취소" @click="closeRejModal" />
-      <btn color="warn" icon="pi pi-file-excel" label="등록" @click="rejectPurchase" />
+      <btn color="warn" icon="cancel" label="취소" @click="closeRejModal" outlined class="whitespace-nowrap" />
+      <btn color="info" icon="cancel" label="등록" @click="rejectPurchase" outlined class="whitespace-nowrap" />
     </div>
   </Dialog>
 </template>

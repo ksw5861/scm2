@@ -81,7 +81,7 @@ const pageLoad = async () => {
         toWarehouse: searchFilter.value.toWarehouse
     }
     try {
-      const list = await axios.get(`/api/supplier/ApprovedList/${vendorId}`, { params });
+      const list = await axios.get(`/api/sApprovedList/${vendorId}`, { params });
       console.log(list);
 
       approveShipData.value = list.data.map((item) => ({
@@ -161,7 +161,7 @@ const submit = async () => {
   console.log(payload);
 
   try {
-    await axios.post('/api/supplier/shipment', payload);
+    await axios.post('/api/sshipment', payload);
     toast('info', '등록 성공', '출고등록  성공:', '3000');
 
     await pageLoad();
@@ -179,7 +179,7 @@ const submit = async () => {
 //창고리스트: 드롭다운용
 const warehouseList = async () => {
   try {
-    const res = await axios.get('/api/mat/warehouseList');
+    const res = await axios.get('/api/mwarehouseList');
     warehoustListOpt.value = res.data.map((item) => ({
       name: item.whName,
       value: item.whId
@@ -304,10 +304,10 @@ const addShipColumns = [
                         <SearchField type="readOnly" label="출고일" v-model="shipmentDate" />
                         <SearchField type="readOnly" label="담당자" v-model="vanEmpName" />
                         <searchField type="dropDown" label="배송지" v-model="deliveryPlace" class="w-full" :options="warehoustListOpt" />
-                        <searchField type="dropDown" label="운송업체" v-model="carrier" class="w-full":options="[ { name: '대한물류', value: 'Log001' },
-                                                                                                                 { name: '경동운송', value: 'Log002' },
-                                                                                                                 { name: '신속배송', value: 'Log003' },
-                                                                                                                 { name: '정확물류', value: 'Log004' }]" />
+                        <searchField type="dropDown" label="운송업체" v-model="carrier" class="w-full":options="[ { name: '대한물류', value: '대한물류' },
+                                                                                                                 { name: '경동운송', value: '경동운송' },
+                                                                                                                 { name: '신속배송', value: '신속배송' },
+                                                                                                                 { name: '정확물류', value: '정확물류' }]" />
                         <SearchField type="text" label="운송번호" v-model="trackingNo" />
                         <SearchField type="text" label="차량번호" v-model="carNo" visibility: hidden/>
                     </div>

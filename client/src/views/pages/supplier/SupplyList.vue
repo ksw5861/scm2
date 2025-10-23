@@ -11,7 +11,6 @@ import Timeline from 'primevue/timeline';
 import Dialog from 'primevue/dialog';
 import { useUserStore } from '@/stores/user';
 import SearchCard from '@/components/card/SearchCard.vue';
-import Select from 'primevue/select';
 import DatePicker from 'primevue/datepicker';
 
 // Pinia Store
@@ -69,7 +68,7 @@ const fetchSuppliyList = async () => {
   };
 
   try {
-    const list = await axios.get(`/api/supplier/supplyList/${vendorId}`, { params });
+    const list = await axios.get(`/api/ssupplyList/${vendorId}`, { params });
     console.log(list);
     // flatMap으로 평탄화
     const flattened = list.data.flatMap((row) =>
@@ -95,7 +94,7 @@ const detailInfo = async () => {
   const inboundDetId = selectedRows.value.id;
   console.log(inboundDetId);
   try {
-    const list = await axios.get('/api/supplier/supplyDetailList', { params: { inboundDetId } });
+    const list = await axios.get('/api/ssupplyDetailList', { params: { inboundDetId } });
     console.log(list);
     //타임라인
     events.value = list.data.map((item) => ({
@@ -119,7 +118,7 @@ const detailInfo = async () => {
 
 const loadStatusCodes = async () => {
   try {
-    const res = await axios.get('/api/mat/status/ind');
+    const res = await axios.get('/api/mstatus/ind');
     // {"ms1":"요청등록","ms2":"요청승인",...} 형태로 변환
     codeMap.value = res.data.reduce((acc, cur) => {
       acc[cur.codeId] = cur.codeName;

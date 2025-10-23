@@ -53,7 +53,7 @@ const fetchMatList = async () => {
   };
   console.log('요청 params:', params);
   try {
-    const res = await axios.get('/api/mat/matStockList', { params });
+    const res = await axios.get('/api/mmatStockList', { params });
     const { list, page: pageInfo } = res.data;
 
     matStockList.value = list.map((item) => ({
@@ -74,7 +74,7 @@ const fetchMatList = async () => {
 
 const detailInfo = async () => {
   try {
-    const list = await axios.get('/api/mat/matLotList', { params: { matId: selectedRows.value.id } });
+    const list = await axios.get('/api/mmatLotList', { params: { matId: selectedRows.value.id } });
     matLotList.value = list.data.map((item) => ({
       regDate: useDateFormat(item.regDate).value,
       lotNo: item.lotNo,
@@ -94,7 +94,7 @@ const detailInfo = async () => {
 
 const loadStatusCodes = async () => {
   try {
-    const res = await axios.get('/api/mat/status/searchStock');
+    const res = await axios.get('/api/mstatus/searchStock');
     codeMap.value = res.data.reduce((acc, cur) => {
       acc[cur.codeId] = cur.codeName;
       return acc;

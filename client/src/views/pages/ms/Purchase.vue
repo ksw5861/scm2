@@ -31,8 +31,16 @@ const breadcrumbItems = computed(() => {
 
 //데이터
 const planMasterList = ref([]);
-const planList = ref([]);
-const mrpList = ref([]);
+const planList = ref([
+  { planDueDate: '', prodId: '', prodName: '', planQty: '', unit: '' },
+  { planDueDate: '', prodId: '', prodName: '', planQty: '', unit: '' },
+  { planDueDate: '', prodId: '', prodName: '', planQty: '', unit: '' }
+]);
+const mrpList = ref([
+  { matId: '', matName: '', mrpQty: '', unit: '', leadTime: '' },
+  { matId: '', matName: '', mrpQty: '', unit: '', leadTime: '' },
+  { matId: '', matName: '', mrpQty: '', unit: '', leadTime: '' }
+]);
 const purchaseList = ref([
   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
@@ -63,7 +71,7 @@ const fetchPlanMaster = async () => {
   }
 
   try {
-    const res = await axios.get('/api/mat/planMasterList');
+    const res = await axios.get('/api/mplanMasterList');
     return {
       items: res.data.map((item) => ({
         ...item,
@@ -72,14 +80,11 @@ const fetchPlanMaster = async () => {
         planType: codeMap.value[item.planType] || item.planType
       }))
     };
-
   } catch (error) {
     toast('error', '리스트 로드 실패', '생산계획 리스트 불러오기 실패', '3000');
     return { items: [] };
   }
 };
-
-
 
 //모달내부 계획선택
 const onSelectPlan = async (plan) => {
@@ -87,7 +92,7 @@ const onSelectPlan = async (plan) => {
   closePlanModal();
 
   // 상세 불러오기
-  const res = await axios.get(`/api/mat/planDetailList/${plan.plId}`);
+  const res = await axios.get(`/api/mplanDetailList/${plan.plId}`);
   planList.value = res.data.map((item) => ({
     id: item.plDetId,
     prodId: item.prodId,
@@ -108,7 +113,7 @@ const calculatMrp = async () => {
   }
 
   try {
-    await axios.post(`/api/mat/calcMrp/${selectedPlan.value.plId}`, null, {
+    await axios.post(`/api/mcalcMrp/${selectedPlan.value.plId}`, null, {
       params: { empName: empName }
     });
     toast('success', 'MRP 산출 완료', '산출 결과가 저장되었습니다.');
@@ -120,7 +125,7 @@ const calculatMrp = async () => {
 
 //mrp목록
 const pageLoadMrp = async () => {
-  const res = await axios.get('/api/mat/mrpList');
+  const res = await axios.get('/api/mmrpList');
   mrpList.value = res.data.map((item) => ({
     id: item.mrpDetId,
     matId: item.matId,
@@ -134,7 +139,7 @@ const pageLoadMrp = async () => {
 //자재별 공급처
 const selectVendor = async (row) => {
   try {
-    const res = await axios.get('/api/mat/matVendorList', { params: { matId: row.matId } });
+    const res = await axios.get('/api/mmatVendorList', { params: { matId: row.matId } });
 
     row.vendorOptions = res.data.map((item) => ({
       contractPrice: item.contractPrice,
@@ -182,7 +187,7 @@ const addToPurchase = (row) => {
 //배송지(창고)
 const loadWarehouseList = async () => {
   try {
-    const res = await axios.get('/api/mat/warehouseList');
+    const res = await axios.get('/api/mwarehouseList');
     warehouseOptions.value = res.data.map((item) => ({
       value: item.whId,
       label: item.whName
@@ -213,7 +218,7 @@ const reqSubmit = async () => {
   }));
   console.log(reqList);
   try {
-    await axios.post('/api/mat/reqMaterial', reqList);
+    await axios.post('/api/mreqMaterial', reqList);
 
     toast('info', '등록 성공', '자재주문 등록 성공', '5000');
     await pageLoadMrp();
@@ -227,11 +232,10 @@ const reqSubmit = async () => {
   }
 };
 
-
 //공통코드
 const loadStatusCodes = async () => {
   try {
-    const res = await axios.get('/api/mat/status/p03');
+    const res = await axios.get('/api/mstatus/p03');
     // {"pt1": "정규생산", "pt2": "특별생산", ...} 형태로 변환
     codeMap.value = res.data.reduce((acc, cur) => {
       acc[cur.codeId] = cur.codeName;
@@ -244,7 +248,7 @@ const loadStatusCodes = async () => {
 
 const monthCodes = async () => {
   try {
-    const res = await axios.get('/api/mat/status/month');
+    const res = await axios.get('/api/mstatus/month');
     monthCodeMap.value = res.data.reduce((acc, cur) => {
       acc[cur.codeId] = cur.codeName;
       return acc;
@@ -256,7 +260,7 @@ const monthCodes = async () => {
 
 const weekCodes = async () => {
   try {
-    const res = await axios.get('/api/mat/status/week');
+    const res = await axios.get('/api/mstatus/week');
     weekCodeMap.value = res.data.reduce((acc, cur) => {
       acc[cur.codeId] = cur.codeName;
       return acc;
@@ -314,13 +318,12 @@ const purchaseColumns = [
 
 <template>
   <div class="container">
-      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <div class="flex flex-col gap-8 mt-4">
-
       <!-- 하단 -->
       <div class="flex flex-col md:flex-row gap-8">
         <div class="md:w-1/2 planList">
-          <div class="card flex flex-col gap-4 h-full" >
+          <div class="card flex flex-col gap-4 h-full">
             <div class="flex items-center justify-between font-semibold text-m">
               <span>생산계획 상세</span>
               <div class="flex gap-2">
@@ -335,19 +338,19 @@ const purchaseColumns = [
 
         <!-- 우측 -->
         <div class="md:w-1/2">
-          <div class="card flex flex-col gap-4 h-full" >
+          <div class="card flex flex-col gap-4 h-full">
             <div class="font-semibold text-m">MRP 합산 자재 소요량</div>
             <Divider />
             <selectTable :columns="mrpColumns" :data="mrpList" :paginator="false" :showCheckbox="false" @row-select="addToPurchase" />
           </div>
         </div>
       </div>
-       <!-- 상단 -->
+      <!-- 상단 -->
       <div class="header">
         <div class="card flex flex-col gap-4">
           <div class="flex items-center justify-between font-semibold text-m">
             <span>MRP 산출 및 자재 발주</span>
-            <btn color="secondary" icon="check" label="자재주문"  @click="reqSubmit" class="whitespace-nowrap" outlined/>
+            <btn color="secondary" icon="check" label="자재주문" @click="reqSubmit" class="whitespace-nowrap" outlined />
           </div>
           <Divider />
           <selectTable :columns="purchaseColumns" :scrollable="true" :data="purchaseList" :paginator="false" :showCheckbox="false" @row-select="selectVendor" />

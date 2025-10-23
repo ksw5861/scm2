@@ -270,6 +270,7 @@ SELECT * FROM (
         FROM mat_lot ml
         JOIN material m ON ml.mat_id = m.mat_id
         WHERE 1=1
+        AND lot_status IN ('OPEN', 'USING')
         <if test="materialId != null and materialId != ''">
             AND UPPER(m.mat_id) LIKE '%' || UPPER(#{materialId}) || '%'
         </if>

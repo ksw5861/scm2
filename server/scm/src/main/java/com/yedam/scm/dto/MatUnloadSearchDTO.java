@@ -1,4 +1,4 @@
-package com.yedam.scm.web;
+package com.yedam.scm.dto;
 
 import java.util.Date;
 

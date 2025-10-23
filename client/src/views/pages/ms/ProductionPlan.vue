@@ -3,7 +3,6 @@ import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 import selectTable from '@/components/common/checkBoxTable.vue';
 import btn from '@/components/common/Btn.vue';
-import searchField from '@/components/common/SearchBox.vue';
 import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
@@ -58,7 +57,7 @@ const productOptions = ref([]);
 
 const pageLoad = async () => {
   try {
-    const res = await axios.get('/api/mat/productsList');
+    const res = await axios.get('/api/mproductsList');
     productOptions.value = res.data.map((item) => ({
       label: item.prodName,
       value: item.prodId,
@@ -78,7 +77,7 @@ onMounted(() => {
 
 const planTypeList = async () => {
   try {
-    const res = await axios.get('/api/mat/status/p03');
+    const res = await axios.get('/api/mstatus/p03');
     statusOptions.value = res.data.map((item) => ({
       name: item.codeName, // 화면 표시용
       value: item.codeId // 실제 값
@@ -91,7 +90,7 @@ const planTypeList = async () => {
 //월코드
 const monthList = async () => {
   try {
-    const res = await axios.get('/api/mat/status/month');
+    const res = await axios.get('/api/mstatus/month');
     monthOptions.value = res.data.map((item) => ({
       name: item.codeName, // 화면 표시용
       value: item.codeId // 실제 값
@@ -104,7 +103,7 @@ const monthList = async () => {
 //주차코드
 const weekList = async () => {
   try {
-    const res = await axios.get('/api/mat/status/week');
+    const res = await axios.get('/api/mstatus/week');
     weekOptions.value = res.data.map((item) => ({
       name: item.codeName, // 화면 표시용
       value: item.codeId // 실제 값
@@ -113,7 +112,6 @@ const weekList = async () => {
     toast('error', '상태값 로드 실패', '코드 불러오기 실패', '3000');
   }
 };
-
 
 //옵션선택시 컬럼반영
 const selectOpt = (row, value) => {
@@ -153,8 +151,7 @@ const deleteRow = () => {
 
 // 계획등록 함수
 const submit = async () => {
-
-    console.log(dateRange.value.start);
+  console.log(dateRange.value.start);
   // 마스터 + 디테일 묶기
   const plan = {
     //vo필드명 : vue 바인드
@@ -175,7 +172,7 @@ const submit = async () => {
   console.log('plan', JSON.stringify(plan, null, 2));
 
   try {
-    const response = await axios.post('/api/mat/productionPlan', plan);
+    const response = await axios.post('/api/mproductionPlan', plan);
     toast('info', '등록 성공', '생산 계획등록 성공:', '3000');
     resetForm();
   } catch (error) {
@@ -189,7 +186,7 @@ const submit = async () => {
 
 <template>
   <div class="container">
-      <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--(master)상단박스 start-->
     <div class="card flex flex-col gap-4 mt-4 pb-6">
       <div class="font-semibold text-xl">생산계획 등록</div>
@@ -226,8 +223,8 @@ const submit = async () => {
               <Select v-model="dateRange.end" :options="weekOptions" optionLabel="name" optionValue="value" placeholder="주차" class="w-full h-[48px] text-base" />
             </InputGroup>
           </div>
-            <!--비고-->
-           <InputGroup>
+          <!--비고-->
+          <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
               <InputText v-model="memo" inputId="memo" />
@@ -235,27 +232,27 @@ const submit = async () => {
             </IftaLabel>
           </InputGroup>
           <!--등록일-->
-            <InputGroup>
-                <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                <IftaLabel>
-                <InputText v-model="resDate" inputId="resDate" readonly />
-                <label for="searchMatName">등록일</label>
-                </IftaLabel>
-            </InputGroup>
-            <!--담당자-->
-            <InputGroup>
-                <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-                <IftaLabel>
-                <InputText v-model="empName" inputId="empName" readonly />
-                <label for="searchMatName">담당자</label>
-                </IftaLabel>
-            </InputGroup>
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="resDate" inputId="resDate" readonly />
+              <label for="searchMatName">등록일</label>
+            </IftaLabel>
+          </InputGroup>
+          <!--담당자-->
+          <InputGroup>
+            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <IftaLabel>
+              <InputText v-model="empName" inputId="empName" readonly />
+              <label for="searchMatName">담당자</label>
+            </IftaLabel>
+          </InputGroup>
         </div>
       </div>
       <div class="flex sm:justify-end justify-start gap-2 mt-4">
         <div class="flex gap-2">
-            <btn color="secondary" icon="check" label="초기화" class="whitespace-nowrap" outlined @click="resetForm" />
-            <btn color="info" icon="check" label="생산계획등록" class="whitespace-nowrap" outlined @click="submit" />
+          <btn color="secondary" icon="check" label="초기화" class="whitespace-nowrap" outlined @click="resetForm" />
+          <btn color="info" icon="check" label="생산계획등록" class="whitespace-nowrap" outlined @click="submit" />
         </div>
       </div>
     </div>
