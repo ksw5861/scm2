@@ -7,101 +7,81 @@
 
     <!-- ResultMap 정의 -->
     <resultMap id="BomResultMap" type="com.yedam.scm.vo.BomVO">
-        <id property="bomId" column="BOM_ID"/>
-        <result property="bomVersion" column="BOM_VERSION"/>
-        <result property="prodId" column="PROD_ID"/>
-        <result property="matId" column="MAT_ID"/>
-        <result property="qty" column="QTY"/>
-        <result property="lossRate" column="LOSS_RATE"/>  
-        <result property="createdAt" column="CREATED_AT"/>
-        <result property="effectiveDate" column="EFFECTIVE_DATE"/>
-        <result property="expireDate" column="EXPIRE_DATE"/>
-        <result property="lastUpdateDate" column="LAST_UPDATE_DATE"/>
+    <id property="bomId" column="BOM_ID"/>
+    <result property="bomVersion" column="BOM_VERSION"/>
+    <result property="prodId" column="PROD_ID"/>
+    <result property="qty" column="QTY"/>
+    <result property="lossRate" column="LOSS_RATE"/>
+    <result property="effectiveDate" column="EFFECTIVE_DATE"/>
+    <result property="expireDate" column="EXPIRE_DATE"/>
+    <result property="createdAt" column="CREATED_AT"/>
+    <result property="lastUpdateDate" column="LAST_UPDATE_DATE"/>
 
-        <!-- BOM_DETAIL (옵션 매핑) -->
-        <association property="bomDetail" javaType="com.yedam.scm.vo.BomDetailVO">
-            <id property="bomDeId" column="BOM_DE_ID"/>
-            <result property="mixingRate" column="MIXING_RATE"/>
-            <result property="baseUnit" column="BASE_UNIT"/>
-            <result property="matId" column="BD_MAT_ID"/>
-        </association>
+    <!-- PRODUCT -->
+    <association property="product" javaType="com.yedam.scm.vo.ProductVO">
+        <id property="prodId" column="P_PROD_ID"/>
+        <result property="prodName" column="P_PROD_NAME"/>
+        <result property="spec" column="P_SPEC"/>
+        <result property="unit" column="P_UNIT"/>
+    </association>
 
-        <!-- PRODUCT -->
-        <association property="product" javaType="com.yedam.scm.vo.ProductVO">
-            <id property="prodId" column="P_PROD_ID"/>
-            <result property="prodName" column="P_PROD_NAME"/>
-            <result property="spec" column="P_SPEC"/>
-            <result property="unit" column="P_UNIT"/>
-            <result property="createdAt" column="P_CREATED_AT"/>
-        </association>
+    <!-- BOM_DETAIL 리스트로 묶기 -->
+    <collection property="details" ofType="com.yedam.scm.vo.BomDetailVO">
+    <id property="bomDeId" column="BOM_DE_ID"/>
+    <result property="matId" column="BD_MAT_ID"/>
+    <result property="mixingRate" column="MIXING_RATE"/>
+    <result property="baseUnit" column="BASE_UNIT"/>
 
-        <!-- MATERIAL -->
-        <association property="material" javaType="com.yedam.scm.vo.MaterialVO">
-            <id property="matId" column="M_MAT_ID"/>
-            <result property="matName" column="M_MAT_NAME"/>
-            <result property="matType" column="M_MAT_TYPE"/>
-            <result property="matStoreCond" column="M_MAT_STORE_COND"/>
-            <result property="matUnitConv" column="M_MAT_UNIT_CONV"/>
-            <result property="matUnitPrice" column="M_MAT_UNIT_PRICE"/>
-            <result property="leadTime" column="M_LEAD_TIME"/>
-            <result property="safeStock" column="M_SAFE_STOCK"/>
-            <result property="status" column="M_STATUS"/>
-            <result property="spec" column="M_SPEC"/>
-            <result property="unit" column="M_UNIT"/>
-        </association>
-    </resultMap>
+    <association property="material" javaType="com.yedam.scm.vo.MaterialVO">
+        <id property="matId" column="M_MAT_ID"/>
+        <result property="matName" column="M_MAT_NAME"/>
+        <result property="spec" column="M_SPEC"/>
+        <result property="unit" column="M_UNIT"/>
+    </association>
+</collection>
+
+</resultMap>
+
 
     <!-- BOM 조회 (BOM + PRODUCT + MATERIAL + BOM_DETAIL) -->
     <select id="getBomByProdId" resultMap="BomResultMap" parameterType="string">
-        SELECT 
-            b.BOM_ID, 
-            b.BOM_VERSION, 
-            b.EFFECTIVE_DATE, 
-            b.EXPIRE_DATE,
-            b.PROD_ID, 
-            b.MAT_ID, 
-            b.CREATED_AT, 
-            b.QTY,
-            b.LOSS_RATE,
-            b.LAST_UPDATE_DATE,
+    SELECT 
+        -- BOM (헤더)
+        b.BOM_ID, 
+        b.BOM_VERSION,
+        b.EFFECTIVE_DATE, 
+        b.EXPIRE_DATE,
+        b.PROD_ID,
+        b.QTY,
+        b.LOSS_RATE,
+        b.CREATED_AT,
+        b.LAST_UPDATE_DATE,
 
-            --  BOM_DETAIL
-            bd.BOM_DE_ID,
-            bd.MIXING_RATE,
-            bd.BASE_UNIT,
-            bd.MAT_ID AS BD_MAT_ID,
+        -- BOM_DETAIL
+        bd.BOM_DE_ID,
+        bd.MAT_ID AS BD_MAT_ID,
+        bd.MIXING_RATE,
+        bd.BASE_UNIT,
 
-            --  PRODUCT
-            p.PROD_ID   AS P_PROD_ID,
-            p.PROD_NAME AS P_PROD_NAME,
-            p.SPEC      AS P_SPEC,
-            p.UNIT      AS P_UNIT,
-            p.CREATED_AT AS P_CREATED_AT,
+        -- PRODUCT
+        p.PROD_ID   AS P_PROD_ID,
+        p.PROD_NAME AS P_PROD_NAME,
+        p.SPEC      AS P_SPEC,
+        p.UNIT      AS P_UNIT,
 
-            --  MATERIAL
-            m.MAT_ID    AS M_MAT_ID,
-            m.MAT_NAME  AS M_MAT_NAME,
-            m.MAT_TYPE  AS M_MAT_TYPE,
-            m.MAT_STORE_COND AS M_MAT_STORE_COND,
-            m.MAT_UNIT_CONV  AS M_MAT_UNIT_CONV,
-            m.MAT_UNIT_PRICE AS M_MAT_UNIT_PRICE,
-            m.LEAD_TIME      AS M_LEAD_TIME,
-            m.SAFE_STOCK     AS M_SAFE_STOCK,
-            m.STATUS         AS M_STATUS,
-            m.SPEC           AS M_SPEC,
-            m.UNIT           AS M_UNIT
+        -- MATERIAL
+        m.MAT_ID    AS M_MAT_ID,
+        m.MAT_NAME  AS M_MAT_NAME,
+        m.SPEC      AS M_SPEC,
+        m.UNIT      AS M_UNIT
+    FROM BOM b
+        LEFT JOIN PRODUCT p ON b.PROD_ID = p.PROD_ID
+        LEFT JOIN BOM_DETAIL bd ON b.BOM_ID = bd.BOM_ID
+        LEFT JOIN MATERIAL m ON bd.MAT_ID = m.MAT_ID
+    WHERE b.PROD_ID = #{prodId}
+    ORDER BY b.BOM_VERSION, bd.BOM_DE_ID
+</select>
 
-        FROM BOM b
-        LEFT JOIN BOM_DETAIL bd 
-            ON b.BOM_ID = bd.BOM_ID
-        LEFT JOIN MATERIAL m 
-            ON bd.MAT_ID = m.MAT_ID
-        LEFT JOIN PRODUCT p 
-            ON b.PROD_ID = p.PROD_ID
-
-        WHERE b.PROD_ID = #{prodId}
-        ORDER BY b.BOM_VERSION, bd.BOM_DE_ID
-    </select>
 
     <!-- BOM 단건 조회 (필요 시) -->
     <select id="getBomDetail" resultMap="BomResultMap" parameterType="string">

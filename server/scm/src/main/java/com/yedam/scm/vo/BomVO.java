@@ -1,6 +1,7 @@
 package com.yedam.scm.vo;
 
 import java.util.Date;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
@@ -25,4 +26,8 @@ public class BomVO {
     private MaterialVO material; // 자재 정보 포함
     private ProductVO product;
     private BomDetailVO bomDetail;
+    
+
+private List<BomDetailVO> details; // BOM_DETAIL 리스트
+
 }
