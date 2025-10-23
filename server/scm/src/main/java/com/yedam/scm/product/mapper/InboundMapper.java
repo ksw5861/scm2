@@ -125,4 +125,27 @@ public interface InboundMapper {
                         @Param("paging") PageDTO paging);
 
         long countApprovalOrderModal(@Param("condition") String condition);
-}
+
+
+
+
+        
+    // ===================== 1️⃣ 반품일자 모달 =====================
+    List<ReturnVO> searchByDate(@Param("dto") AccountLedgerSearchDTO dto, @Param("paging") PageDTO paging);
+    int countByDate(@Param("dto") AccountLedgerSearchDTO dto);
+
+    // ===================== 2️⃣ 판매처명 모달 =====================
+    List<VendorVO> searchByVendor(@Param("condition") String condition,
+                              @Param("offset") int offset,
+                              @Param("size") int size);
+int countByVendor(@Param("condition") String condition);                              
+
+List<ReturnVO> searchByCode(@Param("condition") String condition,
+                            @Param("offset") int offset,
+                            @Param("size") int size);
+
+int countByCode(@Param("condition") String condition); 
+
+
+
+} //end

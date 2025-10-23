@@ -18,7 +18,7 @@ const search = ref({ prodId: '', prodName: '', vendorName: '', fromDate: null, t
 
 // 목록/상세
 const returnList = ref([]);
-const selectedReturns = ref([]); // 항상 1개만 유지
+const selectedReturns = ref([]);
 const detailRows = ref([]);
 const selectedDetailRows = ref([]);
 const currentReturnId = ref(null);
@@ -26,6 +26,23 @@ const currentReturnId = ref(null);
 // 반려 모달
 const rejectDialog = ref(false);
 const rejectReason = ref('');
+
+/* ------------------ 모달 상태 ------------------ */
+// 판매처 모달
+const vendorDialog = ref(false);
+const vendorKeyword = ref('');
+const vendorList = ref([]);
+const vendorPage = ref(1);
+const vendorRows = ref(10);
+const vendorTotal = ref(0);
+
+// 반품코드 모달
+const returnDialog = ref(false);
+const returnKeyword = ref('');
+const returnListModal = ref([]);
+const returnPage = ref(1);
+const returnRows = ref(10);
+const returnTotal = ref(0);
 
 /* ------------------ 유틸 ------------------ */
 function fmtDate(d) {
@@ -151,15 +168,54 @@ async function confirmReject() {
   } else alert('반려 실패');
 }
 
-/* ------------------ 모달 오픈 (자리만 잡기) ------------------ */
-function openProdModal() {
-  alert('제품코드 검색 모달 오픈 예정');
+/* ------------------ 모달 ------------------ */
+// 판매처 모달
+async function openVendorModal() {
+  vendorDialog.value = true;
+  vendorPage.value = 1;
+  await loadVendorList();
 }
-function openProdNameModal() {
-  alert('제품명 검색 모달 오픈 예정');
+async function loadVendorList() {
+  const { data } = await axios.get('/api/returnApproval/modal/searchByVendor', {
+    params: { condition: vendorKeyword.value, page: vendorPage.value, size: vendorRows.value }
+  });
+  vendorList.value = data.items ?? data.data ?? [];
+  vendorTotal.value = data.totalCount ?? 0;
 }
-function openVendorModal() {
-  alert('거래처 검색 모달 오픈 예정');
+function onVendorPageChange(e) {
+  vendorPage.value = e.page + 1;
+  vendorRows.value = e.rows;
+  loadVendorList();
+}
+function selectVendor(e) {
+  const v = e.data;
+  search.value.vendorName = v.companyName;
+  search.value.vendorId = v.vendorId;
+  vendorDialog.value = false;
+}
+
+// 반품코드 모달
+async function openReturnModal() {
+  returnDialog.value = true;
+  returnPage.value = 1;
+  await loadReturnList();
+}
+async function loadReturnList() {
+  const { data } = await axios.get('/api/returnApproval/modal/searchByCode', {
+    params: { condition: returnKeyword.value, page: returnPage.value, size: returnRows.value }
+  });
+  returnListModal.value = data.items ?? data.data ?? [];
+  returnTotal.value = data.totalCount ?? 0;
+}
+function onReturnPageChange(e) {
+  returnPage.value = e.page + 1;
+  returnRows.value = e.rows;
+  loadReturnList();
+}
+function selectReturn(e) {
+  const r = e.data;
+  search.value.returnId = r.returnId;
+  returnDialog.value = false;
 }
 
 onMounted(() => applySearch());
@@ -182,35 +238,25 @@ onMounted(() => applySearch());
           </div>
         </div>
 
-        <!-- 제품명 -->
+       
+        <!-- 판매처명 -->
         <div class="field">
-          <label>제품명</label>
+          <label>판매처명</label>
           <InputGroup>
-            <InputText v-model="search.prodName" placeholder="제품명" readonly @click="openProdNameModal" />
-            <InputGroupAddon>
-              <Button icon="pi pi-search" class="p-button-text p-button-plain" @click="openProdNameModal" />
-            </InputGroupAddon>
-          </InputGroup>
-        </div>
-
-        <!-- 거래처명 -->
-        <div class="field">
-          <label>거래처명</label>
-          <InputGroup>
-            <InputText v-model="search.vendorName" placeholder="거래처명" readonly @click="openVendorModal" />
+            <InputText v-model="search.vendorName" placeholder="판매처명" readonly @click="openVendorModal" />
             <InputGroupAddon>
               <Button icon="pi pi-search" class="p-button-text p-button-plain" @click="openVendorModal" />
             </InputGroupAddon>
           </InputGroup>
         </div>
 
-        <!-- 제품코드 -->
+        <!-- 반품코드 -->
         <div class="field">
-          <label>제품코드</label>
+          <label>반품코드</label>
           <InputGroup>
-            <InputText v-model="search.prodId" placeholder="제품코드" readonly @click="openProdModal" />
+            <InputText v-model="search.returnId" placeholder="반품코드" readonly @click="openReturnModal" />
             <InputGroupAddon>
-              <Button icon="pi pi-search" class="p-button-text p-button-plain" @click="openProdModal" />
+              <Button icon="pi pi-search" class="p-button-text p-button-plain" @click="openReturnModal" />
             </InputGroupAddon>
           </InputGroup>
         </div>
@@ -223,11 +269,18 @@ onMounted(() => applySearch());
 
     <!-- 목록 + 상세 -->
     <div class="split">
-      <!-- 목록 -->
       <div class="list-box">
         <div class="sub-title">반품 목록</div>
-        <DataTable :value="returnList" dataKey="returnId" v-model:selection="selectedReturns" :metaKeySelection="false" @selection-change="onReturnSelectionChange" @row-click="onReturnRowClick" paginator :rows="10">
-          <!-- ✅ 전체선택 헤더 체크박스만 제거 -->
+        <DataTable
+          :value="returnList"
+          dataKey="returnId"
+          v-model:selection="selectedReturns"
+          :metaKeySelection="false"
+          @selection-change="onReturnSelectionChange"
+          @row-click="onReturnRowClick"
+          paginator
+          :rows="10"
+        >
           <Column selectionMode="multiple" :headerCheckbox="false" />
           <Column field="returnDate" header="반품일자" :body="(r) => fmtDate(r.returnDate)" />
           <Column field="companyName" header="판매처명" />
@@ -236,7 +289,6 @@ onMounted(() => applySearch());
         </DataTable>
       </div>
 
-      <!-- 상세 -->
       <div class="detail-box">
         <div class="detail-head">
           <div class="detail-title">반품 상세</div>
@@ -245,12 +297,20 @@ onMounted(() => applySearch());
             <Button label="반려" icon="pi pi-times" class="p-button-danger" @click="openRejectDialog" :disabled="!selectedDetailRows.length" />
           </div>
         </div>
-        <DataTable :value="detailRows" dataKey="rdetailId" v-model:selection="selectedDetailRows" selectionMode="multiple" :metaKeySelection="false" @row-click="toggleDetailSelection($event.data)" paginator :rows="10">
-          <!-- ✅ 헤더 전체선택 체크박스 제거 -->
+        <DataTable
+          :value="detailRows"
+          dataKey="rdetailId"
+          v-model:selection="selectedDetailRows"
+          selectionMode="multiple"
+          :metaKeySelection="false"
+          @row-click="toggleDetailSelection($event.data)"
+          paginator
+          :rows="10"
+        >
           <Column selectionMode="multiple" :headerCheckbox="false" />
           <Column field="prodId" header="제품코드" />
-          <Column field="prodName" header="제품명" />
-          <Column field="companyName" header="거래처명" />
+          
+          <Column field="companyName" header="판매처명" />
           <Column field="returnQty" header="수량" />
           <Column field="prodUnitPrice" header="단가">
             <template #body="{ data }">{{ fmtWon(data.prodUnitPrice) }}</template>
@@ -270,6 +330,46 @@ onMounted(() => applySearch());
         <Button label="취소" icon="pi pi-times" class="p-button-text" @click="rejectDialog = false" />
         <Button label="반려" icon="pi pi-check" class="p-button-danger" @click="confirmReject" />
       </template>
+    </Dialog>
+
+    <!-- 판매처 모달 -->
+    <Dialog v-model:visible="vendorDialog" header="판매처 검색" modal closable :style="{ width: '600px' }">
+      <div class="p-inputgroup mb-3">
+        <InputText v-model="vendorKeyword" placeholder="판매처명 검색" @keyup.enter="loadVendorList" />
+        <Button icon="pi pi-search" @click="loadVendorList" />
+      </div>
+      <DataTable
+        :value="vendorList"
+        dataKey="vendorId"
+        selectionMode="single"
+        @row-dblclick="selectVendor"
+        paginator
+        :rows="vendorRows"
+        :totalRecords="vendorTotal"
+        @page="onVendorPageChange"
+      >
+        <Column field="companyName" header="판매처명" />
+      </DataTable>
+    </Dialog>
+
+    <!-- 반품코드 모달 -->
+    <Dialog v-model:visible="returnDialog" header="반품코드 검색" modal closable :style="{ width: '600px' }">
+      <div class="p-inputgroup mb-3">
+        <InputText v-model="returnKeyword" placeholder="반품코드 검색" @keyup.enter="loadReturnList" />
+        <Button icon="pi pi-search" @click="loadReturnList" />
+      </div>
+      <DataTable
+        :value="returnListModal"
+        dataKey="returnId"
+        selectionMode="single"
+        @row-dblclick="selectReturn"
+        paginator
+        :rows="returnRows"
+        :totalRecords="returnTotal"
+        @page="onReturnPageChange"
+      >
+        <Column field="returnId" header="반품코드" />
+      </DataTable>
     </Dialog>
   </div>
 </template>

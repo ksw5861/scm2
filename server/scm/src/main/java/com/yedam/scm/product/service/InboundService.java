@@ -87,4 +87,21 @@ public interface InboundService {
 
     // ✅ 주문승인 - 주문번호 모달
     Map<String, Object> getApprovalOrderModal(String condition, int page, int size);
-}
+
+
+
+    /* ==============제품 반품 승인 페이지 모달 ============ */
+     // 반품일자 검색 (기간)
+    Map<String, Object> searchByDate(AccountLedgerSearchDTO dto, PageDTO paging);
+
+    // 판매처명 검색
+    Map<String, Object> searchByVendor(String condition, PageDTO paging);
+
+    // 반품코드 검색
+    Map<String, Object> searchByCode(String condition, PageDTO paging);
+
+
+
+
+
+} //end

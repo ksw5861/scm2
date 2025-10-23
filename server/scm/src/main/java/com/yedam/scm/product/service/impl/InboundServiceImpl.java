@@ -283,4 +283,62 @@ public class InboundServiceImpl implements InboundService {
         return result;
     }
 
+
+
+
+
+
+        // ===================== 1️⃣ 반품일자 모달 =====================
+    @Override
+    public Map<String, Object> searchByDate(AccountLedgerSearchDTO dto, PageDTO paging) {
+        int total = inboundMapper.countByDate(dto);
+        paging.updatePageInfo(total);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("items", inboundMapper.searchByDate(dto, paging));
+        result.put("totalCount", total);
+        return result;
+    }
+
+   // ===================== 2️⃣ 판매처명 모달 =====================
+@Override
+public Map<String, Object> searchByVendor(String condition, PageDTO paging) {
+    // 1) 총 개수
+    int total = inboundMapper.countByVendor(condition);
+
+    // 2) 페이지/사이즈 안전 계산 (page, size가 null/0이어도 방어)
+    final int page = (paging != null && paging.getPage() > 0) ? paging.getPage() : 1;
+    final int size = (paging != null && paging.getSize() > 0) ? paging.getSize() : 10;
+    final int offset = (page - 1) * size;
+
+    // 3) 데이터 조회 (offset/size 직접 전달)
+    Map<String, Object> result = new HashMap<>();
+    result.put("items", inboundMapper.searchByVendor(condition, offset, size));
+    result.put("totalCount", total);
+    return result;
+}
+
+// ===================== 3️⃣ 반품코드 모달 =====================
+@Override
+public Map<String, Object> searchByCode(String condition, PageDTO paging) {
+    int total = inboundMapper.countByCode(condition);
+
+    final int page = (paging != null && paging.getPage() > 0) ? paging.getPage() : 1;
+    final int size = (paging != null && paging.getSize() > 0) ? paging.getSize() : 10;
+    final int offset = (page - 1) * size;
+
+    Map<String, Object> result = new HashMap<>();
+    result.put("items", inboundMapper.searchByCode(condition, offset, size));
+    result.put("totalCount", total);
+    return result;
+}
+
+
+
+
+
+
+
+
+
 }// end

@@ -563,4 +563,107 @@
 
 
 
+
+<!-- ===================== 1) 반품일자 모달 (Oracle) ===================== -->
+<select id="searchByDate" resultType="com.yedam.scm.vo.ReturnVO">
+  SELECT returnId, returnDate, vendorId
+  FROM (
+    SELECT
+      r.return_id   AS returnId,
+      r.return_date AS returnDate,
+      r.vendor_id   AS vendorId,
+      ROW_NUMBER() OVER (ORDER BY r.return_date DESC) AS rn
+    FROM sales_return r
+    WHERE 1=1
+      <if test="dto.startDate != null and dto.endDate != null">
+        AND r.return_date >= TRUNC(#{dto.startDate})
+        AND r.return_date <  TRUNC(#{dto.endDate}) + 1
+      </if>
+  )
+  WHERE rn > #{paging.offset}
+    AND rn <= #{paging.offset} + #{paging.size}
+</select>
+
+<select id="countByDate" resultType="int">
+  SELECT COUNT(*)
+  FROM sales_return r
+  WHERE 1=1
+    <if test="dto.startDate != null and dto.endDate != null">
+      AND r.return_date >= TRUNC(#{dto.startDate})
+      AND r.return_date <  TRUNC(#{dto.endDate}) + 1
+    </if>
+</select>
+
+
+<!-- ===================== 2) 판매처명 모달 (Oracle) ===================== -->
+<select id="searchByVendor" resultType="com.yedam.scm.vo.VendorVO">
+  SELECT vendorId, companyName
+  FROM (
+    SELECT
+      v.vendor_id    AS vendorId,
+      v.company_name AS companyName,
+      ROW_NUMBER() OVER (ORDER BY v.company_name) AS rn
+    FROM vendor v
+    WHERE 1=1
+      <if test="condition != null and condition != ''">
+        AND LOWER(v.company_name) LIKE '%' || LOWER(#{condition}) || '%'
+      </if>
+  )
+  WHERE rn > #{offset}
+    AND rn <= #{offset} + #{size}
+</select>
+
+<select id="countByVendor" resultType="int">
+  SELECT COUNT(*)
+  FROM vendor v
+  WHERE 1=1
+    <if test="condition != null and condition != ''">
+      AND LOWER(v.company_name) LIKE '%' || LOWER(#{condition}) || '%'
+    </if>
+</select>
+
+
+<!-- ===================== 3) 반품코드 모달 (Oracle) ===================== -->
+<select id="searchByCode" resultType="com.yedam.scm.vo.ReturnVO">
+  SELECT returnId, returnDate
+  FROM (
+    SELECT
+      r.return_id   AS returnId,
+      r.return_date AS returnDate,
+      ROW_NUMBER() OVER (ORDER BY r.return_date DESC) AS rn
+    FROM sales_return r
+    WHERE 1=1
+      <if test="condition != null and condition != ''">
+        AND LOWER(r.return_id) LIKE '%' || LOWER(#{condition}) || '%'
+      </if>
+  )
+  WHERE rn > #{offset}
+    AND rn <= #{offset} + #{size}
+</select>
+
+<select id="countByCode" resultType="int">
+  SELECT COUNT(*)
+  FROM sales_return r
+  WHERE 1=1
+    <if test="condition != null and condition != ''">
+      AND LOWER(r.return_id) LIKE '%' || LOWER(#{condition}) || '%'
+    </if>
+</select>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </mapper>
