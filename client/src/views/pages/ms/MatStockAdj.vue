@@ -157,17 +157,20 @@ const onLotSelect = async (lotRow) => {
 
 // 조정등록 버튼 클릭
 const submitAdjustStock = async () => {
-  if (!adjustForm.value.lotId) {
+  if (!adjustForm.value.lotId ) {
     return toast('warn', '조정등록', 'LOT를 선택해 주세요', 2500);
   }
   if (!adjustForm.value.adjustWeight || adjustForm.value.adjustWeight <= 0) {
-    return toast('warn', '조정등록', '조정중량(양수)을 입력해 주세요', 2500);
+    return toast('warn', '조정등록', '조정중량을 입력해 주세요', 2500);
   }
   if (!adjustForm.value.type) {
     return toast('warn', '조정등록', '증감 유형(IN/OUT)을 선택해 주세요', 2500);
   }
+  if (!adjustForm.value.adjustReason) {
+    return toast('warn', '조정등록', '조정사유를 선택해 주세요', 2500);
+  }
 
-  if (!confirm('정말 재고 조정을 등록하시겠습니까?')) {
+  if (!confirm('재고 조정을 등록하시겠습니까?')) {
     return;
   }
 
@@ -181,7 +184,7 @@ const submitAdjustStock = async () => {
 
   try {
     const { data } = await axios.post('/api/madjustStock', payload);
-    toast('success', '조정등록', `등록 성공 (ID: ${data.adjStockId})`, 2500);
+    toast('success', '조정등록', `등록 성공 (LOT번호: ${adjustForm.value.lotNo})`, 2500);
 
     // 이력 새로고침 (현재 선택 LOT 기준)
     await onLotSelect(selectedLotRow.value);

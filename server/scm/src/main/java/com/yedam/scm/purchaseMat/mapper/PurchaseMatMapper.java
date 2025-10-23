@@ -1,6 +1,5 @@
 package com.yedam.scm.purchaseMat.mapper;
 
-import java.sql.Date;
 import java.util.List;
 
 import org.apache.ibatis.annotations.Mapper;
@@ -21,6 +20,7 @@ import com.yedam.scm.vo.WareHouseVO;
 @Mapper
 public interface PurchaseMatMapper {
     
+    //생산계획 등록 [마스터 + 디테일 + 자재요청프로시저]
     //생산계획등록[마스터 + 디테일]
     int insertProductionPlan(ProductionPlanVO master); //마스터
     int insertProductionPlanDetail(PrdPlanDetailVO detail); //디테일
@@ -32,7 +32,7 @@ public interface PurchaseMatMapper {
   
     //생산용 내부 자재요청insert프로시저
     void callInsertReqMatProc(Long plDetId);
-
+    
     //mrp산출
     void callCalcMrpProc(@Param("plId") Long plId, @Param("empName") String empName);
 

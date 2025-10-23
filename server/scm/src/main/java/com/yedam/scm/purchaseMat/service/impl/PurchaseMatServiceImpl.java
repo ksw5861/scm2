@@ -29,7 +29,7 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
     
     final PurchaseMatMapper mapper; //mapper injection
 
-    //생산계획 등록
+    //생산계획 등록 [마스터 + 디테일 + 자재요청프로시저]
     @Transactional
     public int insertProductionPlan(ProductionPlanVO plan) {
         // 1. 마스터 저장

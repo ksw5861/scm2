@@ -68,12 +68,6 @@ const pageLoad = async () => {
   }
 };
 
-onMounted(() => {
-  pageLoad();
-  planTypeList();
-  monthList();
-  weekList();
-});
 
 const planTypeList = async () => {
   try {
@@ -163,25 +157,42 @@ const submit = async () => {
     prdPlanDetailList: productionPlans.value
   };
 
+  //유효성 검사: 필수 입력값 확인
+    if (!plan.planType || !plan.startDate || !plan.endDate) {
+        toast('info', '유효성 검사', '필수 입력값을 모두 입력해주세요.', '3000');
+        return;
+    }
+
   // 유효성 검사: 제품 계획이 비어있는지 확인
   if (!plan.prdPlanDetailList || plan.prdPlanDetailList.length === 0 || !plan.prdPlanDetailList[0].prdName || !plan.prdPlanDetailList[0].proQty) {
     toast('info', '유효성 검사', '제품 계획을 하나 이상 입력해주세요.', '3000');
     return;
   }
 
-  console.log('plan', JSON.stringify(plan, null, 2));
+  if (!confirm('생산계획을 등록하시겠습니까?')) {
+    return;
+  }
 
   try {
     const response = await axios.post('/api/mproductionPlan', plan);
-    toast('info', '등록 성공', '생산 계획등록 성공:', '3000');
+    toast('success', '등록 성공', '제품생산이 계획등록되었습니다.', '3000');
     resetForm();
   } catch (error) {
-    toast('error', '등록 실패', '생산 계획등록 실패:', '3000');
+    toast('error', '등록 실패', '생산 계획등록 실패', '3000');
   }
 
   //폼 초기화
   resetForm();
 };
+
+
+onMounted(() => {
+  pageLoad();
+  planTypeList();
+  monthList();
+  weekList();
+});
+
 </script>
 
 <template>

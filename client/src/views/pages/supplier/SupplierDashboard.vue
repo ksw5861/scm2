@@ -40,9 +40,7 @@ onMounted(async () => {
   try {
     const { data } = await axios.get(`/api/sdashboard/${vendorId}`);
 
-    console.log(data);
-    console.log(data.pieList);
-    console.log(data.recentList[0].type);
+
 
     //summaryDTO 기반
     summaryCards.value = [

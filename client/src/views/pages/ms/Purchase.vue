@@ -175,6 +175,14 @@ const addToPurchase = (row) => {
     price: null,
     total: null
   };
+
+  //동일한 자재가 이미 있으면 추가하지 않음
+  const exists = purchaseList.value.some((r) => r.matId === newRow.matId);
+  if (exists) {
+       toast('info', '중복 항목', '이미 자재 주문 목록에 있는 자재입니다.', '3000');
+       return;
+    }
+
   if (emptyRowIndex !== -1) {
     // 빈행 있으면 교체
     purchaseList.value[emptyRowIndex] = newRow;
@@ -193,7 +201,7 @@ const loadWarehouseList = async () => {
       label: item.whName
     }));
   } catch (error) {
-    toast('error', '리스트 로드 실패', '창고 목록 불러오기 실패', '3000');
+    toast('error', '불러오기', '창고 목록 불러오기 실패', '3000');
   }
 };
 
@@ -206,6 +214,11 @@ const selectWarehouseOpt = (row, value) => {
 
 //주문등록
 const reqSubmit = async () => {
+    //유효성 검사: 필수 입력값 확인
+    if (purchaseList.value.some(row => !row.matId || !row.reqQty || !row.vendorId || !row.price || !row.dueDate || !row.toWarehouse)) {
+        toast('warn', '유효성 검사', '모든 자재 주문 항목에 필수값을 모두 입력해주세요.', '3000');
+        return;
+    }
   const reqList = purchaseList.value.map((row) => ({
     mrpDetId: row.id,
     matId: row.matId,

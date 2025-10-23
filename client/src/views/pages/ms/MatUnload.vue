@@ -45,6 +45,22 @@ const searchFilter = ref({
   vendorName: ''
 });
 
+const openRetrunModal = () => {
+  if (!selectedRows.value || !selectedRows.value.id) {
+    toast('warn', '선택 필요', '반품등록처리 출고번호를 선택해주세요:', '3000');
+    return;
+  }
+
+  toast('info', '반품 등록', '반품등록시 전량 반품처리됩니다.', '5000');
+
+  returnModal.value = true;
+
+};
+
+const closeReturnModal = () => {
+  returnModal.value = false;
+};
+
 //datePicker날짜변환
 const formatDate = (date) => {
   if (!date) return '';
@@ -74,7 +90,7 @@ const pageLoad = async () => {
     }));
     page.value.totalElements = pageInfo.totalElements;
   } catch (err) {
-    toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
+    toast('error', '불러오기 실패', '주문 목록 불러오기 실패 : 서버오류', '3000');
   }
 };
 
@@ -93,36 +109,53 @@ const detailInfo = async () => {
       purId: item.purId
     }));
   } catch (error) {
-    toast('error', '상세정보 실패', '상세정보 불러오기 실패:', '3000');
+    toast('error', '불러오기 실패', '상세정보 불러오기 실패 : 서버오류', '3000');
   }
 };
 
 const approve = async () => {
+    if (!selectedRows.value || !selectedRows.value.id) {
+    toast('warn', '선택 필요', '하차승인할 출고건을 선택해주세요.', '3000');
+    return;
+    }
+    if (!confirm('하차 승인을 하시겠습니까?')) {
+    return;
+    }
   try {
     await axios.post('/api/mapproveUnload', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName } });
-    toast('info', '하차승인 성공', '하차승인 성공:', '3000');
+    toast('success', '승인 성공', '하차승인 되었습니다.:', '3000');
     await pageLoad();
     await detailInfo();
     shipDetailListData.value = [{ matId: '', matName: '', ortQty: null, unit: '' }];
   } catch (error) {
-    toast('error', '하차승인 실패', '하차승인 실패:', '3000');
+    toast('error', '승인 실패', '하차승인 실패 : 서버오류', '3000');
   }
 };
 
 const returnSubmit = async () => {
+
+    if (!returnMemo.value) {
+    toast('warn', '사유 입력', '반송 사유를 입력해주세요.', '3000');
+    return;
+    }
+
+    if (!confirm('반송 등록하시겠습니까?')) {
+    return;
+    }
   //사유, 담당자, 하차등록시 해당 마스터와 디테일 모두 상태값 변경하고 기록해줘야함. [입고마스터 + 디테일 + 상태변경로그] + @ 발주상태값 반품으로도 가능??/??
   try {
     await axios.post('/api/munloadReturn', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName, rejMemo: returnMemo.value } });
-    toast('info', '반품등록 성공', '반품등록 성공:', '3000');
+    toast('success', '등록 성공', '반송처리되었습니다.', '3000');
     await pageLoad();
     closeReturnModal();
+    selectedDeRow.value = null;
+    returnMemo.value = '';
   } catch (error) {
-    toast('error', '반품등록 실패', '반품등록 실패:', '3000');
+    toast('error', '등록 실패', '반품등록 실패 : 서버오류', '3000');
   }
 };
 
 const openShipmentReport = () => {
-  console.log(selectedRows.value.id);
   if (!selectedRows.value || !selectedRows.value.id) {
     toast('info', '선택 필요', '명세서를 출력할 출고건을 선택해주세요.', '3000');
     return;
@@ -152,20 +185,6 @@ onMounted(() => {
   pageLoad();
 });
 
-const openRetrunModal = () => {
-  if (selectedRows.value.length === 0) {
-    toast('info', '선택 필요', '반품등록할 항목을 출고번호를 선택해주세요:', '3000');
-    return;
-  }
-
-  toast('info', '반품등록', '반품등록시 전량 반품처리됩니다.', '5000');
-
-  returnModal.value = true;
-};
-
-const closeReturnModal = () => {
-  returnModal.value = false;
-};
 const shipedColumn = [
   { label: '출고일', field: 'shipedDate' },
   { label: '출고번호', field: 'vanOutNo' },
@@ -237,8 +256,8 @@ const shipDetailColumn = [
           <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-m">상세정보</div>
             <div class="flex gap-2">
-              <btn color="warn" icon="cancel" label="반송" class="whitespace-nowrap" outlined @click="openRetrunModal" />
-              <btn color="info" icon="check" label="승인" class="whitespace-nowrap" outlined @click="approve" />
+              <btn color="warn" icon="cancel" label="반송" @click="openRetrunModal" class="whitespace-nowrap" outlined/>
+              <btn color="info" icon="check" label="승인" @click="approve" class="whitespace-nowrap" outlined/>
             </div>
           </div>
           <Divider />
@@ -253,8 +272,8 @@ const shipDetailColumn = [
       <Textarea v-model="returnMemo" rows="5" cols="100" />
     </div>
     <div class="flex justify-center gap-2">
-      <btn color="warn" icon="pi pi-file-excel" label="취소" @click="closeReturnModal" />
-      <btn color="warn" icon="pi pi-file-excel" label="등록" @click="returnSubmit" />
+      <btn color="warn" icon="cancel" label="닫기" @click="closeReturnModal" class="whitespace-nowrap" outlined/>
+      <btn color="info" icon="check" label="등록" @click="returnSubmit" class="whitespace-nowrap" outlined/>
     </div>
   </Dialog>
 </template>

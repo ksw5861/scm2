@@ -44,7 +44,7 @@ watch(
 
     <!--날짜만-->
     <div v-if="type === 'date'" class="flex items-center gap-2">
-      <DatePicker v-model="internalValue" showIcon fluid :showOnFocus="false" dateFormat="yy/mm/dd" />
+      <DatePicker v-model="internalValue" showIcon fluid :showOnFocus="false" dateFormat="yy/mm/dd" :class="['w-10rem', width]" :style="[{ width: typeof width === 'number' ? width + 'px' : width }, style]"/>
     </div>
 
     <!-- 텍스트 입력 -->
@@ -53,8 +53,8 @@ watch(
     </div>
 
     <!--숫자-->
-     <div v-else-if="type === 'number'">
-      <InputNumber v-model="internalValue" :class="['w-10rem', width]" :style="style"/>
+     <div v-else-if="type === 'number'" class="flex items-center gap-2">
+      <InputNumber v-model="internalValue" :class="['w-10rem', width]" :style="[{ width: typeof width === 'number' ? width + 'px' : width }, style]"/>
     </div>
 
     <!-- 텍스트박스 읽기 전용 -->

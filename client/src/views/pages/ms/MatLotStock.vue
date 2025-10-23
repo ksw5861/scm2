@@ -192,7 +192,7 @@ const matLotColumns = [
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">목록</div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" selectionMode="single" :columns="matStock" :data="matStockList" :paginator="true" :page="page" :showCheckbox="false" @page-change="onPage" @row-select="detailInfo" />
+            <selectTable v-model:selection="selectedRows" selectionMode="single"  :columns="matStock" :data="matStockList" :paginator="true" :page="page" :showCheckbox="false" @page-change="onPage" @row-select="detailInfo" />
           </div>
         </div>
       </div>
