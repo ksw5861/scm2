@@ -1,7 +1,6 @@
 export const CountryService = {
     getData() {
         return [
-            { name: 'Afghanistan', code: 'AF' },
             { name: 'Albania', code: 'AL' },
             { name: 'Algeria', code: 'DZ' },
             { name: 'American Samoa', code: 'AS' },
