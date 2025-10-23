@@ -60,36 +60,45 @@
     )
   </insert>
 
-  <!-- ============================================================= -->
-  <!-- 3. 결제 대기중인 주문건 조회 (반품금액 포함) -->
-  <!-- ============================================================= -->
-  <select id="selectPendingOrders" resultType="SalesOrderVO">
-    SELECT 
-        so.order_id AS orderId,
-        so.order_date AS orderDate,
-        so.send_date AS sendDate,
-        ROUND(so.total_price, 2) AS totalPrice,
-        ROUND(NVL(so.return_price, 0), 2) AS returnPrice,   
-        ROUND(so.total_price - NVL(so.return_price, 0), 2) AS finalAmount,
-        so.pay_status AS payStatus,
-        so.status AS status,
-        so.paydue_date AS paydueDate,
-        CASE 
-            WHEN COUNT(sod.prod_name) > 1 
-                THEN MAX(sod.prod_name) || ' 외 ' || (COUNT(sod.prod_name) - 1) || '건'
-            ELSE MAX(sod.prod_name)
-        END AS prodName
-    FROM sales_order so
-    JOIN sales_order_detail sod ON so.order_id = sod.order_id
-    WHERE so.pay_status <![CDATA[<>]]> '결제완료'
-      AND so.status IN ('출고완료','배송완료')
-      AND so.order_date BETWEEN TRUNC(ADD_MONTHS(SYSDATE, -1)) AND SYSDATE
-      AND so.vendor_id = #{vendorId}
-    GROUP BY 
-        so.order_id, so.order_date, so.send_date, so.total_price,
-        so.return_price, so.pay_status, so.status, so.paydue_date
-    ORDER BY so.order_date DESC
-  </select>
+<!-- ============================================================= -->
+<!-- 3. 결제 대기중인 주문건 조회 (반품미포함, 출고일 기준, 상세 없는 주문도 포함) -->
+<!-- ============================================================= -->
+
+<select id="selectPendingOrders" resultType="SalesOrderVO">
+  SELECT
+      so.order_id      AS orderId,
+      so.order_date    AS orderDate,
+      so.send_date     AS sendDate,
+      ROUND(so.total_price, 2)                    AS totalPrice,
+      ROUND(NVL(so.return_price, 0), 2)           AS returnPrice,
+      ROUND(so.total_price - NVL(so.return_price, 0), 2) AS finalAmount,
+      so.pay_status    AS payStatus,
+      so.status        AS status,
+      so.paydue_date   AS paydueDate,
+      /* 상품명은 상세 서브쿼리로 계산 (JOIN으로 집합을 줄이지 않음) */
+      (
+        SELECT
+          CASE
+            WHEN COUNT(*) > 1
+              THEN MAX(d.prod_name) || ' 외 ' || (COUNT(*) - 1) || '건'
+            ELSE MAX(d.prod_name)
+          END
+        FROM sales_order_detail d
+        WHERE d.order_id = so.order_id
+      ) AS prodName
+  FROM sales_order so
+  WHERE so.pay_status = '대기'
+    AND so.status IN ('출고완료','배송완료')
+    AND so.vendor_id = #{vendorId}
+    AND TRUNC(so.send_date) <![CDATA[<=]]>
+      CASE
+        WHEN TO_NUMBER(TO_CHAR(SYSDATE,'DD')) <![CDATA[<=]]> 15
+          THEN LAST_DAY(ADD_MONTHS(SYSDATE, -1))
+        ELSE TRUNC(SYSDATE)
+      END
+  ORDER BY so.send_date ASC
+</select>
+
 
   <!-- ============================================================= -->
   <!-- 4. 결제 목록 조회 -->

@@ -453,61 +453,110 @@
   </select>
 
 
-<!-- 대시보드에 미수금 합계  -->
-<select id="selectNextDueAmount" parameterType="string" resultType="com.yedam.scm.vo.SalesOrderVO">
-    SELECT
-      NVL(SUM(total_price), 0) AS next_due_amount,
-      TO_CHAR(
-        CASE
-          WHEN <![CDATA[ TO_NUMBER(TO_CHAR(SYSDATE, 'DD')) <= 15 ]]> 
-            THEN TRUNC(SYSDATE, 'MM') + 14
-          ELSE
-            ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1) + 14
-        END,
-        'YYYY-MM-DD'
-      ) AS next_due_date
-    FROM SALES_ORDER
-    WHERE VENDOR_ID  = #{vendorId}
-      AND STATUS     IN ('출고완료', '배송완료')
-      AND PAY_STATUS = '대기'
-      AND TRUNC(SEND_DATE) BETWEEN
-        CASE
-          WHEN <![CDATA[ TO_NUMBER(TO_CHAR(SYSDATE, 'DD')) <= 15 ]]> 
-            THEN TRUNC(ADD_MONTHS(SYSDATE, -1), 'MM')
-          ELSE
-            TRUNC(SYSDATE, 'MM')
-        END
-        AND
-        CASE
-          WHEN <![CDATA[ TO_NUMBER(TO_CHAR(SYSDATE, 'DD')) <= 15 ]]> 
-            THEN LAST_DAY(ADD_MONTHS(SYSDATE, -1))
-          ELSE
-            TRUNC(SYSDATE)
-        END
-  </select>
+<!-- 대시보드용 미수금 합계 (결제 대기건 합계, 출고기준 동일 조건) -->
+<select id="selectNextDueAmount" parameterType="string" resultType="SalesOrderVO">
+  SELECT
+    NVL(SUM(so.total_price), 0) AS next_due_amount,
+    TO_CHAR(
+      CASE
+        WHEN TO_NUMBER(TO_CHAR(SYSDATE, 'DD')) <![CDATA[<=]]> 15 
+          THEN TRUNC(SYSDATE, 'MM') + 14
+        ELSE 
+          ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1) + 14
+      END,
+      'YYYY-MM-DD'
+    ) AS next_due_date
+  FROM sales_order so
+  WHERE so.vendor_id  = #{vendorId}
+    AND so.status     IN ('출고완료', '배송완료')
+    AND so.pay_status = '대기'
+    AND TRUNC(so.send_date) <![CDATA[<=]]>
+      CASE
+        WHEN TO_NUMBER(TO_CHAR(SYSDATE, 'DD')) <![CDATA[<=]]> 15 
+          THEN LAST_DAY(ADD_MONTHS(SYSDATE, -1))
+        ELSE
+          TRUNC(SYSDATE)
+      END
+</select>
 
-<!-- 대시보드에 여신한도 잔액-->
-  <select id="selectSalesFinanceSummary" parameterType="string" resultType="SalesOrderVO">
-    SELECT
-      NVL(SUM(s.total_price), 0) AS nextDueAmount,        
-      TO_CHAR(
-        CASE
-          WHEN <![CDATA[ TO_NUMBER(TO_CHAR(SYSDATE, 'DD')) <= 15 ]]>
-            THEN TRUNC(SYSDATE, 'MM') + 14               
-          ELSE
-            ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1) + 14     
-        END,
-        'YYYY-MM-DD'
-      ) AS nextDueDate,                                  
-      MAX(v.credit_limit) AS creditLimit,               
-      NVL(SUM(s.return_price), 0) AS totalReturn,        
-      (MAX(v.credit_limit) - (NVL(SUM(s.total_price), 0) - NVL(SUM(s.return_price), 0))) AS remainCredit
-    FROM SALES_ORDER s
-    JOIN VENDOR v ON s.vendor_id = v.vendor_id
-    WHERE s.vendor_id = #{vendorId}
-      AND s.status IN ('처리완료', '출고완료', '배송완료')
-      AND s.pay_status = '대기'
-  </select>
+
+
+<!-- 대시보드에 여신한도 잔액 (실시간 반영용) -->
+<!-- 대시보드에 여신한도 잔액 (실시간 반영: 처리중 포함, 중복 방지) -->
+<select id="selectSalesFinanceSummary" parameterType="string" resultType="SalesOrderVO">
+  SELECT
+   
+    NVL((
+      SELECT SUM(so.total_price)
+        FROM sales_order so
+       WHERE so.vendor_id  = #{vendorId}
+         AND so.pay_status = '대기'
+         AND so.status     IN ('출고완료','배송완료')
+         AND TRUNC(so.send_date) <![CDATA[<=]]>
+             CASE
+               WHEN TO_NUMBER(TO_CHAR(SYSDATE,'DD')) <![CDATA[<=]]> 15
+                 THEN LAST_DAY(ADD_MONTHS(SYSDATE, -1))
+               ELSE TRUNC(SYSDATE)
+             END
+    ), 0) AS nextDueAmount,
+
+    
+    TO_CHAR(
+      CASE
+        WHEN TO_NUMBER(TO_CHAR(SYSDATE, 'DD')) <![CDATA[<=]]> 15 
+          THEN TRUNC(SYSDATE, 'MM') + 14
+        ELSE 
+          ADD_MONTHS(TRUNC(SYSDATE, 'MM'), 1) + 14
+      END,
+      'YYYY-MM-DD'
+    ) AS nextDueDate,
+
+    
+    v.credit_limit AS creditLimit,
+
+   
+    ( v.credit_limit
+      - (
+          NVL((
+            SELECT SUM(so.total_price)
+              FROM sales_order so
+             WHERE so.vendor_id  = #{vendorId}
+               AND so.pay_status = '대기'
+               AND so.status     IN ('출고완료','배송완료')
+               AND TRUNC(so.send_date) <![CDATA[<=]]>
+                   CASE
+                     WHEN TO_NUMBER(TO_CHAR(SYSDATE,'DD')) <![CDATA[<=]]> 15
+                       THEN LAST_DAY(ADD_MONTHS(SYSDATE, -1))
+                     ELSE TRUNC(SYSDATE)
+                   END
+          ),0)
+          +
+          NVL((
+            SELECT SUM(s2.total_price)
+              FROM sales_order s2
+             WHERE s2.vendor_id  = #{vendorId}
+               AND s2.pay_status = '대기'
+               AND (
+                    
+                     s2.status IN ('처리완료','배송준비중')
+                     
+                     OR (
+                          s2.status IN ('출고완료','배송완료')
+                          AND TRUNC(s2.send_date) <![CDATA[>]]>
+                              CASE
+                                WHEN TO_NUMBER(TO_CHAR(SYSDATE,'DD')) <![CDATA[<=]]> 15
+                                  THEN LAST_DAY(ADD_MONTHS(SYSDATE, -1))
+                                ELSE TRUNC(SYSDATE)
+                              END
+                        )
+                   )
+          ),0)
+        )
+    ) AS remainCredit
+  FROM vendor v
+  WHERE v.vendor_id = #{vendorId}
+</select>
+
 
 
 </mapper>
