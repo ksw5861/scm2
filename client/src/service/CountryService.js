@@ -241,8 +241,7 @@ export const CountryService = {
             { name: 'Wallis and Futuna', code: 'WF' },
             { name: 'Western Sahara', code: 'EH' },
             { name: 'Yemen', code: 'YE' },
-            { name: 'Zambia', code: 'ZM' },
-            { name: 'Zimbabwe', code: 'ZW' }
+            { name: 'Zambia', code: 'ZM' }
         ];
     },
 
