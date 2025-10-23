@@ -3,7 +3,7 @@
 <mapper namespace="com.yedam.scm.product.mapper.InboundMapper">
 
   <!-- ===================== LOT 목록 조회 ===================== -->
-  <select id="selectInboundLots" resultType="com.yedam.scm.vo.ProductLotVO">
+  <select id="selectInboundLots" resultType="ProductLotVO">
     SELECT pl.prod_no,
            pl.prod_id,
            pl.pro_qty,
@@ -31,7 +31,7 @@
      ORDER BY pl.prod_No DESC
   </select>
 
-  <update id="updateInbound" parameterType="com.yedam.scm.vo.ProductLotVO">
+  <update id="updateInbound" parameterType="ProductLotVO">
     UPDATE Product_LOT
        SET total_qty     = #{totalQty},
            remain_qty    = NVL(remain_qty,0) + #{totalQty},
@@ -276,7 +276,7 @@
      SET RETURN_STATUS = (SELECT CASE
                               WHEN SUM(CASE WHEN d.RDETAIL_STATUS = '대기' THEN 1 ELSE 0 END) = COUNT(*)
                                 THEN '배송완료'
-                              WHEN SUM(CASE WHEN d.RDETAIL_STATUS = '대기' THEN 1 ELSE 0 END) > 0
+                              WHEN SUM(CASE WHEN d.RDETAIL_STATUS = '대기' THEN 1 ELSE 0 END) <![CDATA[ > ]]> 0
                                 THEN '처리중'
                               ELSE '처리완료'
                             END
@@ -576,12 +576,12 @@
     FROM sales_return r
     WHERE 1=1
       <if test="dto.startDate != null and dto.endDate != null">
-        AND r.return_date >= TRUNC(#{dto.startDate})
-        AND r.return_date <  TRUNC(#{dto.endDate}) + 1
+        AND r.return_date <![CDATA[ >= ]]> TRUNC(#{dto.startDate})
+        AND r.return_date <![CDATA[ < ]]>  TRUNC(#{dto.endDate}) + 1
       </if>
   )
-  WHERE rn > #{paging.offset}
-    AND rn <= #{paging.offset} + #{paging.size}
+  WHERE rn <![CDATA[ > ]]> #{paging.offset}
+    AND rn <![CDATA[ <= ]]> #{paging.offset} + #{paging.size}
 </select>
 
 <select id="countByDate" resultType="int">
@@ -589,8 +589,8 @@
   FROM sales_return r
   WHERE 1=1
     <if test="dto.startDate != null and dto.endDate != null">
-      AND r.return_date >= TRUNC(#{dto.startDate})
-      AND r.return_date <  TRUNC(#{dto.endDate}) + 1
+      AND r.return_date <![CDATA[ >= ]]> TRUNC(#{dto.startDate})
+      AND r.return_date <![CDATA[ < ]]>  TRUNC(#{dto.endDate}) + 1
     </if>
 </select>
 
@@ -609,8 +609,8 @@
         AND LOWER(v.company_name) LIKE '%' || LOWER(#{condition}) || '%'
       </if>
   )
-  WHERE rn > #{offset}
-    AND rn <= #{offset} + #{size}
+  WHERE rn <![CDATA[ > ]]> #{offset}
+    AND rn <![CDATA[ <= ]]> #{offset} + #{size}
 </select>
 
 <select id="countByVendor" resultType="int">
@@ -637,8 +637,8 @@
         AND LOWER(r.return_id) LIKE '%' || LOWER(#{condition}) || '%'
       </if>
   )
-  WHERE rn > #{offset}
-    AND rn <= #{offset} + #{size}
+  WHERE rn <![CDATA[ > ]]> #{offset}
+    AND rn <![CDATA[ <= ]]> #{offset} + #{size}
 </select>
 
 <select id="countByCode" resultType="int">
