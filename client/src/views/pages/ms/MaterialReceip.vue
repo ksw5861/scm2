@@ -169,6 +169,7 @@ const submit = async () => {
   try {
     await axios.post('/api/mmatInStock', payload);
     await detailInfo();
+    await pageLoad();
     toast('success', '입고등록 성공', '입고등록 성공:', '3000');
     expDate.value = null;
     inQty.value = null;

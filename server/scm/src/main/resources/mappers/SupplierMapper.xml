@@ -333,21 +333,25 @@ ORDER BY qty DESC
 </select>
 
 <select id="getVendorDefectList" parameterType="string" resultType="VendorDefectDTO">
-select l.log_rej_qty,
-       m.mat_name,
-       i.vendor_out_date,
-       l.log_memo,
-       i.ven_out_no
-from inbound_log l
-join inbound_detail d
-on l.inbound_det_id = d.inbound_det_id
-join inbound i
-on i.inbound_id = d.inbound_id
-join material m
-on d.mat_id = m.mat_id
-where l.log_rej_qty is not null
-and i.vendor_id = #{vendorId}
-order by i.vendor_out_date desc
+SELECT *
+FROM (
+  select l.log_rej_qty,
+        m.mat_name,
+        i.vendor_out_date,
+        l.log_memo,
+        i.ven_out_no
+  from inbound_log l
+  join inbound_detail d
+  on l.inbound_det_id = d.inbound_det_id
+  join inbound i
+  on i.inbound_id = d.inbound_id
+  join material m
+  on d.mat_id = m.mat_id
+  where l.log_rej_qty is not null
+  and i.vendor_id = #{vendorId}
+  order by i.vendor_out_date desc
+)
+WHERE ROWNUM &lt; 8
 </select>
 
 </mapper>
