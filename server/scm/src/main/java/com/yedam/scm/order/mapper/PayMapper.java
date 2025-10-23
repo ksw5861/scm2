@@ -17,19 +17,17 @@ public interface PayMapper {
     // 1. 납부 등록 (마스터)
     // =============================================================
     Long insertPayment(PaymentVO paymentVO);
-
-    // =============================================================
-    // 2. 납부 상세 등록
-    // =============================================================
     Long insertPaymentDetail(PaymentDetailVO detailVO);
-
+    Long getCreditLimitByVendorId(@Param("vendorId") String vendorId);
+    Long getPreArBalanceByVendorId(@Param("vendorId") String vendorId);
     // =============================================================
     // 3. 납부 내역 조회
     // =============================================================
     List<Map<String, Object>> selectPaymentList(
         @Param("paymentNo") String paymentNo,
         @Param("startDate") String startDate,
-        @Param("endDate") String endDate
+        @Param("endDate") String endDate,
+        @Param("vendorId") String vendorId
     );
 
     // =============================================================

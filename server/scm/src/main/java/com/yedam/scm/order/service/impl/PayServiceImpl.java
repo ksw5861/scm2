@@ -28,11 +28,41 @@ public class PayServiceImpl implements PayService {
     @Override
     public String insertPayment(PaymentVO paymentVO) {
         try {
+            // -----------------------------------------------------
+            // 1️⃣ 여신한도 및 미수금 계산 (결제 전/후 기준)
+            // -----------------------------------------------------
+            String vendorId = paymentVO.getVendorId();
+            if (vendorId == null) throw new RuntimeException("vendorId 누락");
+
+            Long creditLimit = payMapper.getCreditLimitByVendorId(vendorId);
+            if (creditLimit == null) creditLimit = 0L;
+
+            Long preAr = payMapper.getPreArBalanceByVendorId(vendorId);
+            if (preAr == null) preAr = 0L;
+
+            long payAmount = paymentVO.getPayAmount();
+            long preLimit = creditLimit - preAr;
+            long afterAr = preAr - payAmount;
+            long afterLimit = creditLimit - afterAr;
+
+            // 계산된 값 VO에 세팅
+            paymentVO.setCreditLimit(creditLimit);
+            paymentVO.setPayPreAr(preAr);
+            paymentVO.setPayAfterAr(afterAr);
+            paymentVO.setPayPreLimit(preLimit);
+            paymentVO.setPayAfterLimit(afterLimit);
+
+            // -----------------------------------------------------
+            // 2️⃣ 납부 마스터 저장
+            // -----------------------------------------------------
             Long masterResult = payMapper.insertPayment(paymentVO);
             if (masterResult == null || masterResult <= 0 || paymentVO.getPayId() == null) {
                 throw new RuntimeException("Payment Master 저장 실패");
             }
 
+            // -----------------------------------------------------
+            // 3️⃣ 납부 상세 저장
+            // -----------------------------------------------------
             List<PaymentDetailVO> detailList = paymentVO.getPaymentDetails();
             if (detailList == null || detailList.isEmpty()) {
                 throw new RuntimeException("Payment Detail 데이터 없음");
@@ -43,6 +73,9 @@ public class PayServiceImpl implements PayService {
             }
             insertPaymentDetails(detailList);
 
+            // -----------------------------------------------------
+            // 4️⃣ 관련 주문/반품 상태 업데이트
+            // -----------------------------------------------------
             List<String> orderIds = new ArrayList<>();
             List<String> returnIds = new ArrayList<>();
 
@@ -81,8 +114,8 @@ public class PayServiceImpl implements PayService {
     // 납부 내역 조회
     // =============================================================
     @Override
-    public List<Map<String, Object>> selectPaymentList(String paymentNo, String startDate, String endDate) {
-        return payMapper.selectPaymentList(paymentNo, startDate, endDate);
+    public List<Map<String, Object>> selectPaymentList(String paymentNo, String startDate, String endDate, String vendorId) {
+        return payMapper.selectPaymentList(paymentNo, startDate, endDate, vendorId);
     }
 
     // =============================================================
