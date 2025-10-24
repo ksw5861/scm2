@@ -4,12 +4,13 @@ import lombok.Data;
 
 @Data
 public class BomDetailVO {
-    private Long bomDeId;
+    private String bomDeId;
     private String bomId;
     private String matId;
     private Double mixingRate;
+    private Double qty;       // 남기는 걸로 결정
     private String baseUnit;
 
-    private MaterialVO material; // 자재 정보 포함
-
+    private MaterialVO material; // 조인 시 사용
 }
+

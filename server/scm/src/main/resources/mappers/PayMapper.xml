@@ -43,21 +43,22 @@
       </insert>
 
   <!-- 당시 여신한도 -->
-  <select id="getCreditLimitByVendorId" resultType="long">
+  <select id="getCreditLimitByVendorId" resultType="Long">
       SELECT NVL(v.credit_limit, 0)
       FROM vendor v
       WHERE v.vendor_id = #{vendorId}
   </select>
 
-  <!-- 결제 전 미수금 -->
-  <select id="getPreArBalanceByVendorId" resultType="long">
-      SELECT NVL(so_sum, 0) - NVL(pay_sum, 0) AS pre_ar
+  <!-- 결제 후 미수금 -->
+  <select id="getAfterArBalanceByVendorId" resultType="Long">
+      SELECT NVL(so_sum, 0) - NVL(pay_sum, 0) AS after_ar
       FROM (
           SELECT SUM(NVL(so.total_price,0) - NVL(so.return_price,0)) AS so_sum
           FROM sales_order so
           WHERE so.vendor_id = #{vendorId}
             AND so.send_date IS NOT NULL
             AND so.status IN ('출고완료','배송완료')
+            AND so.pay_status = '대기'
       ),
       (
           SELECT SUM(NVL(p.pay_amount,0)) AS pay_sum
@@ -266,7 +267,8 @@
     pay_amount      AS payAmount,
     pay_pre_ar      AS outstandingAmount,   
     pay_after_ar    AS finalBalance,        
-    pay_after_limit AS creditBalance        
+    pay_after_limit AS creditBalance,
+    credit_limit    AS creditLimit        
   FROM payment
   WHERE vendor_id = #{vendorId}
   ORDER BY pay_date DESC
