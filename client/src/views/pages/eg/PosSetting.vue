@@ -41,19 +41,26 @@
         <template #content><div class="text-2xl font-bold text-primary">+{{ fmt(totalProfit) }}</div></template>
       </Card>
 
-      <div class="flex items-center gap-2">
-        <span class="text-600 text-sm">일괄 마진율 적용:</span>
-        <div class="flex gap-2 flex-wrap">
-          <Button
-            v-for="r in [20, 30, 35, 40, 50]"
-            :key="r"
-            :label="r + '%'"
-            size="small"
-            outlined
-            @click="applyBulkMargin(r)"
-          />
-        </div>
-      </div>
+     <Card class="shadow-sm">
+        <template #title>
+          <div class="text-sm text-600">일괄 마진율 적용</div>
+        </template>
+        <template #content>
+          <div class="flex items-center gap-2 mt-2">
+            <div class="flex gap-2 flex-wrap">
+              <Button
+                v-for="r in [20, 30, 35, 40, 50]"
+                :key="r"
+                :label="r + '%'"
+                size="small"
+                outlined
+                @click="applyBulkMargin(r)"
+              />
+            </div>
+          </div>
+        </template>
+      </Card>
+
     </div>
 
     <!-- DATATABLE -->
@@ -65,7 +72,16 @@
           </Column>
 
           <Column field="name" header="원두명" style="min-width: 180px" />
-          <Column field="cost" header="본사 구매가" style="min-width: 130px; text-align:right" :body="(r) => fmt(r.cost)" />
+          <Column
+            header="본사 구매가"
+            style="min-width: 130px; text-align:right"
+          >
+            <template #body="slotProps">
+              {{ fmt(Number(slotProps.data.cost)) }}
+            </template>
+          </Column>
+
+
 
           <Column header="마진율 (%)" style="min-width: 150px">
             <template #body="{ data, index }">

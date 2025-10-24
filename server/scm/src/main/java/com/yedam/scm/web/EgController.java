@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.io.IOException;
 import java.io.InputStream;
 
 
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 import com.yedam.scm.order.service.BranchDashService;
+import com.yedam.scm.order.service.ExcelService;
 import com.yedam.scm.order.service.GoDelService;
 import com.yedam.scm.order.service.IamportService;
 import com.yedam.scm.order.service.OrderService;
@@ -33,6 +35,7 @@ import com.yedam.scm.vo.ProductVO;
 import com.yedam.scm.vo.ReturnDetailVO;
 import com.yedam.scm.vo.ReturnVO;
 import com.yedam.scm.vo.PaymentVO; 
+
 
 
 
@@ -64,6 +67,9 @@ public class EgController {
 
     @Autowired
     private GoDelService goDelSvc;
+
+    @Autowired
+    private ExcelService excelSvc;
 
 
     // =================================================================
@@ -667,6 +673,18 @@ public ResponseEntity<byte[]> exportOrderPdf(@PathVariable String orderId) throw
     return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
 }
 
+// ================================================================
+// 21. 주문목록조회 - 주문상세건 Excel 출력
+// ================================================================
+@GetMapping("/orders/{orderId}/excel")
+    public ResponseEntity<byte[]> downloadExcel(@PathVariable String orderId) throws IOException {
+        byte[] file = excelSvc.generateOrderExcel(orderId);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=order_" + orderId + ".xlsx")
+                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(file);
+    }
 
 
 }

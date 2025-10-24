@@ -444,9 +444,33 @@ const exportPDF = async () => {
 // -----------------------------
 
 
-const exportExcel = () => {
-  alert('엑셀 다운로드 기능은 아직 구현되지 않았습니다.')
+const exportExcel = async () => {
+  if (!selectedOrder.value) {
+    alert('먼저 주문을 선택하세요.')
+    return
+  }
+  try {
+    const response = await axios.get(`/api/orders/${selectedOrder.value.orderId}/excel`, {
+      responseType: 'blob' // ✅ 엑셀 파일 바이너리 데이터
+    })
+
+    const blob = new Blob([response.data], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      // ✅ MIME Type for Excel (.xlsx)
+    })
+
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `order_${selectedOrder.value.orderId}.xlsx` // ✅ 파일 이름 지정
+    link.click()
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    alert('엑셀 생성 중 오류가 발생했습니다.')
+    console.error(error)
+  }
 }
+
 
 const resetFilters = () => {
   filters.value = {
