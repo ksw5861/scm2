@@ -175,36 +175,12 @@ const submit = async () => {
     inQty.value = null;
     result.value = null;
     inputMatName.value = '';
+    selectedDetail.value = null;
   } catch (error) {
     toast('error', '입고등록 실패', '입고등록 실패:', '3000');
   }
 };
 
-//반품모달open
-// const opendefectModal = () => {
-//   const row = selectedDetail.value;
-//   if (!row) {
-//     toast('info', '선택 필요', '반품할 자재를 선택하세요.', '3000');
-//     return;
-//   }
-
-//   if (result.value === 'Y') {
-//     toast('info', '확인 필요', '검수결과 불합격자재만 입고가능합니다.', '3000');
-//     return;
-//   }
-//   defectForm.value = {
-//     matName: row.matName,
-//     inboundDetId: row.id,
-//     logRejQty: '',
-//     logMemo: '',
-//     logName: empName
-//   };
-//   defectModal.value = true;
-// };
-
-// const closeDefectModal = () => {
-//   defectModal.value = false;
-// };
 //이미지
 const onFileSelect = (event) => {
   // PrimeVue는 배열 형태로 전달됨
@@ -218,26 +194,29 @@ const onFileSelect = (event) => {
 };
 
 const defectSubmit = async () => {
-    if(!defectForm.value.logRejQty || isNaN(defectForm.value.logRejQty) || Number(defectForm.value.logRejQty) <= 0){
-        toast('warn', '유효성 검사', '불량수량은 0보다 큰 숫자로 입력해주세요.', '3000');
-        return;
-    }
-    if(Number(defectForm.value.logRejQty) > (selectedDetail.value.outQty - selectedDetail.value.inTotalQty)){
-        toast('warn', '유효성 검사', '불량수량은 입고잔여수량을 초과할 수 없습니다.', '3000');
-        return;
-    }
-    if(!defectForm.value.logMemo){
-        toast('warn', '유효성 검사', '불량사유를 입력해주세요.', '3000');
-        return;
-    }
-    if(!selectedFile.value){
-        toast('warn', '유효성 검사', '불량 이미지 파일을 선택해주세요.', '3000');
-        return;
-    }
+  defectForm.value.inboundDetId = selectedDetail.value.id;
+  defectForm.value.logRejQty = inQty.value; //불량수량을 입고수량으로 설정
 
-    if (!confirm('불량등록을 진행하시겠습니까?')) {
-        return;
-    }
+  if (!defectForm.value.logRejQty || isNaN(defectForm.value.logRejQty) || Number(defectForm.value.logRejQty) <= 0) {
+    toast('warn', '유효성 검사', '불량수량은 0보다 큰 숫자로 입력해주세요.', '3000');
+    return;
+  }
+  if (Number(defectForm.value.logRejQty) > selectedDetail.value.outQty - selectedDetail.value.inTotalQty) {
+    toast('warn', '유효성 검사', '불량수량은 입고잔여수량을 초과할 수 없습니다.', '3000');
+    return;
+  }
+  if (!defectForm.value.logMemo) {
+    toast('warn', '유효성 검사', '불량사유를 입력해주세요.', '3000');
+    return;
+  }
+  if (!selectedFile.value) {
+    toast('warn', '유효성 검사', '불량 이미지 파일을 선택해주세요.', '3000');
+    return;
+  }
+
+  if (!confirm('불량등록을 진행하시겠습니까?')) {
+    return;
+  }
 
   //[메모, 불량수량, 상세아이디, 담당자]
   const defectPayload = new FormData();
@@ -263,8 +242,20 @@ const defectSubmit = async () => {
   try {
     await axios.post('/api/mdefect', defectPayload);
     toast('success', '불량 등록 완료', '불량 정보가 성공적으로 저장되었습니다.');
-    closeDefectModal();
     await detailInfo();
+    await pageLoad();
+    defectForm.value = {
+      matName: '',
+      inboundDetId: null,
+      logRejQty: '',
+      logMemo: '',
+      logName: empName
+    };
+    selectedFile.value = null;
+    selectedDetail.value.id = null;
+    inQty.value = null;
+    previewUrl.value = null;
+    result.value = null;
   } catch (error) {
     toast('error', '불량 등록 실패', '서버 오류가 발생했습니다.');
   }
@@ -321,6 +312,32 @@ const approveUnloadDetaiColumn = [
   { label: '잔여수량', field: 'restQty' },
   { label: '누적처리수량', field: 'inTotalQty' }
 ];
+
+//반품모달open
+// const opendefectModal = () => {
+//   const row = selectedDetail.value;
+//   if (!row) {
+//     toast('info', '선택 필요', '반품할 자재를 선택하세요.', '3000');
+//     return;
+//   }
+
+//   if (result.value === 'Y') {
+//     toast('info', '확인 필요', '검수결과 불합격자재만 입고가능합니다.', '3000');
+//     return;
+//   }
+//   defectForm.value = {
+//     matName: row.matName,
+//     inboundDetId: row.id,
+//     logRejQty: '',
+//     logMemo: '',
+//     logName: empName
+//   };
+//   defectModal.value = true;
+// };
+
+// const closeDefectModal = () => {
+//   defectModal.value = false;
+// };
 </script>
 
 <template>
@@ -366,9 +383,9 @@ const approveUnloadDetaiColumn = [
     <!--테이블영역--><!--테이블영역-->
     <div class="flex flex-col md:flex-row gap-8">
       <div class="md:w-1/2">
-        <div class="card flex flex-col gap-4 h-full" style="height: 800px">
+        <div class="card flex flex-col gap-4 h-full">
           <!-- h-full 고정 -->
-          <div class="card flex flex-col gap-4" style="height: 800px">
+          <div class="card flex flex-col gap-4">
             <div class="font-semibold text-m">입고대기 목록</div>
             <Divider />
             <selectTable v-model:selection="selectedMaster" :selectionMode="'single'" :columns="approveUnloadColumn" :data="approveUnloadList" :paginator="true" :showCheckbox="false" :page="page" @row-select="detailInfo" @page-change="onPage" />
@@ -394,8 +411,8 @@ const approveUnloadDetaiColumn = [
           <Divider />
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
             <SearchField type="readOnly" label="자재명" v-model="inputMatName" />
-            <SearchField type="date" label="유통기한" v-model="expDate"  width="30rem"/>
-            <SearchField type="text" label="입고수량" v-model="inQty" />
+            <SearchField type="date" label="유통기한" v-model="expDate" width="30rem" />
+            <SearchField type="text" label="처리수량" v-model="inQty" />
             <searchField
               type="dropDown"
               label="검수결과"
@@ -408,18 +425,18 @@ const approveUnloadDetaiColumn = [
             />
           </div>
           <!--검수결과가 불합격시-->
-          <div v-if ="result === 'N'" class="text-black-500 mt-5">
+          <div v-if="result === 'N'" class="text-black-500 mt-5">
             검수결과 불합격 시 입고등록이 불가능하며, 불량등록을 진행해주세요.
-            <Textarea type="text" label="불량사유" v-model="defectForm.logMemo" placeholder="불량사유를 입력하세요" rows="5" cols="95" class="mt-5"/>
-            <FileUpload mode="basic" name="file" chooseLabel="파일 선택" accept="image/*" @select="onFileSelect" class="mt-3 flex justify-center"/>
+            <Textarea type="text" label="불량사유" v-model="defectForm.logMemo" placeholder="불량사유를 입력하세요" rows="5" cols="95" class="mt-5" />
+            <FileUpload mode="basic" name="file" chooseLabel="파일 선택" accept="image/*" @select="onFileSelect" class="mt-3 flex justify-center" />
             <div v-if="previewUrl" class="mt-2">
-                <img :src="previewUrl" alt="미리보기" class="w-32 rounded-lg border" />
+              <img :src="previewUrl" alt="미리보기" class="w-32 rounded-lg border" />
             </div>
+          </div>
         </div>
-    </div>
-</div>
       </div>
     </div>
+  </div>
 
   <!-- 반품 모달
   <Dialog v-model:visible="defectModal" modal header="불량등록" :style="{ width: '500px' }">
