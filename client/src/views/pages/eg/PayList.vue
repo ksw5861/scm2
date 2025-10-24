@@ -85,8 +85,12 @@
       >
         <Column field="payId" header="결제번호" style="width:140px;" />
         <Column field="payDate" header="결제일자" style="width:140px;" />
-
-        <Column field="outstandingAmount" header="미수금" style="width:140px; text-align:right;">
+        <Column field="creditLimit" header="당시 여신한도" style="width:140px; text-align:right;">
+          <template #body="slotProps">
+            {{ formatCurrency(slotProps.data.creditLimit) }}
+          </template>
+        </Column>
+        <Column field="outstandingAmount" header="납부 전 미수금" style="width:140px; text-align:right;">
           <template #body="slotProps">
             {{ formatCurrency(slotProps.data.outstandingAmount) }}
           </template>
@@ -100,7 +104,7 @@
           </template>
         </Column>
 
-        <Column field="finalBalance" header="최종잔액" style="width:140px; text-align:right;">
+        <Column field="finalBalance" header="납부 후 미수금" style="width:140px; text-align:right;">
           <template #body="slotProps">
             {{ formatCurrency(slotProps.data.finalBalance) }}
           </template>
@@ -137,7 +141,7 @@ const toast = useToast()
 // 상태 관리
 // -----------------------------
 const filters = ref({
-  paymentNo: '',
+  payId: '',
   startDate: null,
   endDate: null
 })
@@ -166,7 +170,7 @@ const formatCurrency = (value) => {
 const searchPayments = async () => {
   try {
     const params = {
-      paymentNo: filters.value.paymentNo || '',
+      payId: filters.value.payId || '',
       startDate: filters.value.startDate ? formatDate(filters.value.startDate) : '',
       endDate: filters.value.endDate ? formatDate(filters.value.endDate) : '',
       vendorId: userStore.code
@@ -174,6 +178,7 @@ const searchPayments = async () => {
 
     const res = await axios.get('/api/payments', { params })
     console.log('납부내역 조회 결과:', res.data)
+    console.log('납부내역 조회 결과2:', res.data.list[0])
 
     payList.value = (res.data.list || []).map(item => ({
           payId: item.payId,
@@ -182,7 +187,8 @@ const searchPayments = async () => {
           payAmount: item.payAmount,
           finalBalance: item.finalBalance,
           creditBalance: item.creditBalance,
-          payRmk: item.payRmk || ''
+          payRmk: item.payRmk || '',
+          creditLimit: item.creditLimit
 
           }))
 
@@ -202,7 +208,7 @@ const searchPayments = async () => {
 // 기타 기능
 // -----------------------------
 const resetFilters = () => {
-  filters.value.paymentNo = ''
+  filters.value.payId = ''
   filters.value.startDate = null
   filters.value.endDate = null
   payList.value = []

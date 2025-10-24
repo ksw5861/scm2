@@ -4,36 +4,46 @@
 
 <mapper namespace="com.yedam.scm.order.mapper.OrderMapper">
 
-    <!-- ========================================================== -->
-    <!-- 1. 주문 등록 -->
-    <!-- ========================================================== -->
-    <insert id="insertOrder" parameterType="SalesOrderVO">
-        <selectKey keyProperty="orderId" resultType="string" order="BEFORE">
-            SELECT next_date_code('SO') FROM dual
-        </selectKey>
+<!-- ========================================================== -->
+<!-- 1. 주문 등록 (여신잔액 실시간 검증 완전체 버전) -->
+<!-- ========================================================== -->
+<!-- ========================================================== -->
+<!-- 순수 INSERT: WHERE 조건 제거 (검증은 Service에서만 처리) -->
+<!-- ========================================================== -->
+<insert id="insertOrder" parameterType="SalesOrderVO">
+    <selectKey keyProperty="orderId" resultType="string" order="BEFORE">
+        SELECT next_date_code('SO') FROM dual
+    </selectKey>
 
-        INSERT INTO SALES_ORDER (
-            order_id,
-            order_date,
-            vendor_id,
-            delivery_date,
-            paydue_date,
-            total_price
-        )
-        SELECT
-            #{orderId},
-            SYSDATE,
-            #{vendorId},
-            #{deliveryDate},
-            TRUNC(ADD_MONTHS(SYSDATE, 1), 'MM') + 14,
-            #{totalPrice}
-        FROM DUAL
-        WHERE (
-            SELECT CREDIT_LIMIT
-            FROM   VENDOR
-            WHERE  VENDOR_ID = #{vendorId}
-        ) <![CDATA[ >= ]]> #{totalPrice}
-    </insert>
+    INSERT INTO SALES_ORDER (
+        order_id, order_date, vendor_id, delivery_date, paydue_date, total_price
+    )
+    VALUES (
+        #{orderId},
+        SYSDATE,
+        #{vendorId},
+        #{deliveryDate},
+        TRUNC(ADD_MONTHS(SYSDATE, 1), 'MM') + 14,
+        #{totalPrice}
+    )
+</insert>
+
+<!-- ========================================================== -->
+<!-- 여신잔액 실시간 조회 (Service에서 검증용으로 사용) -->
+<!-- ========================================================== -->
+<select id="getAvailableCredit" resultType="Long" parameterType="string">
+    SELECT 
+        NVL(V.CREDIT_LIMIT, 0)
+        - NVL((
+            SELECT SUM(SO.total_price)
+            FROM SALES_ORDER SO
+            WHERE SO.vendor_id = #{vendorId}
+              AND SO.pay_status = '대기'
+              AND SO.status IN ('처리완료', '배송준비중', '출고완료', '배송완료')
+        ), 0)
+    FROM VENDOR V
+    WHERE V.vendor_id = #{vendorId}
+</select>
 
 
     <!-- ========================================================== -->
