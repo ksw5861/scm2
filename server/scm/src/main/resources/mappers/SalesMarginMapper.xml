@@ -5,61 +5,70 @@
 
 
 <mapper namespace="com.yedam.scm.order.mapper.SalesMarginMapper">
-
   <sql id="Cols">
-    SALE_PROD_ID, SALE_PROD_NAME, SALE_PROD_PRICE,
-    PROD_UNIT_PRICE, SALE_MARGIN, SORT_NO, POS_SHOW_YN,
-    CREATE_DT, UPDATE_DT
+    VENDOR_ID,          
+    SALE_PROD_ID,
+    SALE_PROD_NAME,
+    SALE_PROD_PRICE,
+    PROD_UNIT_PRICE,
+    SALE_MARGIN,
+    SORT_NO,
+    POS_SHOW_YN,
+    CREATE_DT,
+    UPDATE_DT
   </sql>
 
-    <!-- POS설정 - 기존데이터 삭제 -->
-    <delete id="deleteAll">
-        DELETE FROM SALES_MARGIN
-    </delete>
+ <!-- 기존 데이터 삭제 (해당 벤더만) -->
+<delete id="deleteAll">
+  DELETE FROM SALES_MARGIN
+  WHERE VENDOR_ID = #{vendorId}
+</delete>
 
-    <!-- POS설정 - 새 데이터 삽입 -->
-    <insert id="insert" parameterType="SalesMarginVO">
-        INSERT INTO SALES_MARGIN (
-            SALE_PROD_ID,
-            SALE_PROD_NAME,
-            PROD_UNIT_PRICE,
-            SALE_MARGIN,
-            POS_SHOW_YN,
-            SORT_NO,
-            SALE_PROD_PRICE
-        ) VALUES (
-            #{saleProdId},
-            #{saleProdName},
-            #{prodUnitPrice},
-            #{saleMargin},
-            #{posShowYn},
-            #{sortNo},
-            #{saleProdPrice}
-        )
-    </insert>
+<!-- 신규 삽입 -->
+<insert id="insert" parameterType="SalesMarginVO">
+  INSERT INTO SALES_MARGIN (
+      VENDOR_ID,
+      SALE_PROD_ID,
+      SALE_PROD_NAME,
+      PROD_UNIT_PRICE,
+      SALE_MARGIN,
+      POS_SHOW_YN,
+      SORT_NO,
+      SALE_PROD_PRICE
+  ) VALUES (
+      #{vendorId},
+      #{saleProdId},
+      #{saleProdName},
+      #{prodUnitPrice},
+      #{saleMargin},
+      #{posShowYn},
+      #{sortNo},
+      #{saleProdPrice}
+  )
+</insert>
 
+<!-- 조회 역시 vendor별 필수 -->
+<select id="selectSalesMarginList" resultType="SalesMarginVO">
+  SELECT <include refid="Cols"/>
+    FROM SALES_MARGIN
+   WHERE VENDOR_ID = #{vendorId}
+   ORDER BY SORT_NO
+</select>
 
-  <!-- 목록 (POS 순서대로) -->
-  <select id="selectSalesMarginList" resultType="SalesMarginVO">
-    SELECT <include refid="Cols"/>
-      FROM SALES_MARGIN
-     ORDER BY SORT_NO
-  </select>
+<!-- 단건 조회 (벤더 구분 필수) -->
+<select id="selectSalesMarginById" parameterType="map" resultType="SalesMarginVO">
+  SELECT <include refid="Cols"/>
+    FROM SALES_MARGIN
+   WHERE VENDOR_ID = #{vendorId}            
+     AND SALE_PROD_ID = #{saleProdId}
+</select>
 
-  <!-- 단건 조회 -->
-  <select id="selectSalesMarginById" parameterType="string" resultType="SalesMarginVO">
-    SELECT <include refid="Cols"/>
-      FROM SALES_MARGIN
-     WHERE SALE_PROD_ID = #{saleProdId}
-  </select>
-
-  
-
-  <!-- 삭제 -->
-  <delete id="deleteSalesMargin" parameterType="string">
-    DELETE FROM SALES_MARGIN WHERE SALE_PROD_ID = #{saleProdId}
-  </delete>
-
+<!-- 삭제 (벤더 구분 필수) -->
+<delete id="deleteSalesMargin" parameterType="map">
+  DELETE FROM SALES_MARGIN
+  WHERE VENDOR_ID = #{vendorId}            
+    AND SALE_PROD_ID = #{saleProdId}
+</delete>
 
 
 
@@ -92,31 +101,33 @@
   </selectKey>
 
   <!-- 🧾 2. 상세 데이터 INSERT -->
-  INSERT INTO SALES_DETAIL (
-      SDETAIL_ID,      
-      SALE_ID,         
-      SALE_PROD_ID,     
-      SALE_PROD_NAME,    
-      PROD_UNIT_PRICE,     
-      SALE_PROD_PRICE,    
-      SALE_MARGIN,      
-      SALE_QTY,          
-      SALE_TOTAL_PRICE  
-  )
-  SELECT
-      #{sdetailId},           
-      #{saleId},                 
-      P.SALE_PROD_ID,
-      P.SALE_PROD_NAME,
-      P.PROD_UNIT_PRICE,         
-      P.SALE_PROD_PRICE,          
-      P.SALE_MARGIN,
-      #{saleQty},
-      (P.SALE_PROD_PRICE * #{saleQty})
-  FROM SALES_MARGIN P
-  WHERE P.SALE_PROD_ID = #{saleProdId}
-
-</insert>
+    INSERT INTO SALES_DETAIL (
+        SDETAIL_ID,
+        SALE_ID,
+        SALE_PROD_ID,
+        SALE_PROD_NAME,
+        PROD_UNIT_PRICE,
+        SALE_PROD_PRICE,
+        SALE_MARGIN,
+        SALE_QTY,
+        SALE_TOTAL_PRICE
+    )
+    SELECT
+        #{sdetailId},
+        #{saleId},
+        P.SALE_PROD_ID,
+        P.SALE_PROD_NAME,
+        P.PROD_UNIT_PRICE,
+        P.SALE_PROD_PRICE,
+        P.SALE_MARGIN,
+        #{saleQty},
+        (P.SALE_PROD_PRICE * #{saleQty})
+      FROM SALES_MARGIN P
+      JOIN SALES_MASTER M
+        ON M.SALE_ID   = #{saleId}
+       AND M.VENDOR_ID = P.VENDOR_ID     
+     WHERE P.SALE_PROD_ID = #{saleProdId}
+  </insert>
 
 
 

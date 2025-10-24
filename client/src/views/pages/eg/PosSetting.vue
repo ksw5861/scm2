@@ -165,6 +165,10 @@ import InputNumber from 'primevue/inputnumber'
 import Dialog from 'primevue/dialog'
 import InputText from 'primevue/inputtext'
 import Toast from 'primevue/toast'
+import { useUserStore } from '@/stores/user'
+
+const userStore = useUserStore()
+const vendorId = userStore.code 
 
 interface Row {
   id: string
@@ -192,15 +196,18 @@ const fetchProducts = async () => {
 
 onMounted(async () => {
   try {
-    const { data } = await axios.get('/api/sales/margin/list')
-    rows.value = data.map((r: any) => ({
-      id: String(r.saleProdId),
-      name: r.saleProdName,
-      origin: '-',
-      cost: r.prodUnitPrice,
-      margin: r.saleMargin,
-      pos: r.posShowYn === 'Y'
-    }))
+    const { data } = await axios.get('/api/sales/margin/list', { params: { vendorId } })
+    rows.value = data
+      .sort((a, b) => (a.sortNo % 1000) - (b.sortNo % 1000))   // ✅ 정렬 복구 핵심 코드
+      .map((r: any) => ({
+        id: String(r.saleProdId),
+        name: r.saleProdName,
+        origin: '-',
+        cost: r.prodUnitPrice,
+        margin: r.saleMargin,
+        pos: r.posShowYn === 'Y',
+        vendorId: vendorId
+      }))
   } catch (err) {
     toast.add({
       severity: 'error',
@@ -318,12 +325,15 @@ const onSave = async () => {
     prodUnitPrice: r.cost,
     saleMargin: r.margin,
     posShowYn: r.pos ? 'Y' : 'N',
-    sortNo: i + 1,
-    saleProdPrice: priceOf(r)
+    sortNo: Number(vendorId.replace(/\D/g, '')) * 1000 + (i + 1), // ✅ 숫자만 뽑아서 안전하게
+    saleProdPrice: priceOf(r),
+    vendorId: vendorId,
   }))
   await axios.post('/api/sales/margin/save-all', payload)
   toast.add({ severity: 'success', summary: '저장 완료', detail: '저장 성공', life: 2000 })
 }
+
+
 </script>
 
 <style scoped>

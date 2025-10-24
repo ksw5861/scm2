@@ -24,14 +24,17 @@ public class SalesMarginController {
 
     // 목록 조회
     @GetMapping("/sales/margin/list")
-    public List<SalesMarginVO> getList() {
-        return service.getList();
-    }
+     public List<SalesMarginVO> getList(@RequestParam String vendorId) {
+     return service.getList(vendorId);
+     }
 
     // 단건 조회
     @GetMapping("/sales/margin/{id}")
-    public SalesMarginVO getById(@PathVariable("id") String id) {
-        return service.getById(id);
+    public SalesMarginVO getById(
+        @RequestParam String vendorId,    
+        @PathVariable("id") String id
+    ) {
+        return service.getById(vendorId, id);  
     }
 
 
@@ -44,8 +47,11 @@ public class SalesMarginController {
 
     // 삭제 - 목록행에서 휴지통버튼
     @DeleteMapping("/sales/margin/{id}")
-    public ResponseEntity<?> delete(@PathVariable("id") String id) {
-        service.delete(id);
+    public ResponseEntity<?> delete(
+        @RequestParam String vendorId,      
+        @PathVariable("id") String id      
+    ) {
+        service.delete(vendorId, id);      
         return ResponseEntity.ok("Deleted successfully");
     }
 

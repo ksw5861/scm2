@@ -18,7 +18,7 @@ public interface OrderMapper {
     int insertOrder(SalesOrderVO orderVO);
     int insertOrderDetail(SalesOrderDetailVO detailVO);
     int getCreditLimit(String vendorId);
-    long getAvailableCredit(String vendorId);
+    Long getAvailableCredit(String vendorId);
     // =============================================================
     // 주문 목록 조회 (검색조건 포함)
     // =============================================================

@@ -22,34 +22,33 @@ public class SalesMarginServiceImpl implements SalesMarginService {
     private SalesMarginMapper mapper;
 
     @Override
-    public List<SalesMarginVO> getList() {
-        return mapper.selectSalesMarginList();
+    public List<SalesMarginVO> getList(String vendorId) {
+     return mapper.selectSalesMarginList(vendorId);
     }
 
     @Override
-    public SalesMarginVO getById(String saleProdId) {
-        return mapper.selectSalesMarginById(saleProdId);
+    public SalesMarginVO getById(String vendorId, String saleProdId) {
+     return mapper.selectSalesMarginById(vendorId, saleProdId);
     }
 
     @Transactional
     @Override
     public int saveAll(List<SalesMarginVO> list) {
-        // 1️⃣ 기존 데이터 전체 삭제
-        mapper.deleteAll();
+        if (list == null || list.isEmpty()) return 0;
 
-        // 2️⃣ 새 데이터 삽입
+        // ✅ list 첫 번째 데이터에서 vendorId 추출해서 넣어주면 OK
+        String vendorId = list.get(0).getVendorId();
+        mapper.deleteAll(vendorId);   
         int insertedCount = 0;
         for (SalesMarginVO vo : list) {
             insertedCount += mapper.insert(vo);
         }
-
-        // 3️⃣ 결과 반환
         return insertedCount;
     }
 
     @Override
-    public int delete(String saleProdId) {
-        return mapper.deleteSalesMargin(saleProdId);
+    public int delete(String vendorId, String saleProdId) {
+        return mapper.deleteSalesMargin(vendorId, saleProdId);
     }
 
     // ✅ POS 결제 등록

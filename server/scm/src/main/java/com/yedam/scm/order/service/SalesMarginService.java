@@ -16,13 +16,13 @@ public interface SalesMarginService {
     int saveAll(List<SalesMarginVO> list);
 
     // 전체 목록 조회
-    List<SalesMarginVO> getList();
+    List<SalesMarginVO> getList(String vendorId);
 
-    SalesMarginVO getById(String saleProdId);
+    SalesMarginVO getById(String vendorId, String saleProdId);
 
     
 
-    int delete(String saleProdId);
+    int delete(String vendorId, String saleProdId);
 
     //포스기 화면에서 결제등록
     void registerSale(SalesMasterVO vo);
