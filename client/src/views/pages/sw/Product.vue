@@ -68,7 +68,9 @@ const productDetail = reactive({
   safeStock: null, // 숫자 타입
   status: '',
   exp: '',
-  prodUnitPrice: null // 숫자 타입
+  prodUnitPrice: null, // 숫자 타입
+  convRate: null, // 숫자 타입
+  weightUnit: ''
 });
 
 const productForm = reactive({ ...productDetail });
@@ -141,7 +143,9 @@ const fetchProductDetail = async (id) => {
         safeStock: data.safeStock ? Number(data.safeStock) : null,
         status: data.status ?? data.STATUS ?? '',
         exp: data.exp ?? data.EXP ?? '',
-        prodUnitPrice: data.prodUnitPrice ? Number(data.prodUnitPrice) : null
+        prodUnitPrice: data.prodUnitPrice ? Number(data.prodUnitPrice) : null,
+        convRate: data.convRate ? Number(data.convRate) : null,
+        weightUnit: data.weightUnit ?? data.WEIGHT_UNIT ?? ''
       });
       Object.assign(productForm, productDetail);
       selectedProduct.value = data;
@@ -341,6 +345,14 @@ onMounted(() => fetchProductList());
                 <label><input type="radio" value="Y" v-model="productForm.status" /> 사용</label>
                 <label><input type="radio" value="N" v-model="productForm.status" /> 미사용</label>
               </div>
+            </div>
+            <div>
+              <label class="text-sm block mb-1">환산개수</label>
+              <InputNumber v-model="productForm.convRate" class="w-full h-10" placeholder="숫자만 입력" mode="decimal" :useGrouping="true" :minFractionDigits="0" />
+            </div>
+            <div>
+              <label class="text-sm block mb-1">무게 단위</label>
+              <InputText v-model="productForm.weightUnit" class="w-full h-10" placeholder="KG" />
             </div>
             <div>
               <label class="text-sm block mb-1">만료일</label>
