@@ -14,4 +14,5 @@ public class SalesMarginVO {
     private String posShowYn;       // POS 노출여부 (Y/N)
     private Date createDt;          // 등록일
     private Date updateDt;          // 수정일
+    private String vendorId;      // 판매처 코드
 }

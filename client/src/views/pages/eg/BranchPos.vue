@@ -34,7 +34,7 @@
               <div class="product-index">{{ index + 1 }}</div>
               <div class="product-name">{{ item.name }}</div>
               <div class="product-price">{{ item.price.toLocaleString() }}원</div>
-              <div class="product-stock">재고: {{ item.stock }}</div>
+  
             </template>
             <template v-else>
               <div class="empty-cell">—</div>
@@ -230,6 +230,7 @@ import DataTable from "primevue/datatable"
 import Column from "primevue/column"
 import { useUserStore } from "@/stores/user"
 
+
 /* =============================
  🇰🇷 공휴일 자동 생성 (양력 + 명절 하드코딩)
 ============================= */
@@ -300,12 +301,12 @@ const orderList = ref([])
 const paymentMethod = ref("")
 
 const fetchPosProducts = async () => {
-  const { data } = await axios.get("/api/sales/margin/list")
+  const { data } = await axios.get("/api/sales/margin/list", { params: { vendorId } })
   productList.value = data.sort((a, b) => a.sortNo - b.sortNo).map((p) => ({
     id: p.saleProdId,
     name: p.saleProdName,
     price: p.saleProdPrice,
-    stock: 999,
+    vendorId: vendorId,
     posShowYn: p.posShowYn,
   }))
 }
@@ -347,7 +348,7 @@ const handlePayment = async () => {
     })),
     salePayType: paymentMethod.value === "card" ? "CARD" : "CASH",
     saleTotalAmount: total.value,
-    vendorId,
+    vendorId:vendorId,
   }
   await axios.post("/api/sales/register", payload)
   alert("✅ 결제가 완료되었습니다!")

@@ -15,20 +15,20 @@ import org.apache.ibatis.annotations.Param;
 public interface SalesMarginMapper {
 
     // 등록
-    int deleteAll();
+    int deleteAll(@Param("vendorId") String vendorId);
     int insert(SalesMarginVO vo);
    
    
     // 전체 목록 조회
-    List<SalesMarginVO> selectSalesMarginList();
-
+    List<SalesMarginVO> selectSalesMarginList(@Param("vendorId") String vendorId);
     // 단건 조회 (제품코드 기준)
-    SalesMarginVO selectSalesMarginById(String saleProdId);
-
+    SalesMarginVO selectSalesMarginById(@Param("vendorId") String vendorId,
+                                    @Param("saleProdId") String saleProdId);
 
 
     // 삭제
-    int deleteSalesMargin(String saleProdId);
+    int deleteSalesMargin(@Param("vendorId") String vendorId,
+                       @Param("saleProdId") String saleProdId);
 
     // ✅ 매출등록 관련
     int insertSaleMaster(SalesMasterVO vo);
