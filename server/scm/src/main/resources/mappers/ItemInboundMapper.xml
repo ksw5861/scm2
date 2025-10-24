@@ -221,15 +221,46 @@
 
   <!-- ===================== 반품승인 ===================== -->
   <select id="selectReturnList" resultType="com.yedam.scm.vo.ReturnVO">
-    SELECT r.return_id,
-           r.return_date,
-           v.company_name,
-           r.return_status
-      FROM return r
-      LEFT JOIN vendor v ON r.vendor_id = v.vendor_id
-     WHERE r.return_status IN ('대기','처리중')
-     ORDER BY r.return_date DESC
-  </select>
+  SELECT r.return_id,
+         r.return_date,
+         v.company_name,
+         r.return_status
+    FROM return r
+    LEFT JOIN vendor v ON r.vendor_id = v.vendor_id
+   WHERE r.return_status IN ('대기','처리중')
+
+   <if test="returnId != null and returnId != ''">
+     AND r.return_id = #{returnId}
+   </if>
+
+   <if test="vendorName != null and vendorName != ''">
+     AND v.company_name LIKE '%' || #{vendorName} || '%'
+   </if>
+
+   <if test="prodName != null and prodName != ''">
+     AND EXISTS (
+       SELECT 1
+         FROM return_detail d
+         JOIN product p ON d.prod_id = p.prod_id
+        WHERE d.return_id = r.return_id
+          AND p.prod_name LIKE '%' || #{prodName} || '%'
+     )
+   </if>
+
+   <if test="fromDate != null">
+     <![CDATA[
+       AND r.return_date >= TRUNC(#{fromDate})
+     ]]>
+   </if>
+
+   <if test="toDate != null">
+     <![CDATA[
+       AND r.return_date < TRUNC(#{toDate}) + 1
+     ]]>
+   </if>
+
+   ORDER BY r.return_date DESC
+</select>
 
   <select id="selectReturnDetails" resultType="ReturnDetailVO">
     SELECT d.rdetail_id       AS rdetailId,
@@ -567,6 +598,7 @@
 
 
 <!-- ===================== 1) 반품일자 모달 (Oracle) ===================== -->
+
 <select id="searchByDate" resultType="com.yedam.scm.vo.ReturnVO">
   SELECT returnId, returnDate, vendorId
   FROM (
@@ -575,7 +607,7 @@
       r.return_date AS returnDate,
       r.vendor_id   AS vendorId,
       ROW_NUMBER() OVER (ORDER BY r.return_date DESC) AS rn
-    FROM sales_return r
+    FROM return r   <!-- ✅ 여기 수정 -->
     WHERE 1=1
       <if test="dto.startDate != null and dto.endDate != null">
         AND r.return_date <![CDATA[ >= ]]> TRUNC(#{dto.startDate})
@@ -585,6 +617,7 @@
   WHERE rn <![CDATA[ > ]]> #{paging.offset}
     AND rn <![CDATA[ <= ]]> #{paging.offset} + #{paging.size}
 </select>
+
 
 <select id="countByDate" resultType="int">
   SELECT COUNT(*)
@@ -633,7 +666,7 @@
       r.return_id   AS returnId,
       r.return_date AS returnDate,
       ROW_NUMBER() OVER (ORDER BY r.return_date DESC) AS rn
-    FROM sales_return r
+    FROM return  r
     WHERE 1=1
       <if test="condition != null and condition != ''">
         AND LOWER(r.return_id) LIKE '%' || LOWER(#{condition}) || '%'
@@ -645,7 +678,7 @@
 
 <select id="countByCode" resultType="int">
   SELECT COUNT(*)
-  FROM sales_return r
+  FROM return r
   WHERE 1=1
     <if test="condition != null and condition != ''">
       AND LOWER(r.return_id) LIKE '%' || LOWER(#{condition}) || '%'
