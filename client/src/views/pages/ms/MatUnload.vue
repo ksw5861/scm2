@@ -54,7 +54,6 @@ const openRetrunModal = () => {
   toast('info', '반품 등록', '반품등록시 전량 반품처리됩니다.', '5000');
 
   returnModal.value = true;
-
 };
 
 const closeReturnModal = () => {
@@ -114,13 +113,13 @@ const detailInfo = async () => {
 };
 
 const approve = async () => {
-    if (!selectedRows.value || !selectedRows.value.id) {
+  if (!selectedRows.value || !selectedRows.value.id) {
     toast('warn', '선택 필요', '하차승인할 출고건을 선택해주세요.', '3000');
     return;
-    }
-    if (!confirm('하차 승인을 하시겠습니까?')) {
+  }
+  if (!confirm('하차 승인을 하시겠습니까?')) {
     return;
-    }
+  }
   try {
     await axios.post('/api/mapproveUnload', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName } });
     toast('success', '승인 성공', '하차승인 되었습니다.:', '3000');
@@ -133,15 +132,14 @@ const approve = async () => {
 };
 
 const returnSubmit = async () => {
-
-    if (!returnMemo.value) {
+  if (!returnMemo.value) {
     toast('warn', '사유 입력', '반송 사유를 입력해주세요.', '3000');
     return;
-    }
+  }
 
-    if (!confirm('반송 등록하시겠습니까?')) {
+  if (!confirm('반송 등록하시겠습니까?')) {
     return;
-    }
+  }
   //사유, 담당자, 하차등록시 해당 마스터와 디테일 모두 상태값 변경하고 기록해줘야함. [입고마스터 + 디테일 + 상태변경로그] + @ 발주상태값 반품으로도 가능??/??
   try {
     await axios.post('/api/munloadReturn', null, { params: { inboundId: selectedRows.value.id, unloadEmp: empName, rejMemo: returnMemo.value } });
@@ -162,7 +160,7 @@ const openShipmentReport = () => {
   }
 
   const inboundId = selectedRows.value.id;
-  window.open(`/api/mat/shipment/${inboundId}`, '_blank');
+  window.open(`/api/mshipment/${inboundId}`, '_blank');
 };
 
 const onPage = (event) => {
@@ -256,8 +254,8 @@ const shipDetailColumn = [
           <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-m">상세정보</div>
             <div class="flex gap-2">
-              <btn color="warn" icon="cancel" label="반송" @click="openRetrunModal" class="whitespace-nowrap" outlined/>
-              <btn color="info" icon="check" label="승인" @click="approve" class="whitespace-nowrap" outlined/>
+              <btn color="warn" icon="cancel" label="반송" @click="openRetrunModal" class="whitespace-nowrap" outlined />
+              <btn color="info" icon="check" label="승인" @click="approve" class="whitespace-nowrap" outlined />
             </div>
           </div>
           <Divider />
@@ -272,8 +270,8 @@ const shipDetailColumn = [
       <Textarea v-model="returnMemo" rows="5" cols="100" />
     </div>
     <div class="flex justify-center gap-2">
-      <btn color="warn" icon="cancel" label="닫기" @click="closeReturnModal" class="whitespace-nowrap" outlined/>
-      <btn color="info" icon="check" label="등록" @click="returnSubmit" class="whitespace-nowrap" outlined/>
+      <btn color="warn" icon="cancel" label="닫기" @click="closeReturnModal" class="whitespace-nowrap" outlined />
+      <btn color="info" icon="check" label="등록" @click="returnSubmit" class="whitespace-nowrap" outlined />
     </div>
   </Dialog>
 </template>

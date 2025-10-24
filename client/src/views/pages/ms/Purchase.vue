@@ -42,9 +42,9 @@ const mrpList = ref([
   { matId: '', matName: '', mrpQty: '', unit: '', leadTime: '' }
 ]);
 const purchaseList = ref([
-  { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
-//   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
-//   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
+  { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
+  //   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
+  //   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
 ]);
 const warehouseOptions = ref([]); //창고옵션
 const codeMap = ref({}); //공통코드용(생산유형)
@@ -179,9 +179,9 @@ const addToPurchase = (row) => {
   //동일한 자재가 이미 있으면 추가하지 않음
   const exists = purchaseList.value.some((r) => r.matId === newRow.matId);
   if (exists) {
-       toast('info', '중복 항목', '이미 자재 주문 목록에 있는 자재입니다.', '3000');
-       return;
-    }
+    toast('info', '중복 항목', '이미 자재 주문 목록에 있는 자재입니다.', '3000');
+    return;
+  }
 
   if (emptyRowIndex !== -1) {
     // 빈행 있으면 교체
@@ -214,11 +214,11 @@ const selectWarehouseOpt = (row, value) => {
 
 //주문등록
 const reqSubmit = async () => {
-    //유효성 검사: 필수 입력값 확인
-    if (purchaseList.value.some(row => !row.matId || !row.reqQty || !row.vendorId || !row.dueDate || !row.toWarehouse)) {
-        toast('warn', '유효성 검사', '모든 자재 주문 항목에 필수값을 모두 입력해주세요.', '3000');
-        return;
-    }
+  //유효성 검사: 필수 입력값 확인
+  if (purchaseList.value.some((row) => !row.matId || !row.reqQty || !row.vendorId || !row.dueDate || !row.toWarehouse)) {
+    toast('warn', '유효성 검사', '모든 자재 주문 항목에 필수값을 모두 입력해주세요.', '3000');
+    return;
+  }
   const reqList = purchaseList.value.map((row) => ({
     mrpDetId: row.id,
     matId: row.matId,
@@ -236,8 +236,8 @@ const reqSubmit = async () => {
     toast('info', '등록 성공', '자재주문 등록 성공', '5000');
     await pageLoadMrp();
     purchaseList.value = [
-    //   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
-    //   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
+      //   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
+      //   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
       { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
     ];
   } catch (error) {
@@ -362,7 +362,7 @@ const purchaseColumns = [
       <div class="header">
         <div class="card flex flex-col gap-4">
           <div class="flex items-center justify-between font-semibold text-m">
-            <span>MRP 산출 및 자재 발주</span>
+            <span>자재 발주</span>
             <btn color="secondary" icon="check" label="자재주문" @click="reqSubmit" class="whitespace-nowrap" outlined />
           </div>
           <Divider />

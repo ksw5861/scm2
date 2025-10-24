@@ -21,6 +21,9 @@ public class ProductVO {
     private Date createdAt;           // 등록날짜
     private Date bomLastUpdate;       // 마지막수정날짜
 
+    private int convRate;             //
+    private String weightUnit;        // 무게 단위
+
     
 
     // ✅ PROD_UNIT_PRICE 컬럼 사용
