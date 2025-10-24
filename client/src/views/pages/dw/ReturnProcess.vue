@@ -1,3 +1,6 @@
+<!-- ======================================================
+📄 ReturnApproval.vue (완전체)
+====================================================== -->
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
@@ -13,22 +16,16 @@ import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
 
 /* ------------------ 상태 ------------------ */
-// 검색폼
 const search = ref({ prodId: '', prodName: '', vendorName: '', fromDate: null, toDate: null, returnId: '' });
-
-// 목록/상세
 const returnList = ref([]);
 const selectedReturns = ref([]);
 const detailRows = ref([]);
 const selectedDetailRows = ref([]);
 const currentReturnId = ref(null);
-
-// 반려 모달
 const rejectDialog = ref(false);
 const rejectReason = ref('');
 
 /* ------------------ 모달 상태 ------------------ */
-// 판매처 모달
 const vendorDialog = ref(false);
 const vendorKeyword = ref('');
 const vendorList = ref([]);
@@ -36,7 +33,6 @@ const vendorPage = ref(1);
 const vendorRows = ref(10);
 const vendorTotal = ref(0);
 
-// 반품코드 모달
 const returnDialog = ref(false);
 const returnKeyword = ref('');
 const returnListModal = ref([]);
@@ -103,40 +99,25 @@ function resetSearch() {
   applySearch();
 }
 
-/* ------------------ 선택 변경 ------------------ */
-async function onReturnSelectionChange(e) {
-  const arr = Array.isArray(e?.value) ? e.value : [];
-  if (!arr.length) {
+/* ✅ 체크박스 + 행 클릭 */
+function toggleReturnRow(row) {
+  if (selectedReturns.value.length && selectedReturns.value[0].returnId === row.returnId) {
     selectedReturns.value = [];
-    await loadDetails(null);
+    loadDetails(null);
     return;
   }
-  const last = arr[arr.length - 1];
-  selectedReturns.value = [last];
-  await loadDetails(last);
-}
-
-/* ------------------ 행 클릭 ------------------ */
-async function onReturnRowClick(e) {
-  const row = e.data;
   selectedReturns.value = [row];
-  await loadDetails(row);
+  loadDetails(row);
 }
-
-/* ------------------ 상세 체크박스 ------------------ */
 function toggleDetailSelection(row) {
   const idx = selectedDetailRows.value.findIndex((r) => r.rdetailId === row.rdetailId);
   if (idx >= 0) selectedDetailRows.value.splice(idx, 1);
   else selectedDetailRows.value.push(row);
-  return selectedDetailRows.value;
 }
 
-/* ------------------ 승인 ------------------ */
+/* ------------------ 승인/반려 ------------------ */
 async function approveSelected() {
-  if (!selectedDetailRows.value.length) {
-    alert('승인할 상세를 선택하세요');
-    return;
-  }
+  if (!selectedDetailRows.value.length) return alert('승인할 상세를 선택하세요');
   const ids = selectedDetailRows.value.map((r) => r.rdetailId);
   const res = await axios.post('/api/return/approve', { ids });
   if (res?.status === 200 && res.data.retCode === 'success') {
@@ -144,21 +125,13 @@ async function approveSelected() {
     await applySearch();
   } else alert('승인 실패');
 }
-
-/* ------------------ 반려 ------------------ */
 function openRejectDialog() {
-  if (!selectedDetailRows.value.length) {
-    alert('반려할 상세를 선택하세요');
-    return;
-  }
+  if (!selectedDetailRows.value.length) return alert('반려할 상세를 선택하세요');
   rejectReason.value = '';
   rejectDialog.value = true;
 }
 async function confirmReject() {
-  if (!rejectReason.value.trim()) {
-    alert('반려 사유를 입력하세요');
-    return;
-  }
+  if (!rejectReason.value.trim()) return alert('반려 사유를 입력하세요');
   const ids = selectedDetailRows.value.map((r) => r.rdetailId);
   const res = await axios.post('/api/return/reject', { ids, reason: rejectReason.value });
   if (res?.status === 200 && res.data.retCode === 'success') {
@@ -169,7 +142,6 @@ async function confirmReject() {
 }
 
 /* ------------------ 모달 ------------------ */
-// 판매처 모달
 async function openVendorModal() {
   vendorDialog.value = true;
   vendorPage.value = 1;
@@ -194,7 +166,6 @@ function selectVendor(e) {
   vendorDialog.value = false;
 }
 
-// 반품코드 모달
 async function openReturnModal() {
   returnDialog.value = true;
   returnPage.value = 1;
@@ -229,7 +200,6 @@ onMounted(() => applySearch());
     <div class="box">
       <div class="box-title">반품 검색</div>
       <div class="form-grid-4">
-        <!-- 반품일자 -->
         <div class="field">
           <label>반품 일자</label>
           <div class="flex gap-2">
@@ -238,25 +208,22 @@ onMounted(() => applySearch());
           </div>
         </div>
 
-       
-        <!-- 판매처명 -->
         <div class="field">
           <label>판매처명</label>
           <InputGroup>
             <InputText v-model="search.vendorName" placeholder="판매처명" readonly @click="openVendorModal" />
             <InputGroupAddon>
-              <Button icon="pi pi-search" class="p-button-text p-button-plain" @click="openVendorModal" />
+              <Button icon="pi pi-search" class="p-button-text p-button-plain" @click.stop="openVendorModal" />
             </InputGroupAddon>
           </InputGroup>
         </div>
 
-        <!-- 반품코드 -->
         <div class="field">
           <label>반품코드</label>
           <InputGroup>
             <InputText v-model="search.returnId" placeholder="반품코드" readonly @click="openReturnModal" />
             <InputGroupAddon>
-              <Button icon="pi pi-search" class="p-button-text p-button-plain" @click="openReturnModal" />
+              <Button icon="pi pi-search" class="p-button-text p-button-plain" @click.stop="openReturnModal" />
             </InputGroupAddon>
           </InputGroup>
         </div>
@@ -269,19 +236,23 @@ onMounted(() => applySearch());
 
     <!-- 목록 + 상세 -->
     <div class="split">
+      <!-- 목록 -->
       <div class="list-box">
         <div class="sub-title">반품 목록</div>
-        <DataTable
-          :value="returnList"
-          dataKey="returnId"
-          v-model:selection="selectedReturns"
-          :metaKeySelection="false"
-          @selection-change="onReturnSelectionChange"
-          @row-click="onReturnRowClick"
-          paginator
-          :rows="10"
-        >
-          <Column selectionMode="multiple" :headerCheckbox="false" />
+        <DataTable :value="returnList" dataKey="returnId" paginator :rows="10" @row-click="(e) => toggleReturnRow(e.data)">
+          <Column headerStyle="width:3rem; text-align:center;">
+            <template #body="{ data }">
+              <div class="p-checkbox p-component custom-checkbox">
+                <input
+                  type="checkbox"
+                  class="p-checkbox-box"
+                  :checked="selectedReturns.some(r => r.returnId === data.returnId)"
+                  @change="() => toggleReturnRow(data)"
+                />
+              </div>
+            </template>
+          </Column>
+
           <Column field="returnDate" header="반품일자" :body="(r) => fmtDate(r.returnDate)" />
           <Column field="companyName" header="판매처명" />
           <Column field="returnId" header="반품코드" />
@@ -289,6 +260,7 @@ onMounted(() => applySearch());
         </DataTable>
       </div>
 
+      <!-- 상세 -->
       <div class="detail-box">
         <div class="detail-head">
           <div class="detail-title">반품 상세</div>
@@ -309,7 +281,6 @@ onMounted(() => applySearch());
         >
           <Column selectionMode="multiple" :headerCheckbox="false" />
           <Column field="prodId" header="제품코드" />
-          
           <Column field="companyName" header="판매처명" />
           <Column field="returnQty" header="수량" />
           <Column field="prodUnitPrice" header="단가">
@@ -336,7 +307,7 @@ onMounted(() => applySearch());
     <Dialog v-model:visible="vendorDialog" header="판매처 검색" modal closable :style="{ width: '600px' }">
       <div class="p-inputgroup mb-3">
         <InputText v-model="vendorKeyword" placeholder="판매처명 검색" @keyup.enter="loadVendorList" />
-        <Button icon="pi pi-search" @click="loadVendorList" />
+        <Button icon="pi pi-search" @click.stop="loadVendorList" />
       </div>
       <DataTable
         :value="vendorList"
@@ -356,7 +327,7 @@ onMounted(() => applySearch());
     <Dialog v-model:visible="returnDialog" header="반품코드 검색" modal closable :style="{ width: '600px' }">
       <div class="p-inputgroup mb-3">
         <InputText v-model="returnKeyword" placeholder="반품코드 검색" @keyup.enter="loadReturnList" />
-        <Button icon="pi pi-search" @click="loadReturnList" />
+        <Button icon="pi pi-search" @click.stop="loadReturnList" />
       </div>
       <DataTable
         :value="returnListModal"
@@ -444,10 +415,42 @@ onMounted(() => applySearch());
   display: flex;
   gap: 8px;
 }
-:deep(.list-box .p-datatable-tbody > tr:hover),
-:deep(.detail-box .p-datatable-tbody > tr:hover) {
+:deep(.p-datatable-tbody > tr:hover) {
   background: #f9fafb;
   cursor: pointer;
   transition: background 120ms ease-in-out;
+}
+
+/* ✅ 초록 체크박스 스타일 */
+:deep(.custom-checkbox) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+:deep(.custom-checkbox .p-checkbox-box) {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  appearance: none;
+  outline: none;
+}
+:deep(.custom-checkbox .p-checkbox-box:checked) {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+:deep(.custom-checkbox .p-checkbox-box:checked::after) {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  top: 2px;
+  left: 6px;
 }
 </style>

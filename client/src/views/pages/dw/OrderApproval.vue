@@ -1,3 +1,6 @@
+<!-- ======================================================
+📄 주문승인.vue (모달 포함 완전체)
+====================================================== -->
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
@@ -10,7 +13,7 @@ import Column from 'primevue/column';
 import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
 
-/* 상태 */
+/* ------------------ 상태 ------------------ */
 const search = ref({ fromDate: null, toDate: null, vendorId: '', orderId: '' });
 const orderList = ref([]);
 const selectedOrders = ref([]);
@@ -18,41 +21,33 @@ const detailRows = ref([]);
 const selectedDetailRows = ref([]);
 const currentOrderId = ref(null);
 
-/* 반려 모달 */
+/* ------------------ 반려 모달 ------------------ */
 const rejectDialog = ref(false);
 const rejectReason = ref('');
 
-/* 판매처 모달 */
+/* ------------------ 판매처 모달 ------------------ */
 const vendorDialog = ref(false);
 const vendorKeyword = ref('');
 const vendorList = ref([]);
-const selectedVendor = ref(null);
 const vendorPage = ref(1);
 const vendorRows = ref(10);
 const vendorTotal = ref(0);
 
-/* 주문번호 모달 */
+/* ------------------ 주문번호 모달 ------------------ */
 const orderDialog = ref(false);
 const orderKeyword = ref('');
 const orderListModal = ref([]);
-const selectedOrderModal = ref(null);
 const orderPage = ref(1);
 const orderRows = ref(10);
 const orderTotal = ref(0);
 
-/* 유틸 */
+/* ------------------ 유틸 ------------------ */
 function fmtDate(value) {
   if (!value) return '';
   const date = new Date(value);
   if (isNaN(date.getTime())) return '';
-
-  // ✅ UTC → 로컬 보정 (하루 밀림 방지)
   const local = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-
-  const y = local.getFullYear();
-  const m = String(local.getMonth() + 1).padStart(2, '0');
-  const d = String(local.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  return `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, '0')}-${String(local.getDate()).padStart(2, '0')}`;
 }
 function toNumber(n) {
   if (n === null || n === undefined) return 0;
@@ -66,15 +61,11 @@ function fmtCurrency(n) {
   return new Intl.NumberFormat('ko-KR', { maximumFractionDigits: 0 }).format(num) + '원';
 }
 
-/* 판매처 모달 */
+/* ------------------ 판매처 모달 ------------------ */
 async function loadVendorList() {
   try {
     const { data } = await axios.get('/api/approval-modal/vendor', {
-      params: {
-        condition: vendorKeyword.value,
-        page: vendorPage.value,
-        size: vendorRows.value
-      }
+      params: { condition: vendorKeyword.value, page: vendorPage.value, size: vendorRows.value }
     });
     vendorList.value = data.items ?? data.data ?? [];
     vendorTotal.value = data.totalCount ?? 0;
@@ -82,7 +73,6 @@ async function loadVendorList() {
     vendorList.value = [];
   }
 }
-
 async function openVendorModal() {
   vendorDialog.value = true;
   vendorPage.value = 1;
@@ -95,20 +85,16 @@ function onVendorPageChange(e) {
 }
 function selectVendor(e) {
   const v = e.data;
-  search.value.vendorName = v.companyName; // 판매처명 표시용
-  search.value.vendorId = v.vendorId; // ✅ 검색용 id
+  search.value.vendorName = v.companyName;
+  search.value.vendorId = v.vendorId;
   vendorDialog.value = false;
 }
 
-/* 주문번호 모달 */
+/* ------------------ 주문번호 모달 ------------------ */
 async function loadOrderList() {
   try {
     const { data } = await axios.get('/api/approval-modal/order', {
-      params: {
-        condition: orderKeyword.value,
-        page: orderPage.value,
-        size: orderRows.value
-      }
+      params: { condition: orderKeyword.value, page: orderPage.value, size: orderRows.value }
     });
     orderListModal.value = data.items ?? data.data ?? [];
     orderTotal.value = data.totalCount ?? 0;
@@ -116,7 +102,6 @@ async function loadOrderList() {
     orderListModal.value = [];
   }
 }
-
 async function openOrderModal() {
   orderDialog.value = true;
   orderPage.value = 1;
@@ -133,7 +118,7 @@ function selectOrder(e) {
   orderDialog.value = false;
 }
 
-/* 상세 로딩 */
+/* ------------------ 상세 로딩 ------------------ */
 async function loadDetails(row) {
   if (!row) {
     detailRows.value = [];
@@ -158,13 +143,13 @@ async function loadDetails(row) {
   currentOrderId.value = row.orderId;
 }
 
-/* 목록 조회 */
+/* ------------------ 목록 조회 ------------------ */
 async function applySearch() {
   const params = {
     startDate: search.value.fromDate ? fmtDate(search.value.fromDate) : '',
     endDate: search.value.toDate ? fmtDate(search.value.toDate) : '',
     vendorId: search.value.vendorId || '',
-    orderId: search.value.orderId || '' // ✅ 추가됨 (주문번호 필터용)
+    orderId: search.value.orderId || ''
   };
   try {
     const { data } = await axios.get('/api/approval-list', { params });
@@ -181,75 +166,43 @@ function resetSearch() {
   search.value = { fromDate: null, toDate: null, vendorId: '', vendorName: '', orderId: '' };
   applySearch();
 }
-/* 선택 변경 */
-async function onOrderSelectionChange(e) {
-  const arr = Array.isArray(e?.value) ? e.value : [];
-  if (!arr.length) {
+
+/* ------------------ 체크박스 단일 선택 ------------------ */
+function toggleSingleSelect(row) {
+  if (selectedOrders.value.length && selectedOrders.value[0].orderId === row.orderId) {
     selectedOrders.value = [];
-    await loadDetails(null);
+    loadDetails(null);
     return;
   }
-  const last = arr[arr.length - 1];
-  selectedOrders.value = [last];
-  await loadDetails(last);
-}
-
-/* 행 클릭 */
-async function onOrderRowClick(e) {
-  const row = e.data;
   selectedOrders.value = [row];
-  await loadDetails(row);
+  loadDetails(row);
 }
 
-/* 상세 체크박스 */
-function toggleDetailSelection(row) {
-  const idx = selectedDetailRows.value.findIndex((r) => r.odetailId === row.odetailId);
-  if (idx >= 0) selectedDetailRows.value.splice(idx, 1);
-  else selectedDetailRows.value.push(row);
-  return selectedDetailRows.value;
-}
-
-/* 승인 */
+/* ------------------ 승인 / 반려 ------------------ */
 async function approveSelected() {
-  if (!selectedDetailRows.value.length) {
-    alert('승인할 상세를 선택하세요');
-    return;
-  }
+  if (!selectedDetailRows.value.length) return alert('승인할 상세를 선택하세요');
   const odetailIds = selectedDetailRows.value.map((r) => r.odetailId);
   const res = await axios.post('/api/approval/approve', { odetailIds });
   if (res?.status === 200 && res.data.retCode === 'success') {
     alert('승인 완료');
     await applySearch();
-  } else {
-    alert('승인 실패');
-  }
+  } else alert('승인 실패');
 }
-
-/* 반려 */
 function openRejectDialog() {
-  if (!selectedDetailRows.value.length) {
-    alert('반려할 상세를 선택하세요');
-    return;
-  }
+  if (!selectedDetailRows.value.length) return alert('반려할 상세를 선택하세요');
   rejectReason.value = '';
   rejectDialog.value = true;
 }
 async function confirmReject() {
-  if (!rejectReason.value.trim()) {
-    alert('반려 사유를 입력하세요');
-    return;
-  }
+  if (!rejectReason.value.trim()) return alert('반려 사유를 입력하세요');
   const odetailIds = selectedDetailRows.value.map((r) => r.odetailId);
   const res = await axios.post('/api/approval/reject', { odetailIds, reason: rejectReason.value });
   if (res?.status === 200 && res.data.retCode === 'success') {
     alert('반려 완료');
     rejectDialog.value = false;
     await applySearch();
-  } else {
-    alert('반려 실패');
-  }
+  } else alert('반려 실패');
 }
-
 onMounted(() => applySearch());
 </script>
 
@@ -269,8 +222,6 @@ onMounted(() => applySearch());
             <Calendar v-model="search.toDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
           </div>
         </div>
-
-        <!-- 판매처명 -->
         <div class="field">
           <label>판매처명</label>
           <InputGroup>
@@ -278,8 +229,6 @@ onMounted(() => applySearch());
             <Button icon="pi pi-search" @click.stop="openVendorModal" />
           </InputGroup>
         </div>
-
-        <!-- 주문번호 -->
         <div class="field">
           <label>주문번호</label>
           <InputGroup>
@@ -298,8 +247,19 @@ onMounted(() => applySearch());
       <!-- 목록 -->
       <div class="list-box">
         <div class="sub-title">승인 대기 주문 목록</div>
-        <DataTable :value="orderList" dataKey="orderId" v-model:selection="selectedOrders" :metaKeySelection="false" @selection-change="onOrderSelectionChange" @row-click="onOrderRowClick" paginator :rows="10">
-          <Column selectionMode="multiple" />
+        <DataTable :value="orderList" dataKey="orderId" paginator :rows="10" @row-click="(e) => toggleSingleSelect(e.data)">
+          <Column headerStyle="width:3rem; text-align:center;">
+            <template #body="{ data }">
+              <div class="p-checkbox p-component custom-checkbox">
+                <input
+                  type="checkbox"
+                  class="p-checkbox-box"
+                  :checked="selectedOrders.some(o => o.orderId === data.orderId)"
+                  @change="() => toggleSingleSelect(data)"
+                />
+              </div>
+            </template>
+          </Column>
           <Column field="orderDate" header="주문 일자" :body="(r) => fmtDate(r.orderDate)" />
           <Column field="companyName" header="판매처명" />
           <Column field="orderId" header="주문번호" />
@@ -316,7 +276,16 @@ onMounted(() => applySearch());
             <Button label="부분 반려" icon="pi pi-times" class="p-button-danger" @click="openRejectDialog" :disabled="!selectedDetailRows.length" />
           </div>
         </div>
-        <DataTable :value="detailRows" dataKey="odetailId" v-model:selection="selectedDetailRows" selectionMode="multiple" :metaKeySelection="false" @row-click="toggleDetailSelection($event.data)" paginator :rows="10">
+        <DataTable
+          :value="detailRows"
+          dataKey="odetailId"
+          v-model:selection="selectedDetailRows"
+          selectionMode="multiple"
+          :metaKeySelection="false"
+          @row-click="toggleDetailSelection($event.data)"
+          paginator
+          :rows="10"
+        >
           <Column selectionMode="multiple" />
           <Column field="prodId" header="제품 번호" />
           <Column field="prodName" header="제품명" />
@@ -347,9 +316,18 @@ onMounted(() => applySearch());
     <Dialog v-model:visible="vendorDialog" header="판매처 검색" modal closable :style="{ width: '600px' }">
       <div class="p-inputgroup mb-3">
         <InputText v-model="vendorKeyword" placeholder="판매처명 검색" @keyup.enter="loadVendorList" />
-        <Button icon="pi pi-search" @click="() => loadVendorList()" />
+        <Button icon="pi pi-search" @click.stop="loadVendorList" />
       </div>
-      <DataTable :value="vendorList" dataKey="companyName" selectionMode="single" v-model:selection="selectedVendor" @row-dblclick="selectVendor" paginator :rows="vendorRows" :totalRecords="vendorTotal" @page="onVendorPageChange">
+      <DataTable
+        :value="vendorList"
+        dataKey="vendorId"
+        selectionMode="single"
+        @row-dblclick="selectVendor"
+        paginator
+        :rows="vendorRows"
+        :totalRecords="vendorTotal"
+        @page="onVendorPageChange"
+      >
         <Column field="companyName" header="판매처명" />
       </DataTable>
     </Dialog>
@@ -358,9 +336,18 @@ onMounted(() => applySearch());
     <Dialog v-model:visible="orderDialog" header="주문번호 검색" modal closable :style="{ width: '600px' }">
       <div class="p-inputgroup mb-3">
         <InputText v-model="orderKeyword" placeholder="주문번호 검색" @keyup.enter="loadOrderList" />
-        <Button icon="pi pi-search" @click="() => loadOrderList()" />
+        <Button icon="pi pi-search" @click.stop="loadOrderList" />
       </div>
-      <DataTable :value="orderListModal" dataKey="orderId" selectionMode="single" v-model:selection="selectedOrderModal" @row-dblclick="selectOrder" paginator :rows="orderRows" :totalRecords="orderTotal" @page="onOrderPageChange">
+      <DataTable
+        :value="orderListModal"
+        dataKey="orderId"
+        selectionMode="single"
+        @row-dblclick="selectOrder"
+        paginator
+        :rows="orderRows"
+        :totalRecords="orderTotal"
+        @page="onOrderPageChange"
+      >
         <Column field="orderId" header="주문번호" />
       </DataTable>
     </Dialog>
@@ -442,5 +429,38 @@ onMounted(() => applySearch());
   background: #f9fafb;
   cursor: pointer;
   transition: background 120ms ease-in-out;
+}
+
+/* ✅ 상세와 동일한 초록 체크박스 */
+:deep(.custom-checkbox) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+:deep(.custom-checkbox .p-checkbox-box) {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  appearance: none;
+  outline: none;
+}
+:deep(.custom-checkbox .p-checkbox-box:checked) {
+  background: #16a34a; /* ✅ 상세와 동일 (green-600) */
+  border-color: #16a34a;
+}
+:deep(.custom-checkbox .p-checkbox-box:checked::after) {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 9px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  top: 2px;
+  left: 6px;
 }
 </style>
