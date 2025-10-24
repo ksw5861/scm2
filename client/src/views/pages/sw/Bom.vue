@@ -22,7 +22,6 @@ import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
 import TabView from 'primevue/tabview';
 import TabPanel from 'primevue/tabpanel';
-
 import btn from '@/components/common/Btn.vue';
 
 /* ===========================
@@ -42,36 +41,6 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-/* 날짜 유틸 */
-const formatDateOnly = (date) => {
-  if (!date) return '';
-  const d = new Date(date);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${dd}`;
-};
-const formatDateTime = (date) => {
-  if (!date) return '';
-  const d = new Date(date);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${y}-${m}-${dd} ${hh}:${mm}:${ss}`;
-};
-
-/* ===========================
-   좌측: 제품 목록
-=========================== */
-const suggestions = ref([]);
-const searchFilters = ref({ prodName: '', prodId: '' });
-const prodList = ref([]);
-const selectedProd = ref(null);
-const loading = ref(false);
-
 const searchProdSuggestions = async (event) => {
   const keyword = (typeof event === 'string' ? event : event.query)?.trim();
   if (!keyword) {
@@ -79,12 +48,24 @@ const searchProdSuggestions = async (event) => {
     return;
   }
   try {
-    const { data } = await axios.get(`/api/product/autocomplete?keyword=${keyword}`);
+    const { data } = await axios.get(`http://localhost:8080/api/product/autocomplete?keyword=${keyword}`);
     suggestions.value = Array.isArray(data) ? data : [];
   } catch {
     suggestions.value = [];
   }
 };
+
+/* 날짜 포맷 */
+const fmt = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
+
+/* ===========================
+   좌측: 제품 목록
+=========================== */
+const searchFilters = ref({ prodName: '' });
+const prodList = ref([]);
+const selectedProd = ref(null);
+const loading = ref(false);
+const suggestions = ref([]);
 
 const fetchProdList = async () => {
   loading.value = true;
@@ -92,183 +73,220 @@ const fetchProdList = async () => {
     const res = await axios.get('/api/product', { params: searchFilters.value });
     prodList.value = Array.isArray(res.data) ? res.data : [];
   } catch {
-    toast('error', '조회 실패', '제품 정보를 가져오지 못했습니다.');
-    prodList.value = [];
+    toast('error', '조회 실패', '제품 조회 중 오류 발생');
   } finally {
     loading.value = false;
   }
 };
 
-const form = ref({ prodId: '', prodName: '', unit: '', spec: '', createdAt: '', lastUpdateDate: '' });
-
 const selectProduct = async (prod) => {
-  selectedProd.value = prod || null;
-  form.value = selectedProd.value
-    ? {
-        prodId: prod.prodId,
-        prodName: prod.prodName,
-        unit: prod.unit,
-        spec: prod.spec,
-        createdAt: prod.createdAt,
-        lastUpdateDate: ''
-      }
-    : { prodId: '', prodName: '', unit: '', spec: '', createdAt: '', lastUpdateDate: '' };
-
-  if (selectedProd.value) await fetchBomList(selectedProd.value.prodId);
-  else {
-    bomList.value = [];
-    form.value.lastUpdateDate = '';
-  }
-};
-
-const resetSearch = () => {
-  searchFilters.value = { prodName: '', prodId: '' };
-  fetchProdList();
-  selectedProd.value = null;
-  form.value = { prodId: '', prodName: '', unit: '', spec: '', createdAt: '', lastUpdateDate: '' };
-  bomList.value = [];
+  selectedProd.value = prod;
+  form.value = {
+    prodId: prod.prodId,
+    prodName: prod.prodName,
+    unit: prod.unit,
+    spec: prod.spec,
+    createdAt: fmt(prod.createdAt),
+    lastUpdateDate: ''
+  };
+  await fetchBomList(prod.prodId);
 };
 
 /* ===========================
-   우측 탭 제어
+   우측 탭
 =========================== */
 const activeTabIndex = ref(0);
 
 /* ===========================
-   BOM 리스트
+   BOM 목록
 =========================== */
 const bomList = ref([]);
 const fetchBomList = async (prodId) => {
   if (!prodId) return;
-  loading.value = true;
   try {
     const { data } = await axios.get(`/api/bom/${prodId}`);
-    const list = Array.isArray(data) ? data : [];
-    let latestDate = null;
-    list.forEach((b) => {
-      b.effectiveDate = b.effectiveDate ? new Date(b.effectiveDate) : null;
-      b.expireDate = b.expireDate ? new Date(b.expireDate) : null;
-      if (!b.material) b.material = { matName: '', unit: '', matId: b.matId || '' };
-      if (!b.matId && b.material?.matId) b.matId = b.material.matId;
-      if (b.lastUpdateDate) {
-        const d = new Date(b.lastUpdateDate);
-        if (!latestDate || d > latestDate) latestDate = d;
-      }
-    });
-    form.value.lastUpdateDate = latestDate ? formatDateTime(latestDate) : '';
-    bomList.value = list;
+    bomList.value = Array.isArray(data) ? data : [];
   } catch {
-    toast('error', '조회 실패', 'BOM 목록을 불러올 수 없습니다.');
-    bomList.value = [];
-  } finally {
-    loading.value = false;
+    toast('error', 'BOM 조회 실패');
   }
 };
 
-/* ===========================
-   BOM 삭제
-=========================== */
+/* 삭제 */
 const deleteBom = async (bomId) => {
   if (!confirm('정말 삭제하시겠습니까?')) return;
   try {
-    const res = await axios.delete(`/api/bom/${bomId}`);
-    if (res.data > 0) {
-      toast('success', '삭제 완료', 'BOM이 삭제되었습니다.');
-      await fetchBomList(selectedProd.value?.prodId);
-    } else {
-      toast('warn', '삭제 실패', '삭제된 행이 없습니다.');
-    }
+    await axios.delete(`/api/bom/${bomId}`);
+    toast('success', '삭제 완료');
+    bomList.value = bomList.value.filter((b) => b.bomId !== bomId);
   } catch {
-    toast('error', '삭제 실패', 'BOM 삭제 중 오류 발생');
+    toast('error', '삭제 실패');
   }
+};
+
+const resetSearch = async () => {
+  // 검색 조건 초기화
+  searchFilters.value.prodName = '';
+
+  // 선택된 제품 및 목록 초기화
+  selectedProd.value = null;
+  prodList.value = [];
+
+  // 제품 상세 폼 초기화
+  Object.assign(form.value, {
+    prodId: '',
+    prodName: '',
+    unit: '',
+    spec: '',
+    createdAt: '',
+    lastUpdateDate: ''
+  });
+
+  // BOM 목록 초기화
+  bomList.value = [];
+
+  // 다시 전체 제품 목록 조회
+  await fetchProdList();
 };
 
 /* ===========================
-   자재선택 모달
+   BOM 수정 모달
 =========================== */
-const materialList = ref([]);
-const materialDialogVisible = ref(false);
-const selectedRowDetail = ref(null);
+const editDialogVisible = ref(false);
+const editHeader = ref({ bomId: '', effectiveDate: new Date(), expireDate: new Date('9999-12-31') });
+const editDetails = ref([]);
 
-const fetchMaterialList = async () => {
+const openEditDialog = (bomId) => {
+  const targetBom = bomList.value.find((b) => b.bomId === bomId);
+  if (!targetBom) return toast('warn', '데이터 없음');
+
+  editHeader.value = {
+    bomId: targetBom.bomId,
+    effectiveDate: new Date(targetBom.effectiveDate),
+    expireDate: new Date(targetBom.expireDate)
+  };
+
+  editDetails.value = targetBom.details.map((d) => ({
+    id: Date.now() + Math.random(),
+    bomDeId: d.bomDeId,
+    bomId: d.bomId,
+    matId: d.material?.matId || d.matId || '',
+    matName: d.material?.matName || d.matName || '',
+    baseUnit: d.material?.unit || d.baseUnit || '',
+    mixingRate: d.mixingRate ?? 0,
+    qty: d.qty ?? 0
+  }));
+
+  editDialogVisible.value = true;
+};
+
+const saveEditBom = async () => {
+  const req = {
+    bom: {
+      bomId: editHeader.value.bomId,
+      prodId: selectedProd.value.prodId,
+      effectiveDate: fmt(editHeader.value.effectiveDate),
+      expireDate: fmt(editHeader.value.expireDate)
+    },
+    details: editDetails.value.map((d) => ({
+      bomDeId: d.bomDeId,
+      matId: d.matId,
+      mixingRate: d.mixingRate,
+      qty: d.qty,
+      baseUnit: d.baseUnit
+    }))
+  };
   try {
-    const res = await axios.get('/api/material');
-    materialList.value = Array.isArray(res.data) ? res.data : [];
+    await axios.put(`/api/bom/with-detail/${req.bom.bomId}`, req);
+    toast('success', '수정 완료');
+    editDialogVisible.value = false;
+    await fetchBomList(selectedProd.value?.prodId);
   } catch {
-    toast('error', '조회 실패', '자재 정보를 가져오지 못했습니다.');
-    materialList.value = [];
+    toast('error', '수정 실패');
   }
-};
-const openMaterialDialog = async (row) => {
-  selectedRowDetail.value = row;
-  await fetchMaterialList();
-  materialDialogVisible.value = true;
-};
-const selectMaterial = (material) => {
-  if (selectedRowDetail.value) {
-    selectedRowDetail.value.matId = material.matId;
-    selectedRowDetail.value.matName = material.matName;
-    selectedRowDetail.value.baseUnit = material.unit;
-  }
-  materialDialogVisible.value = false;
 };
 
 /* ===========================
    신규 BOM 등록
 =========================== */
-const bomMaster = ref({
-  prodId: '',
-  prodName: '',
-  effectiveDate: new Date(),
-  expireDate: new Date('9999-12-31')
-});
-const bomDetails = ref([{ id: 1, matId: '', matName: '', mixingRate: 0, qty: 0, baseUnit: '' }]);
-
-const addRow = () => {
-  bomDetails.value.push({ id: Date.now(), matId: '', matName: '', mixingRate: 0, qty: 0, baseUnit: '' });
-};
+const bomMaster = ref({ effectiveDate: new Date(), expireDate: new Date('9999-12-31') });
+const bomDetails = ref([{ id: 1, matId: '', matName: '', baseUnit: '', mixingRate: 0, qty: 0 }]);
+const addRow = () => bomDetails.value.push({ id: Date.now(), matId: '', matName: '', baseUnit: '', mixingRate: 0, qty: 0 });
 const deleteRow = () => {
   if (bomDetails.value.length > 1) bomDetails.value.pop();
 };
 
 const saveNewBom = async () => {
-  const prodId = selectedProd.value?.prodId || bomMaster.value.prodId;
-  if (!prodId) {
-    toast('warn', '제품을 선택해주세요.');
-    return;
-  }
+  const prodId = selectedProd.value?.prodId;
+  if (!prodId) return toast('warn', '제품을 먼저 선택하세요');
   const req = {
     bom: {
       prodId,
-      effectiveDate: formatDateOnly(bomMaster.value.effectiveDate),
-      expireDate: formatDateOnly(bomMaster.value.expireDate)
+      effectiveDate: fmt(bomMaster.value.effectiveDate),
+      expireDate: fmt(bomMaster.value.expireDate)
     },
     details: bomDetails.value.map((d) => ({
       matId: d.matId,
-      mixingRate: d.mixingRate ?? 0,
-      qty: d.qty ?? 0,
+      mixingRate: d.mixingRate,
+      qty: d.qty,
       baseUnit: d.baseUnit || 'EA'
     }))
   };
   try {
     await axios.post('/api/bom/with-detail', req);
-    toast('success', 'BOM 등록 완료', '');
+    toast('success', '등록 완료');
     await fetchBomList(prodId);
-    resetNewForm();
+    bomDetails.value = [{ id: 1, matId: '', matName: '', baseUnit: '', mixingRate: 0, qty: 0 }];
     activeTabIndex.value = 1;
   } catch {
-    toast('error', 'BOM 등록 실패', '입력값을 확인하세요.');
+    toast('error', '등록 실패');
   }
 };
-const resetNewForm = () => {
-  bomMaster.value = { prodId: '', prodName: '', effectiveDate: new Date(), expireDate: new Date('9999-12-31') };
-  bomDetails.value = [{ id: 1, matId: '', matName: '', mixingRate: 0, qty: 0, baseUnit: '' }];
+
+/* ===========================
+   자재 모달
+=========================== */
+const materialList = ref([]);
+const materialDialogVisible = ref(false);
+const selectedRowDetail = ref(null);
+
+const openMaterialDialog = async (row) => {
+  selectedRowDetail.value = row;
+  const res = await axios.get('/api/material');
+  materialList.value = res.data;
+  materialDialogVisible.value = true;
+};
+
+const selectMaterial = (mat) => {
+  if (!selectedRowDetail.value) return;
+
+  const row = selectedRowDetail.value;
+
+  row.matId = mat.matId;
+  row.matName = mat.matName;
+  row.baseUnit = mat.unit;
+
+  const idx = editDetails.value.findIndex((d) => d.id === row.id || d.bomDeId === row.bomDeId);
+  if (idx !== -1) {
+    editDetails.value[idx] = {
+      ...editDetails.value[idx],
+      matId: mat.matId,
+      matName: mat.matName,
+      baseUnit: mat.unit
+    };
+  }
+
+  // 콘솔로 확인
+  console.log('자재 선택 후 editDetails:', JSON.stringify(editDetails.value, null, 2));
+
+  materialDialogVisible.value = false;
 };
 
 /* ===========================
    Mounted
 =========================== */
 onMounted(fetchProdList);
+
+const form = ref({ prodId: '', prodName: '', unit: '', spec: '', createdAt: '', lastUpdateDate: '' });
 </script>
 
 <template>
@@ -276,81 +294,113 @@ onMounted(fetchProdList);
     <Breadcrumb class="rounded-lg mb-4" :home="breadcrumbHome" :model="breadcrumbItems" />
 
     <div class="main-wrapper">
-      <!-- 좌: 제품 목록 -->
+      <!-- 좌측 -->
       <div class="panel left-panel">
         <div class="card flex flex-col gap-3">
           <div class="font-semibold text-xl">제품 목록</div>
           <Divider class="mt-0" />
           <div class="flex gap-2">
-            <AutoComplete v-model="searchFilters.prodName" :suggestions="suggestions" @complete="searchProdSuggestions" placeholder="제품명 입력" class="w-full" />
+            <AutoComplete v-model="searchFilters.prodName" :suggestions="suggestions" :loading="autoLoading" @complete="searchProdSuggestions" placeholder="제품명 입력" class="w-full" />
             <Button icon="pi pi-search" @click="fetchProdList" />
             <Button icon="pi pi-refresh" class="p-button-outlined" @click="resetSearch" />
           </div>
-          <DataTable :value="prodList" selectionMode="single" dataKey="prodId" v-model:selection="selectedProd" :loading="loading" @row-select="selectProduct($event.data)" stripedRows paginator :rows="6" class="flex-grow overflow-auto">
+          <DataTable :value="prodList" selectionMode="single" dataKey="prodId" v-model:selection="selectedProd" @row-select="selectProduct($event.data)" paginator :rows="6" stripedRows>
             <Column field="prodId" header="제품코드" />
             <Column field="prodName" header="제품명" />
           </DataTable>
         </div>
       </div>
 
-      <!-- 우: 신규 BOM 등록 -->
+      <!-- 우측 -->
       <div class="panel right-panel">
         <div class="card flex flex-col gap-3 h-full">
-          <div v-if="selectedProd" class="flex flex-col gap-4">
-            <div class="grid gap-4 md:grid-cols-3">
-              <InputGroup>
-                <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
-                <Calendar v-model="bomMaster.effectiveDate" dateFormat="yy-mm-dd" />
-              </InputGroup>
-              <InputGroup>
-                <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
-                <Calendar v-model="bomMaster.expireDate" dateFormat="yy-mm-dd" />
-              </InputGroup>
-            </div>
-
-            <div class="flex justify-between items-center">
-              <div class="font-semibold text-l">자재 구성</div>
-              <div class="flex gap-2">
-                <btn color="secondary" icon="add" @click="addRow" />
-                <btn color="secondary" icon="minus" @click="deleteRow" />
-                <btn color="info" icon="check" label="BOM 등록" outlined @click="saveNewBom" />
+          <TabView v-model:activeIndex="activeTabIndex">
+            <!-- 탭1: 상세정보 -->
+            <TabPanel header="제품 상세정보">
+              <div class="grid grid-cols-2 gap-4">
+                <div><label>제품코드</label><InputText v-model="form.prodId" readonly class="w-full" /></div>
+                <div><label>제품명</label><InputText v-model="form.prodName" readonly class="w-full" /></div>
+                <div><label>단위</label><InputText v-model="form.unit" readonly class="w-full" /></div>
+                <div><label>등록일</label><InputText v-model="form.createdAt" readonly class="w-full" /></div>
+                <div><label>마지막수정날짜</label><InputText v-model="form.lastUpdateDate" readonly class="w-full" /></div>
               </div>
-            </div>
+            </TabPanel>
 
-            <DataTable :value="bomDetails" stripedRows>
-              <Column header="자재선택" style="width: 8rem">
-                <template #body="{ data }">
-                  <Button icon="pi pi-search" class="p-button-text p-button-sm" @click="openMaterialDialog(data)" />
-                </template>
-              </Column>
-              <Column field="matId" header="자재코드">
-                <template #body="{ data }">
-                  <InputText v-model="data.matId" readonly class="w-full" />
-                </template>
-              </Column>
-              <Column field="matName" header="자재명">
-                <template #body="{ data }">
-                  <InputText v-model="data.matName" readonly class="w-full" />
-                </template>
-              </Column>
-              <Column field="baseUnit" header="단위">
-                <template #body="{ data }">
-                  <InputText v-model="data.baseUnit" readonly class="w-full" />
-                </template>
-              </Column>
-              <Column field="mixingRate" header="비율(%)">
-                <template #body="{ data }">
-                  <InputNumber v-model="data.mixingRate" :useGrouping="false" class="w-full" />
-                </template>
-              </Column>
-              <Column field="qty" header="수량">
-                <template #body="{ data }">
-                  <InputNumber v-model="data.qty" :useGrouping="false" class="w-full" />
-                </template>
-              </Column>
-            </DataTable>
-          </div>
-          <div v-else>제품을 먼저 선택하세요.</div>
+            <!-- 탭2: BOM 관리 -->
+            <TabPanel header="BOM 관리">
+              <div v-if="selectedProd">
+                <DataTable :value="bomList.flatMap((b) => b.details.map((d) => ({ ...d, bomId: b.bomId })))" stripedRows paginator :rows="8">
+                  <Column field="bomId" header="BOM코드" />
+                  <Column field="matId" header="자재코드">
+                    <template #body="{ data }">{{ data.material?.matId }}</template>
+                  </Column>
+                  <Column header="자재명">
+                    <template #body="{ data }">{{ data.material?.matName }}</template>
+                  </Column>
+                  <Column field="mixingRate" header="비율(%)" />
+                  <Column field="qty" header="수량" />
+                  <Column field="baseUnit" header="단위" />
+                  <Column header="작업">
+                    <template #body="{ data, index }">
+                      <div v-if="index === 0 || bomList.flatMap((b) => b.details).findIndex((d) => d.bomId === data.bomId) === index">
+                        <Button icon="pi pi-pencil" class="p-button-text" @click="openEditDialog(data.bomId)" />
+                        <Button icon="pi pi-trash" class="p-button-text p-button-danger" @click="deleteBom(data.bomId)" />
+                      </div>
+                    </template>
+                  </Column>
+                </DataTable>
+              </div>
+              <div v-else>제품을 먼저 선택하세요.</div>
+            </TabPanel>
+
+            <!-- 탭3: 신규 등록 -->
+            <TabPanel header="신규 BOM 등록">
+              <div v-if="selectedProd">
+                <div class="grid gap-4 md:grid-cols-2">
+                  <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
+                    <Calendar v-model="bomMaster.effectiveDate" dateFormat="yy-mm-dd" />
+                  </InputGroup>
+                  <InputGroup>
+                    <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
+                    <Calendar v-model="bomMaster.expireDate" dateFormat="yy-mm-dd" />
+                  </InputGroup>
+                </div>
+                <div class="flex justify-between items-center mt-4">
+                  <div class="font-semibold text-l">자재 구성</div>
+                  <div class="flex gap-2">
+                    <btn color="secondary" icon="add" @click="addRow" />
+                    <btn color="secondary" icon="minus" @click="deleteRow" />
+                    <btn color="info" icon="check" label="등록" outlined @click="saveNewBom" />
+                  </div>
+                </div>
+
+                <DataTable :value="bomDetails" stripedRows>
+                  <Column header="자재선택">
+                    <template #body="{ data }">
+                      <Button icon="pi pi-search" class="p-button-text p-button-sm" @click="openMaterialDialog(data)" />
+                    </template>
+                  </Column>
+                  <Column field="matId" header="자재코드">
+                    <template #body="{ data }"><InputText v-model="data.matId" readonly class="w-full" /></template>
+                  </Column>
+                  <Column field="matName" header="자재명">
+                    <template #body="{ data }"><InputText v-model="data.matName" readonly class="w-full" /></template>
+                  </Column>
+                  <Column field="baseUnit" header="단위">
+                    <template #body="{ data }"><InputText v-model="data.baseUnit" readonly class="w-full" /></template>
+                  </Column>
+                  <Column field="mixingRate" header="비율(%)">
+                    <template #body="{ data }"><InputNumber v-model="data.mixingRate" :useGrouping="false" class="w-full" /></template>
+                  </Column>
+                  <Column field="qty" header="수량">
+                    <template #body="{ data }"><InputNumber v-model="data.qty" :useGrouping="false" class="w-full" /></template>
+                  </Column>
+                </DataTable>
+              </div>
+              <div v-else>제품을 먼저 선택하세요.</div>
+            </TabPanel>
+          </TabView>
         </div>
       </div>
     </div>
@@ -362,6 +412,70 @@ onMounted(fetchProdList);
         <Column field="matName" header="자재명" />
         <Column field="unit" header="단위" />
       </DataTable>
+    </Dialog>
+
+    <!-- 수정 모달 -->
+    <!-- 수정 모달 -->
+    <Dialog v-model:visible="editDialogVisible" header="BOM 수정" modal style="width: 80vw">
+      <div class="grid gap-4 md:grid-cols-2 mb-4">
+        <div>
+          <label>시작일</label>
+          <Calendar v-model="editHeader.effectiveDate" dateFormat="yy-mm-dd" />
+        </div>
+        <div>
+          <label>종료일</label>
+          <Calendar v-model="editHeader.expireDate" dateFormat="yy-mm-dd" />
+        </div>
+      </div>
+
+      <!-- BOM 자재 수정 테이블 -->
+      <DataTable :value="editDetails" stripedRows>
+        <!-- 자재 선택 -->
+        <Column header="자재선택">
+          <template #body="{ data }">
+            <Button icon="pi pi-search" class="p-button-text p-button-sm" @click="openMaterialDialog(data)" />
+          </template>
+        </Column>
+
+        <!-- 자재 코드 -->
+        <Column field="matId" header="자재코드">
+          <template #body="{ data }">
+            <InputText v-model="data.matId" readonly class="w-full" />
+          </template>
+        </Column>
+
+        <!-- 자재명 -->
+        <Column field="matName" header="자재명">
+          <template #body="{ data }">
+            <InputText v-model="data.matName" readonly class="w-full" />
+          </template>
+        </Column>
+
+        <!-- 단위 -->
+        <Column field="baseUnit" header="단위">
+          <template #body="{ data }">
+            <InputText v-model="data.baseUnit" readonly class="w-full" />
+          </template>
+        </Column>
+
+        <!-- 비율 -->
+        <Column field="mixingRate" header="비율(%)">
+          <template #body="{ data }">
+            <InputNumber v-model="data.mixingRate" :useGrouping="false" class="w-full" />
+          </template>
+        </Column>
+
+        <!-- 수량 -->
+        <Column field="qty" header="수량">
+          <template #body="{ data }">
+            <InputNumber v-model="data.qty" :useGrouping="false" class="w-full" />
+          </template>
+        </Column>
+      </DataTable>
+
+      <div class="mt-3 text-right">
+        <btn color="info" icon="check" label="저장" outlined @click="saveEditBom" />
+      </div>
     </Dialog>
   </div>
 </template>
@@ -392,11 +506,5 @@ onMounted(fetchProdList);
   border-radius: 0.75rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   height: 100%;
-}
-.flex-grow {
-  flex: 1 1 auto;
-}
-.overflow-auto {
-  overflow: auto;
 }
 </style>

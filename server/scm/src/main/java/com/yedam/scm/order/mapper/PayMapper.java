@@ -19,7 +19,7 @@ public interface PayMapper {
     Long insertPayment(PaymentVO paymentVO);
     Long insertPaymentDetail(PaymentDetailVO detailVO);
     Long getCreditLimitByVendorId(@Param("vendorId") String vendorId);
-    Long getPreArBalanceByVendorId(@Param("vendorId") String vendorId);
+    Long getAfterArBalanceByVendorId(@Param("vendorId") String vendorId);
     // =============================================================
     // 3. 납부 내역 조회
     // =============================================================

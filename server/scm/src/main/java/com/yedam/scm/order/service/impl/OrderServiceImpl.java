@@ -27,7 +27,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     @Override
     public boolean insertOrder(SalesOrderVO orderVO) {
-        long totalPrice = 0L;
+        Long totalPrice = 0L;
         if (orderVO.getDetails() != null) {
             for (SalesOrderDetailVO detail : orderVO.getDetails()) {
                 totalPrice += (long) detail.getProdUnitPrice() * detail.getOrderQty();
@@ -41,15 +41,17 @@ public class OrderServiceImpl implements OrderService {
 
         orderVO.setTotalPrice(totalPrice);
 
-        int creditLimit = orderMapper.getCreditLimit(orderVO.getVendorId());
-        long remainCredit = creditLimit - totalPrice;
-        orderVO.setRemainCredit(remainCredit < 0 ? creditLimit : remainCredit);
+        // ✅ 여신잔액 계산
+        Long availableCredit = orderMapper.getAvailableCredit(orderVO.getVendorId());
+        orderVO.setRemainCredit(availableCredit);
 
-        if (remainCredit < 0) {
-            orderVO.setFailReason("CREDIT"); // ✅ 여신 초과
+        // ✅ 여신잔액보다 주문금액이 크면 차단
+        if (availableCredit < totalPrice) {
+            orderVO.setFailReason("CREDIT");
             return false;
         }
 
+        // ✅ 정상일 때만 주문 등록
         int masterResult = orderMapper.insertOrder(orderVO);
         if (masterResult <= 0) return false;
 

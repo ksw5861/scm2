@@ -214,7 +214,7 @@
       </template>
     </Card>
 
-    <!-- 재고 / 공지 -->
+    <!-- 공지 -->
     <div class="two-col">
       <Card class="notice-card">
         <template #title>공지사항</template>
