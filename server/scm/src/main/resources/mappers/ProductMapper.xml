@@ -15,7 +15,9 @@
       UNIT,
       EXP,
       PROD_UNIT_PRICE,
-      CREATED_AT
+      CREATED_AT,
+      CONV_RATE,
+      WEIGHT_UNIT
     FROM PRODUCT
     <where>
       <if test="prodId != null and prodId != ''">
@@ -79,7 +81,9 @@
       UNIT,
       EXP,
       PROD_UNIT_PRICE,
-      CREATED_AT
+      CREATED_AT,
+      CONV_RATE,
+      WEIGHT_UNIT
     )
     VALUES (
       next_code('P'),
@@ -91,7 +95,9 @@
       #{unit},
       #{exp},
       #{prodUnitPrice},
-      sysdate
+      sysdate,
+      #{convRate},
+      #{weightUnit}
     )
   </insert>
 
@@ -108,7 +114,9 @@
       SPEC = #{spec},
       UNIT = #{unit},
       EXP = #{exp},
-      PROD_UNIT_PRICE = #{prodUnitPrice}
+      PROD_UNIT_PRICE = #{prodUnitPrice},
+      CONV_RATE = #{convRate},
+      WEIGHT_UNIT = #{weightUnit}
     WHERE PROD_ID = #{prodId}
   </update>
 
