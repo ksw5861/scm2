@@ -260,13 +260,15 @@
 
   <update id="rejectReturnDetails">
     UPDATE return_detail
-       SET rdetail_status = '반려',
-           return_why = #{reason}
-     WHERE rdetail_id IN
-     <foreach collection="ids" item="id" open="(" separator="," close=")">
-       #{id}
-     </foreach>
+      SET rdetail_status = '반려',
+          return_why = #{reason},
+          return_qty = 0  
+    WHERE rdetail_id IN
+    <foreach collection="ids" item="id" open="(" separator="," close=")">
+      #{id}
+    </foreach>
   </update>
+
 
 
   

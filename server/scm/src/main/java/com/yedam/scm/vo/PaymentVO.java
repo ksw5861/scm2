@@ -37,7 +37,7 @@ public class PaymentVO {
    // 총 결제 금액
     private String memo;          // 메모
 
-    private Long creditLimit;    // 당시 원본 여신한도
+    private Long creditLimit;    // 당시 원본 여신한도//납부기록 로그용
     private Long payPreAr;       // 결제 전 미수금
     private Long payAfterAr;     // 결제 후 미수금
     private Long payPreLimit;    // 결제 전 잔여 여신한도

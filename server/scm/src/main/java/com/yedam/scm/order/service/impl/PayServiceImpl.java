@@ -20,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 public class PayServiceImpl implements PayService {
 
     private final PayMapper payMapper;
-
     // =============================================================
     // 납부 등록 (마스터 + 상세 + 상태 변경)
     // =============================================================
@@ -28,29 +27,33 @@ public class PayServiceImpl implements PayService {
     @Override
     public String insertPayment(PaymentVO paymentVO) {
         try {
+            paymentVO.setCreditLimit(null);
             // -----------------------------------------------------
             // 1️⃣ 여신한도 및 미수금 계산 (결제 전/후 기준)
             // -----------------------------------------------------
             String vendorId = paymentVO.getVendorId();
-            if (vendorId == null) throw new RuntimeException("vendorId 누락");
 
-            Long creditLimit = payMapper.getCreditLimitByVendorId(vendorId);
+            Long creditLimit = payMapper.getCreditLimitByVendorId(vendorId); 
             if (creditLimit == null) creditLimit = 0L;
 
-            Long preAr = payMapper.getPreArBalanceByVendorId(vendorId);
-            if (preAr == null) preAr = 0L;
+            Long afterAr = payMapper.getAfterArBalanceByVendorId(vendorId); // ★출고완료+배송완료 기준 미수금
+            if (afterAr == null) afterAr = 0L;
 
-            long payAmount = paymentVO.getPayAmount();
-            long preLimit = creditLimit - preAr;
-            long afterAr = preAr - payAmount;
-            long afterLimit = creditLimit - afterAr;
+            int payAmount = paymentVO.getPayAmount(); // 납부 금액
 
-            // 계산된 값 VO에 세팅
+            // ✅ 계산 시작
+            Long payPreAr = afterAr;                 // 결제 직전 미수금
+            Long payAfterAr = afterAr - payAmount;   // 결제 후 미수금
+
+            Long payPreLimit = creditLimit - payPreAr;   // 결제 전 여신 가능 금액
+            Long payAfterLimit = creditLimit - payAfterAr; // 결제 후 여신 가능 금액
+
+            // ✅ VO 저장
             paymentVO.setCreditLimit(creditLimit);
-            paymentVO.setPayPreAr(preAr);
-            paymentVO.setPayAfterAr(afterAr);
-            paymentVO.setPayPreLimit(preLimit);
-            paymentVO.setPayAfterLimit(afterLimit);
+            paymentVO.setPayPreAr(payPreAr);
+            paymentVO.setPayAfterAr(payAfterAr);
+            paymentVO.setPayPreLimit(payPreLimit);
+            paymentVO.setPayAfterLimit(payAfterLimit);
 
             // -----------------------------------------------------
             // 2️⃣ 납부 마스터 저장
