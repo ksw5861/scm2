@@ -180,17 +180,16 @@ const searchPayments = async () => {
     console.log('납부내역 조회 결과:', res.data)
     console.log('납부내역 조회 결과2:', res.data.list[0])
 
-    payList.value = (res.data.list || []).map(item => ({
-          payId: item.payId,
-          payDate: item.payDate,
-          outstandingAmount: item.outstandingAmount,
-          payAmount: item.payAmount,
-          finalBalance: item.finalBalance,
-          creditBalance: item.creditBalance,
-          payRmk: item.payRmk || '',
-          creditLimit: item.creditLimit
-
-          }))
+  payList.value = (res.data.list || []).map(item => ({
+    payId: item.payId,
+    payDate: item.payDate ? item.payDate.substring(0, 19).replace('T', ' ') : '', 
+    outstandingAmount: item.outstandingAmount,
+    payAmount: item.payAmount,
+    finalBalance: item.finalBalance,
+    creditBalance: item.creditBalance,
+    payRmk: item.payRmk || '',
+    creditLimit: item.creditLimit
+  }))
 
   } catch (error) {
     console.error('납부내역 조회 실패:', error)
