@@ -572,7 +572,7 @@ onMounted(() => fetchList());
                 </div>
                 <div>
                   <label class="text-sm block mb-1">단위</label>
-                  <InputText v-model="form.unit" class="w-full h-10" />
+                  <InputText v-model="form.unit" class="w-full h-10" placeholder="봉투는(EA), 원두는(KG)" />
                 </div>
                 <div>
                   <label class="text-sm block mb-1">안전재고(EA)</label>

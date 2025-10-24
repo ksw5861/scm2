@@ -20,13 +20,13 @@ public class BomServiceImpl implements BomService {
     @Transactional(readOnly = true)
     @Override
     public List<BomVO> getBomDetailByProdId(String prodId) {
-        return bomMapper.getBomByProdId(prodId);
+        return bomMapper.getBomListByProdId(prodId);
     }
 
     @Transactional(readOnly = true)
     @Override
     public BomVO getBomDetail(String bomId) {
-        return bomMapper.getBomDetail(bomId);
+        return bomMapper.getBomWithDetail(bomId);
     }
 
     @Transactional(rollbackFor = Exception.class)
