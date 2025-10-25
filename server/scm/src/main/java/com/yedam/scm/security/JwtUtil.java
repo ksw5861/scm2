@@ -102,4 +102,10 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
     }
+    
+    public long getExpiration(String token) {
+        Claims claims = getClaims(token);
+        return claims.getExpiration().getTime();
+    }
+
 }
