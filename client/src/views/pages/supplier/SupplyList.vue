@@ -56,10 +56,21 @@ const searchFilter = ref({
 const formatDate = (date) => {
   if (!date) return '';
   const d = new Date(date);
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const fetchSuppliyList = async () => {
+  //검색필터 기간 유효성검사
+  if (searchFilter.value.startDate && searchFilter.value.endDate) {
+    if (new Date(searchFilter.value.startDate) > new Date(searchFilter.value.endDate)) {
+      toast('warn', '기간 오류', '시작일은 종료일보다 이전이어야 합니다.', '3000');
+      return;
+    }
+  }
+
   const params = {
     startDate: formatDate(searchFilter.value.startDate),
     endDate: formatDate(searchFilter.value.endDate),
@@ -239,7 +250,9 @@ const statusColumn = [
         <div class="card flex flex-col gap-4 h-full">
           <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">자재공급 목록</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 자재공급 목록</div>
+            </div>
             <Divider />
             <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="supplyListColumn" :data="supplyList" :paginator="true" :showCheckbox="false" @row-select="detailInfo" @page-change="onPage" :page="page" />
           </div>
@@ -250,7 +263,9 @@ const statusColumn = [
         <div class="card flex flex-col gap-4 h-full">
           <!-- 타이틀 -->
           <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">상세정보</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('history')"></span> 진행현황</div>
+            </div>
             <Divider />
             <!--타임라인-->
             <div class="card">
@@ -276,7 +291,7 @@ const statusColumn = [
       <img :src="defectImg" alt="불량 이미지" class="w-full rounded-lg" />
     </div>
     <div class="flex justify-center">
-      <btn color="warn" icon="cancel" label="닫기" @click="closeRejModal" />
+      <btn color="contrast" icon="check" label="닫기" @click="closeRejModal" class="whitespace-nowrap" outlined />
     </div>
   </Dialog>
 </template>

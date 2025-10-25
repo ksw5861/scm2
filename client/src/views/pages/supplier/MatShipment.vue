@@ -47,15 +47,12 @@ const deliveryPlace = ref(''); //배송창고 바인딩용
 const carrier = ref()//운송업체
 const trackingNo = ref() //운송번호
 const carNo = ref()
-
 const approveShipData = ref(); //페이지로드시 목록
 const warehoustListOpt = ref([]); //창고드롭다운용
 
 const page = ref({ page: 1, size: 10, totalElements: 0 });
 
-const shipDetailList = ref([
-  { matId: '', matName: '', ortQty: null, unit: ''}
-]);
+const shipDetailList = ref([])
 //검색필드
 const searchFilter = ref({
   startDate: '',
@@ -66,13 +63,24 @@ const searchFilter = ref({
 
 //datePicker날짜변환
 const formatDate = (date) => {
-  if (!date) return '';
+   if (!date) return '';
   const d = new Date(date);
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 //페이지로드시 목록출력
 const pageLoad = async () => {
+
+    //검색필터 기간 유효성검사
+    if (searchFilter.value.startDate && searchFilter.value.endDate) {
+        if (new Date(searchFilter.value.startDate) > new Date(searchFilter.value.endDate)) {
+            toast('warn', '기간 오류', '시작일은 종료일보다 이전이어야 합니다.', '3000');
+            return;
+        }
+        }
 
     const params = {
         startDate: formatDate(searchFilter.value.startDate),
@@ -105,35 +113,21 @@ const pageLoad = async () => {
   }
 };
 
-//(좌측)제품클릭시 우측테이블 행 push
-const addTOshipmentList = (row) => {
-    //클릭시 1번만 들어가도록 제어
-    if (shipDetailList.value.some(r => r.matId === row.matId && r.purId === row.purId)) {
-    return;
-  }
-  console.log(row.id)
-  const emptyRowIndex = shipDetailList.value.findIndex((r) => !r.matId);
-  const newRow = {
-     //테이블 출력데이터
-      purStatusId: row.id, //주문로그T아이디: 출고상태값 제어필수
-      matId: row.matId,
-      matName:row.matName,
-      ortQty:row.ortQty,
-      unit: row.unit,
-      purName: row.buyerName,
-    //DB입력시 행별 필요데이터[]
-      shipOrderNo: row.logShipOrderNo, //출고지시번호
-      purId: row.purId,  //주문테이블 아이디
-      buyerName: row.empName,
-  };
-  if (emptyRowIndex !== -1) {
-   shipDetailList.value[emptyRowIndex] = newRow;     // 빈행 있으면 교체
-  } else {
-   shipDetailList.value.push(newRow);     // 빈행 없으면 push
-  }
-};
-
 const submit = async () => {
+
+    //유효성 검사
+    if (!deliveryPlace.value || !carrier.value || !trackingNo.value || !carNo.value) {
+      toast('warn', '유효성 검사', '배송지, 운송업체, 운송번호는 필수 입력값입니다.', '3000');
+      return;
+    }
+    if (shipDetailList.value.length === 0 || shipDetailList.value.some((row) => !row.matId || !row.ortQty)) {
+      toast('warn', '유효성 검사', '출고할 자재를 선택해주세요.', '3000');
+      return;
+    }
+    if(!confirm('출고등록 하시겠습니까?')) {
+      return;
+    }
+
   const list = JSON.parse(JSON.stringify(shipDetailList.value));
   console.log(list);
   //마스터 필요데이터들 [공급처 코드, 운송업체코드, 차량번호, 공장코드, 운송번호, 거래처 담당자이름]
@@ -176,6 +170,41 @@ const submit = async () => {
   }
 };
 
+//선택토글
+const toggleSelection = (row) => {
+
+    const existingIndex = shipDetailList.value.findIndex((r) => r.purStatusId === row.id);
+
+    if (existingIndex !== -1) {
+      shipDetailList.value.splice(existingIndex, 1)
+      return;
+    }
+
+    const newRow = {
+     //테이블 출력데이터
+      id: row.id,
+      purStatusId: row.id, //주문로그T아이디: 출고상태값 제어필수
+      matId: row.matId,
+      matName:row.matName,
+      ortQty:row.ortQty,
+      unit: row.unit,
+      purName: row.buyerName,
+    //DB입력시 행별 필요데이터[]
+      shipOrderNo: row.logShipOrderNo, //출고지시번호
+      purId: row.purId,  //주문테이블 아이디
+      buyerName: row.empName,
+  };
+
+  const emptyRowIndex = shipDetailList.value.findIndex((r) => !r.matId);
+
+  if (emptyRowIndex !== -1) {
+   shipDetailList.value[emptyRowIndex] = newRow;     // 빈행 있으면 교체
+  } else {
+   shipDetailList.value.push(newRow);     // 빈행 없으면 push
+  }
+
+};
+
 //창고리스트: 드롭다운용
 const warehouseList = async () => {
   try {
@@ -204,6 +233,15 @@ const resetSearch = () => {
     toWarehouse: ''
   };
   pageLoad();
+};
+
+const formreset = () => {
+  shipmentDate.value = getNowDate();
+  deliveryPlace.value = '';
+  carrier.value = '';
+  trackingNo.value = '';
+  carNo.value = '';
+  shipDetailList.value = [];
 };
 
 onMounted(() => {
@@ -281,17 +319,22 @@ const addShipColumns = [
         <div class="card flex flex-col gap-4 h-full">
           <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">출고대기 목록</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+            <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 출고대기 목록</div>
+            </div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" :columns="approveShipColumns" :data="approveShipData" :paginator="true" :rows="15" @row-select="addTOshipmentList" :showCheckbox="false"  @page-change="onPage" :page="page" />
+            <selectTable :columns="approveShipColumns" :data="approveShipData" :paginator="true" :rows="15" :showCheckbox="false"  @page-change="onPage" :page="page" @row-click="toggleSelection"/>
           </div>
         </div>
       </div>
       <div class="md:w-1/2 h-full">
         <div class="card flex flex-col gap-4 h-full">
             <div class="flex items-center justify-between my-3">
-                <div class="font-semibold text-m">상세정보</div>
+                <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+                <div class="flex items-center gap-4"><span :class="useIcon('openfolder')"></span> 상세정보</div>
+                </div>
                 <div class="flex gap-2">
+                    <btn color="secondary" icon="refresh" label="초기화" class="whitespace-nowrap" outlined @click="formreset" />
                     <btn color="info" icon="check" label="배송 등록" class="whitespace-nowrap" outlined @click="submit" />
                 </div>
             </div>
@@ -314,7 +357,7 @@ const addShipColumns = [
                 </div>
                 <!-- 하단 테이블 (6 비율) -->
                 <div class="flex-[6] overflow-auto">
-                    <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="addShipColumns" :data="shipDetailList" :paginator="false" :showCheckbox="false" class="h-full"/>
+                    <selectTable :selectionMode="'single'" :columns="addShipColumns" :data="shipDetailList" :paginator="false" :showCheckbox="false" class="h-full"/>
                 </div>
             </div>
         </div>

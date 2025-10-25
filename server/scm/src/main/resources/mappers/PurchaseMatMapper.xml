@@ -227,7 +227,7 @@ SELECT * FROM (
         AND pm.reg_date &gt;= #{search.startDate}
     </if>
     <if test="search.endDate != null">
-        AND pm.reg_date &lt;= #{search.endDate}
+        AND pm.reg_date &lt;= #{search.endDate} + 1
     </if>
     <if test="search.vendorName != null and search.vendorName != ''">
         AND UPPER(v.company_name) LIKE '%' || UPPER(#{search.vendorName}) || '%'
@@ -250,7 +250,7 @@ WHERE 1=1
   AND pm.reg_date &gt;= #{search.startDate}
 </if>
 <if test="search.endDate != null">
-  AND pm.reg_date &lt;= #{search.endDate}
+  AND pm.reg_date &lt;= #{search.endDate} + 1
 </if>
 <if test="search.vendorName != null and search.vendorName != ''">
   AND UPPER(v.company_name) LIKE '%' || UPPER(#{search.vendorName}) || '%'

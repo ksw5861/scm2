@@ -7,8 +7,6 @@ import { useAppToast } from '@/composables/useAppToast';
 import { useRoute } from 'vue-router';
 import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
-import Dialog from 'primevue/dialog';
-import Textarea from 'primevue/textarea';
 import { useUserStore } from '@/stores/user';
 import SearchCard from '@/components/card/SearchCard.vue';
 import DatePicker from 'primevue/datepicker';
@@ -20,8 +18,6 @@ import DatePicker from 'primevue/datepicker';
 const userStore = useUserStore();
 const vendorId = userStore.code;
 const vendorName = '승인담당';
-
-console.log(vendorId);
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -37,19 +33,18 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const matOrderData = ref([]);
-const selectedRows = ref([]);
-const rejModal = ref(false);
-const rejMemo = ref('');
-
+const reqeustResultrData = ref([]);
 const page = ref({ page: 1, size: 10, totalElements: 0 });
+//공통코드
+const codeMap = ref();
+const statusOptions = ref([]);
 
 //검색필드
 const searchFilter = ref({
   startDate: '',
   endDate: '',
   matName: '',
-  toWarehouse: ''
+  status: ''
 });
 
 //datePicker날짜변환
@@ -76,27 +71,28 @@ const fetchList = async () => {
     startDate: formatDate(searchFilter.value.startDate),
     endDate: formatDate(searchFilter.value.endDate),
     matName: searchFilter.value.matName,
-    toWarehouse: searchFilter.value.toWarehouse
+    status: searchFilter.value.status
   };
 
   try {
-    const list = await axios.get(`/api/sOrderList/${vendorId}`, { params });
+    const list = await axios.get(`/api/requestResult/${vendorId}`, { params });
     console.log(list);
-    matOrderData.value = list.data.map((item) => ({
+    reqeustResultrData.value = list.data.map((item) => ({
       id: item.purId,
       orderDate: useDateFormat(item.regDate).value,
       orderNo: item.purNo,
-      dueDate: useDateFormat(item.dueDate).value,
       matId: item.matId,
       matName: item.materialVO.matName,
-      orderQty: item.reqQty,
+      reqQty: item.reqQty,
       unit: item.materialVO.stockUnit,
-      toWarehouse: item.wareHouseVO.whName,
-      total: item.total,
-      buyerName: item.empName
+      status: codeMap.value[item.purStatusLogVO.logPurMatStatus],
+      outName: item.empName,
+      inName: item.purStatusLogVO.logName,
+      reDate: useDateFormat(item.purStatusLogVO.reDate).value,
+      resonComm: item.purStatusLogVO.logResonComm
     }));
 
-    page.value.totalElements = matOrderData.value.length;
+    //page.value.totalElements = matOrderData.value.length;
   } catch (error) {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
@@ -116,49 +112,20 @@ const onPage = (event) => {
   });
 };
 
-//주문승인
-const approve = async () => {
-  const list = JSON.parse(JSON.stringify(selectedRows.value));
-  const idList = list.map((row) => row.id);
-
-  //유효성검사
-  if (idList.length === 0) {
-    toast('warn', '선택 필요', '승인할 항목을 선택해주세요:', '3000');
-    return;
-  }
-  if (!confirm('선택한 주문을 승인하시겠습니까?')) {
-    return;
-  }
-
+const loadStatusCodes = async () => {
   try {
-    await axios.post('/api/sapprove', { purId: idList, vId: vendorId, name: vendorName });
-    toast('info', '승인 성공', '주문 승인 성공:', '3000');
+    const res = await axios.get('/api/mstatus/purResult');
+    codeMap.value = res.data.reduce((acc, cur) => {
+      acc[cur.codeId] = cur.codeName;
+      return acc;
+    }, {});
 
-    fetchList();
-  } catch (error) {
-    toast('error', '승인 실패', '주문 승인 실패:', '3000');
-  }
-};
-//반려
-const rejectPurchase = async () => {
-  //유효성검사
-  if (rejMemo.value.trim() === '') {
-    toast('warn', '사유 필요', '반려 사유를 입력해주세요:', '3000');
-    return;
-  }
-  if (!confirm('선택한 주문을 반려하시겠습니까?')) {
-    return;
-  }
-
-  try {
-    await axios.post('/api/sreject', null, { params: { purId: selectedRows.value[0].id, rejMemo: rejMemo.value, staff: vendorName } });
-    rejModal.value = false;
-    rejMemo.value = '';
-    toast('info', '등록 성공', '주문 거부 성공:', '3000');
-    fetchList();
-    selectedRows.value = [];
-  } catch (error) {
-    toast('error', '등록 실패', '주문 승인 실패:', '3000');
+    statusOptions.value = res.data.map((item) => ({
+      name: item.codeName, // 화면 표시용
+      value: item.codeId // 실제 값
+    }));
+  } catch (err) {
+    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
   }
 };
 
@@ -167,50 +134,31 @@ const resetSearch = () => {
     stardDate: '',
     endDate: '',
     matName: '',
-    location: ''
+    status: ''
   };
   fetchList();
 };
 
-//모달(열기)
-const oepnRejModal = () => {
-  const selectedCount = selectedRows.value.length;
-
-  if (selectedCount === 0) {
-    toast('warn', '선택 필요', '반려할 항목을 선택해주세요:', '3000');
-    return;
-  }
-
-  if (selectedCount > 1) {
-    toast('info', '반려 불가', '1건씩만 처리 가능합니다:', '3000');
-    return;
-  }
-
-  rejModal.value = true;
-};
-//모달(닫기)
-const closeRejModal = () => {
-  rejModal.value = false;
-};
-
 onMounted(() => {
   fetchList();
+  loadStatusCodes();
 });
 
 const matOrderColumns = [
-  { label: '주문일자', field: 'orderDate', sortable: true },
+  { label: '주문일', field: 'orderDate', sortable: true },
   { label: '주문번호', field: 'orderNo' },
-  { label: '납기요청일', field: 'dueDate', sortable: true },
+  //{ label: '납기요청일', field: 'dueDate', sortable: true },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName', sortable: true },
-  { label: '주문수량', field: 'orderQty', sortable: true },
+  { label: '주문수량', field: 'reqQty', sortable: true },
   { label: '단위', field: 'unit' },
-  { label: '도착지', field: 'toWarehouse' },
-  { label: '총 금액', field: 'total', sortable: true },
-  { label: '구매처 담당자', field: 'buyerName', sortable: true }
+  { label: '상태', field: 'status' },
+  { label: '발주 담당자', field: 'outName', sortable: true },
+  { label: '승인 담당자', field: 'inName', sortable: true },
+  { label: '승인일자', field: 'reDate', sortable: true },
+  { label: '반려 사유', field: 'resonComm' }
 ];
 </script>
-
 <template>
   <div class="container">
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
@@ -242,13 +190,12 @@ const matOrderColumns = [
             </IftaLabel>
           </InputGroup>
 
-          <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-            <IftaLabel>
-              <InputText v-model="searchFilter.toWarehouse" inputId="searchtoWarehouse" />
-              <label for="searchtoWarehouse">도착지</label>
-            </IftaLabel>
-          </InputGroup>
+          <div class="flex flex-col w-full">
+            <InputGroup>
+              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <Select v-model="searchFilter.status" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="상태" class="w-full h-[48px] text-base" />
+            </InputGroup>
+          </div>
         </div>
       </SearchCard>
     </div>
@@ -256,27 +203,11 @@ const matOrderColumns = [
 
     <!--중간버튼영역-->
     <div class="card flex flex-col gap-4">
-      <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="warn" icon="cancel" label="주문 거부" @click="oepnRejModal" outlined class="whitespace-nowrap" />
-        <btn color="info" icon="check" label="주문 승인" @click="approve" class="whitespace-nowrap" outlined />
-      </div>
       <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
         <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 주문 목록</div>
       </div>
-      <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" @page-change="onPage" :page="page" />
+      <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="reqeustResultrData" :showCheckbox="false" :paginator="true" :rows="15" @page-change="onPage" :page="page" />
     </div>
   </div>
-
-  <!--반려모달-->
-  <Dialog v-model:visible="rejModal" modal header="반려 사유(공급처)" :style="{ width: '500px' }">
-    <div class="card flex justify-center">
-      <Textarea v-model="rejMemo" rows="5" cols="100" />
-    </div>
-    <div class="flex justify-center gap-2">
-      <btn color="secondary" icon="check" label="닫기" @click="closeRejModal" class="whitespace-nowrap" outlined />
-      <btn color="info" icon="cancel" label="등록" @click="rejectPurchase" class="whitespace-nowrap" outlined />
-    </div>
-  </Dialog>
 </template>
-
 <style scoped></style>

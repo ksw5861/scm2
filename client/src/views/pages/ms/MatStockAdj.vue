@@ -157,7 +157,7 @@ const onLotSelect = async (lotRow) => {
 
 // 조정등록 버튼 클릭
 const submitAdjustStock = async () => {
-  if (!adjustForm.value.lotId ) {
+  if (!adjustForm.value.lotId) {
     return toast('warn', '조정등록', 'LOT를 선택해 주세요', 2500);
   }
   if (!adjustForm.value.adjustWeight || adjustForm.value.adjustWeight <= 0) {
@@ -173,7 +173,13 @@ const submitAdjustStock = async () => {
   if (!confirm('재고 조정을 등록하시겠습니까?')) {
     return;
   }
-
+  // 출고인 경우 현재재고보다 조정중량이 큰지 체크
+  if (adjustForm.value.type === 'OUT') {
+    const selectedLot = matLotList.value.find((lot) => lot.id === adjustForm.value.lotId);
+    if (selectedLot && adjustForm.value.adjustWeight > selectedLot.currWeight) {
+      return toast('warn', '조정등록', '재고차감시 현재재고보다 클 수 없습니다.', 2500);
+    }
+}
   const payload = {
     lotId: adjustForm.value.lotId,
     weight: adjustForm.value.adjustWeight, // 양수
@@ -332,7 +338,9 @@ const adjustHistoryColumns = [
         <div class="card flex flex-col gap-4 h-full">
           <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">목록</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('list')"></span>목록</div>
+            </div>
             <Divider />
             <selectTable v-model:selection="selectedRows" selectionMode="single" :columns="matStock" :data="matStockList" :paginator="true" :page="page" :showCheckbox="false" @page-change="onPage" @row-select="detailInfo" />
           </div>
@@ -343,7 +351,9 @@ const adjustHistoryColumns = [
         <div class="card flex flex-col gap-4 h-full">
           <!-- 상단 헤더 -->
           <div class="flex items-center justify-between my-3">
-            <div class="font-semibold text-m">상세정보</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('openfolder')"></span>상세정보</div>
+            </div>
             <div class="flex gap-2">
               <btn color="info" icon="check" label="재고 조정" class="whitespace-nowrap" outlined @click="submitAdjustStock" />
             </div>

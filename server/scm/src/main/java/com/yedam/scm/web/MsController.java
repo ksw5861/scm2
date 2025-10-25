@@ -3,10 +3,13 @@ package com.yedam.scm.web;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.yedam.scm.StockByProduct.service.StockByProductService;
 import com.yedam.scm.dto.AdjStockDTO;
 import com.yedam.scm.dto.MatStockSearchDTO;
 import com.yedam.scm.dto.MatUnloadSearchDTO;
 import com.yedam.scm.dto.PageDTO;
+import com.yedam.scm.dto.ProdSearchDTO;
+import com.yedam.scm.dto.ProdStockDTO;
 import com.yedam.scm.dto.PurchaseListSearchDTO;
 import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
@@ -63,8 +66,10 @@ public class MsController {
     
     final PurchaseMatService purchaseMatService;  //자재주문
     final InStockMatService inStockMatService;    //자재입고
+    final StockByProductService stockByProductService;    //제품재고
     private final DataSource dataSource;   // jasper
     private final ResourceLoader resourceLoader;
+
     
     //======================================================================주문part
     //생산계획등록
@@ -230,8 +235,8 @@ public class MsController {
     /*==============================================
      * 재스퍼 출고명세서
      ===============================================*/
-  @GetMapping("/mshipment/{inboundId}")
-  public ResponseEntity<byte[]> exportShipment(@PathVariable Long inboundId) throws Exception {
+    @GetMapping("/mshipment/{inboundId}")
+    public ResponseEntity<byte[]> exportShipment(@PathVariable Long inboundId) throws Exception {
     Map<String, Object> params = new HashMap<>();
     params.put("InboundId", inboundId);
 
@@ -256,7 +261,19 @@ public class MsController {
     }
 }
 
-
+ /*======================================
+     *  제품 재고조회
+     * ======================================*/
+    @GetMapping("/stockByProd")
+    public ResponseEntity<Map<String, Object>> getProductStockList(ProdSearchDTO searchDTO, PageDTO pageDTO) {
+        Map<String, Object> result = stockByProductService.getProductStockList(searchDTO, pageDTO);
+        return ResponseEntity.ok(result);
+    }
+    //자재별LOT현황
+    @GetMapping("/stockByProdLotList")
+    public List<ProdStockDTO> getProductLotList(@RequestParam String prodId) {
+        return stockByProductService.getProductLotList(prodId);
+    }
 
 }
 

@@ -155,5 +155,10 @@ public class SupplierServiceImpl implements SupplierService  {
         return result;
     }
 
+    @Override
+    public List<PurchaseMatVO> getRequestResultList(String vendorId, matSupplySearchDTO searchDTO) {
+        return mapper.getRequestResultList(vendorId, searchDTO);
+    }
+
 
 }

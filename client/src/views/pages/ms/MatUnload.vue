@@ -47,11 +47,9 @@ const searchFilter = ref({
 
 const openRetrunModal = () => {
   if (!selectedRows.value || !selectedRows.value.id) {
-    toast('warn', '선택 필요', '반품등록처리 출고번호를 선택해주세요:', '3000');
+    toast('warn', '선택 필요', '반송처리 출고번호를 선택해주세요:', '3000');
     return;
   }
-
-  toast('info', '반품 등록', '반품등록시 전량 반품처리됩니다.', '5000');
 
   returnModal.value = true;
 };
@@ -64,10 +62,21 @@ const closeReturnModal = () => {
 const formatDate = (date) => {
   if (!date) return '';
   const d = new Date(date);
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const pageLoad = async () => {
+  //검색필터 기간 유효성검사
+  if (searchFilter.value.startDate && searchFilter.value.endDate) {
+    if (new Date(searchFilter.value.startDate) > new Date(searchFilter.value.endDate)) {
+      toast('warn', '기간 오류', '시작일은 종료일보다 이전이어야 합니다.', '3000');
+      return;
+    }
+  }
+
   const params = {
     page: page.value.page,
     size: page.value.size,
@@ -114,7 +123,7 @@ const detailInfo = async () => {
 
 const approve = async () => {
   if (!selectedRows.value || !selectedRows.value.id) {
-    toast('warn', '선택 필요', '하차승인할 출고건을 선택해주세요.', '3000');
+    toast('warn', '선택 필요', '하차승인할 출고번호를 선택해주세요.', '3000');
     return;
   }
   if (!confirm('하차 승인을 하시겠습니까?')) {
@@ -238,7 +247,9 @@ const shipDetailColumn = [
       <div class="md:w-1/2">
         <div class="card flex flex-col gap-4" style="height: 800px">
           <div class="flex items-center justify-between my-3">
-            <div class="font-semibold text-m">하차대기 목록</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 하차대기 목록</div>
+            </div>
             <div class="flex gap-2">
               <btn color="secondary" icon="file" label="출고명세서" class="whitespace-nowrap" outlined @click="openShipmentReport" />
             </div>
@@ -252,7 +263,9 @@ const shipDetailColumn = [
       <div class="md:w-1/2">
         <div class="card flex flex-col gap-4" style="height: 800px">
           <div class="flex items-center justify-between my-3">
-            <div class="font-semibold text-m">상세정보</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('openfolder')"></span> 상세정보</div>
+            </div>
             <div class="flex gap-2">
               <btn color="warn" icon="cancel" label="반송" @click="openRetrunModal" class="whitespace-nowrap" outlined />
               <btn color="info" icon="check" label="승인" @click="approve" class="whitespace-nowrap" outlined />
@@ -267,10 +280,11 @@ const shipDetailColumn = [
   <!--반품모달-->
   <Dialog v-model:visible="returnModal" modal header="반송 사유" :style="{ width: '500px' }">
     <div class="card flex justify-center">
+      반송등록시 전체 반송처리됩니다.
       <Textarea v-model="returnMemo" rows="5" cols="100" />
     </div>
     <div class="flex justify-center gap-2">
-      <btn color="warn" icon="cancel" label="닫기" @click="closeReturnModal" class="whitespace-nowrap" outlined />
+      <btn color="secondary" icon="check" label="닫기" @click="closeReturnModal" class="whitespace-nowrap" outlined />
       <btn color="info" icon="check" label="등록" @click="returnSubmit" class="whitespace-nowrap" outlined />
     </div>
   </Dialog>

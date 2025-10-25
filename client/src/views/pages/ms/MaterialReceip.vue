@@ -78,10 +78,21 @@ const defectForm = ref({
 const formatDate = (date) => {
   if (!date) return '';
   const d = new Date(date);
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const pageLoad = async () => {
+  //검색필터 기간 유효성검사
+  if (searchFilter.value.startDate && searchFilter.value.endDate) {
+    if (new Date(searchFilter.value.startDate) > new Date(searchFilter.value.endDate)) {
+      toast('warn', '기간 오류', '시작일은 종료일보다 이전이어야 합니다.', '3000');
+      return;
+    }
+  }
+
   const params = {
     page: page.value.page,
     size: page.value.size,
@@ -139,6 +150,10 @@ const inputInfo = () => {
     toast('info', '입고등록 완료', '입고등록이 완료된 자재입니다.', '3000');
     return;
   }
+  // 인풋박스 초기화
+  inQty.value = null;
+  expDate.value = null;
+  result.value = null;
 
   inputMatName.value = row.matName;
   console.log('선택된 자재명:', row.matName);
@@ -147,15 +162,29 @@ const inputInfo = () => {
 const submit = async () => {
   //불합격시 등록버튼 제어
   if (result.value === 'N') {
-    toast('info', '입고등록 실패', '검수결과 합격자재만 입고가능합니다.', '3000');
+    toast('warn', '입고등록 불가', '검수결과 합격자재만 입고가능합니다.', '3000');
     return;
   }
-  //입고수량 > 입고잔여수량 초과제어
-  // if(Number(inQty.value) > Number(restQty.value)){
-  //     toast('info', '입고등록 실패', '입고수량이 입고잔여수량을 초과할 수 없습니다.', '3000');
-  //     return
-  // }
-
+  //유효성 검사
+  if (!inQty.value || isNaN(inQty.value) || Number(inQty.value) <= 0) {
+    toast('warn', '유효성 검사', '처리수량은 0보다 큰 숫자로 입력해주세요.', '3000');
+    return;
+  }
+  if (Number(inQty.value) > selectedDetail.value.restQty) {
+    toast('warn', '유효성 검사', '입고수량은 잔여수량을 초과할 수 없습니다.', '3000');
+    return;
+  }
+  if (!expDate.value) {
+    toast('warn', '유효성 검사', '유통기한을 입력해주세요.', '3000');
+    return;
+  }
+  if (result.value !== 'Y') {
+    toast('warn', '유효성 검사', '검수결과를 선택해주세요.', '3000');
+    return;
+  }
+  if (!confirm('입고등록을 진행하시겠습니까?')) {
+    return;
+  }
   const payload = {
     inboundDetId: selectedDetail.value.id,
     inboundId: selectedMaster.value.id,
@@ -197,12 +226,17 @@ const defectSubmit = async () => {
   defectForm.value.inboundDetId = selectedDetail.value.id;
   defectForm.value.logRejQty = inQty.value; //불량수량을 입고수량으로 설정
 
+  if (result.value === 'Y') {
+    toast('warn', '등록 불가', '검수결과 불합격자재만 등록가능합니다.', '3000');
+    return;
+  }
+
   if (!defectForm.value.logRejQty || isNaN(defectForm.value.logRejQty) || Number(defectForm.value.logRejQty) <= 0) {
     toast('warn', '유효성 검사', '불량수량은 0보다 큰 숫자로 입력해주세요.', '3000');
     return;
   }
-  if (Number(defectForm.value.logRejQty) > selectedDetail.value.outQty - selectedDetail.value.inTotalQty) {
-    toast('warn', '유효성 검사', '불량수량은 입고잔여수량을 초과할 수 없습니다.', '3000');
+  if (Number(defectForm.value.logRejQty) > selectedDetail.value.restQty) {
+    toast('warn', '유효성 검사', '불량수량은 잔여수량을 초과할 수 없습니다.', '3000');
     return;
   }
   if (!defectForm.value.logMemo) {
@@ -386,7 +420,9 @@ const approveUnloadDetaiColumn = [
         <div class="card flex flex-col gap-4 h-full">
           <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">입고대기 목록</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 입고대기 목록</div>
+            </div>
             <Divider />
             <selectTable v-model:selection="selectedMaster" :selectionMode="'single'" :columns="approveUnloadColumn" :data="approveUnloadList" :paginator="true" :showCheckbox="false" :page="page" @row-select="detailInfo" @page-change="onPage" />
           </div>
@@ -398,7 +434,9 @@ const approveUnloadDetaiColumn = [
           <!-- 버튼 + 제목을 같은 행에 배치 -->
           <div class="flex items-center justify-between my-3">
             <!-- 왼쪽: 제목 -->
-            <div class="font-semibold text-m">상세정보</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('openfolder')"></span> 상세정보</div>
+            </div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
               <btn color="warn" icon="check" label="불량등록" @click="defectSubmit" class="whitespace-nowrap" outlined />
@@ -412,7 +450,7 @@ const approveUnloadDetaiColumn = [
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
             <SearchField type="readOnly" label="자재명" v-model="inputMatName" />
             <SearchField type="date" label="유통기한" v-model="expDate" width="30rem" />
-            <SearchField type="text" label="처리수량" v-model="inQty" />
+            <SearchField type="number" label="처리수량" v-model="inQty" width="30rem" />
             <searchField
               type="dropDown"
               label="검수결과"
