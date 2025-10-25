@@ -51,7 +51,7 @@ AND pm.vendor_id = #{vendorId}
     AND pm.reg_date &gt;= #{search.startDate}
   </if>
   <if test="search.endDate != null">
-    AND pm.reg_date &lt;= #{search.endDate}
+    AND pm.reg_date &lt;= #{search.endDate} + 1
   </if>
   <if test="search.matName != null and search.matName != ''">
     AND m.mat_name LIKE '%' || #{search.matName} || '%'
@@ -110,7 +110,7 @@ WHERE pm.vendor_id = #{vendorId}
     AND pm.due_date &gt;= #{search.startDate}
   </if>
   <if test="search.endDate != null">
-    AND pm.due_date &lt;= #{search.endDate}
+    AND pm.due_date &lt;= #{search.endDate} + 1
   </if>
   <if test="search.matName != null and search.matName != ''">
     AND m.mat_name LIKE '%' || #{search.matName} || '%'
@@ -133,7 +133,6 @@ ORDER BY psl.re_date DESC
             #{expectDate, mode=IN, jdbcType=DATE}
         )}
 </select>
-
 
 <!--공급처출고-->
 <!--공급처출고등록시:  1)출고승인목록 출력 2)입고마스터테이블 INSERT 3)입고마스터테이블데이터insert 3)입고상세테이블insert  4)배송정보테이블insert-->
@@ -167,7 +166,7 @@ WHERE pm.pur_mat_status IN ('ms4','ms5')
     AND psl.log_expect_date &gt;= #{search.startDate}
   </if>
   <if test="search.endDate != null">
-    AND psl.log_expect_date &lt;= #{search.endDate}
+    AND psl.log_expect_date &lt;= #{search.endDate} + 1
   </if>
   <if test="search.matName != null and search.matName != ''">
     AND m.mat_name LIKE '%' || #{search.matName} || '%'
@@ -228,7 +227,7 @@ WHERE i.vendor_id = #{vendorId}
     AND i.vendor_out_date &gt;= #{search.startDate}
   </if>
   <if test="search.endDate != null">
-    AND i.vendor_out_date &lt;= #{search.endDate}
+    AND i.vendor_out_date &lt;= #{search.endDate} + 1
   </if>
   <if test="search.matName != null and search.matName != ''">
     AND m.mat_name LIKE '%' || #{search.matName} || '%'
@@ -352,6 +351,47 @@ FROM (
   order by i.vendor_out_date desc
 )
 WHERE ROWNUM &lt; 8
+</select>
+
+<!--주문내역조회-->
+<select id="getRequestResultList" parameterType="map" resultMap="purchaseMatMap">
+SELECT p.pur_id,
+       p.reg_date,
+       p.pur_no,
+       p.mat_id,
+       m.mat_name,
+       p.req_qty,
+       m.stock_unit,
+       l.log_pur_mat_status,
+       p.emp_name,
+       l.log_name,
+       l.re_date,
+       l.log_reson_comm
+FROM purchase_status_log l
+JOIN purchase_mat p
+  ON l.log_pur_id = p.pur_id
+JOIN material m
+ON p.mat_id = m.mat_id
+WHERE (l.log_pur_id, l.re_date) IN (
+    SELECT log_pur_id, MAX(re_date)
+    FROM purchase_status_log
+    WHERE log_pur_mat_status IN ('ms1', 'ms2', 'ms3')
+    GROUP BY log_pur_id
+)
+AND l.log_vendor_id = #{vendorId}
+  <if test="search.startDate != null">
+    AND p.reg_date &gt;= #{search.startDate}
+  </if>
+  <if test="search.endDate != null">
+    AND p.reg_date &lt;= #{search.endDate} + 1
+  </if>
+  <if test="search.matName != null and search.matName != ''">
+    AND m.mat_name LIKE '%' || #{search.matName} || '%'
+  </if>
+  <if test="search.status != null and search.status != ''">
+    AND l.log_pur_mat_status = #{search.status}
+  </if>
+ORDER BY re_date desc
 </select>
 
 </mapper>

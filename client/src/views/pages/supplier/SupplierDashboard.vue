@@ -40,8 +40,6 @@ onMounted(async () => {
   try {
     const { data } = await axios.get(`/api/sdashboard/${vendorId}`);
 
-
-
     //summaryDTO 기반
     summaryCards.value = [
       { label: '승인 대기 건', value: data.summary.beforeApprove },
@@ -132,14 +130,18 @@ const tableColumns = [
       <!-- 상태별 현황 차트 -->
       <div class="md:w-1/5">
         <div class="card p-4" style="height: 450px">
-          <h3 class="text-lg font-semibold mb-4">최근 3개월 출고 품목 비율</h3>
+          <div class="flex items-center justify-between gap-4 h-10">
+            <h3 class="text-lg font-semibold flex items-center gap-4"><span :class="useIcon('history')"></span> 최근 3개월 출고 품목 비율</h3>
+          </div>
           <Divider />
           <Chart type="pie" :data="chartData" :options="chartOptions" class="w-full md:w-[20rem]" />
         </div>
       </div>
       <div class="md:w-2/5">
         <div class="card p-4" style="height: 450px">
-          <h3 class="text-lg font-semibold mb-4">불량 내역</h3>
+          <div class="flex items-center justify-between gap-4 h-10">
+            <h3 class="text-lg font-semibold flex items-center gap-4"><span :class="useIcon('list')"></span>불량 내역</h3>
+          </div>
           <Divider />
           <selectTable v-model:selection="selectedDetails" :selectionMode="'single'" :columns="defectColumns" :data="defectList" :paginator="false" :showCheckbox="false" />
         </div>
@@ -147,7 +149,9 @@ const tableColumns = [
       <!-- 최근 주문 / 출고 내역 -->
       <div class="md:w-3/5">
         <div class="card p-4" style="height: 450px">
-          <h3 class="text-lg font-semibold mb-4">최근 주문 / 출고 내역</h3>
+          <div class="flex items-center justify-between gap-4 h-10">
+            <h3 class="text-lg font-semibold flex items-center gap-4"><span :class="useIcon('list')"></span>최근 주문 / 출고 내역</h3>
+          </div>
           <Divider />
           <selectTable v-model:selection="selectedDetail" :selectionMode="'single'" :columns="tableColumns" :data="recentList" :paginator="false" :showCheckbox="false" />
         </div>

@@ -56,10 +56,21 @@ const searchFilter = ref({
 const formatDate = (date) => {
   if (!date) return '';
   const d = new Date(date);
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const pageLoad = async () => {
+  //검색필터 기간 유효성검사
+  if (searchFilter.value.startDate && searchFilter.value.endDate) {
+    if (new Date(searchFilter.value.startDate) > new Date(searchFilter.value.endDate)) {
+      toast('warn', '기간 오류', '시작일은 종료일보다 이전이어야 합니다.', '3000');
+      return;
+    }
+  }
+
   const params = {
     startDate: formatDate(searchFilter.value.startDate),
     endDate: formatDate(searchFilter.value.endDate),
@@ -112,22 +123,22 @@ const approvedShip = async () => {
     toast('info', '유효성 검사', '출고 지시 제품을 선택해 주세요.', '3000');
     return;
   }
-  // //출고수량 null
-  // if (!matOutData.value.orderQty || matOutData.value.orderQty == 0) {
-  // toast('info', '유효성 검사', '출고 수량을 입력해 주세요.', '3000');
-  // return;
-  // }
-
-  // if (!matOutData.value.expectDate) {
-  // toast('info', '유효성 검사', '출고 예정일을 입력해 주세요.', '3000');
-  // return;
-  // }
-
-  // //잔여수량대비 유효성검사
-  // if (matOutData.value.outQty > matOutData.value.orderQty) {
-  // toast('info', '유효성 검사', '주문수량 대비 출고수량이 많습니다.', '3000');
-  // return;
-  // }
+  //유효성검사
+  if (selectedRows.value.some((row) => !row.outQty)) {
+    toast('warning', '유효성 검사', '출고수량을 입력해 주세요.', '3000');
+    return;
+  }
+  if (selectedRows.value.some((row) => !row.expectDate)) {
+    toast('warning', '유효성 검사', '출고예정일을 입력해 주세요.', '3000');
+    return;
+  }
+  if (selectedRows.value.some((row) => !row.outQty || row.outQty <= 0 || row.outQty > row.restQty)) {
+    toast('warning', '유효성 검사', '잔여 출고수량을 초과할 수 없습니다.', '3000');
+    return;
+  }
+  if (!confirm('선택한 자재를 출고 승인하시겠습니까?')) {
+    return;
+  }
 
   const list = JSON.parse(JSON.stringify(selectedRows.value));
 
@@ -244,7 +255,9 @@ const matOutColumns = [
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
         <btn color="info" icon="check" label="출고 승인" class="whitespace-nowrap" outlined @click="approvedShip" />
       </div>
-      <div class="font-semibold text-xl mb-5">출고대기 목록</div>
+      <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+        <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 출고대기 목록</div>
+      </div>
       <selectTable v-model:selection="selectedRows" :columns="matOutColumns" :data="matOutData" :paginator="true" :rows="15" :page="page" @page-change="onPage" />
     </div>
   </div>

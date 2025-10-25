@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yedam.scm.StockByProduct.mapper.StockByProductMapper">
+<select id = "getProductStockList" parameterType="map" resultType="ProdStockDTO">
+SELECT * FROM (
+    SELECT a.*, ROWNUM rnum
+    FROM (
+        SELECT i.prod_id,
+               p.prod_name,
+               SUM(i.remain_qty) as total_remain_qty,
+               p.unit
+        FROM item_inbound i
+        JOIN product p
+        ON i.prod_id = p.prod_id
+        WHERE 1=1
+        <if test="prodName != null and prodName != '' ">
+            AND p.prod_name LIKE '%' || #{prodName} || '%'
+        </if>
+        <if test="productLot != null and productLot != '' ">
+            AND i.lot_no LIKE '%' || #{productLot} || '%'
+        </if>
+        GROUP BY i.prod_id, p.prod_name, p.unit
+        ORDER BY i.prod_id 
+    ) a
+    WHERE ROWNUM &lt;= #{endRow}
+)
+WHERE rnum &gt;= #{startRow}
+</select>
+
+<select id="getProductStockCount" parameterType="map" resultType="long">
+SELECT COUNT(DISTINCT i.prod_id)
+FROM item_inbound i
+JOIN product p  
+ON i.prod_id = p.prod_id
+WHERE 1=1
+<if test="prodName != null and prodName != '' ">
+    AND p.prod_name LIKE '%' || #{prodName} || '%'
+</if>
+<if test="productLot != null and productLot != '' ">
+    AND i.lot_no LIKE '%' || #{productLot} || '%'
+</if>
+</select>
+
+<select id="getProductLotList" parameterType="string" resultType="ProdStockDTO">
+SELECT i.inbound_id,
+       p.prod_name,
+       i.remain_qty,
+       p.unit,
+       i.in_date,
+       (i.in_date + p.exp - 1)as expDate,
+       w.wh_name
+FROM item_inbound i
+JOIN product p
+ON i.prod_id = p.prod_id
+JOIN warehouse w
+ON i.wh_id = w.wh_id
+WHERE i.prod_id = #{prodId}
+ORDER BY i.in_date ASC
+</select>
+
+</mapper>

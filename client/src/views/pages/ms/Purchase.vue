@@ -41,11 +41,13 @@ const mrpList = ref([
   { matId: '', matName: '', mrpQty: '', unit: '', leadTime: '' },
   { matId: '', matName: '', mrpQty: '', unit: '', leadTime: '' }
 ]);
+
 const purchaseList = ref([
+  { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
+  { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
-  //   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
-  //   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
 ]);
+
 const warehouseOptions = ref([]); //창고옵션
 const codeMap = ref({}); //공통코드용(생산유형)
 const monthCodeMap = ref({}); //공통코드용(월)
@@ -136,6 +138,105 @@ const pageLoadMrp = async () => {
   }));
 };
 
+//mrp행 선택/해제(토글)
+const toggleMrpSelection = (row) => {
+  // 이미 존재하면 제거
+  const existingIndex = purchaseList.value.findIndex((r) => r.matId === row.matId);
+  if (existingIndex !== -1) {
+    if (purchaseList.value.length > 3) {
+      purchaseList.value.splice(existingIndex, 1);
+    } else {
+      purchaseList.value[existingIndex] = {
+        matId: '',
+        matName: '',
+        reqQty: null,
+        unit: '',
+        vendorId: null,
+        price: null,
+        total: null,
+        dueDate: null
+      };
+    }
+    return;
+  }
+
+  //새로 추가할 행 데이터 정의
+  const newRow = {
+    id: row.id,
+    matId: row.matId,
+    matName: row.matName,
+    reqQty: row.mrpQty,
+    unit: row.unit,
+    vendorId: null,
+    price: null,
+    total: null,
+    dueDate: null
+  };
+
+  console.log('추가할 행:', newRow);
+  // 3️동일 자재 중복 방지
+  if (purchaseList.value.some((r) => r.matId === newRow.matId)) {
+    toast('info', '중복 항목', '이미 자재 주문 목록에 있는 자재입니다.', 2000);
+    return;
+  }
+
+  //빈행 찾기
+  const emptyIndex = purchaseList.value.findIndex((r) => !r.matId);
+
+  if (emptyIndex !== -1) {
+    // 빈행이 있으면 그 자리에 교체
+    purchaseList.value[emptyIndex] = newRow;
+  } else {
+    // 빈행이 없으면 새 행 push
+    purchaseList.value.push(newRow);
+  }
+};
+
+//주문등록
+const reqSubmit = async () => {
+  if (invalidRows.length > 0) {
+    toast('warn', '유효성 검사', '입력된 자재 항목 중 필수값이 누락된 행이 있습니다.', 3000);
+    return;
+  }
+
+  if (!confirm('자재주문을 등록하시겠습니까?')) {
+    return;
+  }
+
+  console.log('주문등록 클릭', purchaseList.value);
+  //유효성 검사: 필수 입력값 확인
+  const invalidRows = purchaseList.value.filter(
+    (row) =>
+      // matId가 존재하는(=실제 입력된) 행만 검사
+      row.matId && (!row.reqQty || !row.vendorId || !row.dueDate || !row.toWarehouse)
+  );
+
+  const reqList = purchaseList.value.map((row) => ({
+    mrpDetId: row.id,
+    matId: row.matId,
+    reqQty: row.reqQty,
+    vendorId: row.vendorId,
+    total: row.reqQty * row.price,
+    dueDate: row.dueDate,
+    toWarehouse: row.toWarehouse,
+    empName: empName
+  }));
+  console.log(reqList);
+  try {
+    await axios.post('/api/mreqMaterial', reqList);
+
+    toast('info', '등록 성공', '자재주문 등록 성공', '5000');
+    await pageLoadMrp();
+    purchaseList.value = [
+      { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
+      { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
+      { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
+    ];
+  } catch (error) {
+    toast('error', '등록 실패', '자재주문 등록 실패:', '500');
+  }
+};
+
 //자재별 공급처
 const selectVendor = async (row) => {
   try {
@@ -162,36 +263,6 @@ const selectOpt = (row, value) => {
   }
 };
 
-//mrp리스트 행 선택
-const addToPurchase = (row) => {
-  const emptyRowIndex = purchaseList.value.findIndex((r) => !r.matId);
-  const newRow = {
-    id: row.id, //mrp상세테이블 아이디값 넘겨줘야 함.
-    matId: row.matId,
-    matName: row.matName,
-    reqQty: row.mrpQty,
-    unit: row.unit,
-    vendorId: null, //드롭다운 선택시 채워짐
-    price: null,
-    total: null
-  };
-
-  //동일한 자재가 이미 있으면 추가하지 않음
-  const exists = purchaseList.value.some((r) => r.matId === newRow.matId);
-  if (exists) {
-    toast('info', '중복 항목', '이미 자재 주문 목록에 있는 자재입니다.', '3000');
-    return;
-  }
-
-  if (emptyRowIndex !== -1) {
-    // 빈행 있으면 교체
-    purchaseList.value[emptyRowIndex] = newRow;
-  } else {
-    // 빈행 없으면 push
-    purchaseList.value.push(newRow);
-  }
-};
-
 //배송지(창고)
 const loadWarehouseList = async () => {
   try {
@@ -210,39 +281,6 @@ const selectWarehouseOpt = (row, value) => {
   row.toWarehouse = value; // 선택된 창고ID 저장
   const wh = warehouseOptions.value.find((w) => w.value === value);
   row.toWarehouseName = wh ? wh.label : '';
-};
-
-//주문등록
-const reqSubmit = async () => {
-  //유효성 검사: 필수 입력값 확인
-  if (purchaseList.value.some((row) => !row.matId || !row.reqQty || !row.vendorId || !row.dueDate || !row.toWarehouse)) {
-    toast('warn', '유효성 검사', '모든 자재 주문 항목에 필수값을 모두 입력해주세요.', '3000');
-    return;
-  }
-  const reqList = purchaseList.value.map((row) => ({
-    mrpDetId: row.id,
-    matId: row.matId,
-    reqQty: row.reqQty,
-    vendorId: row.vendorId,
-    total: row.reqQty * row.price,
-    dueDate: row.dueDate,
-    toWarehouse: row.toWarehouse,
-    empName: empName
-  }));
-  console.log(reqList);
-  try {
-    await axios.post('/api/mreqMaterial', reqList);
-
-    toast('info', '등록 성공', '자재주문 등록 성공', '5000');
-    await pageLoadMrp();
-    purchaseList.value = [
-      //   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
-      //   { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
-      { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null }
-    ];
-  } catch (error) {
-    toast('error', '등록 실패', '자재주문 등록 실패:', '500');
-  }
 };
 
 //공통코드
@@ -338,7 +376,9 @@ const purchaseColumns = [
         <div class="md:w-1/2 planList">
           <div class="card flex flex-col gap-4 h-full">
             <div class="flex items-center justify-between font-semibold text-m">
-              <span>생산계획 상세</span>
+              <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+                <div class="flex items-center gap-4"><span :class="useIcon('list')"></span>생산계획 상세</div>
+              </div>
               <div class="flex gap-2">
                 <btn color="secondary" icon="check" label="생산계획불러오기" class="whitespace-nowrap" outlined @click="openPlanModal" />
                 <btn color="secondary" icon="check" label="MRP계산" class="whitespace-nowrap" outlined @click="calculatMrp" />
@@ -352,17 +392,22 @@ const purchaseColumns = [
         <!-- 우측 -->
         <div class="md:w-1/2">
           <div class="card flex flex-col gap-4 h-full">
-            <div class="font-semibold text-m">MRP 합산 자재 소요량</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('list')"></span>MRP 합산 자재 소요량</div>
+            </div>
             <Divider />
-            <selectTable :columns="mrpColumns" :data="mrpList" :paginator="false" :showCheckbox="false" @row-select="addToPurchase" />
+            <selectTable :columns="mrpColumns" :data="mrpList" :paginator="false" :showCheckbox="false" @row-click="toggleMrpSelection" />
           </div>
         </div>
       </div>
       <!-- 상단 -->
       <div class="header">
         <div class="card flex flex-col gap-4">
-          <div class="flex items-center justify-between font-semibold text-m">
-            <span>자재 발주</span>
+          <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+            <div class="flex items-center gap-4">
+              <span :class="useIcon('cart')"></span>
+              <span>자재 발주</span>
+            </div>
             <btn color="secondary" icon="check" label="자재주문" @click="reqSubmit" class="whitespace-nowrap" outlined />
           </div>
           <Divider />

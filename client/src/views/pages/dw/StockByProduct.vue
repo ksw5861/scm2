@@ -8,7 +8,7 @@ import { useIcon } from '@/composables/useIcon';
 import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import { useUserStore } from '@/stores/user';
 import SearchCard from '@/components/card/SearchCard.vue';
-import Select from 'primevue/select';
+
 
 // Pinia Store
 const userStore = useUserStore();
@@ -29,18 +29,15 @@ const breadcrumbItems = computed(() => {
 });
 
 //테이블
-const matStockList = ref();
+const productList = ref();
 const selectedRows = ref();
-const matLotList = ref();
-//공통코드
-const codeMap = ref();
-const statusOptions = ref([]);
+const prodLotList = ref();
+const selectedDeRow = ref();
+
 //검색조건
 const searchFilter = ref({
-  materialId: '',
-  materialName: '',
-  lotNo: '',
-  lotStatus: ''
+  prodName: '',
+  inboundId: '',
 });
 // pagination
 const page = ref({ page: 1, size: 10, totalElements: 0 });
@@ -51,19 +48,17 @@ const fetchMatList = async () => {
     size: page.value.size,
     ...searchFilter.value
   };
-  console.log('요청 params:', params);
+  console.log(params);
   try {
-    const res = await axios.get('/api/mmatStockList', { params });
+    const res = await axios.get('/api/stockByProd', { params });
     const { list, page: pageInfo } = res.data;
 
-    matStockList.value = list.map((item) => ({
-      id: item.matId,
-      matId: item.matId,
-      matName: item.materialVO.matName,
-      currWeight: item.currWeight,
-      unit: item.materialVO.unit,
-      currQty: item.currQty,
-      qtyUnit: item.materialVO.stockUnit
+    productList.value = list.map((item) => ({
+      id: item.prodId,
+      prodId: item.prodId,
+      prodName: item.prodName,
+      currQty: item.totalRemainQty,
+      unit: item.unit
     }));
 
     page.value.totalElements = pageInfo.totalElements;
@@ -73,18 +68,17 @@ const fetchMatList = async () => {
 };
 
 const detailInfo = async () => {
+
   try {
-    const list = await axios.get('/api/mmatLotList', { params: { matId: selectedRows.value.id } });
-    matLotList.value = list.data.map((item) => ({
-      regDate: useDateFormat(item.regDate).value,
-      lotNo: item.lotNo,
-      matName: item.materialVO.matName,
-      currWeight: item.currWeight,
-      unit: item.materialVO.unit,
-      currQty: item.currQty,
-      stockUnit: item.materialVO.stockUnit,
-      expDate: useDateFormat(item.expDate).value,
-      status: codeMap.value[item.lotStatus]
+    const list = await axios.get('/api/stockByProdLotList', { params: { prodId: selectedRows.value.id } });
+    prodLotList.value = list.data.map((item) => ({
+        lotNo: item.inboundId,
+        prodName: item.prodName,
+        currQty: item.remainQty,
+        unit: item.unit,
+        regDate: useDateFormat(item.inDate).value,
+        expDate: useDateFormat(item.expDate).value,
+        warehouse: item.whName
     }));
   } catch (error) {
     toast('error', '리스트 로드 실패', 'LOT 리스트 불러오기 실패', '3000');
@@ -92,31 +86,13 @@ const detailInfo = async () => {
   }
 };
 
-const loadStatusCodes = async () => {
-  try {
-    const res = await axios.get('/api/mstatus/searchStock');
-    codeMap.value = res.data.reduce((acc, cur) => {
-      acc[cur.codeId] = cur.codeName;
-      return acc;
-    }, {});
-
-    statusOptions.value = res.data.map((item) => ({
-      name: item.codeName, // 화면 표시용
-      value: item.codeId // 실제 값
-    }));
-  } catch (err) {
-    toast('error', '공통코드 로드 실패', '상태명 불러오기 실패', '3000');
-  }
-};
-
 const resetSearch = () => {
   searchFilter.value = {
-    materialId: '',
-    materialName: '',
-    lotNo: '',
-    lotStatus: ''
+    prodName: '',
+    inboundId: '',
   };
   fetchMatList();
+  selectedRows.value = null;
 };
 
 const onPage = (event) => {
@@ -127,27 +103,23 @@ const onPage = (event) => {
 
 onMounted(() => {
   fetchMatList();
-  loadStatusCodes();
 });
 
-const matStock = [
-  { label: '자재코드', field: 'matId' },
-  { label: '자재명', field: 'matName', sortable: true },
-  { label: '현재재고', field: 'currWeight', sortable: true },
-  { label: '단위', field: 'unit' },
-  { label: '환산재고', field: 'currQty', sortable: true },
-  { label: '환산단위', field: 'qtyUnit' }
+const productStock = [
+  { label: '제품코드', field: 'prodId' },
+  { label: '제품명', field: 'prodName', sortable: true },
+  { label: '현재재고', field: 'currQty', sortable: true },
+  { label: '단위', field: 'unit' }
 ];
 
-const matLotColumns = [
-  //{ field: 'regDate', label: '등록일', style: 'width: 12rem' },
+const prodLotColumns = [
   { field: 'lotNo', label: 'LOT번호', style: 'width: 15rem' },
-  { field: 'currWeight', label: '현재재고', style: 'width: 10rem' },
-  { field: 'unit', label: '단위', style: 'width: 8rem' },
-  { field: 'currQty', label: '환산재고', style: 'width: 10rem' },
-  { field: 'stockUnit', label: '환산단위', style: 'width: 10rem' },
+  { field: 'prodName', label: '제품명', style: 'width: 15rem' },
+  { field: 'currQty', label: '현재고', style: 'width: 10rem' },
+  { field: 'unit', label: '단위', style: 'width: 10rem' },
+  //{ field: 'regDate', label: '등록일', style: 'width: 12rem' },
   { field: 'expDate', label: '유통기한', style: 'width: 12rem' },
-  { field: 'status', label: '상태', style: 'width: 8rem' }
+  { field: 'warehouse', label: '보관창고', style: 'width: 12rem' }
 ];
 </script>
 
@@ -161,25 +133,19 @@ const matLotColumns = [
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <InputText v-model="searchFilter.materialId" inputId="searchMa" />
-              <label for="searchMatName">자재명</label>
+              <InputText v-model="searchFilter.prodName" inputId="searchName" />
+              <label for="searchMatName">제품명</label>
             </IftaLabel>
           </InputGroup>
 
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
             <IftaLabel>
-              <InputText v-model="searchFilter.lotNo" inputId="searchMa" />
+              <InputText v-model="searchFilter.inboundId" inputId="searchLot" />
               <label for="searchLotNo">LOT번호</label>
             </IftaLabel>
           </InputGroup>
 
-          <div class="flex flex-col w-full">
-            <InputGroup>
-              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
-              <Select v-model="searchFilter.lotStatus" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="LOT 상태" class="w-full h-[48px] text-base" />
-            </InputGroup>
-          </div>
         </div>
       </SearchCard>
     </div>
@@ -191,31 +157,27 @@ const matLotColumns = [
           <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
-              <div class="flex items-center gap-4"><span :class="useIcon('list')"></span>목록</div>
+              <div class="flex items-center gap-4"><span :class="useIcon('list')"></span>제품 재고 목록</div>
             </div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" selectionMode="single" :columns="matStock" :data="matStockList" :paginator="true" :page="page" :showCheckbox="false" @page-change="onPage" @row-select="detailInfo" />
+            <selectTable v-model:selection="selectedRows" selectionMode="single" :columns="productStock" :data="productList" :paginator="true" :page="page" :showCheckbox="false" @page-change="onPage" @row-select="detailInfo" />
           </div>
         </div>
       </div>
       <!--하단우측-->
       <div class="md:w-1/2">
         <div class="card flex flex-col gap-4" style="height: 850px">
-          <!-- 버튼 + 제목을 같은 행에 배치 -->
           <div class="flex items-center justify-between my-3">
-            <!-- 왼쪽: 제목 -->
             <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
               <div class="flex items-center gap-4"><span :class="useIcon('openfolder')"></span>LOT 상세정보</div>
             </div>
           </div>
           <Divider />
-          <selectTable v-model:selection="selectedDeRow" :selectionMode="'single'" :columns="matLotColumns" :data="matLotList" :paginator="false" :showCheckbox="false" />
+          <selectTable v-model:selection="selectedDeRow" :selectionMode="'single'" :columns="prodLotColumns" :data="prodLotList" :paginator="false" :showCheckbox="false" />
         </div>
       </div>
     </div>
   </div>
-  <!-- 자재별 LOT현황 모달 -->
-  <!-- <CommonModal :visible="showMatLot" title="자재별 LOT 현황" :columns="matLotColumns" :fetchData="matLotList" @close="closePlanModal" /> -->
 </template>
 
 <style scoped></style>

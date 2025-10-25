@@ -16,6 +16,18 @@ const supplier = {
       }
     },
     {
+      path: '/requstResultList',
+      name: '공급처 주문 내역 조회',
+      component: () => import('@/views/pages/supplier/RequestResult.vue'),
+      meta: {
+        breadcrumb: {
+          parent: '공급처'
+        },
+        requiresAuth: true,
+        roles: ['supplier']
+      }
+    },
+    {
       path: '/matSupply',
       name: '공급처 출고 승인',
       component: () => import('@/views/pages/supplier/matSupply.vue'),
