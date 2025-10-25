@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.data.redis.core.RedisTemplate;
 
 /**
  * DhController
@@ -60,6 +62,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("${api.base-path:/}")
 public class DhController {
 
+  private final RedisTemplate<String, String> redisTemplate;
   private final EmployeeService employeeSvc;
   private final ImgService imgSvc;
   private final LoginService loginSvc;
@@ -345,47 +348,53 @@ public class DhController {
       ));
   }
 
-  @GetMapping("/auth/me")
-  public ResponseEntity<LoginRes> getCurrentUser(
-      @CookieValue(value = "accessToken", required = false) String token
-  ) {
-      if (token == null || token.isBlank()) {
-          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-      }
+    @GetMapping("/auth/me")
+    public ResponseEntity<LoginRes> getCurrentUser(
+        @CookieValue(value = "accessToken", required = false) String token
+    ) {
+        if (token == null || token.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
-      boolean valid;
-      try {
-          valid = jwtUtil.validateToken(token);
-      } catch (Exception ex) {
-          ex.printStackTrace();
-          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-      }
+        Boolean isBlacklisted = redisTemplate.hasKey("BL_" + token);
+        if (isBlacklisted != null && isBlacklisted) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                .body(null);
+        }
 
-      if (!valid) {
-          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-      }
+        boolean valid;
+        try {
+            valid = jwtUtil.validateToken(token);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
-      Claims claims;
-      try {
-          claims = jwtUtil.getClaims(token);
-      } catch (Exception ex) {
-          ex.printStackTrace();
-          return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-      }
+        if (!valid) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
-      try {
-          LoginRes user = new LoginRes();
-          user.setAccountId(claims.getSubject());
-          user.setName((String) claims.get("name"));
-          user.setCode((String) claims.get("code"));
-          user.setRole((String) claims.get("role"));
-          user.setTempPassword((String) claims.get("tempPassword"));
-          return ResponseEntity.ok(user);
-      } catch (Exception ex) {
-          ex.printStackTrace();
-          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-      }
-  }
+        Claims claims;
+        try {
+            claims = jwtUtil.getClaims(token);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            LoginRes user = new LoginRes();
+            user.setAccountId(claims.getSubject());
+            user.setName((String) claims.get("name"));
+            user.setCode((String) claims.get("code"));
+            user.setRole((String) claims.get("role"));
+            user.setTempPassword((String) claims.get("tempPassword"));
+            return ResponseEntity.ok(user);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
   @PostMapping("/auth/change-password")
   public ResponseEntity<?> modifyAccountPassword(
@@ -439,15 +448,27 @@ public class DhController {
       }
   }
 
-  @PostMapping("/auth/logout")
-  public ResponseEntity<?> logout(HttpServletResponse response) {
-      Cookie cookie = new Cookie("accessToken", "");
-      cookie.setPath("/");
-      cookie.setHttpOnly(true);
-      cookie.setMaxAge(0);
-      response.addCookie(cookie);
-      return ResponseEntity.ok().body(Map.of("message", "로그아웃 되었습니다."));
-  }
+   @PostMapping("/auth/logout")
+    public ResponseEntity<?> logout(
+        @CookieValue(value = "accessToken", required = false) String token,
+        HttpServletResponse response
+    ) {
+        if (token != null && jwtUtil.validateToken(token)) {
+            long expiration = jwtUtil.getExpiration(token) - System.currentTimeMillis();
+            if (expiration > 0) {
+                redisTemplate.opsForValue()
+                        .set("BL_" + token, "logout", expiration, TimeUnit.MILLISECONDS);
+            }
+        }
+
+        Cookie cookie = new Cookie("accessToken", "");
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(0);
+        response.addCookie(cookie);
+
+        return ResponseEntity.ok(Map.of("message", "로그아웃 되었습니다."));
+    }
 
   // 출고완료 목록
   @GetMapping("/app/orderlist")
