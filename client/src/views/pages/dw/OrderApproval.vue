@@ -41,13 +41,46 @@ const orderPage = ref(1);
 const orderRows = ref(10);
 const orderTotal = ref(0);
 
+/* ------------------ 날짜 모달 ------------------ */
+const dateDialog = ref(false);
+const dateList = ref([]);
+const datePage = ref(1);
+const dateRows = ref(10);
+const dateTotal = ref(0);
+
+async function openDateModal() {
+  dateDialog.value = true;
+  datePage.value = 1;
+  await loadDateList();
+}
+async function loadDateList() {
+  const { data } = await axios.get('/api/approval/modal/searchByDate', {
+    params: {
+      startDate: search.value.fromDate ? fmtDate(search.value.fromDate) : '',
+      endDate: search.value.toDate ? fmtDate(search.value.toDate) : '',
+      page: datePage.value,
+      size: dateRows.value
+    }
+  });
+  dateList.value = data.items ?? data.data ?? [];
+  dateTotal.value = data.totalCount ?? 0;
+}
+function onDatePageChange(e) {
+  datePage.value = e.page + 1;
+  dateRows.value = e.rows;
+  loadDateList();
+}
+function selectDateRow(e) {
+  const row = e.data;
+  search.value.orderId = row.orderId;
+  dateDialog.value = false;
+}
+
 /* ------------------ 유틸 ------------------ */
-function fmtDate(value) {
-  if (!value) return '';
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return '';
-  const local = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-  return `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, '0')}-${String(local.getDate()).padStart(2, '0')}`;
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = typeof d === 'string' ? new Date(d) : d;
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 function toNumber(n) {
   if (n === null || n === undefined) return 0;
@@ -220,6 +253,7 @@ onMounted(() => applySearch());
             <Calendar v-model="search.fromDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
             <span>~</span>
             <Calendar v-model="search.toDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
+            <!-- <Button icon="pi pi-search" class="p-button-text" @click="openDateModal" /> -->
           </div>
         </div>
         <div class="field">
@@ -303,6 +337,8 @@ onMounted(() => applySearch());
       </div>
     </div>
 
+    <!-- 날짜 모달 -->
+   
     <!-- 반려 모달 -->
     <Dialog v-model:visible="rejectDialog" modal header="반려 사유 입력" :style="{ width: '400px' }">
       <Textarea v-model="rejectReason" rows="5" class="w-full" placeholder="반려 사유를 입력해 주세요" />
@@ -353,6 +389,7 @@ onMounted(() => applySearch());
     </Dialog>
   </div>
 </template>
+
 
 <style scoped>
 .page-wrap {

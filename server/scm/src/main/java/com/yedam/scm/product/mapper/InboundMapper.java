@@ -72,7 +72,9 @@ public interface InboundMapper {
         /* ===================== 반품승인 ===================== */
 
         // 반품 목록
-        List<ReturnVO> selectReturnList();
+        // List<ReturnVO> selectReturnList();
+        List<ReturnVO> selectReturnList(Map<String, Object> params);
+
 
         // 반품 상세
         List<ReturnDetailVO> selectReturnDetails(@Param("returnId") String returnId);
@@ -126,10 +128,14 @@ public interface InboundMapper {
 
         long countApprovalOrderModal(@Param("condition") String condition);
 
-
+            // ===================== 주문승인 날짜 모달 =====================
+    List<SalesOrderVO> searchApprovalByDate(@Param("dto") AccountLedgerSearchDTO dto,
+                                            @Param("paging") PageDTO paging);
+    int countApprovalByDate(@Param("dto") AccountLedgerSearchDTO dto);
 
 
         
+        //반품 페이지 
     // ===================== 1️⃣ 반품일자 모달 =====================
     List<ReturnVO> searchByDate(@Param("dto") AccountLedgerSearchDTO dto, @Param("paging") PageDTO paging);
     int countByDate(@Param("dto") AccountLedgerSearchDTO dto);

@@ -48,7 +48,8 @@ public interface InboundService {
     void callProcApproveOrder(Map<String, Object> param);
 
     /* ===================== 반품승인 ===================== */
-    List<ReturnVO> getReturnList();
+    // List<ReturnVO> getReturnList();
+    List<ReturnVO> getReturnList(Map<String, Object> params);
 
     List<ReturnDetailVO> getReturnDetails(String returnId);
 
@@ -88,6 +89,10 @@ public interface InboundService {
     // ✅ 주문승인 - 주문번호 모달
     Map<String, Object> getApprovalOrderModal(String condition, int page, int size);
 
+   // ===================== 주문승인 날짜 모달 =====================
+    Map<String, Object> searchApprovalByDate(AccountLedgerSearchDTO dto, PageDTO paging);
+
+
 
 
     /* ==============제품 반품 승인 페이지 모달 ============ */
@@ -99,6 +104,8 @@ public interface InboundService {
 
     // 반품코드 검색
     Map<String, Object> searchByCode(String condition, PageDTO paging);
+
+    
 
 
 
