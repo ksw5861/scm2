@@ -130,9 +130,14 @@ public class InboundServiceImpl implements InboundService {
     }
 
     /* ===================== 반품승인 ===================== */
+    // @Override
+    // public List<ReturnVO> getReturnList() {
+    //     return inboundMapper.selectReturnList();
+    // }
+
     @Override
-    public List<ReturnVO> getReturnList() {
-        return inboundMapper.selectReturnList();
+    public List<ReturnVO> getReturnList(Map<String, Object> params) {
+        return inboundMapper.selectReturnList(params);
     }
 
     @Override
@@ -282,6 +287,19 @@ public class InboundServiceImpl implements InboundService {
         result.put("page", paging);
         return result;
     }
+
+    // ===================== 주문승인 날짜 모달 =====================
+    @Override
+    public Map<String, Object> searchApprovalByDate(AccountLedgerSearchDTO dto, PageDTO paging) {
+        int total = inboundMapper.countApprovalByDate(dto);
+        paging.updatePageInfo(total);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("items", inboundMapper.searchApprovalByDate(dto, paging));
+        result.put("totalCount", total);
+        return result;
+    }
+
 
 
 
