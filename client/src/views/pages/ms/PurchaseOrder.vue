@@ -16,8 +16,8 @@ import DatePicker from 'primevue/datepicker';
 // (userStore.name)이름
 // (userStore.code)코드 - 계정기준으로
 const userStore = useUserStore();
-const vendorId = userStore.code;
-const vendorName = '승인담당';
+const empName = userStore.name;
+const empId = userStore.code;
 
 const route = useRoute();
 const { toast } = useAppToast();
@@ -33,7 +33,8 @@ const breadcrumbItems = computed(() => {
   return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
 });
 
-const reqeustResultrData = ref([]);
+const purchaseOrderData = ref([]);
+const selectedRows = ref([]);
 const page = ref({ page: 1, size: 10, totalElements: 0 });
 //공통코드
 const codeMap = ref();
@@ -75,9 +76,9 @@ const fetchList = async () => {
   };
 
   try {
-    const list = await axios.get(`/api/requestResult/${vendorId}`, { params });
+    const list = await axios.get('/api/mgetPurchaseOrderList', { params });
     console.log(list);
-    reqeustResultrData.value = list.data.map((item) => ({
+    purchaseOrderData.value = list.data.map((item) => ({
       id: item.purId,
       orderDate: useDateFormat(item.regDate).value,
       orderNo: item.purNo,
@@ -85,9 +86,11 @@ const fetchList = async () => {
       matName: item.materialVO.matName,
       reqQty: item.reqQty,
       unit: item.materialVO.stockUnit,
+      dueDate: useDateFormat(item.dueDate).value,
+      companyName: item.vendorVO.companyName,
       status: codeMap.value[item.purStatusLogVO.logPurMatStatus],
-      outName: item.empName,
-      inName: item.purStatusLogVO.logName,
+      epmName: item.empName,
+      venName: item.purStatusLogVO.logName,
       reDate: useDateFormat(item.purStatusLogVO.reDate).value,
       resonComm: item.purStatusLogVO.logResonComm
     }));
@@ -97,6 +100,34 @@ const fetchList = async () => {
     toast('error', '리스트 로드 실패', '주문 리스트 불러오기 실패:', '3000');
   }
 };
+
+//발주취소
+const cancel = async () => {
+    const list = JSON.parse(JSON.stringify(selectedRows.value));
+    const idList = list.map((row) => row.id);
+    const checkStatus = list.map((row) => row.status);
+
+    //유효성 검사
+    for(const status of checkStatus){
+        if(status !== '발주등록'){
+            toast('warn', '취소 불가', '발주등록상태 외 주문건은 취소가 불가능합니다.', '3000');
+            return
+        }
+    }
+
+    if(!confirm('등록된 발주를 취소하시겠습니까?')){
+        return;
+    }
+
+    try{ //취소담당자, purId,
+        await axios.post('/api/mcancel', { purId: idList, empName: empName } )
+        toast('success', '취소 성공', '발주 취소 성공:', '3000');
+        fetchList();
+    } catch(err){
+        toast('error', '취소 실패', '발주 취소 실패:', '3000');
+    }
+
+}
 
 const onPage = (event) => {
   const startRow = event.page * event.rows + 1;
@@ -147,24 +178,26 @@ onMounted(() => {
 const matOrderColumns = [
   { label: '주문일자', field: 'orderDate', sortable: true },
   { label: '주문번호', field: 'orderNo' },
-  //{ label: '납기요청일', field: 'dueDate', sortable: true },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName', sortable: true },
   { label: '주문수량', field: 'reqQty', style: 'text-align: right', sortable: true },
   { label: '단위', field: 'unit' },
+  { label: '납기요청일', field: 'dueDate', sortable: true },
+  { label: '공급처', field: 'companyName', sortable: true },
   { label: '상태', field: 'status' },
-  { label: '발주 담당자', field: 'outName', sortable: true },
-  { label: '승인 담당자', field: 'inName', sortable: true },
+  { label: '발주 담당자', field: 'epmName', sortable: true },
+  { label: '공급처 담당자', field: 'venName', sortable: true },
   { label: '처리일자', field: 'reDate', sortable: true },
   { label: '비고', field: 'resonComm' }
 ];
 </script>
+
 <template>
   <div class="container">
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--검색영역-->
     <div class="card flex flex-col gap-4 mt-4">
-      <SearchCard title="주문 검색" @search="fetchList" @reset="resetSearch">
+      <SearchCard title="발주 검색" @search="fetchList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
@@ -183,10 +216,10 @@ const matOrderColumns = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('vendor')" /></InputGroupAddon>
             <IftaLabel>
               <InputText v-model="searchFilter.matName" inputId="searchMatName" />
-              <label for="searchMatName">자재명</label>
+              <label for="searchMatName">공급처</label>
             </IftaLabel>
           </InputGroup>
 
@@ -203,10 +236,15 @@ const matOrderColumns = [
 
     <!--중간버튼영역-->
     <div class="card flex flex-col gap-4">
-      <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
-        <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 주문 목록</div>
-      </div>
-      <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="reqeustResultrData" :showCheckbox="false" :paginator="true" :rows="15" @page-change="onPage" :page="page" />
+        <div class="flex items-center justify-between my-3">
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+                <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 발주 목록</div>
+            </div>
+            <div>
+                <btn color="warn" icon="cancel" label="발주취소" @click="cancel" class="whitespace-nowrap" outlined />
+            </div>
+        </div>
+        <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="purchaseOrderData" :showCheckbox="true" :paginator="true" :rows="15" @page-change="onPage" :page="page" />
     </div>
   </div>
 </template>

@@ -132,7 +132,7 @@ const approve = async () => {
 
   try {
     await axios.post('/api/sapprove', { purId: idList, vId: vendorId, name: vendorName });
-    toast('info', '승인 성공', '주문 승인 성공:', '3000');
+    toast('success', '승인 성공', '주문 승인 성공:', '3000');
 
     fetchList();
   } catch (error) {
@@ -154,7 +154,7 @@ const rejectPurchase = async () => {
     await axios.post('/api/sreject', null, { params: { purId: selectedRows.value[0].id, rejMemo: rejMemo.value, staff: vendorName } });
     rejModal.value = false;
     rejMemo.value = '';
-    toast('info', '등록 성공', '주문 거부 성공:', '3000');
+    toast('success', '등록 성공', '주문 거부 성공:', '3000');
     fetchList();
     selectedRows.value = [];
   } catch (error) {
@@ -182,7 +182,7 @@ const oepnRejModal = () => {
   }
 
   if (selectedCount > 1) {
-    toast('info', '반려 불가', '1건씩만 처리 가능합니다:', '3000');
+    toast('error', '반려 불가', '1건씩만 처리 가능합니다:', '3000');
     return;
   }
 
@@ -203,10 +203,10 @@ const matOrderColumns = [
   { label: '납기요청일', field: 'dueDate', sortable: true },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName', sortable: true },
-  { label: '주문수량', field: 'orderQty', sortable: true },
+  { label: '주문수량', field: 'orderQty',style: 'text-align: right', sortable: true },
   { label: '단위', field: 'unit' },
   { label: '도착지', field: 'toWarehouse' },
-  { label: '총 금액', field: 'total', sortable: true },
+  { label: '총 금액', field: 'total', style: 'text-align: right', sortable: true },
   { label: '구매처 담당자', field: 'buyerName', sortable: true }
 ];
 </script>
@@ -219,7 +219,7 @@ const matOrderColumns = [
       <SearchCard title="주문 검색" @search="fetchList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.startDate" inputId="searcStart" />
               <label for="searchStart">시작일</label>
@@ -227,7 +227,7 @@ const matOrderColumns = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.endDate" inputId="searcEnd" />
               <label for="searchEnd">종료일</label>
@@ -243,7 +243,7 @@ const matOrderColumns = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('truck')" /></InputGroupAddon>
             <IftaLabel>
               <InputText v-model="searchFilter.toWarehouse" inputId="searchtoWarehouse" />
               <label for="searchtoWarehouse">도착지</label>
@@ -257,7 +257,7 @@ const matOrderColumns = [
     <!--중간버튼영역-->
     <div class="card flex flex-col gap-4">
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="warn" icon="cancel" label="주문 거부" @click="oepnRejModal" outlined class="whitespace-nowrap" />
+        <btn color="warn" icon="cancel" label="주문 취소" @click="oepnRejModal" outlined class="whitespace-nowrap" />
         <btn color="info" icon="check" label="주문 승인" @click="approve" class="whitespace-nowrap" outlined />
       </div>
       <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">

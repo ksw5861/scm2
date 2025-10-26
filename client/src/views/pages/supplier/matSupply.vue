@@ -125,15 +125,15 @@ const approvedShip = async () => {
   }
   //유효성검사
   if (selectedRows.value.some((row) => !row.outQty)) {
-    toast('warning', '유효성 검사', '출고수량을 입력해 주세요.', '3000');
+    toast('warn', '유효성 검사', '출고수량을 입력해 주세요.', '3000');
     return;
   }
   if (selectedRows.value.some((row) => !row.expectDate)) {
-    toast('warning', '유효성 검사', '출고예정일을 입력해 주세요.', '3000');
+    toast('warn', '유효성 검사', '출고예정일을 입력해 주세요.', '3000');
     return;
   }
   if (selectedRows.value.some((row) => !row.outQty || row.outQty <= 0 || row.outQty > row.restQty)) {
-    toast('warning', '유효성 검사', '잔여 출고수량을 초과할 수 없습니다.', '3000');
+    toast('warn', '유효성 검사', '잔여 출고수량을 초과할 수 없습니다.', '3000');
     return;
   }
   if (!confirm('선택한 자재를 출고 승인하시겠습니까?')) {
@@ -200,12 +200,12 @@ const matOutColumns = [
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
   { label: '구매처 담당자', field: 'buyerName' },
-  { label: '수량', field: 'orderQty' },
+  { label: '수량', field: 'orderQty', style: 'text-align: right' },
   { label: '단위', field: 'unit' },
-  { label: '잔여수량', field: 'restQty' },
+  { label: '잔여수량', field: 'restQty', style: 'text-align: right' },
   { label: '출고수량', field: 'outQty', inputText: true },
   { label: '출고예정일', field: 'expectDate', datePicker: true },
-  { label: '누적출고수량', field: 'outTotalQty' }
+  { label: '누적출고수량', field: 'outTotalQty', style: 'text-align: right' }
   //{ label: '상태', field: 'releaseStatus' },
   //{ label: '출고승인일', field: 'approveDate' }
 ];
@@ -218,7 +218,7 @@ const matOutColumns = [
       <SearchCard title="주문 검색" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.startDate" inputId="searchMatId" />
               <label for="searchStart">시작일</label>
@@ -226,7 +226,7 @@ const matOutColumns = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.endDate" inputId="searchMa" />
               <label for="searchEnd">종료일</label>
@@ -243,7 +243,7 @@ const matOutColumns = [
 
           <div class="flex flex-col w-full">
             <InputGroup>
-              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <InputGroupAddon><i :class="useIcon('tags')" /></InputGroupAddon>
               <Select v-model="searchFilter.status" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="출고 상태" class="w-full h-[48px] text-base" />
             </InputGroup>
           </div>

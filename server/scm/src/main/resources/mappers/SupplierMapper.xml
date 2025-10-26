@@ -375,10 +375,10 @@ ON p.mat_id = m.mat_id
 WHERE (l.log_pur_id, l.re_date) IN (
     SELECT log_pur_id, MAX(re_date)
     FROM purchase_status_log
-    WHERE log_pur_mat_status IN ('ms1', 'ms2', 'ms3')
+    WHERE log_pur_mat_status IN ('ms1', 'ms2', 'ms3', 'ms99')
     GROUP BY log_pur_id
 )
-AND l.log_vendor_id = #{vendorId}
+AND p.vendor_id = #{vendorId}
   <if test="search.startDate != null">
     AND p.reg_date &gt;= #{search.startDate}
   </if>

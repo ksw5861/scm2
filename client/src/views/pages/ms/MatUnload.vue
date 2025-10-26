@@ -204,7 +204,7 @@ const shipedColumn = [
 const shipDetailColumn = [
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
-  { label: '수량', field: 'outQty' },
+  { label: '수량', field: 'outQty', style: 'text-align: right' },
   { label: '단위', field: 'unit' }
 ];
 </script>
@@ -213,10 +213,10 @@ const shipDetailColumn = [
   <div class="container">
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <div class="card flex flex-col gap-4 mt-4">
-      <SearchCard title="입고 조회" @search="pageLoad" @reset="resetSearch">
+      <SearchCard title="입고 검색" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.startDate" inputId="searchStart" />
               <label for="searchStart">시작일</label>
@@ -224,7 +224,7 @@ const shipDetailColumn = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.endDate" inputId="searchEnd" />
               <label for="searchEnd">종료일</label>
@@ -232,7 +232,7 @@ const shipDetailColumn = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('vendor')" /></InputGroupAddon>
             <IftaLabel>
               <InputText v-model="searchFilter.vendorName" inputId="searchVendor" />
               <label for="searchVendor">공급처</label>

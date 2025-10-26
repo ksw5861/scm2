@@ -20,6 +20,7 @@ public class PurStatusLogVO {
     private Date logExpectDate;
     private String logShipOrderNo;
     private String finalShipCon;   //최종출고유무 (출고승인 후 입력되는 값!)
+    private String inEmpName; //발주취소기록용
 }
 
 

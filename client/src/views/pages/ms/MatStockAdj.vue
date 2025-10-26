@@ -271,17 +271,17 @@ onMounted(async () => {
 const matStock = [
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName', sortable: true },
-  { label: '현재재고', field: 'currWeight', sortable: true },
+  { label: '현재재고', field: 'currWeight', style: 'text-align: right', sortable: true },
   { label: '단위', field: 'unit' },
-  { label: '환산재고', field: 'currQty', sortable: true },
+  { label: '환산재고', field: 'currQty', style: 'text-align: right', sortable: true },
   { label: '환산단위', field: 'qtyUnit' }
 ];
 
 const matLotColumns = [
   { field: 'lotNo', label: 'LOT번호', style: 'width: 15rem' },
-  { field: 'currWeight', label: '현재재고', style: 'width: 10rem' },
+  { field: 'currWeight', label: '현재재고', style: 'width: 10rem; text-align: right' },
   { field: 'unit', label: '단위', style: 'width: 8rem' },
-  { field: 'currQty', label: '환산재고', style: 'width: 10rem' },
+  { field: 'currQty', label: '환산재고', style: 'width: 10rem; text-align: righ' },
   { field: 'stockUnit', label: '환산단위', style: 'width: 10rem' },
   { field: 'expDate', label: '유통기한', style: 'width: 12rem' },
   { field: 'status', label: '상태', style: 'width: 8rem' }
@@ -290,12 +290,12 @@ const matLotColumns = [
 const adjustHistoryColumns = [
   { field: 'adjDate', label: '조정일시', style: 'width:10rem' },
   { field: 'inOut', label: '유형', style: 'width: 8rem' },
-  { field: 'adjWeight', label: '조정중량', style: 'width: 10rem' },
+  { field: 'adjWeight', label: '조정중량', style: 'width: 10rem, text-align: right' },
   { field: 'unit', label: '단위', style: 'width: 8rem' },
   { field: 'reason', label: '사유', style: 'width: 10rem' },
   { field: 'name', label: '담당자', style: 'width: 10rem' },
-  { field: 'beforeWeight', label: '조정 전', style: 'width: 10rem' },
-  { field: 'afterWeight', label: '조정 후', style: 'width: 10rem' }
+  { field: 'beforeWeight', label: '조정 전', style: 'width: 10rem; text-align: right' },
+  { field: 'afterWeight', label: '조정 후', style: 'width: 10rem; text-align: right' }
 ];
 </script>
 
@@ -304,7 +304,7 @@ const adjustHistoryColumns = [
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--검색영역-->
     <div class="card flex flex-col gap-4 mt-4">
-      <SearchCard title="재고 조회" @search="fetchMatList" @reset="resetSearch">
+      <SearchCard title="재고 검색" @search="fetchMatList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
@@ -315,7 +315,7 @@ const adjustHistoryColumns = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('file')" /></InputGroupAddon>
             <IftaLabel>
               <InputText v-model="searchFilter.materialId" inputId="searchMa" />
               <label for="searchLotNo">LOT번호</label>
@@ -324,7 +324,7 @@ const adjustHistoryColumns = [
 
           <div class="flex flex-col w-full">
             <InputGroup>
-              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <InputGroupAddon><i :class="useIcon('tags')" /></InputGroupAddon>
               <Select v-model="searchFilter.lotStatus" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="LOT 상태" class="w-full h-[48px] text-base" />
             </InputGroup>
           </div>
@@ -352,7 +352,7 @@ const adjustHistoryColumns = [
           <!-- 상단 헤더 -->
           <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
-              <div class="flex items-center gap-4"><span :class="useIcon('openfolder')"></span>상세정보</div>
+              <div class="flex items-center gap-4"><span :class="useIcon('info')"></span>상세정보</div>
             </div>
             <div class="flex gap-2">
               <btn color="info" icon="check" label="재고 조정" class="whitespace-nowrap" outlined @click="submitAdjustStock" />

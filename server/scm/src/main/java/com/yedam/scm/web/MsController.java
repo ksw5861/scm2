@@ -11,6 +11,8 @@ import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.ProdSearchDTO;
 import com.yedam.scm.dto.ProdStockDTO;
 import com.yedam.scm.dto.PurchaseListSearchDTO;
+import com.yedam.scm.dto.prodPlanForAccoDTO;
+import com.yedam.scm.dto.purchaseOrderDTO;
 import com.yedam.scm.instockMat.service.InStockMatService;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
 import com.yedam.scm.vo.InboundDetailVO;
@@ -107,8 +109,13 @@ public class MsController {
     public void callReqestMaterial(@RequestBody List<PurchaseMatVO> requestList) {      
         purchaseMatService.callReqestMatProc(requestList);
     }
+    //발주취소
+    @PostMapping("/mcancel")
+    public void purchseCancel(@RequestBody Map<String, Object> data) {
+        purchaseMatService.purchseCancel(data);
+    }
     
-    //발주목록
+    //발주현황
     @GetMapping("/mpurchaseList")
     public ResponseEntity<Map<String, Object>> getPurchaseList(PurchaseListSearchDTO searchDTO, PageDTO pageDTO) {
 
@@ -116,11 +123,30 @@ public class MsController {
         return ResponseEntity.ok(result);
     }
     
-    //발주상세조회
+    //발주현황상세조회
     @GetMapping("/mpurchaseListStatus")
     public List<PurStatusLogVO> getPurchaseStatus(@RequestParam Long purId) {
         return purchaseMatService.getPurchaseStatus(purId);
     }
+    
+    //발주내역
+    @GetMapping("/mgetPurchaseOrderList")
+    public List<PurchaseMatVO> getPurchaseOrderList(purchaseOrderDTO searchDTO) {
+
+        return purchaseMatService.getPurchaseOrderList(searchDTO);
+    }
+
+    //생산계획리스트 for accodion
+    @GetMapping("/prd-planList")
+    public List<ProductionPlanVO> getPlanlistforAcco(prodPlanForAccoDTO searchDTO){
+        return purchaseMatService.getPlanlistforAcco(searchDTO);
+    }
+    //생산계획상세(제품 + MPR) for accodion
+    @GetMapping("/prd-planDetail")
+    public Map<String, Object> getPlanDetailforAcco(@RequestParam Long plId){
+        return purchaseMatService.getPlanDetailforAcco(plId);
+    }
+
     //============================================================================ 입고Part
     //하차대기목록(마스터)
     @GetMapping("/mshipedList")
@@ -260,7 +286,7 @@ public class MsController {
         return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
     }
 }
-
+    
  /*======================================
      *  제품 재고조회
      * ======================================*/

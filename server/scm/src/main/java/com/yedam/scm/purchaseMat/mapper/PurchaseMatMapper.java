@@ -7,6 +7,8 @@ import org.apache.ibatis.annotations.Param;
 
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.PurchaseListSearchDTO;
+import com.yedam.scm.dto.prodPlanForAccoDTO;
+import com.yedam.scm.dto.purchaseOrderDTO;
 import com.yedam.scm.vo.MatStatusVO;
 import com.yedam.scm.vo.MatVendorVO;
 import com.yedam.scm.vo.MrpDetailVO;
@@ -42,6 +44,12 @@ public interface PurchaseMatMapper {
     //자재주문등록(공급처)
     void callReqestMatProc(PurchaseMatVO requestList);
    
+    //발주취소
+    void updatePurchaseCancel(int purId);
+
+    //발주취소 이력
+    void insertCancelLog(@Param("purId")int purId, @Param("empName")String empName);
+
     //자재주문목록
     List<PurchaseMatVO> getPurchaseList(@Param("page")PageDTO PageDTO, @Param("search")PurchaseListSearchDTO searchDTO);
     Long getPurchaseMasterCount(@Param("search")PurchaseListSearchDTO searchDTO);
@@ -49,7 +57,15 @@ public interface PurchaseMatMapper {
     //자재주문상태목록
      List<PurStatusLogVO> getPurchaseStatus(Long purId);
 
-    /*==========================
+    //발주내역
+    List<PurchaseMatVO> getPurchaseOrderList(@Param("search")purchaseOrderDTO searchDTO);
+
+    //생산계획리스트 for accodion
+     List<ProductionPlanVO> getPlanlistforAcco(@Param("search")prodPlanForAccoDTO searchDTO);
+    //생산계획상세(제품 + MPR) for accodion
+    //제품은 기존꺼
+    List<MrpDetailVO> getMrpCalList(Long plId);
+     /*==========================
      * 드롭다운/모달용
      ===========================*/
     //제품리스트

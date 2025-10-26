@@ -4,7 +4,7 @@ import StockByProduct from "./dw/stockByProduct";
 
 const stock = {
   label: '재고 관리',
-  items: [ StockByProduct, matLotStock, matStockadj ]
+  items: [ matLotStock, matStockadj, StockByProduct ]
 };
 
 export default stock;

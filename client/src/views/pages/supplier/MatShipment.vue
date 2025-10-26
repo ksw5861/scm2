@@ -120,7 +120,7 @@ const submit = async () => {
       toast('warn', '유효성 검사', '배송지, 운송업체, 운송번호는 필수 입력값입니다.', '3000');
       return;
     }
-    if (shipDetailList.value.length === 0 || shipDetailList.value.some((row) => !row.matId || !row.ortQty)) {
+    if (shipDetailList.value.length === 0 ) {
       toast('warn', '유효성 검사', '출고할 자재를 선택해주세요.', '3000');
       return;
     }
@@ -137,13 +137,14 @@ const submit = async () => {
   venName: vanEmpName,
   vendorId: vendorId,
   //입고상세
-  details: list.map((row) => ({
-      purId: row.purId,               //주문테이블 아이디
-      matId: row.matId,               // 자재 코드
-      outQty: row.ortQty,             // 공급처 출고수량
-      purStatusId: row.purStatusId,   //주문로그T아이디 : : 출고상태값 제어필수
-      vendorId: vendorId        // 공급처코드 (공통)
-    })),
+  details: list.filter(row => row.purId && row.matId && row.outQty)
+                .map((row) => ({
+                    purId: row.purId,               //주문테이블 아이디
+                    matId: row.matId,               // 자재 코드
+                    outQty: row.ortQty,             // 공급처 출고수량
+                    purStatusId: row.purStatusId,   //주문로그T아이디 : : 출고상태값 제어필수
+                    vendorId: vendorId        // 공급처코드 (공통)
+                })),
   //배송정보
   shipmentInfoVO: {
     carrierName: carrier.value,
@@ -263,7 +264,7 @@ const approveShipColumns = [
 const addShipColumns = [
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
-  { label: '출고수량', field: 'ortQty' },
+  { label: '출고수량', field: 'ortQty', style: 'text-align: right'},
   { label: '단위', field: 'unit' },
   { label: '구매처 담당자', field: 'purName' }
 ];
@@ -279,7 +280,7 @@ const addShipColumns = [
             <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
                 <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
                     <IftaLabel>
                         <DatePicker v-model="searchFilter.startDate" inputId="searchStart" />
                         <label for="searchStart">시작일</label>
@@ -287,7 +288,7 @@ const addShipColumns = [
                 </InputGroup>
 
                 <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
                     <IftaLabel>
                         <DatePicker v-model="searchFilter.endDate" inputId="searchEnd" />
                         <label for="searchEnd">종료일</label>
@@ -303,7 +304,7 @@ const addShipColumns = [
                 </InputGroup>
 
                  <InputGroup>
-                    <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+                    <InputGroupAddon><i :class="useIcon('truck')" /></InputGroupAddon>
                     <IftaLabel>
                         <InputText v-model="searchFilter.toWarehouse" inputId="searchTowarehouse" />
                         <label for="searchTowarehouse">도착지</label>
@@ -331,7 +332,7 @@ const addShipColumns = [
         <div class="card flex flex-col gap-4 h-full">
             <div class="flex items-center justify-between my-3">
                 <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
-                <div class="flex items-center gap-4"><span :class="useIcon('openfolder')"></span> 상세정보</div>
+                <div class="flex items-center gap-4"><span :class="useIcon('info')"></span> 상세정보</div>
                 </div>
                 <div class="flex gap-2">
                     <btn color="secondary" icon="refresh" label="초기화" class="whitespace-nowrap" outlined @click="formreset" />
