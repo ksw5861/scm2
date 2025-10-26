@@ -1,5 +1,5 @@
 <!-- ======================================================
-📄 AccountLedger.vue (페이지네이션 완성본)
+📄 AccountLedger.vue (브레드크럼 + 순서정렬 완성본)
 ====================================================== -->
 <script setup>
 import Modal from '@/components/common/Modal.vue';
@@ -14,10 +14,24 @@ import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
 import InputText from 'primevue/inputtext';
 import Paginator from 'primevue/paginator';
+import Breadcrumb from 'primevue/breadcrumb';
+import { useRoute } from 'vue-router';
 import { computed, onMounted, ref } from 'vue';
 
 const { toast } = useAppToast();
 const icons = { home: useIcon('home'), vendor: useIcon('vendor'), list: useIcon('list') };
+
+/* ------------------ 브레드크럼 ------------------ */
+const route = useRoute();
+const breadcrumbHome = { icon: useIcon('home'), to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter((r) => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  const parentLabel = current.meta?.breadcrumb?.parent || '거래처 관리';
+  const currentLabel = current.name || '본사 거래처 원장';
+  return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
+});
 
 /* ====================== 데이터 ====================== */
 const list = ref([]);
@@ -114,20 +128,12 @@ function handleSelectVendor(item) {
 
 <template>
   <div class="page-wrap font-pretendard">
+    <!-- ✅ 브레드크럼 -->
+    <Breadcrumb class="rounded-lg mb-3" :home="breadcrumbHome" :model="breadcrumbItems" />
+
     <!-- ====================== 검색 ====================== -->
     <div class="box">
       <div class="flex items-end flex-wrap gap-4 mb-3">
-        <!-- 판매처명 -->
-        <div class="flex flex-col gap-1" style="width: 240px">
-          <label class="text-sm text-gray-500">판매처명</label>
-          <InputGroup>
-            <InputText v-model="search.companyName" placeholder="판매처 선택" @click="openVendorModal" readonly class="h-9 text-sm" />
-            <InputGroupAddon>
-              <Button icon="pi pi-search" text @click="openVendorModal" />
-            </InputGroupAddon>
-          </InputGroup>
-        </div>
-
         <!-- 시작일 -->
         <div class="flex flex-col gap-1" style="width: 150px">
           <label class="text-sm text-gray-500">시작일</label>
@@ -140,6 +146,17 @@ function handleSelectVendor(item) {
         <div class="flex flex-col gap-1" style="width: 150px">
           <label class="text-sm text-gray-500">종료일</label>
           <Calendar v-model="search.endDate" dateFormat="yy-mm-dd" showIcon inputClass="h-9 text-sm w-full" />
+        </div>
+
+        <!-- 판매처명 -->
+        <div class="flex flex-col gap-1" style="width: 240px">
+          <label class="text-sm text-gray-500">판매처명</label>
+          <InputGroup>
+            <InputText v-model="search.companyName" placeholder="판매처 선택" @click="openVendorModal" readonly class="h-9 text-sm" />
+            <InputGroupAddon>
+              <Button icon="pi pi-search" text @click="openVendorModal" />
+            </InputGroupAddon>
+          </InputGroup>
         </div>
       </div>
 
@@ -158,6 +175,8 @@ function handleSelectVendor(item) {
       </div>
 
       <DataTable :value="list" dataKey="vendorId" size="small" rowHover responsiveLayout="scroll" class="text-base">
+        <!-- ✅ 컬럼 순서 변경 -->
+        <Column field="lastOrderDate" header="최근거래일자" />
         <Column field="companyName" header="판매처명" />
         <Column field="totalPrice" header="총매출">
           <template #body="{ data }">₩{{ Number(data.totalPrice || 0).toLocaleString() }}</template>
@@ -177,7 +196,6 @@ function handleSelectVendor(item) {
         <Column field="unpaidCount" header="미수건수">
           <template #body="{ data }">{{ data.unpaidCount || 0 }}건</template>
         </Column>
-        <Column field="lastOrderDate" header="최근거래일자" />
       </DataTable>
 
       <!-- ✅ 페이지네이션 -->

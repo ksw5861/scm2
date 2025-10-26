@@ -1,17 +1,20 @@
 <!-- ======================================================
-📄 주문승인.vue (모달 포함 완전체)
+📄 주문승인.vue (모달 포함 + 브레드크럼 추가 완전체)
 ====================================================== -->
 <script setup>
-import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import InputText from 'primevue/inputtext';
-import InputGroup from 'primevue/inputgroup';
-import Calendar from 'primevue/calendar';
 import Button from 'primevue/button';
-import DataTable from 'primevue/datatable';
+import Calendar from 'primevue/calendar';
 import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
 import Dialog from 'primevue/dialog';
+import InputGroup from 'primevue/inputgroup';
+import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
+import { onMounted, ref, computed } from 'vue';
+import Breadcrumb from 'primevue/breadcrumb';
+import { useRoute } from 'vue-router';
+import { useIcon } from '@/composables/useIcon';
 
 /* ------------------ 상태 ------------------ */
 const search = ref({ fromDate: null, toDate: null, vendorId: '', orderId: '' });
@@ -237,11 +240,26 @@ async function confirmReject() {
   } else alert('반려 실패');
 }
 onMounted(() => applySearch());
+
+/* ------------------ 브레드크럼 ------------------ */
+const route = useRoute();
+const breadcrumbHome = { icon: useIcon('home'), to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter((r) => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  const parentLabel = current.meta?.breadcrumb?.parent || '';
+  const currentLabel = current.name || '';
+  return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
+});
 </script>
 
 <template>
   <div class="page-wrap">
-    <div class="page-title">주문 승인</div>
+    <!-- ✅ 브레드크럼 -->
+    <Breadcrumb class="rounded-lg mb-3" :home="breadcrumbHome" :model="breadcrumbItems" />
+
+    <div class="page-title"></div>
 
     <!-- 검색폼 -->
     <div class="box">
@@ -285,12 +303,7 @@ onMounted(() => applySearch());
           <Column headerStyle="width:3rem; text-align:center;">
             <template #body="{ data }">
               <div class="p-checkbox p-component custom-checkbox">
-                <input
-                  type="checkbox"
-                  class="p-checkbox-box"
-                  :checked="selectedOrders.some(o => o.orderId === data.orderId)"
-                  @change="() => toggleSingleSelect(data)"
-                />
+                <input type="checkbox" class="p-checkbox-box" :checked="selectedOrders.some((o) => o.orderId === data.orderId)" @change="() => toggleSingleSelect(data)" />
               </div>
             </template>
           </Column>
@@ -310,16 +323,7 @@ onMounted(() => applySearch());
             <Button label="부분 반려" icon="pi pi-times" class="p-button-danger" @click="openRejectDialog" :disabled="!selectedDetailRows.length" />
           </div>
         </div>
-        <DataTable
-          :value="detailRows"
-          dataKey="odetailId"
-          v-model:selection="selectedDetailRows"
-          selectionMode="multiple"
-          :metaKeySelection="false"
-          @row-click="toggleDetailSelection($event.data)"
-          paginator
-          :rows="10"
-        >
+        <DataTable :value="detailRows" dataKey="odetailId" v-model:selection="selectedDetailRows" selectionMode="multiple" :metaKeySelection="false" @row-click="toggleDetailSelection($event.data)" paginator :rows="10">
           <Column selectionMode="multiple" />
           <Column field="prodId" header="제품 번호" />
           <Column field="prodName" header="제품명" />
@@ -338,7 +342,7 @@ onMounted(() => applySearch());
     </div>
 
     <!-- 날짜 모달 -->
-   
+
     <!-- 반려 모달 -->
     <Dialog v-model:visible="rejectDialog" modal header="반려 사유 입력" :style="{ width: '400px' }">
       <Textarea v-model="rejectReason" rows="5" class="w-full" placeholder="반려 사유를 입력해 주세요" />
@@ -354,16 +358,7 @@ onMounted(() => applySearch());
         <InputText v-model="vendorKeyword" placeholder="판매처명 검색" @keyup.enter="loadVendorList" />
         <Button icon="pi pi-search" @click.stop="loadVendorList" />
       </div>
-      <DataTable
-        :value="vendorList"
-        dataKey="vendorId"
-        selectionMode="single"
-        @row-dblclick="selectVendor"
-        paginator
-        :rows="vendorRows"
-        :totalRecords="vendorTotal"
-        @page="onVendorPageChange"
-      >
+      <DataTable :value="vendorList" dataKey="vendorId" selectionMode="single" @row-dblclick="selectVendor" paginator :rows="vendorRows" :totalRecords="vendorTotal" @page="onVendorPageChange">
         <Column field="companyName" header="판매처명" />
       </DataTable>
     </Dialog>
@@ -374,22 +369,12 @@ onMounted(() => applySearch());
         <InputText v-model="orderKeyword" placeholder="주문번호 검색" @keyup.enter="loadOrderList" />
         <Button icon="pi pi-search" @click.stop="loadOrderList" />
       </div>
-      <DataTable
-        :value="orderListModal"
-        dataKey="orderId"
-        selectionMode="single"
-        @row-dblclick="selectOrder"
-        paginator
-        :rows="orderRows"
-        :totalRecords="orderTotal"
-        @page="onOrderPageChange"
-      >
+      <DataTable :value="orderListModal" dataKey="orderId" selectionMode="single" @row-dblclick="selectOrder" paginator :rows="orderRows" :totalRecords="orderTotal" @page="onOrderPageChange">
         <Column field="orderId" header="주문번호" />
       </DataTable>
     </Dialog>
   </div>
 </template>
-
 
 <style scoped>
 .page-wrap {
@@ -481,16 +466,18 @@ onMounted(() => applySearch());
   border-radius: 3px;
   background: #fff;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
   appearance: none;
   outline: none;
 }
 :deep(.custom-checkbox .p-checkbox-box:checked) {
-  background: #16a34a; /* ✅ 상세와 동일 (green-600) */
+  background: #16a34a;
   border-color: #16a34a;
 }
 :deep(.custom-checkbox .p-checkbox-box:checked::after) {
-  content: "";
+  content: '';
   position: absolute;
   width: 4px;
   height: 9px;

@@ -1,8 +1,8 @@
 <!-- ======================================================
-📄 ReturnApproval.vue (완전체)
+📄 ReturnApproval.vue (브레드크럼 추가 완전체)
 ====================================================== -->
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
 
 import InputText from 'primevue/inputtext';
@@ -14,6 +14,9 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Dialog from 'primevue/dialog';
 import Textarea from 'primevue/textarea';
+import Breadcrumb from 'primevue/breadcrumb';
+import { useRoute } from 'vue-router';
+import { useIcon } from '@/composables/useIcon';
 
 /* ------------------ 상태 ------------------ */
 const search = ref({ prodId: '', prodName: '', vendorName: '', fromDate: null, toDate: null, returnId: '' });
@@ -78,7 +81,6 @@ async function loadDetails(row) {
 /* ------------------ 목록 조회 ------------------ */
 async function applySearch() {
   const params = {
-    // prodId: search.value.prodId || '',
     prodName: search.value.prodName || '',
     vendorName: search.value.vendorName || '',
     fromDate: search.value.fromDate ? fmtDate(search.value.fromDate) : '',
@@ -190,11 +192,26 @@ function selectReturn(e) {
 }
 
 onMounted(() => applySearch());
+
+/* ------------------ 브레드크럼 ------------------ */
+const route = useRoute();
+const breadcrumbHome = { icon: useIcon('home'), to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter((r) => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  const parentLabel = current.meta?.breadcrumb?.parent || '';
+  const currentLabel = current.name || '';
+  return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
+});
 </script>
 
 <template>
   <div class="page-wrap">
-    <div class="page-title">반품 승인 처리</div>
+    <!-- ✅ 브레드크럼 -->
+    <Breadcrumb class="rounded-lg mb-3" :home="breadcrumbHome" :model="breadcrumbItems" />
+
+    <div class="page-title"></div>
 
     <!-- 검색폼 -->
     <div class="box">
@@ -243,21 +260,16 @@ onMounted(() => applySearch());
           <Column headerStyle="width:3rem; text-align:center;">
             <template #body="{ data }">
               <div class="p-checkbox p-component custom-checkbox">
-                <input
-                  type="checkbox"
-                  class="p-checkbox-box"
-                  :checked="selectedReturns.some(r => r.returnId === data.returnId)"
-                  @change="() => toggleReturnRow(data)"
-                />
+                <input type="checkbox" class="p-checkbox-box" :checked="selectedReturns.some((r) => r.returnId === data.returnId)" @change="() => toggleReturnRow(data)" />
               </div>
             </template>
           </Column>
 
           <Column field="returnDate" header="반품일자">
-  <template #body="{ data }">
-    {{ String(data.returnDate).substring(0, 10) }}
-  </template>
-</Column>
+            <template #body="{ data }">
+              {{ String(data.returnDate).substring(0, 10) }}
+            </template>
+          </Column>
           <Column field="companyName" header="판매처명" />
           <Column field="returnId" header="반품코드" />
           <Column field="returnStatus" header="상태" />
@@ -273,16 +285,7 @@ onMounted(() => applySearch());
             <Button label="반려" icon="pi pi-times" class="p-button-danger" @click="openRejectDialog" :disabled="!selectedDetailRows.length" />
           </div>
         </div>
-        <DataTable
-          :value="detailRows"
-          dataKey="rdetailId"
-          v-model:selection="selectedDetailRows"
-          selectionMode="multiple"
-          :metaKeySelection="false"
-          @row-click="toggleDetailSelection($event.data)"
-          paginator
-          :rows="10"
-        >
+        <DataTable :value="detailRows" dataKey="rdetailId" v-model:selection="selectedDetailRows" selectionMode="multiple" :metaKeySelection="false" @row-click="toggleDetailSelection($event.data)" paginator :rows="10">
           <Column selectionMode="multiple" :headerCheckbox="false" />
           <Column field="prodId" header="제품코드" />
           <Column field="companyName" header="판매처명" />
@@ -313,16 +316,7 @@ onMounted(() => applySearch());
         <InputText v-model="vendorKeyword" placeholder="판매처명 검색" @keyup.enter="loadVendorList" />
         <Button icon="pi pi-search" @click.stop="loadVendorList" />
       </div>
-      <DataTable
-        :value="vendorList"
-        dataKey="vendorId"
-        selectionMode="single"
-        @row-dblclick="selectVendor"
-        paginator
-        :rows="vendorRows"
-        :totalRecords="vendorTotal"
-        @page="onVendorPageChange"
-      >
+      <DataTable :value="vendorList" dataKey="vendorId" selectionMode="single" @row-dblclick="selectVendor" paginator :rows="vendorRows" :totalRecords="vendorTotal" @page="onVendorPageChange">
         <Column field="companyName" header="판매처명" />
       </DataTable>
     </Dialog>
@@ -333,16 +327,7 @@ onMounted(() => applySearch());
         <InputText v-model="returnKeyword" placeholder="반품코드 검색" @keyup.enter="loadReturnList" />
         <Button icon="pi pi-search" @click.stop="loadReturnList" />
       </div>
-      <DataTable
-        :value="returnListModal"
-        dataKey="returnId"
-        selectionMode="single"
-        @row-dblclick="selectReturn"
-        paginator
-        :rows="returnRows"
-        :totalRecords="returnTotal"
-        @page="onReturnPageChange"
-      >
+      <DataTable :value="returnListModal" dataKey="returnId" selectionMode="single" @row-dblclick="selectReturn" paginator :rows="returnRows" :totalRecords="returnTotal" @page="onReturnPageChange">
         <Column field="returnId" header="반품코드" />
       </DataTable>
     </Dialog>
@@ -438,7 +423,9 @@ onMounted(() => applySearch());
   border-radius: 3px;
   background: #fff;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
   appearance: none;
   outline: none;
 }
@@ -447,7 +434,7 @@ onMounted(() => applySearch());
   border-color: #16a34a;
 }
 :deep(.custom-checkbox .p-checkbox-box:checked::after) {
-  content: "";
+  content: '';
   position: absolute;
   width: 4px;
   height: 9px;
