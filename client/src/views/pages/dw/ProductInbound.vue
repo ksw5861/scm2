@@ -1,19 +1,35 @@
+<!-- ======================================================
+📄 Inbound.vue (모달 컬럼 분리 + 체크박스 복구 + 생산일자 제거 완전체)
+====================================================== -->
 <script setup>
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useAppToast } from '@/composables/useAppToast';
 import Modal from '@/components/common/Modal.vue';
-import Checkbox from 'primevue/checkbox';
 
 import InputText from 'primevue/inputtext';
 import InputGroup from 'primevue/inputgroup';
 import InputGroupAddon from 'primevue/inputgroupaddon';
-import Calendar from 'primevue/calendar';
 import Button from 'primevue/button';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
+import Breadcrumb from 'primevue/breadcrumb'; // ✅ 추가
+import { useRoute } from 'vue-router'; // ✅ 추가
+import { computed } from 'vue'; // ✅ 추가
+import { useIcon } from '@/composables/useIcon'; // ✅ 추가
 
 const { toast } = useAppToast();
+/* ------------------ 브레드크럼 ------------------ */
+const route = useRoute();
+const breadcrumbHome = { icon: useIcon('home'), to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter((r) => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  const parentLabel = current.meta?.breadcrumb?.parent || '';
+  const currentLabel = current.name || '';
+  return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
+});
 
 /* ------------------ 유틸 ------------------ */
 function fmtDate(d) {
@@ -26,12 +42,28 @@ function fmtDate(d) {
   }
 }
 
+/* ------------------ 로그인 사용자 ------------------ */
+const currentUser = ref('');
+async function loadCurrentUser() {
+  try {
+    const { data } = await axios.get('/api/user/me');
+    currentUser.value = data?.userName ?? '';
+  } catch {
+    currentUser.value = '관리자';
+  }
+}
+
 /* ------------------ 검색 폼 ------------------ */
-const searchForm = ref({ prodId: '', prodName: '', endDate: null });
+const searchForm = ref({ prodId: '', prodName: '' });
 
 /* ------------------ 목록/상세 ------------------ */
 const inboundList = ref([]);
 const selectedRow = ref(null);
+
+/* ✅ 페이지네이션 상태 */
+const page = ref(1);
+const rows = ref(10);
+const totalRecords = ref(0);
 
 const detail = ref({
   prodId: '',
@@ -57,7 +89,7 @@ function clearDetail() {
     endDate: null,
     spec: '',
     unit: '',
-    manager: '',
+    manager: currentUser.value,
     whCode: ''
   };
 }
@@ -70,29 +102,37 @@ function bindDetail(row) {
     prodName: row?.prodName ?? '',
     prodNo: row?.prodNo ?? '',
     proQty: row?.proQty ?? null,
-    endDate: row?.endDate ?? null,
+    endDate: fmtDate(row?.endDate),
     spec: row?.spec ?? '',
-    manager: row?.manager ?? '',
+    manager: currentUser.value,
     whCode: row?.whCode ?? '',
-    proDate: row?.proDate ?? ''
+    proDate: fmtDate(row?.proDate)
   };
 }
 
-/* ------------------ 이벤트 ------------------ */
-function onRowClick(e) {
-  bindDetail(e.data);
-  selectedRow.value = e.data; // 클릭행 만 선택값으로
+/* ✅ 체크박스 단일 선택 */
+function toggleInboundRow(row) {
+  if (selectedRow.value && selectedRow.value.prodNo === row.prodNo) {
+    selectedRow.value = null;
+    clearDetail();
+    return;
+  }
+  selectedRow.value = row;
+  bindDetail(row);
 }
 
+/* ------------------ 목록 조회 ------------------ */
 async function doSearch() {
   try {
     const params = {
       prodCode: searchForm.value.prodId.trim(),
       prodName: searchForm.value.prodName.trim(),
-      endDate: searchForm.value.endDate ? fmtDate(searchForm.value.endDate) : ''
+      page: page.value,
+      size: rows.value
     };
     const { data } = await axios.get('/api/lots', { params });
-    inboundList.value = data ?? [];
+    inboundList.value = data.data ?? data ?? [];
+    totalRecords.value = data.page?.totalElements ?? inboundList.value.length;
     clearDetail();
   } catch (err) {
     toast.error('목록 조회 오류');
@@ -100,62 +140,60 @@ async function doSearch() {
   }
 }
 
+/* ✅ 페이지 변경 */
+function onPageChange(e) {
+  page.value = e.page + 1;
+  rows.value = e.rows;
+  doSearch();
+}
+
+/* ------------------ 초기화 ------------------ */
 function resetSearch() {
-  searchForm.value = { prodId: '', prodName: '', proDate: null };
+  searchForm.value = { prodId: '', prodName: '' };
+  page.value = 1;
   doSearch();
 }
 
 /* ------------------ 제품 모달 ------------------ */
 const isShowProdModal = ref(false);
-function openProdModal() {
+const prodModalColumns = ref([]); // ✅ 동적 컬럼
+let lastClickedField = '';
+
+function openProdModal(type) {
+  lastClickedField = type;
+  if (type === 'code') {
+    prodModalColumns.value = [{ label: '제품코드', field: 'prodId' }];
+  } else {
+    prodModalColumns.value = [{ label: '제품명', field: 'prodName' }];
+  }
   isShowProdModal.value = true;
 }
+
 function closeProdModal() {
   isShowProdModal.value = false;
 }
 
-
 const fetchProductData = async ({ page = 1, size = 10, search = '' } = {}) => {
   const params = { page, size, keyword: search };
   const { data } = await axios.get('/api/inbound/product', { params });
-  console.log("제품 모달 응답:", data);
   return { items: data.data, total: data.page.totalElements };
 };
-
 
 function handleSelectProduct(item) {
   const code = item?.prodId || '';
   const name = item?.prodName || '';
-  searchForm.value.prodId = code;
-  searchForm.value.prodName = name;
+  if (lastClickedField === 'code') {
+    searchForm.value.prodId = code;
+  } else if (lastClickedField === 'name') {
+    searchForm.value.prodName = name;
+  }
   closeProdModal();
-  toast.info(`제품 선택: ${code} / ${name}`);
+  toast.info(`제품 선택: ${lastClickedField === 'code' ? code : name}`);
   doSearch();
 }
 
 /* ------------------ 창고 모달 ------------------ */
-// const isShowWhModal = ref(false);
-// function openWhModal() {
-//   isShowWhModal.value = true;
-// }
-// function closeWhModal() {
-//   isShowWhModal.value = false;
-// }
-
-// const fetchWarehouseData = async ({ q = '', page = 1, size = 10 } = {}) => {
-//   const { data } = await axios.get('/api/warehouse1', { params: { q, page, size } });
-//   c;
-//   return data;
-// };
-
-// function handleSelectWarehouse(item) {
-//   detail.value.whCode = item?.whId || '';
-//   closeWhModal();
-//   toast.info(`창고 선택: ${detail.value.whCode}`);
-// }
-
 const isShowWhModal = ref(false);
-
 function openWhModal() {
   isShowWhModal.value = true;
 }
@@ -175,41 +213,21 @@ function handleSelectWarehouse(item) {
   toast.info(`창고 선택: ${detail.value.whCode}`);
 }
 
-
 /* ------------------ 저장 ------------------ */
 async function save() {
   try {
     const body = {
       prodNo: detail.value.prodNo,
-      employeeId: detail.value.manager,
+      employeeName: currentUser.value,
       totalQty: Number(detail.value.proQty || 0),
       whId: detail.value.whCode
     };
-    // const result = await axios.post('/api/inbound', body);
-    // console.log(result.data.retCode); // success, fail
-    // console.log(result.status); // 200, 404, 405, 400
-
-    // if (result.data.retCode === 'success') {
-    //   toast('success', '등록 성공', '성공적으로 입고처리되었습니다.');
-    // } else if (result.data.retCode === 'fail') {
-    //   toast('error', '실패', '실패 하였습니다');
-    // }
-
-    // if (result.status === 200) {
-    //   toast('success', '등록 성공', '성공적으로 입고처리되었습니다.');
-    // } else {
-    //   toast('error', '실패', '실패 하였습니다');
-    // }
-
-    // const { data } = await axios.post('/api/inbound', body);
-    console.log(body);
-    const { status } = await axios.post('/api/inbound', body); // 200
-
+    const { status } = await axios.post('/api/inbound', body);
     if (status === 200) {
       await doSearch();
-      return toast('success', '등록 성공', '성공적으로 입고처리되었습니다.');
+      toast('success', '등록 성공', '성공적으로 입고처리되었습니다.');
     } else {
-      return toast('error', '실패', '실패 하였습니다');
+      toast('error', '실패', '실패 하였습니다');
     }
   } catch (err) {
     toast('error', '실패', '실패 하였습니다');
@@ -217,41 +235,8 @@ async function save() {
   }
 }
 
-/* ------------------ 삭제 ------------------ */
-async function remove() {
-  try {
-    const prodNo = selectedRow.value?.prodNo;
-    if (!prodNo) {
-      toast.add({
-        severity: 'warn',
-        summary: '경고',
-        detail: '삭제할 LOT을 선택하세요',
-        life: 3000
-      });
-      return;
-    }
-
-    await axios.delete(`/api/inbound/${prodNo}`);
-    toast.add({
-      severity: 'success',
-      summary: '성공',
-      detail: '삭제 완료',
-      life: 3000
-    });
-    await doSearch();
-  } catch (err) {
-    toast.add({
-      severity: 'error',
-      summary: '에러',
-      detail: '삭제 실패',
-      life: 3000
-    });
-    console.error(err);
-  }
-}
-
-// ✅ 페이지 진입 시 자동 조회
-onMounted(() => {
+onMounted(async () => {
+  await loadCurrentUser();
   doSearch();
 });
 </script>
@@ -259,29 +244,27 @@ onMounted(() => {
 <template>
   <div class="page-wrap">
     <!-- 검색 -->
+    <!-- ✅ 브레드크럼 추가 -->
+    <Breadcrumb class="rounded-lg mb-3" :home="breadcrumbHome" :model="breadcrumbItems" />
     <div class="box">
       <div class="form-grid">
         <div class="field">
           <label>제품코드</label>
           <InputGroup>
-            <InputText v-model="searchForm.prodId" placeholder="PRD001" @click="openProdModal" />
+            <InputText v-model="searchForm.prodId" placeholder="PRD001" readonly @click="() => openProdModal('code')" />
             <InputGroupAddon>
-              <Button icon="pi pi-search" text @click="openProdModal" />
+              <Button icon="pi pi-search" text @click="() => openProdModal('code')" />
             </InputGroupAddon>
           </InputGroup>
         </div>
         <div class="field">
           <label>제품명</label>
           <InputGroup>
-            <InputText v-model="searchForm.prodName" placeholder="원두" @click="openProdModal" />
+            <InputText v-model="searchForm.prodName" placeholder="원두" readonly @click="() => openProdModal('name')" />
             <InputGroupAddon>
-              <Button icon="pi pi-search" text @click="openProdModal" />
+              <Button icon="pi pi-search" text @click="() => openProdModal('name')" />
             </InputGroupAddon>
           </InputGroup>
-        </div>
-        <div class="field">
-          <label>생산일자</label>
-          <Calendar v-model="searchForm.proDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
         </div>
       </div>
       <div class="actions">
@@ -290,18 +273,19 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 목록 + 상세 (좌우 분할 유지) -->
+    <!-- 목록 + 상세 -->
     <div class="split">
-      <!-- 목록 -->
+      <!-- ✅ LOT 목록 -->
       <div class="list-box">
-        <DataTable :value="inboundList" dataKey="prdLot" @rowClick="onRowClick" :rowClass="(rowData) => (selectedRow?.prdLot === rowData.prdLot ? 'selected-row' : '')" highlightOnHover selectionMode="none">
-          <!-- ✅ 행 체크박스, 전체선택 헤더 제거 -->
-          <Column headerStyle="width:3em" :header="''">
-            <template #body="slotProps">
-              <Checkbox :binary="true" :modelValue="selectedRow?.prdLot === slotProps.data.prdLot" @update:modelValue="() => bindDetail(slotProps.data)" />
+        <div class="sub-title">LOT 목록</div>
+        <DataTable :value="inboundList" dataKey="prodNo" paginator :rows="rows" :totalRecords="totalRecords" :first="(page - 1) * rows" @page="onPageChange" @row-click="(e) => toggleInboundRow(e.data)">
+          <Column headerStyle="width:3rem; text-align:center;">
+            <template #body="{ data }">
+              <div class="p-checkbox p-component custom-checkbox">
+                <input type="checkbox" class="p-checkbox-box" :checked="selectedRow?.prodNo === data.prodNo" @change="() => toggleInboundRow(data)" />
+              </div>
             </template>
           </Column>
-
           <Column field="prodNo" header="LOT번호" />
           <Column field="prodId" header="제품코드" />
           <Column field="prodName" header="제품명" />
@@ -310,29 +294,28 @@ onMounted(() => {
         </DataTable>
       </div>
 
-      <!-- 상세 -->
+      <!-- ✅ 상세 -->
       <div class="detail-box">
         <div class="detail-head">
-          <div class="detail-title">상세</div>
+          <div class="detail-title">입고 상세</div>
           <div class="head-actions">
-            <Button label="삭제" icon="pi pi-trash" severity="danger" @click="remove" />
             <Button label="등록" icon="pi pi-save" severity="primary" @click="save" />
           </div>
         </div>
 
         <div class="detail-grid">
-          <div class="field"><label>제품코드</label><InputText v-model="detail.prodId" /></div>
-          <div class="field"><label>제품명</label><InputText v-model="detail.prodName" /></div>
-          <div class="field"><label>LOT번호</label><InputText v-model="detail.prodNo" /></div>
-          <div class="field"><label>입고일자</label><Calendar v-model="detail.proDate" dateFormat="yy-mm-dd" showIcon /></div>
-          <div class="field"><label>입고수량</label><InputText v-model="detail.proQty" /></div>
-          <div class="field"><label>유통기한</label><Calendar v-model="detail.endDate" dateFormat="yy-mm-dd" showIcon /></div>
-          <div class="field"><label>규격/단위</label><InputText v-model="detail.spec" /></div>
-          <div class="field"><label>담당자</label><InputText v-model="detail.manager" /></div>
+          <div class="field"><label>제품코드</label><InputText v-model="detail.prodId" readonly /></div>
+          <div class="field"><label>제품명</label><InputText v-model="detail.prodName" readonly /></div>
+          <div class="field"><label>LOT번호</label><InputText v-model="detail.prodNo" readonly /></div>
+          <div class="field"><label>입고일자</label><InputText :value="fmtDate(detail.proDate)" readonly /></div>
+          <div class="field"><label>입고수량</label><InputText v-model="detail.proQty" readonly /></div>
+          <div class="field"><label>유통기한</label><InputText :value="fmtDate(detail.endDate)" readonly /></div>
+          <div class="field"><label>규격</label><InputText v-model="detail.spec" readonly /></div>
+          <div class="field"><label>담당자</label><InputText v-model="detail.manager" readonly /></div>
           <div class="field">
             <label>창고코드</label>
             <InputGroup>
-              <InputText v-model="detail.whCode" placeholder="WH001" @click="openWhModal" />
+              <InputText v-model="detail.whCode" placeholder="WH001" readonly @click="openWhModal" />
               <InputGroupAddon>
                 <Button icon="pi pi-search" text @click="openWhModal" />
               </InputGroupAddon>
@@ -342,36 +325,10 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- 제품검색 모달 -->
-  <Modal
-  :visible="isShowProdModal"
-  title="제품 검색"
-  :columns="[
-    { label: '제품코드', field: 'prodId' },
-    { label: '제품명', field: 'prodName' }
-  ]"
-  dataKey="prodId"
-  :fetchData="fetchProductData"
-  :pageSize="5"
-  :frontPagination="false"
-  @select="handleSelectProduct"
-  @close="closeProdModal"
-/>
+    <!-- ✅ 제품 모달 -->
+    <Modal :visible="isShowProdModal" title="제품 검색" :columns="prodModalColumns" dataKey="prodId" :fetchData="fetchProductData" :pageSize="5" :frontPagination="false" @select="handleSelectProduct" @close="closeProdModal" />
 
-    <!-- 창고검색 모달 -->
-    <!-- <Modal
-      :visible="isShowWhModal"
-      title="창고 검색"
-      idField="whId"
-      :columns="[
-      { label: '창고코드', field: 'whId' },
-      { label: '창고명', field: 'whName' }
-      ]"
-      :fetchData="fetchWarehouseData"
-      :page-size="5"
-      @select="handleSelectWarehouse"
-      @close="closeWhModal"
-    /> -->
+    <!-- ✅ 창고 모달 -->
     <Modal
       :visible="isShowWhModal"
       title="창고 검색"
@@ -386,12 +343,8 @@ onMounted(() => {
       @select="handleSelectWarehouse"
       @close="closeWhModal"
     />
-
-
   </div>
 </template>
-
-<style></style>
 
 <style scoped>
 .page-wrap {
@@ -433,6 +386,10 @@ onMounted(() => {
   border-radius: 10px;
   padding: 12px;
 }
+.sub-title {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
 .detail-head {
   display: flex;
   justify-content: space-between;
@@ -450,5 +407,48 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+}
+
+/* ✅ 손가락 커서 표시 */
+:deep(.p-datatable-tbody > tr:hover) {
+  background: #f9fafb;
+  cursor: pointer;
+  transition: background 120ms ease-in-out;
+}
+
+/* ✅ 초록 체크박스 스타일 */
+:deep(.custom-checkbox) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+:deep(.custom-checkbox .p-checkbox-box) {
+  width: 18px;
+  height: 18px;
+  border: 1px solid #ced4da;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+  appearance: none;
+  outline: none;
+  position: relative;
+}
+:deep(.custom-checkbox .p-checkbox-box:checked) {
+  background: #16a34a;
+  border-color: #16a34a;
+}
+:deep(.custom-checkbox .p-checkbox-box:checked::after) {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 8px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  top: 2px;
+  left: 6px;
 }
 </style>

@@ -56,6 +56,15 @@ public class NoticeServiceImpl implements NoticeService {
   }
 
   @Override
+  public NoticeListRes getNeighborNotices(String noticeNo) {
+
+    // Mapper에서 위/아래 post 받아오기
+    List<NoticeVO> data = mapper.selectNeighborNotices(noticeNo);
+
+    return new NoticeListRes(data, null);
+  }
+
+  @Override
   @Transactional
   public boolean addNotice(NoticeVO notice, MultipartFile bannerImg) {
 

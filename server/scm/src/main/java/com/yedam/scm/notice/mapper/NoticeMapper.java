@@ -23,6 +23,9 @@ public interface NoticeMapper {
 
   // 공지사항 단건 조회
   NoticeVO selectNoticeByNoticeNo(String noticeNo);
+
+  // 선택된 공지사항 기준 위/아래 공지사항 목록 조회
+  List<NoticeVO> selectNeighborNotices(String noticeNo);
   
   // 공지사항 등록
   int insertNotice(NoticeVO notice);
