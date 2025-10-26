@@ -1,38 +1,42 @@
 <script setup>
-import { computed, defineEmits, ref } from 'vue';
+import { computed, defineEmits, ref, watch } from 'vue';
 import { useIcon } from '@/composables/useIcon';
-import Button from 'primevue/button'; // PrimeVue Button 컴포넌트를 직접 import 합니다.
+import Button from 'primevue/button';
 
 const props = defineProps({
   title: { type: String, default: '검색' },
   icon: { type: String, default: 'search' },
-  showButtons: { type: Boolean, default: true }
+  showButtons: { type: Boolean, default: true },
+  collapsed: { type: Boolean, default: null }
 });
 
-const emits = defineEmits(['search', 'reset']);
-const collapsed = ref(false);
+const emits = defineEmits(['search', 'reset', 'update:collapsed']);
+
+const internalCollapsed = ref(
+  props.collapsed === null ? false : props.collapsed
+)
+
+watch(() => props.collapsed, (newVal) => {
+  if (newVal !== null) internalCollapsed.value = newVal;
+});
 
 const iconClass = computed(() => useIcon(props.icon));
 
-function onSearch() {
-  emits('search');
-}
+const onSearch = () => emits('search');
+const onReset = () => emits('reset');
 
-function onReset() {
-  emits('reset');
-}
-
-function toggleCollapse() {
-  collapsed.value = !collapsed.value;
-}
+const toggleCollapse = () => {
+  internalCollapsed.value = !internalCollapsed.value;
+  emits('update:collapsed', internalCollapsed.value);
+};
 </script>
 
 <template>
   <div class="card flex flex-col w-full mt-4" id="card">
-    <div 
+    <div
       class="font-semibold text-lg sm:text-xl flex items-center gap-4 cursor-pointer select-none h-10"
       @click="toggleCollapse"
-      aria-expanded="!collapsed"
+      aria-expanded="!internalCollapsed"
       role="button"
       tabindex="0"
       @keydown.enter.prevent="toggleCollapse"
@@ -41,7 +45,7 @@ function toggleCollapse() {
       <span :class="iconClass"></span>
       {{ title }}
       <svg
-        :class="{'rotate-180': !collapsed, 'rotate-0': collapsed}"
+        :class="{'rotate-180': !internalCollapsed, 'rotate-0': internalCollapsed}"
         class="ml-auto w-5 h-5 transition-transform duration-300"
         fill="none"
         stroke="currentColor"
@@ -53,7 +57,7 @@ function toggleCollapse() {
     </div>
 
     <transition name="fade">
-      <div v-show="!collapsed">
+      <div v-show="!internalCollapsed">
         <Divider />
         <slot />
         <div v-if="showButtons" class="flex justify-between sm:justify-end gap-2 mt-4">
@@ -85,24 +89,18 @@ function toggleCollapse() {
 #card {
   margin-bottom: 0;
 }
-
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.3s ease;
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
 }
-
-/* 1200px 미만 화면에서 버튼 스타일 조정 */
 .responsive-btn :deep(.p-button-label) {
   @apply hidden;
 }
-
 .responsive-btn {
   @apply !p-0 h-[35px] w-[35px];
 }
-
-/* 1200px 이상 화면에서 버튼 스타일 조정 */
 @media (min-width: 1200px) {
   .responsive-btn :deep(.p-button-label) {
     @apply inline-block;

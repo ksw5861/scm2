@@ -22,6 +22,9 @@ public interface NoticeService {
 
   // 공지사항 단건 조회
   NoticeVO getNoticeByNoticeNo(String noticeNo);
+
+  // 선택된 공지사항 기준 5개 목록 조회
+  NoticeListRes getNeighborNotices(String noticeNo);
   
   // 공지사항 등록
   boolean addNotice(NoticeVO notice, MultipartFile bannerImg);

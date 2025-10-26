@@ -77,7 +77,7 @@ const handlePageChange = ({ page, size }) => {
 };
 
 const onRowSelect = (item) => {
-  emit('select', item.noticeNo);
+  emit('select', item);
 };
 
 const handleCreate = () => {
@@ -90,7 +90,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <SearchCard title="공지사항 검색" @search="handleSearch" @reset="handleReset">
+  <SearchCard title="공지사항 검색" collapsed="false" @search="handleSearch" @reset="handleReset">
     <div class="flex flex-col gap-2 p-2 w-full">
       <InputGroup>
         <InputGroupAddon><i :class="icons.search" /></InputGroupAddon>
