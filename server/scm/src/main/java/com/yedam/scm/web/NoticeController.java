@@ -1,7 +1,6 @@
 package com.yedam.scm.web;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Map;
 
@@ -101,7 +100,24 @@ public class NoticeController {
   }
 
   // =================================================================
-  // 4. 공지사항 등록
+  // 4. 선택된 공지사항 기준 총 5건 목록 조회 ( 공지사항 번호 )
+  // =================================================================
+
+  @GetMapping("/notice/{noticeId}/neighbors")
+  public ResponseEntity<NoticeListRes> getNeighborNotices(@PathVariable String noticeId)  {
+
+    NoticeListRes response = noticeSvc.getNeighborNotices(noticeId);
+
+    if (response == null || response.getData() == null || response.getData().isEmpty()) {
+        return ResponseEntity.noContent().build();
+    }
+
+    return ResponseEntity.ok(response);
+
+  }
+
+  // =================================================================
+  // 5. 공지사항 등록
   // =================================================================
 
   @PostMapping(value = "/notice", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -117,7 +133,7 @@ public class NoticeController {
   }
 
   // =================================================================
-  // 5. 공지사항 수정
+  // 6. 공지사항 수정
   // =================================================================
 
   @PutMapping(value = "/notice", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -132,7 +148,7 @@ public class NoticeController {
   }
 
   // =================================================================
-  // 6. 공지사항 삭제 ( 공지사항 번호 )
+  // 7. 공지사항 삭제 ( 공지사항 번호 )
   // =================================================================
 
   @DeleteMapping("/notice/{noticeNo}")

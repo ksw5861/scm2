@@ -39,8 +39,8 @@ const updateSearch = (newSearch) => {
   searchParams.value = { ...searchParams.value, ...newSearch };
 };
 
-const goDetail = (noticeNo) => {
-  selected.value = noticeNo;
+const goDetail = (item) => {
+  selected.value = item;
   mode.value = 'detail';
 };
 
@@ -60,6 +60,15 @@ const goEdit = () => {
 
 const cancelForm = () => {
   mode.value = selected.value ? 'detail' : 'list';
+};
+
+const handleDone = (notice) => {
+  if (notice) {
+    selected.value = notice;
+    mode.value = 'detail';
+  } else {
+    goList();
+  }
 };
 </script>
 
