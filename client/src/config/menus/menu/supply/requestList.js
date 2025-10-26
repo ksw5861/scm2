@@ -2,7 +2,7 @@ import { useIcon } from "@/composables/useIcon";
 
 const requestList = {
   label: '주문 승인',
-  icon: useIcon('list'),
+  icon: useIcon('send'),
   to: '/requstList',
   roles: ['supplier']
 };

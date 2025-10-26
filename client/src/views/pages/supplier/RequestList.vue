@@ -56,11 +56,22 @@ const searchFilter = ref({
 const formatDate = (date) => {
   if (!date) return '';
   const d = new Date(date);
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 //주문목록(페이지로드시)
 const fetchList = async () => {
+  //검색필터 기간 유효성검사
+  if (searchFilter.value.startDate && searchFilter.value.endDate) {
+    if (new Date(searchFilter.value.startDate) > new Date(searchFilter.value.endDate)) {
+      toast('warn', '기간 오류', '시작일은 종료일보다 이전이어야 합니다.', '3000');
+      return;
+    }
+  }
+
   const params = {
     startDate: formatDate(searchFilter.value.startDate),
     endDate: formatDate(searchFilter.value.endDate),
@@ -110,9 +121,18 @@ const approve = async () => {
   const list = JSON.parse(JSON.stringify(selectedRows.value));
   const idList = list.map((row) => row.id);
 
+  //유효성검사
+  if (idList.length === 0) {
+    toast('warn', '선택 필요', '승인할 항목을 선택해주세요:', '3000');
+    return;
+  }
+  if (!confirm('선택한 주문을 승인하시겠습니까?')) {
+    return;
+  }
+
   try {
     await axios.post('/api/sapprove', { purId: idList, vId: vendorId, name: vendorName });
-    toast('info', '승인 성공', '주문 승인 성공:', '3000');
+    toast('success', '승인 성공', '주문 승인 성공:', '3000');
 
     fetchList();
   } catch (error) {
@@ -121,11 +141,20 @@ const approve = async () => {
 };
 //반려
 const rejectPurchase = async () => {
+  //유효성검사
+  if (rejMemo.value.trim() === '') {
+    toast('warn', '사유 필요', '반려 사유를 입력해주세요:', '3000');
+    return;
+  }
+  if (!confirm('선택한 주문을 반려하시겠습니까?')) {
+    return;
+  }
+
   try {
     await axios.post('/api/sreject', null, { params: { purId: selectedRows.value[0].id, rejMemo: rejMemo.value, staff: vendorName } });
     rejModal.value = false;
     rejMemo.value = '';
-    toast('info', '등록 성공', '주문 거부 성공:', '3000');
+    toast('success', '등록 성공', '주문 거부 성공:', '3000');
     fetchList();
     selectedRows.value = [];
   } catch (error) {
@@ -153,7 +182,7 @@ const oepnRejModal = () => {
   }
 
   if (selectedCount > 1) {
-    toast('info', '반려 불가', '1건씩만 처리 가능합니다:', '3000');
+    toast('error', '반려 불가', '1건씩만 처리 가능합니다:', '3000');
     return;
   }
 
@@ -174,10 +203,10 @@ const matOrderColumns = [
   { label: '납기요청일', field: 'dueDate', sortable: true },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName', sortable: true },
-  { label: '주문수량', field: 'orderQty', sortable: true },
+  { label: '주문수량', field: 'orderQty',style: 'text-align: right', sortable: true },
   { label: '단위', field: 'unit' },
   { label: '도착지', field: 'toWarehouse' },
-  { label: '총 금액', field: 'total', sortable: true },
+  { label: '총 금액', field: 'total', style: 'text-align: right', sortable: true },
   { label: '구매처 담당자', field: 'buyerName', sortable: true }
 ];
 </script>
@@ -190,7 +219,7 @@ const matOrderColumns = [
       <SearchCard title="주문 검색" @search="fetchList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.startDate" inputId="searcStart" />
               <label for="searchStart">시작일</label>
@@ -198,7 +227,7 @@ const matOrderColumns = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.endDate" inputId="searcEnd" />
               <label for="searchEnd">종료일</label>
@@ -214,7 +243,7 @@ const matOrderColumns = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('truck')" /></InputGroupAddon>
             <IftaLabel>
               <InputText v-model="searchFilter.toWarehouse" inputId="searchtoWarehouse" />
               <label for="searchtoWarehouse">도착지</label>
@@ -228,10 +257,12 @@ const matOrderColumns = [
     <!--중간버튼영역-->
     <div class="card flex flex-col gap-4">
       <div class="my-3 flex flex-wrap items-center justify-end gap-2">
-        <btn color="warn" icon="cancel" label="주문 거부" @click="oepnRejModal" outlined class="whitespace-nowrap" />
+        <btn color="warn" icon="cancel" label="주문 취소" @click="oepnRejModal" outlined class="whitespace-nowrap" />
         <btn color="info" icon="check" label="주문 승인" @click="approve" class="whitespace-nowrap" outlined />
       </div>
-      <div class="font-semibold text-xl mb-5">조회 내역</div>
+      <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+        <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 주문 목록</div>
+      </div>
       <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="matOrderData" :paginator="true" :rows="15" @page-change="onPage" :page="page" />
     </div>
   </div>
@@ -242,8 +273,8 @@ const matOrderColumns = [
       <Textarea v-model="rejMemo" rows="5" cols="100" />
     </div>
     <div class="flex justify-center gap-2">
-      <btn color="warn" icon="cancel" label="취소" @click="closeRejModal" outlined class="whitespace-nowrap" />
-      <btn color="info" icon="cancel" label="등록" @click="rejectPurchase" outlined class="whitespace-nowrap" />
+      <btn color="secondary" icon="check" label="닫기" @click="closeRejModal" class="whitespace-nowrap" outlined />
+      <btn color="info" icon="cancel" label="등록" @click="rejectPurchase" class="whitespace-nowrap" outlined />
     </div>
   </Dialog>
 </template>

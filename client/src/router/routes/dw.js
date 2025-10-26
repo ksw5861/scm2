@@ -104,6 +104,14 @@ const dw = {
         requiresAuth: true,
         roles: ['admin', 'employee']
       }
+    },
+    { path: '/stock-product',
+      name: '제품 재고조회',
+      component: () => import('@/views/pages/dw/StockByProduct.vue'),
+      meta: {
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
     }
   ]
 };

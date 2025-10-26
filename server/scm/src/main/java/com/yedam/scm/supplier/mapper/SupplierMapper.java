@@ -60,4 +60,6 @@ public interface SupplierMapper {
     List<VendorChartDTO> getVendorChartData(@Param("vendorId")String vendorId);
     //불량목록
     List<VendorDefectDTO> getVendorDefectList(@Param("vendorId")String vendorId);
+    //주문내역조회
+    List<PurchaseMatVO> getRequestResultList(@Param("vendorId")String vendorId, @Param("search")matSupplySearchDTO searchDTO);
 }

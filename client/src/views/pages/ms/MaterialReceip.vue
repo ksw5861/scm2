@@ -78,10 +78,21 @@ const defectForm = ref({
 const formatDate = (date) => {
   if (!date) return '';
   const d = new Date(date);
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const pageLoad = async () => {
+  //검색필터 기간 유효성검사
+  if (searchFilter.value.startDate && searchFilter.value.endDate) {
+    if (new Date(searchFilter.value.startDate) > new Date(searchFilter.value.endDate)) {
+      toast('warn', '기간 오류', '시작일은 종료일보다 이전이어야 합니다.', '3000');
+      return;
+    }
+  }
+
   const params = {
     page: page.value.page,
     size: page.value.size,
@@ -136,9 +147,13 @@ const inputInfo = () => {
   const row = selectedDetail.value; // 선택된 행 데이터
 
   if (row.outQty === row.inTotalQty) {
-    toast('info', '입고등록 완료', '입고등록이 완료된 자재입니다.', '3000');
+    toast('warn', '입고등록 완료', '입고등록이 완료된 자재입니다.', '3000');
     return;
   }
+  // 인풋박스 초기화
+  inQty.value = null;
+  expDate.value = null;
+  result.value = null;
 
   inputMatName.value = row.matName;
   console.log('선택된 자재명:', row.matName);
@@ -147,15 +162,29 @@ const inputInfo = () => {
 const submit = async () => {
   //불합격시 등록버튼 제어
   if (result.value === 'N') {
-    toast('info', '입고등록 실패', '검수결과 합격자재만 입고가능합니다.', '3000');
+    toast('warn', '입고등록 불가', '검수결과 합격자재만 입고가능합니다.', '3000');
     return;
   }
-  //입고수량 > 입고잔여수량 초과제어
-  // if(Number(inQty.value) > Number(restQty.value)){
-  //     toast('info', '입고등록 실패', '입고수량이 입고잔여수량을 초과할 수 없습니다.', '3000');
-  //     return
-  // }
-
+  //유효성 검사
+  if (!inQty.value || isNaN(inQty.value) || Number(inQty.value) <= 0) {
+    toast('warn', '유효성 검사', '처리수량은 0보다 큰 숫자로 입력해주세요.', '3000');
+    return;
+  }
+  if (Number(inQty.value) > selectedDetail.value.restQty) {
+    toast('warn', '유효성 검사', '입고수량은 잔여수량을 초과할 수 없습니다.', '3000');
+    return;
+  }
+  if (!expDate.value) {
+    toast('warn', '유효성 검사', '유통기한을 입력해주세요.', '3000');
+    return;
+  }
+  if (result.value !== 'Y') {
+    toast('warn', '유효성 검사', '검수결과를 선택해주세요.', '3000');
+    return;
+  }
+  if (!confirm('입고등록을 진행하시겠습니까?')) {
+    return;
+  }
   const payload = {
     inboundDetId: selectedDetail.value.id,
     inboundId: selectedMaster.value.id,
@@ -197,16 +226,21 @@ const defectSubmit = async () => {
   defectForm.value.inboundDetId = selectedDetail.value.id;
   defectForm.value.logRejQty = inQty.value; //불량수량을 입고수량으로 설정
 
+  if (result.value === 'Y') {
+    toast('warn', '등록 불가', '검수결과 불합격자재만 등록가능합니다.', '3000');
+    return;
+  }
+
   if (!defectForm.value.logRejQty || isNaN(defectForm.value.logRejQty) || Number(defectForm.value.logRejQty) <= 0) {
     toast('warn', '유효성 검사', '불량수량은 0보다 큰 숫자로 입력해주세요.', '3000');
     return;
   }
-  if (Number(defectForm.value.logRejQty) > selectedDetail.value.outQty - selectedDetail.value.inTotalQty) {
-    toast('warn', '유효성 검사', '불량수량은 입고잔여수량을 초과할 수 없습니다.', '3000');
+  if (Number(defectForm.value.logRejQty) > selectedDetail.value.restQty) {
+    toast('warn', '유효성 검사', '불량수량은 잔여수량을 초과할 수 없습니다.', '3000');
     return;
   }
   if (!defectForm.value.logMemo) {
-    toast('warn', '유효성 검사', '불량사유를 입력해주세요.', '3000');
+    toast('warn', '유효성 검사', '불합격 사유를 입력해주세요.', '3000');
     return;
   }
   if (!selectedFile.value) {
@@ -241,7 +275,7 @@ const defectSubmit = async () => {
   defectPayload.get('data').text().then(console.log);
   try {
     await axios.post('/api/mdefect', defectPayload);
-    toast('success', '불량 등록 완료', '불량 정보가 성공적으로 저장되었습니다.');
+    toast('success', '불량 등록 완료', '불합격 정보가 성공적으로 저장되었습니다.');
     await detailInfo();
     await pageLoad();
     defectForm.value = {
@@ -307,10 +341,10 @@ const approveUnloadColumn = [
 const approveUnloadDetaiColumn = [
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName' },
-  { label: '입고대기수량', field: 'outQty' },
+  { label: '입고대기수량', field: 'outQty', style: 'text-align: right'},
   { label: '단위', field: 'unit' },
-  { label: '잔여수량', field: 'restQty' },
-  { label: '누적처리수량', field: 'inTotalQty' }
+  { label: '잔여수량', field: 'restQty', style: 'text-align: right' },
+  { label: '누적처리수량', field: 'inTotalQty', style: 'text-align: right' }
 ];
 
 //반품모달open
@@ -345,10 +379,10 @@ const approveUnloadDetaiColumn = [
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--검색영역-->
     <div class="card flex flex-col gap-4 mt-4">
-      <SearchCard title="입고 조회" @search="pageLoad" @reset="resetSearch">
+      <SearchCard title="입고 검색" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.startDate" inputId="searchStart" />
               <label for="searchStart">시작일</label>
@@ -356,7 +390,7 @@ const approveUnloadDetaiColumn = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.endDate" inputId="searchEnd" />
               <label for="searchEnd">종료일</label>
@@ -364,7 +398,7 @@ const approveUnloadDetaiColumn = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('vendor')" /></InputGroupAddon>
             <IftaLabel>
               <InputText v-model="searchFilter.vendorName" inputId="searchVenName" />
               <label for="searchVendor">공급처</label>
@@ -373,7 +407,7 @@ const approveUnloadDetaiColumn = [
 
           <div class="flex flex-col w-full">
             <InputGroup>
-              <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+              <InputGroupAddon><i :class="useIcon('tags')" /></InputGroupAddon>
               <Select v-model="searchFilter.status" :options="statusOptions" optionLabel="name" optionValue="value" placeholder="입고 상태" class="w-full h-[48px] text-base" />
             </InputGroup>
           </div>
@@ -386,7 +420,9 @@ const approveUnloadDetaiColumn = [
         <div class="card flex flex-col gap-4 h-full">
           <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">입고대기 목록</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 입고대기 목록</div>
+            </div>
             <Divider />
             <selectTable v-model:selection="selectedMaster" :selectionMode="'single'" :columns="approveUnloadColumn" :data="approveUnloadList" :paginator="true" :showCheckbox="false" :page="page" @row-select="detailInfo" @page-change="onPage" />
           </div>
@@ -398,10 +434,12 @@ const approveUnloadDetaiColumn = [
           <!-- 버튼 + 제목을 같은 행에 배치 -->
           <div class="flex items-center justify-between my-3">
             <!-- 왼쪽: 제목 -->
-            <div class="font-semibold text-m">상세정보</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('info')"></span> 상세정보</div>
+            </div>
             <!-- 오른쪽: 버튼 -->
             <div class="flex gap-2">
-              <btn color="warn" icon="check" label="불량등록" @click="defectSubmit" class="whitespace-nowrap" outlined />
+              <btn color="warn" icon="cancel" label="불량등록" @click="defectSubmit" class="whitespace-nowrap" outlined />
               <btn color="info" icon="check" label="입고등록" @click="submit" lass="whitespace-nowrap" outlined />
             </div>
           </div>
@@ -412,7 +450,7 @@ const approveUnloadDetaiColumn = [
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-full">
             <SearchField type="readOnly" label="자재명" v-model="inputMatName" />
             <SearchField type="date" label="유통기한" v-model="expDate" width="30rem" />
-            <SearchField type="text" label="처리수량" v-model="inQty" />
+            <SearchField type="number" label="처리수량" v-model="inQty" width="30rem" />
             <searchField
               type="dropDown"
               label="검수결과"
@@ -427,7 +465,7 @@ const approveUnloadDetaiColumn = [
           <!--검수결과가 불합격시-->
           <div v-if="result === 'N'" class="text-black-500 mt-5">
             검수결과 불합격 시 입고등록이 불가능하며, 불량등록을 진행해주세요.
-            <Textarea type="text" label="불량사유" v-model="defectForm.logMemo" placeholder="불량사유를 입력하세요" rows="5" cols="95" class="mt-5" />
+            <Textarea type="text" label="불량사유" v-model="defectForm.logMemo" placeholder="불합격사유를 입력하세요" rows="5" cols="95" class="mt-5" />
             <FileUpload mode="basic" name="file" chooseLabel="파일 선택" accept="image/*" @select="onFileSelect" class="mt-3 flex justify-center" />
             <div v-if="previewUrl" class="mt-2">
               <img :src="previewUrl" alt="미리보기" class="w-32 rounded-lg border" />

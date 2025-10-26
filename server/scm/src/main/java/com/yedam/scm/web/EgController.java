@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.io.IOException;
 import java.io.InputStream;
-
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -685,6 +686,39 @@ public ResponseEntity<byte[]> exportOrderPdf(@PathVariable String orderId) throw
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(file);
     }
+
+
+// ================================================================
+// 22. 대시보드 - 진행중인 주문건
+// ================================================================
+@GetMapping("/orders/ongoing")
+public ResponseEntity<List<SalesOrderVO>> getOngoingOrders(@RequestParam("vendorId") String vendorId) {
+
+    List<String> excludedStatuses = Arrays.asList("배송완료");  // 또는 기타 원하는 상태들
+
+    List<SalesOrderVO> ongoingOrders = orderSvc.getOngoingOrdersByVendorId(vendorId, excludedStatuses);
+
+    if (ongoingOrders.isEmpty()) {
+        return ResponseEntity.noContent().build();
+    }
+    return ResponseEntity.ok(ongoingOrders);
+}
+
+// ================================================================
+// 23. 대시보드 - 연체중인주문건(건수, 금액)
+// ================================================================
+@GetMapping("/orders/overdue-summary")
+public ResponseEntity<Map<String, Object>> getOverdueSummary(@RequestParam("vendorId") String vendorId) {
+    Map<String, Object> summary = orderSvc.getOverdueSummary(vendorId);
+    if (summary == null || summary.isEmpty()) {
+        return ResponseEntity.ok(Map.of("count", 0, "amount", 0));
+    }
+    return ResponseEntity.ok(summary);
+}
+
+
+
+
 
 
 }

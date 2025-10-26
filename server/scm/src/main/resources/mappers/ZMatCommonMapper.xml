@@ -30,6 +30,7 @@
     <result property="logShipOrderNo"     column="LOG_SHIP_ORDER_NO"/>
     <result property="finalShipCon"     column="FINAL_SHIP_CON"/>
     <result property="logResonComm"     column="LOG_RESON_COMM"/>
+    <result property="inEmpName"     column="IN_EMP_NAME"/>
 </resultMap>
 
 <!--거래처 resultMap -->

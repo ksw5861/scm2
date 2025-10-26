@@ -15,6 +15,18 @@ const ms = {
         roles: ['admin', 'employee']
       }
     },
+     {
+      path: '/planList',
+      name: '본사 생산 계획 목록',
+      component: () => import('@/views/pages/ms/PlanList.vue'),
+      meta: {
+        breadcrumb: {
+          parent: '생산 관리'
+        },
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    },
     {
       path: '/purchase',
       name: '본사 발주 등록',
@@ -28,8 +40,20 @@ const ms = {
       }
     },
     {
-      path: '/purchaseList',
+      path: '/purchaseOrder',
       name: '본사 발주 내역 조회',
+      component: () => import('@/views/pages/ms/PurchaseOrder.vue'),
+      meta: {
+        breadcrumb: {
+          parent: '발주 관리'
+        },
+        requiresAuth: true,
+        roles: ['admin', 'employee']
+      }
+    },
+    {
+      path: '/purchaseList',
+      name: '본사 발주 현황 조회',
       component: () => import('@/views/pages/ms/PurchaseList.vue'),
       meta: {
         breadcrumb: {

@@ -78,7 +78,7 @@ async function loadDetails(row) {
 /* ------------------ 목록 조회 ------------------ */
 async function applySearch() {
   const params = {
-    prodId: search.value.prodId || '',
+    // prodId: search.value.prodId || '',
     prodName: search.value.prodName || '',
     vendorName: search.value.vendorName || '',
     fromDate: search.value.fromDate ? fmtDate(search.value.fromDate) : '',
@@ -253,7 +253,11 @@ onMounted(() => applySearch());
             </template>
           </Column>
 
-          <Column field="returnDate" header="반품일자" :body="(r) => fmtDate(r.returnDate)" />
+          <Column field="returnDate" header="반품일자">
+  <template #body="{ data }">
+    {{ String(data.returnDate).substring(0, 10) }}
+  </template>
+</Column>
           <Column field="companyName" header="판매처명" />
           <Column field="returnId" header="반품코드" />
           <Column field="returnStatus" header="상태" />
