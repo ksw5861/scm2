@@ -104,7 +104,7 @@ const onSelectPlan = async (plan) => {
     planDueDate: useDateFormat(item.proDate).value
   }));
 
-  toast('info', '선택된 생산계획 불러오기 완료', `${plan.planNo}의 상세를 로드했습니다.`);
+  toast('success', '선택된 생산계획 불러오기 완료', `${plan.planNo}의 상세를 로드했습니다.`);
 };
 
 //mrp산출
@@ -176,7 +176,7 @@ const toggleMrpSelection = (row) => {
   console.log('추가할 행:', newRow);
   // 3️동일 자재 중복 방지
   if (purchaseList.value.some((r) => r.matId === newRow.matId)) {
-    toast('info', '중복 항목', '이미 자재 주문 목록에 있는 자재입니다.', 2000);
+    toast('warn', '중복 항목', '이미 자재 주문 목록에 있는 자재입니다.', 2000);
     return;
   }
 
@@ -194,6 +194,14 @@ const toggleMrpSelection = (row) => {
 
 //주문등록
 const reqSubmit = async () => {
+
+  //유효성 검사: 필수 입력값 확인
+  const invalidRows = purchaseList.value.filter(
+    (row) =>
+      // matId가 존재하는(=실제 입력된) 행만 검사
+      row.matId && (!row.reqQty || !row.vendorId || !row.dueDate || !row.toWarehouse)
+  );
+
   if (invalidRows.length > 0) {
     toast('warn', '유효성 검사', '입력된 자재 항목 중 필수값이 누락된 행이 있습니다.', 3000);
     return;
@@ -202,14 +210,6 @@ const reqSubmit = async () => {
   if (!confirm('자재주문을 등록하시겠습니까?')) {
     return;
   }
-
-  console.log('주문등록 클릭', purchaseList.value);
-  //유효성 검사: 필수 입력값 확인
-  const invalidRows = purchaseList.value.filter(
-    (row) =>
-      // matId가 존재하는(=실제 입력된) 행만 검사
-      row.matId && (!row.reqQty || !row.vendorId || !row.dueDate || !row.toWarehouse)
-  );
 
   const reqList = purchaseList.value.map((row) => ({
     mrpDetId: row.id,
@@ -225,7 +225,7 @@ const reqSubmit = async () => {
   try {
     await axios.post('/api/mreqMaterial', reqList);
 
-    toast('info', '등록 성공', '자재주문 등록 성공', '5000');
+    toast('success', '등록 성공', '자재주문 등록 성공', '5000');
     await pageLoadMrp();
     purchaseList.value = [
       { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
@@ -342,14 +342,14 @@ const planColumns = [
   { field: 'planDueDate', label: '생산예정일', style: 'width: 15rem' },
   { field: 'prodId', label: '제품코드', style: 'width: 8rem' },
   { field: 'prodName', label: '제품명', style: 'width: 20rem' },
-  { field: 'planQty', label: '생산수량', style: 'width: 10rem' },
+  { field: 'planQty', label: '생산수량', style: 'width: 10rem; text-align: right' },
   { field: 'unit', label: '단위', style: 'width: 5rem' }
 ];
 
 const mrpColumns = [
   { field: 'matId', label: '자재코드', style: 'width: 8rem' },
   { field: 'matName', label: '자재명', style: 'width: 20rem', sortable: true },
-  { field: 'mrpQty', label: '필요수량', style: 'width: 10rem', sortable: true },
+  { field: 'mrpQty', label: '필요수량', style: 'width: 10rem; text-align: right', sortable: true },
   { field: 'unit', label: '단위', style: 'width: 8rem' },
   { field: 'leadTime', label: '리드타임(일)', style: 'width: 10rem' }
 ];
@@ -357,11 +357,11 @@ const mrpColumns = [
 const purchaseColumns = [
   { field: 'matId', label: '자재코드', style: 'width: 10rem' },
   { field: 'matName', label: '자재명', style: 'width: 20rem' },
-  { field: 'reqQty', label: '주문수량', style: 'width: 10rem' },
+  { field: 'reqQty', label: '주문수량', style: 'width: 10rem; text-align: right' },
   { field: 'unit', label: '단위', style: 'width: 8rem' },
   { field: 'vendor', label: '공급처', style: 'width: 15rem', select: true, option: (row) => row.vendorOptions || [], change: selectOpt },
-  { field: 'price', label: '단가', style: 'width: 10rem' },
-  { field: 'total', label: '총 금액', style: 'width: 12rem' },
+  { field: 'price', label: '단가', style: 'width: 10rem; text-align: right' },
+  { field: 'total', label: '총 금액', style: 'width: 12rem; text-align: right' },
   { field: 'toWarehouse', label: '도착지', style: 'width: 15rem', select: true, option: () => warehouseOptions.value, change: selectWarehouseOpt },
   { field: 'dueDate', label: '납기요청일', style: 'width: 12rem', datePicker: true }
 ];
@@ -408,7 +408,7 @@ const purchaseColumns = [
               <span :class="useIcon('cart')"></span>
               <span>자재 발주</span>
             </div>
-            <btn color="secondary" icon="check" label="자재주문" @click="reqSubmit" class="whitespace-nowrap" outlined />
+            <btn color="info" icon="check" label="자재주문" @click="reqSubmit" class="whitespace-nowrap" outlined />
           </div>
           <Divider />
           <selectTable :columns="purchaseColumns" :scrollable="true" :data="purchaseList" :paginator="false" :showCheckbox="false" @row-select="selectVendor" />

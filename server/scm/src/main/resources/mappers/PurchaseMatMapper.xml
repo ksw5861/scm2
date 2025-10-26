@@ -203,6 +203,18 @@ ORDER BY md.mrp_det_id DESC
     )}
 </select>
 
+<!--발주취소-->
+<update id= "updatePurchaseCancel" parameterType="int">
+UPDATE purchase_mat
+SET pur_mat_status = 'ms99'
+WHERE pur_id = #{purId}
+</update>
+<!--발주취소이력-->
+<insert id = "insertCancelLog" parameterType="map">
+INSERT INTO purchase_status_log (pur_status_id, log_pur_mat_status, log_pur_id, in_emp_name)
+VALUES (seq_purchase_status_log.NEXTVAL,'ms99', #{purId}, #{empName})
+</insert>
+
 <!--자재주문목록-->
 <select id = "getPurchaseList" resultMap="PurchaseMatMap">
 SELECT * FROM (
@@ -315,6 +327,89 @@ WHERE GROUP_ID = #{groupId}
 ORDER BY NO
 </select>
 
+<!--발주내역-->
+<select id="getPurchaseOrderList" resultMap="PurchaseMatMap">
+SELECT p.pur_id,
+       p.reg_date,
+       p.pur_no,
+       p.mat_id,
+       m.mat_name,
+       p.req_qty,
+       m.stock_unit,
+       p.due_date,
+       v.company_name,
+       l.log_pur_mat_status,
+       p.emp_name,
+       l.log_name,
+       l.re_date,
+       l.log_reson_comm
+FROM purchase_status_log l
+JOIN purchase_mat p
+  ON l.log_pur_id = p.pur_id
+JOIN material m
+ON p.mat_id = m.mat_id
+JOIN vendor v
+ON p.vendor_id = v.vendor_id
+WHERE (l.log_pur_id, l.re_date) IN (
+    SELECT log_pur_id, MAX(re_date)
+    FROM purchase_status_log
+    WHERE log_pur_mat_status IN ('ms1', 'ms2', 'ms3', 'ms99')
+    GROUP BY log_pur_id
+)
+<if test="search.startDate != null">
+    AND p.reg_date &gt;= #{search.startDate}
+</if>
+<if test="search.endDate != null">
+    AND p.reg_date &lt;= #{search.endDate} + 1
+</if>
+<if test="search.vendorName != null and search.vendorName != ''">
+    AND v.company_name LIKE '%' || #{search.vendorName} || '%'
+</if>
+<if test="search.status != null and search.status != ''">
+    AND l.log_pur_mat_status = #{search.status}
+</if>
+ORDER BY p.reg_date DESC
+</select>
 
-
+<!--생산계획리스트-->
+<select id = "getPlanlistforAcco" parameterType="map" resultType="ProductionPlanVO">
+SELECT pl_id,
+       plan_type,
+       plan_no, 
+       start_date,
+       end_date,
+       emp_name,
+       mrp_status
+FROM product_plan
+WHERE 1=1
+AND re_date >= ADD_MONTHS(SYSDATE, -6)
+<if test="search.startDate != null and search.startDate != ''">
+    AND start_date &gt;= #{search.startDate}
+</if>
+<if test="search.endDate != null and search.endDate != ''">
+    AND end_date &lt;= #{search.endDate}
+</if>
+<if test="search.status != null and search.status != ''">
+    AND mrp_status = #{search.status}
+</if>
+ORDER BY start_date DESC
+</select>
+<!--selectPlanDetailList-->
+<!--mrp-->
+<select id = "getMrpCalList" parameterType="long" resultMap = "MrpDetailMap">
+SELECT mr.mrp_det_id,
+       mr.mat_id,
+       m.mat_name,
+       mr.needs_weight,
+       m.unit,
+       mr.shortage_qty,
+       m.stock_unit,
+       mr.status
+FROM mrp_detail mr
+JOIN material m
+ON mr.mat_id = m.mat_id
+WHERE mr.pl_id = #{plId}
+AND mr.shortage_qty > 0
+ORDER BY mat_id
+</select>
 </mapper>

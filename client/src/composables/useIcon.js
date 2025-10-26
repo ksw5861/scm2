@@ -53,7 +53,8 @@ const iconMap = {
   chartline: 'pi pi-chart-line',
   left: "pi pi-chevron-left",
   pie: 'pi pi-chart-pie',
-  gauge: 'pi pi-gauge'
+  gauge: 'pi pi-gauge',
+  forward: 'pi pi-forward'
 };
 
 export const useIcon = (name) => {

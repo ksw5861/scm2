@@ -128,7 +128,7 @@ const prodLotColumns = [
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--검색영역-->
     <div class="card flex flex-col gap-4 mt-4">
-      <SearchCard title="재고 조회" @search="fetchMatList" @reset="resetSearch">
+      <SearchCard title="재고 검색" @search="fetchMatList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
@@ -139,7 +139,7 @@ const prodLotColumns = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('file')" /></InputGroupAddon>
             <IftaLabel>
               <InputText v-model="searchFilter.inboundId" inputId="searchLot" />
               <label for="searchLotNo">LOT번호</label>
@@ -169,7 +169,7 @@ const prodLotColumns = [
         <div class="card flex flex-col gap-4" style="height: 850px">
           <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
-              <div class="flex items-center gap-4"><span :class="useIcon('openfolder')"></span>LOT 상세정보</div>
+              <div class="flex items-center gap-4"><span :class="useIcon('info')"></span>LOT 상세정보</div>
             </div>
           </div>
           <Divider />

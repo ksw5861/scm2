@@ -191,16 +191,16 @@ const supplyListColumn = [
   { label: '출고일', field: 'outDate' },
   { label: '출고번호', field: 'outNo' },
   { label: '자재명', field: 'matName' },
-  { label: '출고수량', field: 'outQty' },
+  { label: '출고수량', field: 'outQty', style: 'text-align: right' },
   { label: '단위', field: 'unit' },
   { label: '담당자', field: 'empName' }
 ];
 
 const statusColumn = [
   { label: '변경일', field: 'updateDate' },
-  { label: '발주처 담당자', field: 'chargeName' },
   { label: '상태', field: 'status' },
-  { label: '반송 및 불량수량', field: 'rejQty' }
+  { label: '반송 및 불량수량', field: 'rejQty', style: 'width: 10rem; text-align: right' },
+  { label: '발주처 담당자', field: 'chargeName', style: 'width: 10rem' }
 ];
 </script>
 
@@ -209,10 +209,10 @@ const statusColumn = [
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--검색영역-->
     <div class="card flex flex-col gap-4 mt-4">
-      <SearchCard title="공급 조회" @search="fetchSuppliyList" @reset="resetSearch">
+      <SearchCard title="현황 검색" @search="fetchSuppliyList" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.startDate" inputId="searchStart" />
               <label for="searchStart">시작일</label>
@@ -220,7 +220,7 @@ const statusColumn = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
             <IftaLabel>
               <DatePicker v-model="searchFilter.endDate" inputId="searchEnd" />
               <label for="searchEnd">종료일</label>
@@ -264,7 +264,7 @@ const statusColumn = [
           <!-- 타이틀 -->
           <div class="card flex flex-col gap-4">
             <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
-              <div class="flex items-center gap-4"><span :class="useIcon('history')"></span> 진행현황</div>
+              <div class="flex items-center gap-4"><span :class="useIcon('forward')"></span> 진행현황</div>
             </div>
             <Divider />
             <!--타임라인-->

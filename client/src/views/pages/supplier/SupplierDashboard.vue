@@ -98,7 +98,7 @@ onMounted(async () => {
 const defectColumns = [
   { field: 'matName', label: '자재명', style: 'width: 140px' },
   { field: 'qty', label: '수량', style: 'width: 50px; text-align: right' },
-  { field: 'unit', label: '단위', style: 'width: 25px; text-align: right' },
+  { field: 'unit', label: '단위', style: 'width: 25px;' },
   { field: 'regDate', label: '사유', style: 'width: 100px' }
 ];
 
@@ -140,7 +140,7 @@ const tableColumns = [
       <div class="md:w-2/5">
         <div class="card p-4" style="height: 450px">
           <div class="flex items-center justify-between gap-4 h-10">
-            <h3 class="text-lg font-semibold flex items-center gap-4"><span :class="useIcon('list')"></span>불량 내역</h3>
+            <h3 class="text-lg font-semibold flex items-center gap-4"><span :class="useIcon('wrench')"></span>불량 내역</h3>
           </div>
           <Divider />
           <selectTable v-model:selection="selectedDetails" :selectionMode="'single'" :columns="defectColumns" :data="defectList" :paginator="false" :showCheckbox="false" />
