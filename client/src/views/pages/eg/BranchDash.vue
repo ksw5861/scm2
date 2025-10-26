@@ -1,6 +1,5 @@
 <template>
   <div class="main">
-    <!-- 헤더 -->
     <header class="header">
       <div>
         <h2 class="title">대시보드 {{ userStore.name }}님 환영합니다!</h2>
@@ -14,7 +13,6 @@
       </div>
     </header>
 
-    <!-- 빠른 작업 -->
     <div class="card-grid-4">
       <Card class="quick-card" @click="$router.push('/insertorder')" style="cursor:pointer;">
         <template #title><i class="pi pi-shopping-cart mr-2"></i>발주 요청</template>
@@ -31,13 +29,14 @@
         <template #content>이번 달 납부 내역 등록.</template>
       </Card>
 
-      <Card class="quick-card" style="cursor:not-allowed; opacity:0.5;">
-        <template #title><i class="pi pi-upload mr-2"></i>재고조사 업로드</template>
-        <template #content>실사 파일 업로드 (준비중).</template>
+      <Card>
+        <template #title><i class="pi pi-exclamation-triangle mr-2"></i>연체 주문</template>
+        <template #content>
+          {{ overdue.count }}건 | {{ asKRW(overdue.amount) }}
+        </template>
       </Card>
     </div>
 
-    <!-- KPI -->
     <div class="kpi-row">
       <Card class="kpi">
         <template #title>오늘 매출</template>
@@ -84,7 +83,7 @@
       <Card class="kpi">
       <template #title>여신한도 잔액</template>
       <template #content>
-        <div class="kpi-value">{{ asKRW(kpi.remainCredit) }}</div>  
+        <div class="kpi-value">{{ asKRW(kpi.remainCredit) }}</div>  
         <div class="kpi-sub">
           <i class="pi pi-truck"></i>
           여신한도: {{ asKRW(kpi.creditLimit) }}
@@ -93,7 +92,6 @@
     </Card>
   </div>
 
-    <!-- 매출 분석 (탭 + 공통 Range 컨트롤) -->
     <Card class="chart-card">
       <template #title>
         매출 분석
@@ -107,7 +105,6 @@
             @change="onRangeChange"
           />
 
-          <!-- 일별: 7/15/21 버튼 -->
           <template v-if="selectedRange === 'daily'">
             <div class="flex gap-1 ml-2">
               <Button
@@ -121,7 +118,6 @@
             </div>
           </template>
 
-          <!-- 월별: 연/월 드롭다운 -->
           <template v-else-if="selectedRange === 'monthly'">
             <div class="flex items-center gap-2 ml-2">
               <Dropdown
@@ -185,9 +181,8 @@
       </template>
     </Card>
 
-    <!-- 미결제 주문건 리스트 -->
     <Card class="table-card">
-      <template #title>미결제 주문건</template>
+      <template #title>진행중인 주문건</template>
       <template #content>
         <div class="table-toolbar">
           <span class="p-input-icon-left">
@@ -214,25 +209,63 @@
       </template>
     </Card>
 
-    <!-- 공지 -->
     <div class="two-col">
       <Card class="notice-card">
         <template #title>공지사항</template>
         <template #content>
-          <ul class="notice-list">
-            <li v-for="n in notices" :key="n.id">
-              <div class="row">
-                <Tag :value="n.category" :severity="noticeColor(n.category)" />
-                <span class="date">{{ formatDate(n.date) }}</span>
-              </div>
-              <div class="title">{{ n.title }}</div>
-              <p class="desc">{{ n.desc }}</p>
-            </li>
-          </ul>
-          <div class="more"><Button label="모든 공지 보기" class="p-button-text" /></div>
+          <div class="table-toolbar">
+            <span class="muted">최근 등록된 공지사항입니다.</span>
+          </div>
+
+          <DataTable
+            :value="notices"
+            dataKey="noticeNo"
+            class="p-datatable-sm clickable-rows" 
+            paginator
+            :rows="5"
+            :rowHover="true"
+            style="min-height: 250px"
+            @row-click="openNoticeModal" >
+            <Column field="noticeNo" header="공지번호" style="width:100px; text-align:center" />
+            <Column field="title" header="제목" />
+            <Column field="author" header="작성자" style="width:140px; text-align:center" />
+            <Column field="createdAt" header="작성일자" style="width:180px; text-align:center" />
+          </DataTable>
+
+          <div class="more">
+            <Button
+              label="모든 공지 보기"
+              class="p-button-text"
+              @click="$router.push('/notice')"
+            />
+          </div>
         </template>
       </Card>
     </div>
+
+    <Dialog 
+        v-model:visible="noticeModalVisible" 
+        modal 
+        :closable="false"  
+        :style="{ width: '50vw' }"
+        :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
+    >
+        <template #header>
+            <div class="flex flex-column gap-1">
+                <h3 style="margin: 0; padding: 0;">{{ selectedNotice.title }}</h3>
+                <div class="flex align-items-center text-sm text-500 notice-header-info">
+                    <span class="mr-3 text-700"><i class="pi pi-user mr-1"></i> {{ selectedNotice.author }}</span>
+                    <span><i class="pi pi-calendar mr-1"></i> {{ formatDate(selectedNotice.createdAt) }}</span>
+                </div>
+            </div>
+        </template>
+        
+        <div v-html="selectedNotice.content" class="notice-content-body"></div>
+        
+        <template #footer>
+            <Button label="닫기" icon="pi pi-times" @click="noticeModalVisible = false" text />
+        </template>
+    </Dialog>
   </div>
 </template>
 
@@ -246,11 +279,20 @@ import {
   Title, Tooltip, Legend, LineElement, BarElement, PointElement,
   CategoryScale, LinearScale, TimeScale, Filler
 } from 'chart.js'
+
+// ✅ 타임스케일 어댑터 반드시 필요
 import 'chartjs-adapter-date-fns'
+
+ChartJS.register(
+  Title, Tooltip, Legend, LineElement, BarElement, PointElement,
+  CategoryScale, LinearScale, TimeScale, Filler
+)
 
 import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import ProgressBar from 'primevue/progressbar'
+import Dialog from 'primevue/dialog'
+
 
 ChartJS.register(
   Title, Tooltip, Legend, LineElement, BarElement, PointElement,
@@ -263,6 +305,16 @@ const vendorId = userStore.code;
 // 선택 매장
 const selectedStore = ref(null)
 const stores = ref([])
+
+// ✅ 공지 모달 관련 상태
+const noticeModalVisible = ref(false)
+const selectedNotice = ref({
+    noticeNo: null,
+    title: '공지 상세 정보 로딩 중...',
+    content: '잠시만 기다려주세요...',
+    author: '',
+    createdAt: ''
+})
 
 // 유틸
 const formatDate = (dateStr) => {
@@ -278,13 +330,13 @@ const statusColor = (status) => {
     case '대기': return 'warning'
     case '처리중': return 'success'
     case '처리완료': return 'danger'
-    case '출고완료': return 'info'
-    case '배송완료': return 'success'
+    case '배송준비중': return 'info'
+    case '출고완료': return 'danger'
     default: return 'secondary'
   }
 }
 
-// ===== KPI =====
+// ===== KPI (로직 유지) =====
 const kpi = ref({
   todaySales: 0,
   monthSales: 0,
@@ -293,6 +345,10 @@ const kpi = ref({
   nextDueDate: '',
   dailyRate: 0,
   monthRate: 0
+})
+const overdue = ref({
+  count: 0,
+  amount: 0
 })
 
 const fetchKpi = async () => {
@@ -310,7 +366,6 @@ const fetchKpi = async () => {
     const lastMonthSales = Number(monthly.lastMonthTotal || 0)
     const monthRate = lastMonthSales > 0 ? (((monthSales - lastMonthSales) / lastMonthSales) * 100).toFixed(1) : 0
 
-    // ✅ 여기! 최종 금융 요약 정보 호출
     const { data: finance } = await axios.get('/api/sales/finance-summary', { params: { vendorId } })
 
     kpi.value = {
@@ -318,63 +373,150 @@ const fetchKpi = async () => {
       monthSales,
       dailyRate,
       monthRate,
-      creditLimit: Number(finance.creditLimit || 0),  // 여신한도
-      nextDueAmount: Number(finance.nextDueAmount || 0),  // 납부 예정금
-      nextDueDate: finance.nextDueDate || '',            // 납부 예정일
-      remainCredit: Number(finance.remainCredit || 0)    // 여신잔액 ✅
+      creditLimit: Number(finance.creditLimit || 0), 
+      nextDueAmount: Number(finance.nextDueAmount || 0), 
+      nextDueDate: finance.nextDueDate || '', 
+      remainCredit: Number(finance.remainCredit || 0) 
     }
   } catch (err) {
     console.error('❌ KPI 불러오기 오류:', err)
   }
 }
 
-
-// ===== 주문 목록 결제안한것들....꼭 필요한가?=====
-const orders = ref([])
-const orderQuery = ref('')
-const fetchOrders = async () => {
+// 연체중인 주문건
+const fetchOverdue = async () => {
   try {
-    const { data } = await axios.get('/api/pendingorders', { params: { vendorId, limit: 10 } })
-    orders.value = data
+    const { data } = await axios.get('/api/orders/overdue-summary', { params: { vendorId } })
+    
+    // ✅ 배열로 오면 첫 번째 객체만 사용
+    const obj = Array.isArray(data) ? data[0] : data
+    
+    overdue.value = {
+      count: obj.COUNT || 0,
+      amount: obj.AMOUNT || 0
+    }
   } catch (err) {
-    console.error('미결제 주문 조회 오류:', err)
+    console.error('연체 요약 조회 오류:', err)
   }
 }
-const filteredOrders = computed(() =>
-  orders.value.filter(o =>
+
+
+// ===== 진행중인 주문 목록 (수정된 Vue 로직) =====
+const orders = ref([])
+const orderQuery = ref('')
+
+const fetchOrders = async () => {
+  try {
+    console.log("✅ vendorId:", vendorId)
+    const { data } = await axios.get('/api/orders/ongoing', { params: { vendorId } }) 
+    
+    // 백엔드에서 이미 '배송완료'를 제외하고 리스트를 반환하므로, 
+    // data.data 대신 바로 data를 사용합니다. (컨트롤러 응답 형태에 따라)
+    orders.value = data 
+    
+  } catch (err) {
+    // 204 No Content도 여기서 처리될 수 있습니다.
+    if (err.response && err.response.status === 204) {
+      orders.value = [];
+    } else {
+      console.error('진행중 주문 조회 오류:', err)
+    }
+  }
+}
+
+// ✅ 백엔드에서 이미 필터링했으므로, 여기서는 검색어 필터링만 유지하면 됩니다.
+const filteredOrders = computed(() => {
+  return orders.value.filter(o =>
     !orderQuery.value ||
     o.orderId?.includes(orderQuery.value) ||
     (o.prodName && o.prodName.includes(orderQuery.value))
-  )
-)
+  );
+});
 
-// ===== 공지 =====
+// ===== 공지 (로직 수정) =====
 const notices = ref([])
+
 const fetchNotices = async () => {
   try {
-    const { data } = await axios.get('/api/dashboard/notices')
-    notices.value = data
+    const { data, status } = await axios.get('/api/notice', {
+      params: { page: 1, size: 5, title: '' } 
+    });
+
+    if (status === 204) {
+      notices.value = []
+      return
+    }
+
+    notices.value = data.data 
   } catch (err) {
-    console.error('공지사항 조회 오류:', err)
+    console.error('대시보드 공지 조회 오류:', err)
   }
 }
-const noticeColor = (cat) => (cat === '공지' ? 'info' : cat === '업데이트' ? 'success' : 'secondary')
 
-// ===== Range 공통 상태 =====
+// ✅ 공지사항 상세 내용을 가져오는 함수 (모달용)
+const fetchNoticeDetail = async (noticeNo) => {
+    try {
+        const { data } = await axios.get(`/api/notice/${noticeNo}`); 
+        
+        // 컨트롤러 응답 구조 ({ "data": NoticeVO 객체 })에 맞춰 data.data 반환
+        return data.data; 
+        
+    } catch (err) {
+        console.error(`공지 ${noticeNo} 상세 조회 오류:`, err);
+        return { 
+            title: '오류', 
+            content: '공지 내용을 불러오는 데 실패했습니다.', 
+            author: '시스템', 
+            createdAt: new Date().toISOString() 
+        };
+    }
+}
+
+// ✅ 모달을 열고 상세 내용을 불러오는 함수
+const openNoticeModal = async (event) => {
+  // PrimeVue DataTable의 @row-click 이벤트 객체에서 data (행 데이터)를 가져옴
+  const noticeNo = event.data?.noticeNo;
+  
+  // 1. 모달을 열기 전에 로딩 상태 데이터 설정 (사용자에게 반응성을 보여줌)
+  selectedNotice.value = {
+    noticeNo,
+    title: '공지 상세 정보 로딩 중...',
+    content: '<p>잠시만 기다려주세요...</p>',
+    author: '로딩',
+    createdAt: ''
+  };
+  
+  // 2. 모달을 띄움
+  noticeModalVisible.value = true;
+  
+  // 3. 상세 API 호출 및 데이터 업데이트
+  if (noticeNo) {
+    const detail = await fetchNoticeDetail(noticeNo);
+    
+    // 상세 정보로 selectedNotice 업데이트
+    selectedNotice.value = {
+        noticeNo: detail.noticeNo || noticeNo,
+        title: detail.title || '제목 없음',
+        content: detail.content || '내용 없음',
+        author: detail.author || '관리자',
+        createdAt: detail.createdAt || new Date().toISOString()
+    };
+  }
+}
+
+
+// ===== Range 공통 상태 및 차트 (로직 유지) =====
 const selectedRange = ref('daily')
 const rangeOptions = [
   { label: '일별', value: 'daily' },
   { label: '월별', value: 'monthly' }
 ]
 
-// 일별 버튼
 const selectedDays = ref(7)
 const dayOptions = [7, 15, 21]
 
-// 월별 드롭다운
 const selectedYear = ref(new Date().getFullYear())
 const selectedMonth = ref(new Date().getMonth() + 1)
-// 필요 연도만 넣으세요(예시)
 const yearOptions = [new Date().getFullYear() - 2, new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1]
 const monthOptions = Array.from({ length: 12 }, (_, i) => i + 1)
 
@@ -398,7 +540,6 @@ const fetchTrend = async () => {
     let orderAmt = (data || []).map(d => Number(d.ORDER_AMT ?? 0))
     let salesAmt = (data || []).map(d => Number(d.SALES_AMT ?? 0))
 
-    // 프론트 슬라이싱
     ;({ labels, datasets: [orderAmt, salesAmt] } = applyTimeFilter(labels, [orderAmt, salesAmt]))
 
     trendData.value = {
@@ -485,7 +626,6 @@ const fetchCoffeeRank = async () => {
   try {
     const { data } = await axios.get('/api/branch/coffeerank', { params: { vendorId, range: selectedRange.value } })
     const list = Array.isArray(data) ? data : (data?.list ?? data?.items ?? [])
-    // 랭킹은 서버에서 이미 기간 반영한다고 가정 → 추가 슬라이싱 없음
     beanRank.value = list.map(r => ({ LABEL: r.LABEL ?? r.name ?? '', RATE: roundRate(r.RATE ?? r.rate ?? 0) }))
   } catch (e) {
     console.error('원두 랭킹 조회 오류:', e)
@@ -529,9 +669,7 @@ const fetchPayMethod = async () => {
   }
 }
 
-// ===== 공통 슬라이싱 유틸 =====
-// labels: ['YYYY-MM-DD' or 'YYYY-MM'] 가정
-// datasets: [arr1, arr2, ...] 각 원소 길이 = labels 길이
+// ===== 공통 슬라이싱 유틸 (로직 유지) =====
 const applyTimeFilter = (labels, datasets) => {
   if (selectedRange.value === 'daily') {
     const n = selectedDays.value
@@ -548,32 +686,32 @@ const applyTimeFilter = (labels, datasets) => {
   }
 }
 
-// ===== 이벤트 핸들러 =====
+// ===== 이벤트 핸들러 (로직 유지) =====
 const onRangeChange = () => {
-  // 일별로 바꾸면 기본 7일, 월별로 바꾸면 현재연/월 유지
   if (selectedRange.value === 'daily') selectedDays.value = 7
   fetchAllCharts()
 }
 const updateDays = (days) => { selectedDays.value = days; fetchAllCharts() }
 const updateMonth = () => { fetchAllCharts() }
 
-// ===== 공통 fetch =====
+// ===== 공통 fetch (로직 유지) =====
 const fetchAllCharts = async () => {
-   await Promise.all([
-     fetchTrend(),
-     fetchProfit(),
-     fetchCompare(),
-     fetchCoffeeRank(),
-     fetchPayMethod()
-   ])
- }
+    await Promise.all([
+      fetchTrend(),
+      fetchProfit(),
+      fetchCompare(),
+      fetchCoffeeRank(),
+      fetchPayMethod()
+    ])
+  }
 
- // 최초 로드
+  // 최초 로드
 onMounted(() => {
   fetchKpi()
   fetchOrders()
   fetchNotices()
   fetchAllCharts()
+  fetchOverdue()
 })
 </script>
 
@@ -582,7 +720,7 @@ onMounted(() => {
 
 /* 헤더 */
 .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; }
-.title { margin:0; font-size:20px; font-weight:700; }
+.title { margin:0; font-size:15px; font-weight:300; }
 .subtitle { margin:0; color:#6b7280; }
 .header-ctrl { display:flex; align-items:center; }
 
@@ -622,7 +760,7 @@ onMounted(() => {
 .muted { color:#9ca3af; font-weight:400; }
 
 /* 2열 */
-.two-col { display:grid; grid-template-columns: 1.3fr 1fr; gap:12px; }
+.two-col { display:grid; grid-template-columns: 1fr; gap:12px; }
 
 /* 공지 리스트 */
 .notice-card .notice-list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:12px; }
@@ -631,6 +769,47 @@ onMounted(() => {
 .notice-card .title{ font-weight:700; margin-top:4px; }
 .notice-card .desc{ color:#6b7280; margin:.25rem 0 0; font-size:14px; }
 .more{ text-align:right; margin-top:8px; }
+.notice-no {
+  font-weight: 600;
+  color: #4F46E5; /* 보라톤 강조 */
+  margin-right: 6px;
+}
+
+.author {
+  color: #6b7280;
+  font-size: 13px;
+  margin-right: 8px;
+}
+
+.date {
+  color: #9ca3af;
+  font-size: 13px;
+  margin-left: auto; /* 오른쪽 끝 정렬 */
+}
+
+/* ✅ 클릭 가능한 행에 커서 스타일 추가 */
+.notice-card :deep(.p-datatable-sm.clickable-rows .p-datatable-tbody > tr:hover) {
+  cursor: pointer;
+  background: #f0f4f8; /* 마우스 오버 시 배경색 변경 (선택 사항) */
+}
+
+/* ✅ 공지 모달 내용 스타일 */
+.notice-content-body {
+    max-height: 500px; /* 모달 내용 최대 높이 지정 */
+    overflow-y: auto; /* 내용이 길면 스크롤 생성 */
+    padding: 10px 0;
+    line-height: 1.6;
+    color: #374151;
+}
+
+.notice-header-info {
+  margin-top: 5px;
+  font-size: 13px;
+  color: #6b7280 !important;
+}
+.notice-header-info i {
+  font-size: 12px;
+}
 
 /* 반응형 */
 @media (max-width: 1200px){

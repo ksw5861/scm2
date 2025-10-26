@@ -34,5 +34,12 @@ public interface OrderService {
     int deleteOrderWithDetails(String orderId);
 
     List<SalesOrderDetailVO> getOrderDetails(String orderId);
+
+    
+List<SalesOrderVO> getOngoingOrdersByVendorId(String vendorId, List<String> excludedStatuses);
+List<SalesOrderVO> getOngoingOrdersByVendorId(String vendorId);
+
+Map<String, Object> getOverdueSummary(String vendorId);
+
 }
 
