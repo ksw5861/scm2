@@ -144,4 +144,28 @@ public class OrderServiceImpl implements OrderService {
     public List<SalesOrderDetailVO> getOrderDetails(String orderId) {
         return orderMapper.findOrderDetails(orderId);
     }
+
+
+    // =============================================================
+    // 대시보드에 진행중인 주문건
+    // =============================================================
+   @Override
+    public List<SalesOrderVO> getOngoingOrdersByVendorId(String vendorId, List<String> excludedStatuses) {
+        return orderMapper.selectOngoingOrders(vendorId, excludedStatuses);
+    }
+
+    // ✅ 오버로딩 버전 추가 (컨트롤러 편의용 — excludedStatuses 기본값 셋팅)
+    @Override
+    public List<SalesOrderVO> getOngoingOrdersByVendorId(String vendorId) {
+        return getOngoingOrdersByVendorId(vendorId, List.of("배송완료"));
+    }
+        
+    // ================================================================
+    // 23. 대시보드 - 연체중인주문건(건수, 금액)
+    // ================================================================
+    @Override
+    public Map<String, Object> getOverdueSummary(String vendorId) {
+        return orderMapper.selectOverdueSummary(vendorId);
+    }
+
 }
