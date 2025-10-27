@@ -1,10 +1,11 @@
 package com.yedam.scm.order.service;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
+
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
-
+import java.io.InputStream;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.*;
 import org.springframework.stereotype.Service;
@@ -58,21 +59,27 @@ public class ExcelService {
         bodyStyle.setBorderLeft(BorderStyle.THIN);
         bodyStyle.setBorderRight(BorderStyle.THIN);
 
-        // ===================== 로고 추가 =====================
-        try (FileInputStream logoStream = new FileInputStream("C:/DEV/scm2/server/scm/src/main/resources/reports/logo.png")) {
+        // ===================== 로고 추가 (배포 안정형 최종본) =====================
+        try (InputStream logoStream = this.getClass().getResourceAsStream("/reports/logo.png")) {
+            if (logoStream == null) {
+                throw new FileNotFoundException("reports/logo.png not found in classpath.");
+            }
+
             byte[] imageBytes = logoStream.readAllBytes();
             int pictureIdx = workbook.addPicture(imageBytes, Workbook.PICTURE_TYPE_PNG);
+
             XSSFDrawing drawing = sheet.createDrawingPatriarch();
             XSSFClientAnchor anchor = new XSSFClientAnchor();
             anchor.setCol1(0);
             anchor.setRow1(0);
             anchor.setCol2(2);
             anchor.setRow2(4);
+
             drawing.createPicture(anchor, pictureIdx);
+
         } catch (Exception e) {
             System.out.println("⚠️ 로고 삽입 실패: " + e.getMessage());
         }
-
         // ===================== 상단 제목 및 주문정보 =====================
         Row titleRow = sheet.createRow(1);
         Cell titleCell = titleRow.createCell(3);

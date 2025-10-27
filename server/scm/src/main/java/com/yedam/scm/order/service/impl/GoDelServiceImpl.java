@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.yedam.scm.order.mapper.GoDelMapper;   
 import com.yedam.scm.order.service.GoDelService;
@@ -17,36 +18,36 @@ public class GoDelServiceImpl implements GoDelService {
     @Autowired
     private GoDelMapper goDelMapper;
 
-    @Override
-    public boolean createDeliveryInstruction(List<String> orderIds) {
-        
+@Override
+@Transactional
+public boolean createDeliveryInstruction(List<String> orderIds) {
+    try {
+        for (String orderId : orderIds) {
 
-        try {
-            for (String orderId : orderIds) {
-                SalesOrderVO order = new SalesOrderVO();
-                order.setOrderId(orderId);
-                goDelMapper.createDeliveryInstruction(order);
+            // 출고 지시 생성 (헤더)
+            goDelMapper.createDeliveryInstruction(new SalesOrderVO(orderId));
 
-                SalesOrderDetailVO info = new SalesOrderDetailVO();
+            // 주문 상세 여러 개 조회
+            List<SalesOrderDetailVO> details = goDelMapper.getProdandQTY(orderId);
 
-                info = goDelMapper.getProdandQTY(orderId);
-
+            for (SalesOrderDetailVO info : details) {
                 String prodId = info.getProdId();
                 Long orderQty = info.getOrderQty();
 
                 goDelMapper.callProcStockReduction(prodId, orderQty);
 
-
-                System.out.println("제품코드" + prodId);
-                System.out.println("수량" + orderQty);
-
+                System.out.println("제품코드: " + prodId + ", 수량: " + orderQty);
             }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
         }
+        return true;
+    } catch (Exception e) {
+        System.out.println("출고지시 생성 중 오류 발생: " + e.getMessage());
+        e.printStackTrace();
+        return false;
     }
+}
+
+
 
     @Override
     public boolean registerShipment(String shipId) {
