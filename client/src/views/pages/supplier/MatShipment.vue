@@ -137,8 +137,7 @@ const submit = async () => {
   venName: vanEmpName,
   vendorId: vendorId,
   //입고상세
-  details: list.filter(row => row.purId && row.matId && row.outQty)
-                .map((row) => ({
+  details: list.map((row) => ({
                     purId: row.purId,               //주문테이블 아이디
                     matId: row.matId,               // 자재 코드
                     outQty: row.ortQty,             // 공급처 출고수량
@@ -155,55 +154,42 @@ const submit = async () => {
   });
   console.log(payload);
 
-  try {
-    await axios.post('/api/sshipment', payload);
-    toast('info', '등록 성공', '출고등록  성공:', '3000');
+  // try {
+  //   await axios.post('/api/sshipment', payload);
+  //   toast('info', '등록 성공', '출고등록  성공:', '3000');
 
-    await pageLoad();
-    deliveryPlace.value = '';
-    carrier.value = '';
-    trackingNo.value = '';
-    carNo.value = '';
-    shipDetailList.value = [{ matId: '', matName: '', ortQty: null, unit: ''}];
+  //   await pageLoad();
+  //   deliveryPlace.value = '';
+  //   carrier.value = '';
+  //   trackingNo.value = '';
+  //   carNo.value = '';
+  //   shipDetailList.value = [{ matId: '', matName: '', ortQty: null, unit: ''}];
 
-  } catch (error) {
-    toast('error', '등록 실패', '출고등록  실패:', '3000');
-  }
+  // } catch (error) {
+  //   toast('error', '등록 실패', '출고등록  실패:', '3000');
+  // }
 };
 
 //선택토글
 const toggleSelection = (row) => {
+  const existingIndex = shipDetailList.value.findIndex((r) => r.purStatusId === row.id);
 
-    const existingIndex = shipDetailList.value.findIndex((r) => r.purStatusId === row.id);
-
-    if (existingIndex !== -1) {
-      shipDetailList.value.splice(existingIndex, 1)
-      return;
-    }
-
-    const newRow = {
-     //테이블 출력데이터
+  if (existingIndex !== -1) {
+    shipDetailList.value.splice(existingIndex, 1);
+  } else {
+    shipDetailList.value.push({
       id: row.id,
-      purStatusId: row.id, //주문로그T아이디: 출고상태값 제어필수
+      purStatusId: row.id,
       matId: row.matId,
-      matName:row.matName,
-      ortQty:row.ortQty,
+      matName: row.matName,
+      ortQty: row.ortQty,
       unit: row.unit,
       purName: row.buyerName,
-    //DB입력시 행별 필요데이터[]
-      shipOrderNo: row.logShipOrderNo, //출고지시번호
-      purId: row.purId,  //주문테이블 아이디
+      shipOrderNo: row.logShipOrderNo,
+      purId: row.purId,
       buyerName: row.empName,
-  };
-
-  const emptyRowIndex = shipDetailList.value.findIndex((r) => !r.matId);
-
-  if (emptyRowIndex !== -1) {
-   shipDetailList.value[emptyRowIndex] = newRow;     // 빈행 있으면 교체
-  } else {
-   shipDetailList.value.push(newRow);     // 빈행 없으면 push
+    });
   }
-
 };
 
 //창고리스트: 드롭다운용
@@ -249,6 +235,7 @@ onMounted(() => {
   pageLoad();
   warehouseList();
 });
+
 
 const approveShipColumns = [
   { label: '출고예정일', field: 'expectDate' },

@@ -42,6 +42,7 @@ public class SupplierServiceImpl implements SupplierService  {
        
         List<Integer> idList  = (List<Integer>) data.get("purId");
         String vendorId = (String) data.get("vId");
+
         String name = (String) data.get("name");
 
         int updatedCount = 0;
@@ -107,13 +108,13 @@ public class SupplierServiceImpl implements SupplierService  {
         MatShipInfo.getShipmentInfoVO().setInboundId(inboundMastPk); // inboundId 세팅
         MatShipInfo.getShipmentInfoVO().setShipFrom(MatShipInfo.getVendorId()); // 공급처코드 세팅
 
-        //1-2)입고마스터 insert 출고정보 insert 
+        //1-2)입고마스터 insert 출고정보 insert (배송정보주소랑 그런것)
         mapper.callShipmentMasterPoc(MatShipInfo);
 
         //requestBody에서 리스트만 뽑기
         List<InboundDetailVO> detailList = MatShipInfo.getDetails();
 
-        //행별로 뽑아서 정리
+        //행별로 뽑아서 정리 (자제별 insert) <========================================== 여기가 안탐! 
         for (InboundDetailVO detail : detailList) {
            // 2-1) 입고마스터 외래키 등록
            detail.setInboundId(inboundMastPk);  // FK

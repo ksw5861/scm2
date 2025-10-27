@@ -20,7 +20,6 @@ public class GoDelServiceImpl implements GoDelService {
     @Override
     public boolean createDeliveryInstruction(List<String> orderIds) {
         
-        
 
         try {
             for (String orderId : orderIds) {
@@ -39,7 +38,7 @@ public class GoDelServiceImpl implements GoDelService {
 
 
                 System.out.println("제품코드" + prodId);
-                 System.out.println("수량" + orderQty);
+                System.out.println("수량" + orderQty);
 
             }
             return true;
