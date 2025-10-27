@@ -157,14 +157,14 @@ const purchaseListColumn = [
   { label: '자재명', field: 'matName' },
   { label: '주문수량', field: 'reqQty', style: 'text-align: right' },
   { label: '단위', field: 'unit' },
-  { label: '공급처', field: 'companyName' },
-  { label: '발주 담당자', field: 'empName' }
+  { label: '공급처', field: 'companyName' }
+  // { label: '발주 담당자', field: 'empName' }
 ];
 
 const statusColumn = [
   { label: '변경일', field: 'updateDate' },
   { label: '상태', field: 'status' },
-  { label: '공급처 출고수량', field: 'supOutQty', style: 'text-align: right'},
+  { label: '공급처 출고수량', field: 'supOutQty', style: 'text-align: right' },
   { label: '출고예정일', field: 'expectDate' },
   { label: '공급처 담당자', field: 'chargeName' }
 ];

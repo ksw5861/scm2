@@ -291,6 +291,7 @@ ORDER BY re_date DESC
            unit
     FROM product
     WHERE status = 'Y'
+    ORDER BY prod_id
 </select>
 
 
@@ -303,6 +304,7 @@ ORDER BY re_date DESC
     JOIN vendor v
     ON mv.vendor_id = v.vendor_id
     Where mv.mat_id = #{matId}
+    ORDER BY mv.vendor_id
  </select>
 
 
@@ -315,6 +317,7 @@ SELECT wh_id,
        owner_tel
 FROM warehouse
 WHERE status = '정상'
+ORDER BY wh_id
 </select>
 
 <!-- 자재공통코드 상태값 -->
