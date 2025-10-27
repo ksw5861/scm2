@@ -55,6 +55,7 @@ ON i.prod_id = p.prod_id
 JOIN warehouse w
 ON i.wh_id = w.wh_id
 WHERE i.prod_id = #{prodId}
+AND i.remain_qty > 0
 ORDER BY i.in_date ASC
 </select>
 
