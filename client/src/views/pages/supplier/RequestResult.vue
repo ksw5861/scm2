@@ -146,17 +146,17 @@ onMounted(() => {
 
 const matOrderColumns = [
   { label: '주문일자', field: 'orderDate', sortable: true },
-  { label: '주문번호', field: 'orderNo' },
+  { label: '주문번호', field: 'orderNo', style: 'width: 12rem' },
   //{ label: '납기요청일', field: 'dueDate', sortable: true },
   { label: '자재코드', field: 'matId' },
   { label: '자재명', field: 'matName', sortable: true },
-  { label: '주문수량', field: 'reqQty', style: 'text-align: right', sortable: true },
+  { label: '주문수량', field: 'reqQty', style: 'width: 10rem; text-align: right', sortable: true },
   { label: '단위', field: 'unit' },
   { label: '상태', field: 'status' },
   { label: '발주 담당자', field: 'outName', sortable: true },
   { label: '승인 담당자', field: 'inName', sortable: true },
   { label: '처리일자', field: 'reDate', sortable: true },
-  { label: '비고', field: 'resonComm' }
+  { label: '비고', field: 'resonComm', style: 'width: 15rem' }
 ];
 </script>
 <template>

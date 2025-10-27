@@ -154,24 +154,27 @@ const submit = async () => {
   });
   console.log(payload);
 
-  // try {
-  //   await axios.post('/api/sshipment', payload);
-  //   toast('info', '등록 성공', '출고등록  성공:', '3000');
+  try {
+    await axios.post('/api/sshipment', payload);
+    toast('info', '등록 성공', '출고등록  성공:', '3000');
 
-  //   await pageLoad();
-  //   deliveryPlace.value = '';
-  //   carrier.value = '';
-  //   trackingNo.value = '';
-  //   carNo.value = '';
-  //   shipDetailList.value = [{ matId: '', matName: '', ortQty: null, unit: ''}];
+    await pageLoad();
+    deliveryPlace.value = '';
+    carrier.value = '';
+    trackingNo.value = '';
+    carNo.value = '';
+    shipDetailList.value = [];
 
-  // } catch (error) {
-  //   toast('error', '등록 실패', '출고등록  실패:', '3000');
-  // }
+  } catch (error) {
+    toast('error', '등록 실패', '출고등록  실패:', '3000');
+  }
 };
 
 //선택토글
 const toggleSelection = (row) => {
+
+  if (!row || !row.id) return;
+
   const existingIndex = shipDetailList.value.findIndex((r) => r.purStatusId === row.id);
 
   if (existingIndex !== -1) {

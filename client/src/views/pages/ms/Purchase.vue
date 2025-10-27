@@ -227,6 +227,7 @@ const reqSubmit = async () => {
 
     toast('success', '등록 성공', '자재주문 등록 성공', '5000');
     await pageLoadMrp();
+    planList.value = [];
     purchaseList.value = [
       { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },
       { matId: '', matName: '', reqQty: null, unit: '', vendorId: null, price: null, total: null, dueDate: null },

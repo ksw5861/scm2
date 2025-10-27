@@ -96,7 +96,7 @@ onMounted(async () => {
 });
 
 const defectColumns = [
-  { field: 'matName', label: '자재명', style: 'width: 140px' },
+  { field: 'matName', label: '자재명', style: 'width: 100px' },
   { field: 'qty', label: '수량', style: 'width: 50px; text-align: right' },
   { field: 'unit', label: '단위', style: 'width: 25px;' },
   { field: 'regDate', label: '사유', style: 'width: 100px' }
@@ -105,17 +105,15 @@ const defectColumns = [
 const tableColumns = [
   { field: 'type', label: '구분', style: 'width: 25px' },
   { field: 'refNo', label: '번호', style: 'width: 90px' },
-  //{ field: 'matId', label: '자재코드', style: 'width: 30px; text-align: center' },
   { field: 'matName', label: '자재명', style: 'width: 150px' },
-  { field: 'qty', label: '수량', style: 'width: 50px; text-align: right' },
+  { field: 'qty', label: '수량', style: 'width: 60px; text-align: right' },
   { field: 'unit', label: '단위', style: 'width: 25px' }
-  //{ field: 'regDate', label: '일자', style: 'width: 100px; text-align: center' }
 ];
 </script>
 
 <template>
-  <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
-  <div class="p-6 space-y-6 w-full">
+  <Breadcrumb class="rounded-lg block w-full" :home="breadcrumbHome" :model="breadcrumbItems" />
+  <div class="rounded-lg block w-full mt-4">
     <!-- 요약 카드 -->
     <div class="grid grid-cols-5 gap-4">
       <div v-for="(item, i) in summaryCards" :key="i" class="card flex flex-col justify-center text-center p-6" style="height: 128px">
