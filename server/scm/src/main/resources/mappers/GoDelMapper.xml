@@ -69,7 +69,7 @@
     <!-- ====================================================== -->
     <!-- 4. 출하지시 진행 목록 (배송준비중 상태) -->
     <!-- ====================================================== -->
-    <select id="getDeliveryInProgressOrders" resultType="com.yedam.scm.vo.SalesOrderVO">
+    <select id="getDeliveryInProgressOrders" resultType="SalesOrderVO">
         SELECT
             so.order_id     AS orderId,
             TO_CHAR(so.order_date, 'YYYY-MM-DD') AS orderDate,
@@ -86,7 +86,7 @@
     <!-- ====================================================== -->
     <!-- 5. 주문 상세 조회 (조회 전용) -->
     <!-- ====================================================== -->
-    <select id="selectDeliveryDetailList" parameterType="string" resultType="com.yedam.scm.vo.SalesOrderDetailVO">
+    <select id="selectDeliveryDetailList" parameterType="string" resultType="SalesOrderDetailVO">
         SELECT
             sod.odetail_id      AS odetailId,
             sod.order_id        AS orderId,
