@@ -10,7 +10,7 @@
 
     <update id="createDeliveryInstruction" parameterType="SalesOrderVO">
         <selectKey keyProperty="shipId" resultType="string" order="BEFORE">
-            SELECT next_date_code('SD') FROM dual
+            SELECT next_date_code('OB') FROM dual
         </selectKey>
 
         UPDATE SALES_ORDER
