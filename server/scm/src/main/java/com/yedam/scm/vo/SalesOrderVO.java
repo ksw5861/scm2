@@ -116,4 +116,8 @@ public class SalesOrderVO {
     private Integer orderCount; // 주문건수
     private Integer unpaidCount; // 미수건수
 
+    public SalesOrderVO(String orderId) {
+    this.orderId = orderId;
+}
+
 }
