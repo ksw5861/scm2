@@ -6,6 +6,7 @@ import { useUserStore } from '@/stores/user';
 import { useAppToast } from '@/composables/useAppToast';
 import logo from '@/assets/logo.webp'
 import axios from 'axios';
+import AppConfigurator from './AppConfigurator.vue';
 
 const { toggleMenu, toggleDarkMode, isDarkTheme } = useLayout();
 const userStore = useUserStore();
@@ -54,10 +55,10 @@ const logout = async () => {
             </div>
 
             <div class="layout-config-menu">
-                <button type="button" class="layout-topbar-action" @click="toggleDarkMode">
+                <!-- <button type="button" class="layout-topbar-action" @click="toggleDarkMode">
                     <i :class="['pi', { 'pi-moon': isDarkTheme, 'pi-sun': !isDarkTheme }]"></i>
-                </button>
-                <!-- <div class="relative">
+                </button> -->
+                <div class="relative">
                     <button
                         v-styleclass="{ selector: '@next', enterFromClass: 'hidden', enterActiveClass: 'animate-scalein', leaveToClass: 'hidden', leaveActiveClass: 'animate-fadeout', hideOnOutsideClick: true }"
                         type="button"
@@ -66,7 +67,7 @@ const logout = async () => {
                         <i class="pi pi-palette"></i>
                     </button>
                     <AppConfigurator />
-                </div> -->
+                </div>
             </div>
 
             <button
@@ -78,24 +79,16 @@ const logout = async () => {
 
             <div class="layout-topbar-menu hidden lg:block">
                 <div class="layout-topbar-menu-content">
-                    <button type="button" class="layout-topbar-action">
+                    
+                    <!-- <button type="button" class="layout-topbar-action">
                         <i class="pi pi-inbox"></i>
                         <span>공지사항</span>
-                    </button>
+                    </button> -->
 
-                    <button type="button" class="layout-topbar-action" @click="toggleProfileMenu">
-                        <i class="pi pi-user"></i>
-                        <span>로그인 정보</span>
+                    <button type="button" class="layout-topbar-action" @click="logout">
+                        <i class="pi pi-sign-out"></i>
+                        <span>로그아웃</span>
                     </button>
-
-                    <Popover ref="profilePopover" style="width: 180px;">
-                        <div class="p-3 flex flex-col gap-2 items-center">
-                            <button type="button" class="layout-topbar-action">
-                            회원정보
-                            </button>
-                            <Btn label="로그아웃" color="danger" icon="signout" @click="logout"></Btn>
-                        </div>
-                    </Popover>
 
                 </div>
             </div>

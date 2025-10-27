@@ -196,6 +196,7 @@ function onPresetChange() {
 function onMenuModeChange() {
     layoutConfig.menuMode = menuMode.value;
 }
+
 </script>
 
 <template>

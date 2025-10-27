@@ -3,7 +3,7 @@
 - 거래처원장 요약 및 그래프 페이지
 ====================================================== -->
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import axios from 'axios';
 import Chart from 'chart.js/auto';
 import { useAppToast } from '@/composables/useAppToast';
@@ -13,23 +13,15 @@ import { useIcon } from '@/composables/useIcon';
 const { toast } = useAppToast();
 const route = useRoute();
 
+const loading = ref(true);
+
 const icons = {
-  info: useIcon('info'),
-  add: useIcon('add'),
-  edit: useIcon('edit'),
-  list: useIcon('list'),
-  employee: useIcon('employee'),
-  phone: useIcon('phone'),
-  email: useIcon('email'),
-  calendar: useIcon('calendar'),
-  id: useIcon('id'),
   home: useIcon('home'),
-  cancel: useIcon('cancel'),
-  delete: useIcon('delete'),
-  refresh: useIcon('refresh'),
-  save: useIcon('save'),
-  register: useIcon('register'),
-  address: useIcon('address')
+  cart: useIcon('cart'),
+  hourglass: useIcon('hourglass'),
+  forward: useIcon('forward'),
+  gauge: useIcon('gauge'),
+  bill: useIcon('bill')
 };
 
 /* breadcrumb */
@@ -37,7 +29,7 @@ const breadcrumbHome = { icon: icons.home, to: '/' };
 const breadcrumbItems = computed(() => {
   const matched = route.matched.filter((r) => r.meta);
   if (!matched.length) return [];
-  return [{ label: '홈' }, { label: '대시보드' }];
+  return [{ label: '대시보드' }];
 });
 
 /* 상태 */
@@ -56,7 +48,7 @@ let donutChart, barChart;
 
 function fmt(v) {
   const n = Number(v);
-  return isNaN(n) ? '₩0' : '₩' + n.toLocaleString('ko-KR');
+  return isNaN(n) ? '0' : n.toLocaleString('ko-KR');
 }
 
 /* 데이터 로드 */
@@ -65,10 +57,15 @@ async function loadDashboard() {
     const { data } = await axios.get('/api/account-dash');
     summary.value = data.summary;
     list.value = data.items;
+
+    loading.value = false;
+    await nextTick();
+
     renderDonutChart();
     renderBarChart();
   } catch (e) {
     toast('error', '대시보드 조회 실패', e.message);
+    loading.value = false;
   }
 }
 
@@ -128,37 +125,109 @@ onMounted(() => loadDashboard());
   <Fluid>
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
 
-    <!-- 요약 카드 -->
-    <div class="flex gap-4 mt-4">
-      <div
-        class="card"
-        v-for="(v, i) in [
-          { label: '총매출', val: summary.totalPrice },
-          { label: '총반품', val: summary.returnPrice },
-          { label: '총입금', val: summary.totalPayment },
-          { label: '총미수금', val: summary.totalAr }
-        ]"
-        :key="i"
-        style="width: 25%; height: 128px; margin-bottom: 0"
-      >
-        <p>{{ v.label }}</p>
-        <h4>{{ fmt(v.val) }}</h4>
-      </div>
-    </div>
+        <div class="grid grid-cols-2 2xl:grid-cols-4 gap-4 mt-4">
 
-    <!-- 그래프 영역 -->
-    <div class="flex gap-4 mt-4">
-      <!-- 도넛 차트 -->
-      <div class="card w-1/3" style="margin-bottom: 0">
-        <h3 class="text-center text-[22px] font-extrabold tracking-wide mb-4 select-none" style="font-family: 'Poppins', 'Pretendard', sans-serif; color: #1e3a8a; /* ✅ 파란 막대보다 한톤 어두운 blue-900 */ letter-spacing: 0.6px">입금·미수금 현황</h3>
-        <canvas ref="chartRefDonut"></canvas>
-      </div>
+            <template v-if="loading">
 
-      <!-- 막대 차트 -->
-      <div class="card w-2/3" style="margin-bottom: 0">
-        <h3 class="text-center text-[22px] font-extrabold tracking-wide mb-4 select-none" style="font-family: 'Poppins', 'Pretendard', sans-serif; color: #1e3a8a; /* ✅ 동일 톤 적용 */ letter-spacing: 0.6px">매출 상위 5개 판매처</h3>
-        <canvas ref="chartRefBar"></canvas>
-      </div>
-    </div>
+                <div v-for="n in 4" :key="n" class="card h-30" height="7rem" style="margin-bottom: 0;">
+                    
+                    <div class="flex justify-between mb-4">
+                        <Skeleton width="40%" height="1.5rem" />
+                        <Skeleton width="2.5rem" height="2.5rem" class="rounded-full" />
+                    </div>
+
+                    <Skeleton height="2rem" />
+                </div>
+
+            </template>
+
+            <template v-else>
+
+                <div
+                  v-for="(v, i) in [
+                    { label: '총 매출', val: summary.totalPrice, color: 'blue', icon: icons.cart },
+                    { label: '총 반품', val: summary.returnPrice, color: 'red', icon: icons.hourglass },
+                    { label: '총 입금', val: summary.totalPayment, color: 'green', icon: icons.forward },
+                    { label: '총 미수금', val: summary.totalAr, color: 'orange', icon: icons.gauge }
+                  ]"
+                  :key="i" class="card h-30" style="margin-bottom: 0;"
+                >
+                  <div class="flex justify-between mb-4">
+
+                        <div>
+                            <span class="block text-muted-color font-medium mb-4">{{ v.label }}</span>
+                            <div
+                                class="dark:text-surface-0 font-bold text-xl"
+                                :class="`text-${v.color}-500`"
+                            >
+
+                                {{ fmt(v.val) }}<span class="font-medium text-gray-700">원</span>
+                            
+                            </div>
+                        </div>
+
+                        <div
+                            class="flex items-center justify-center rounded-border"
+                            :class="'bg-' + v.color + '-100 dark:bg-' + v.color + '-100/10'"
+                            style="width:2.5rem;height:2.5rem;"
+                        >
+                            <i class="!text-xl" :class="[v.icon, 'text-' + v.color + '-500']"></i>
+                        </div>
+
+                    </div>
+                </div>
+
+            </template>
+
+        </div>
+
+        <div class="flex w-full gap-4 mt-4 items-stretch">
+
+            <div class="card flex flex-col w-full 2xl:w-1/3 h-full">
+
+                <template v-if="loading">
+                    <Skeleton width="60%" height="1.5rem" class="mb-2" />
+                    <Skeleton height="200px" />
+                </template>
+
+                <template v-else>
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center gap-2 font-semibold text-lg">
+                            <span :class=icons.bill></span> 입금 및 미수금 현황
+                        </div>
+                    </div>
+
+                    <Divider />
+                    
+                    <canvas ref="chartRefDonut"></canvas>
+
+                </template>
+
+            </div>
+
+            <div class="card flex flex-col w-full 2xl:w-2/3 h-full">
+
+                <template v-if="loading">
+                    <Skeleton width="60%" height="1.5rem" class="mb-2" />
+                    <Skeleton height="200px" />
+                </template>
+
+                <template v-else>
+                    <div class="flex justify-between items-center mb-2">
+                        <div class="flex items-center gap-2 font-semibold text-lg">
+                            <span :class=icons.bill></span> 매출 상위 5개 판매처
+                        </div>
+                    </div>
+
+                    <Divider />
+                    
+                    <canvas ref="chartRefBar"></canvas>
+
+                </template>
+
+            </div>
+
+        </div>
+
   </Fluid>
 </template>
