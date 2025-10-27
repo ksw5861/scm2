@@ -9,7 +9,6 @@ import { useDateFormat, useNumberFormat } from '@/composables/useFormat';
 import { useUserStore } from '@/stores/user';
 import SearchCard from '@/components/card/SearchCard.vue';
 
-
 // Pinia Store
 const userStore = useUserStore();
 const empName = userStore.name;
@@ -32,12 +31,11 @@ const breadcrumbItems = computed(() => {
 const productList = ref();
 const selectedRows = ref();
 const prodLotList = ref();
-const selectedDeRow = ref();
 
 //검색조건
 const searchFilter = ref({
   prodName: '',
-  inboundId: '',
+  inboundId: ''
 });
 // pagination
 const page = ref({ page: 1, size: 10, totalElements: 0 });
@@ -68,17 +66,16 @@ const fetchMatList = async () => {
 };
 
 const detailInfo = async () => {
-
   try {
     const list = await axios.get('/api/stockByProdLotList', { params: { prodId: selectedRows.value.id } });
     prodLotList.value = list.data.map((item) => ({
-        lotNo: item.inboundId,
-        prodName: item.prodName,
-        currQty: item.remainQty,
-        unit: item.unit,
-        regDate: useDateFormat(item.inDate).value,
-        expDate: useDateFormat(item.expDate).value,
-        warehouse: item.whName
+      lotNo: item.inboundId,
+      prodName: item.prodName,
+      currQty: item.remainQty,
+      unit: item.unit,
+      regDate: useDateFormat(item.inDate).value,
+      expDate: useDateFormat(item.expDate).value,
+      warehouse: item.whName
     }));
   } catch (error) {
     toast('error', '리스트 로드 실패', 'LOT 리스트 불러오기 실패', '3000');
@@ -89,7 +86,7 @@ const detailInfo = async () => {
 const resetSearch = () => {
   searchFilter.value = {
     prodName: '',
-    inboundId: '',
+    inboundId: ''
   };
   fetchMatList();
   selectedRows.value = null;
@@ -145,7 +142,6 @@ const prodLotColumns = [
               <label for="searchLotNo">LOT번호</label>
             </IftaLabel>
           </InputGroup>
-
         </div>
       </SearchCard>
     </div>
