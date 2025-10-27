@@ -54,7 +54,8 @@ const iconMap = {
   left: "pi pi-chevron-left",
   pie: 'pi pi-chart-pie',
   gauge: 'pi pi-gauge',
-  forward: 'pi pi-forward'
+  forward: 'pi pi-forward',
+  hourglass: 'pi pi-hourglass'
 };
 
 export const useIcon = (name) => {

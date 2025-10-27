@@ -239,6 +239,7 @@ onMounted(() => {
                   <div class="flex flex-wrap text-xl gap-x-3 text-gray-600">
                     <span><span># </span>{{ monthMap?.[plan.planMonth] || plan.planMonth }}</span>
                     <span>{{ weekMap?.[plan.planWeek] || plan.planWeek }}</span>
+                    <span class="text-green-700">- {{ planTypeMap?.[plan.planType] || plan.planType }}</span>
                 </div>
                 </AccordionHeader>
                   <AccordionContent class="p-3 bg-white rounded-b-lg  max-h-[500px] overflow-auto">

@@ -1,4 +1,12 @@
 <template>
+  <Fluid>
+
+    <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
+
+    
+  </Fluid>
+
+
   <div class="main">
     <header class="header">
       <div>
@@ -272,6 +280,8 @@
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 import { useUserStore } from '@/stores/user'
+import { useIcon } from '@/composables/useIcon'
+import { useRoute } from 'vue-router'
 
 import {
   Chart as ChartJS,
@@ -291,6 +301,23 @@ import TabView from 'primevue/tabview'
 import TabPanel from 'primevue/tabpanel'
 import ProgressBar from 'primevue/progressbar'
 import Dialog from 'primevue/dialog'
+
+
+const route = useRoute()
+
+const loading = ref(true)
+
+const icons = {
+  home: useIcon('home')
+}
+
+/* breadcrumb */
+const breadcrumbHome = { icon: icons.home, to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter((r) => r.meta);
+  if (!matched.length) return [];
+  return [{ label: '대시보드' }];
+});
 
 
 ChartJS.register(
