@@ -48,6 +48,11 @@ const logout = async () => {
         </div>
 
         <div class="layout-topbar-actions">
+
+            <div class="flex align-items-center" style="display: flex; align-items: center; margin-top: 2px;">
+                <span class="text-base">{{ userStore.name }}님 환영합니다! :)</span>
+            </div>
+
             <div class="layout-config-menu">
                 <button type="button" class="layout-topbar-action" @click="toggleDarkMode">
                     <i :class="['pi', { 'pi-moon': isDarkTheme, 'pi-sun': !isDarkTheme }]"></i>
