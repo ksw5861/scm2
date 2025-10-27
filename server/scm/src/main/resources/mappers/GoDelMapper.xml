@@ -19,6 +19,22 @@
         WHERE order_id = #{orderId}
     </update>
 
+    <!-- ====================================================== -->
+    <!-- ######## 출하지시 등록 시 재고차감진행 ############
+        ====================================================== -->
+        <!--제품수량이랑 출고수량받아오기! -->
+    <select id = "getProdandQTY" parameterType="string" resultType="SalesOrderDetailVO">
+    SELECT order_qty,
+           prod_id
+    FROM sales_order_detail
+    WHERE order_id = #{orderId}
+    </select>
+    <!--재고차감 프로시저-->
+    <select id="callProcStockReduction" parameterType="map" statementType="CALLABLE">
+      { call DEDUCT_INVENTORY(   
+                #{prodId,   mode=IN, jdbcType=VARCHAR},
+                #{orderQty,    mode=IN, jdbcType=NUMERIC}     )}
+    </select>
 
     <!-- ====================================================== -->
     <!-- 2. 출하 등록 (주문 상태: 배송준비중 → 출고완료) -->
@@ -99,7 +115,6 @@
         FROM SALES_ORDER so
         WHERE so.status = '배송준비중'
         ORDER BY so.order_id DESC
-
     </select>
 
     <select id="selectShippedOrders" resultType="SalesOrderVO">

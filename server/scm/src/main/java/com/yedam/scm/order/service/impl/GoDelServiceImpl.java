@@ -19,12 +19,28 @@ public class GoDelServiceImpl implements GoDelService {
 
     @Override
     public boolean createDeliveryInstruction(List<String> orderIds) {
+        
+        
+
         try {
             for (String orderId : orderIds) {
                 SalesOrderVO order = new SalesOrderVO();
                 order.setOrderId(orderId);
                 goDelMapper.createDeliveryInstruction(order);
-              
+
+                SalesOrderDetailVO info = new SalesOrderDetailVO();
+
+                info = goDelMapper.getProdandQTY(orderId);
+
+                String prodId = info.getProdId();
+                Long orderQty = info.getOrderQty();
+
+                goDelMapper.callProcStockReduction(prodId, orderQty);
+
+
+                System.out.println("제품코드" + prodId);
+                 System.out.println("수량" + orderQty);
+
             }
             return true;
         } catch (Exception e) {
