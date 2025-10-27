@@ -55,7 +55,6 @@ import org.springframework.web.bind.annotation.RequestParam;
  *  ----------   -------    ---------------------------
  *  2025.09.28   김상우            최초 생성
  */
-@CrossOrigin(origins = "http://localhost:5173")
 
 @RestController
 @RequestMapping("${api.base-path:/}")
