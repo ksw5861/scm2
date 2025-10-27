@@ -103,31 +103,31 @@ const fetchList = async () => {
 
 //발주취소
 const cancel = async () => {
-    const list = JSON.parse(JSON.stringify(selectedRows.value));
-    const idList = list.map((row) => row.id);
-    const checkStatus = list.map((row) => row.status);
+  const list = JSON.parse(JSON.stringify(selectedRows.value));
+  const idList = list.map((row) => row.id);
+  const checkStatus = list.map((row) => row.status);
 
-    //유효성 검사
-    for(const status of checkStatus){
-        if(status !== '발주등록'){
-            toast('warn', '취소 불가', '발주등록상태 외 주문건은 취소가 불가능합니다.', '3000');
-            return
-        }
+  //유효성 검사
+  for (const status of checkStatus) {
+    if (status !== '발주등록') {
+      toast('warn', '취소 불가', '발주등록상태 외 주문건은 취소가 불가능합니다.', '3000');
+      return;
     }
+  }
 
-    if(!confirm('등록된 발주를 취소하시겠습니까?')){
-        return;
-    }
+  if (!confirm('등록된 발주를 취소하시겠습니까?')) {
+    return;
+  }
 
-    try{ //취소담당자, purId,
-        await axios.post('/api/mcancel', { purId: idList, empName: empName } )
-        toast('success', '취소 성공', '발주 취소 성공:', '3000');
-        fetchList();
-    } catch(err){
-        toast('error', '취소 실패', '발주 취소 실패:', '3000');
-    }
-
-}
+  try {
+    //취소담당자, purId,
+    await axios.post('/api/mcancel', { purId: idList, empName: empName });
+    toast('success', '취소 성공', '발주 취소 성공:', '3000');
+    fetchList();
+  } catch (err) {
+    toast('error', '취소 실패', '발주 취소 실패:', '3000');
+  }
+};
 
 const onPage = (event) => {
   const startRow = event.page * event.rows + 1;
@@ -185,10 +185,10 @@ const matOrderColumns = [
   { label: '납기요청일', field: 'dueDate', sortable: true },
   { label: '공급처', field: 'companyName', sortable: true },
   { label: '상태', field: 'status' },
-  { label: '발주 담당자', field: 'epmName', sortable: true },
-  { label: '공급처 담당자', field: 'venName', sortable: true },
+  { label: '담당자', field: 'epmName', style: 'width: 5rem' },
+  { label: '공급처 담당자', field: 'venName', style: 'width: 8rem' },
   { label: '처리일자', field: 'reDate', sortable: true },
-  { label: '비고', field: 'resonComm' }
+  { label: '비고', field: 'resonComm', style: 'width: 12rem' }
 ];
 </script>
 
@@ -236,15 +236,15 @@ const matOrderColumns = [
 
     <!--중간버튼영역-->
     <div class="card flex flex-col gap-4">
-        <div class="flex items-center justify-between my-3">
-            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
-                <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 발주 목록</div>
-            </div>
-            <div>
-                <btn color="warn" icon="cancel" label="발주취소" @click="cancel" class="whitespace-nowrap" outlined />
-            </div>
+      <div class="flex items-center justify-between my-3">
+        <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+          <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 발주 목록</div>
         </div>
-        <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="purchaseOrderData" :showCheckbox="true" :paginator="true" :rows="15" @page-change="onPage" :page="page" />
+        <div>
+          <btn color="warn" icon="cancel" label="발주취소" @click="cancel" class="whitespace-nowrap" outlined />
+        </div>
+      </div>
+      <selectTable v-model:selection="selectedRows" :columns="matOrderColumns" :data="purchaseOrderData" :showCheckbox="true" :paginator="true" :rows="15" @page-change="onPage" :page="page" />
     </div>
   </div>
 </template>
