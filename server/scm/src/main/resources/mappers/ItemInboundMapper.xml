@@ -151,8 +151,8 @@
    <!-- ✅ 날짜 필터: TRUNC 제거, endDate + 1 로 당일 포함 -->
    <if test="dto.startDate != null and dto.endDate != null">
      <![CDATA[
-       AND so.order_date >= #{dto.startDate,jdbcType=DATE}
-       AND so.order_date <  #{dto.endDate,jdbcType=DATE} + 1
+       AND so.order_date >= #{dto.startDate,jdbcType=DATE} -1
+       AND so.order_date <  #{dto.endDate,jdbcType=DATE} + 2
      ]]>
    </if>
 
@@ -230,7 +230,7 @@
    WHERE r.return_status IN ('대기','처리중')
 
    <if test="returnId != null and returnId != ''">
-     AND r.return_id = #{returnId}
+     AND TRIM(r.return_id) = TRIM(#{returnId})
    </if>
 
    <if test="vendorName != null and vendorName != ''">
@@ -247,7 +247,19 @@
      )
    </if>
 
-   <if test="fromDate != null">
+   <if test="fromDate != null and fromDate != ''">
+  <![CDATA[
+    AND r.return_date >= TO_DATE(#{fromDate}, 'YYYY-MM-DD')
+  ]]>
+</if>
+
+<if test="toDate != null and toDate != ''">
+  <![CDATA[
+    AND r.return_date < TO_DATE(#{toDate}, 'YYYY-MM-DD') + 1
+  ]]>
+</if>
+
+   <!-- <if test="fromDate != null and ">
      <![CDATA[
        AND r.return_date >= TRUNC(#{fromDate})
      ]]>
@@ -257,7 +269,7 @@
      <![CDATA[
        AND r.return_date < TRUNC(#{toDate}) + 1
      ]]>
-   </if>
+   </if> -->
 
    ORDER BY r.return_date DESC
 </select>
@@ -532,6 +544,42 @@
 
 
  <!-- ===================== 주문승인 페이지 모달  ===================== -->
+<!-- ===================== 주문승인 날짜 모달 ===================== -->
+<select id="searchApprovalByDate" resultType="com.yedam.scm.vo.SalesOrderVO">
+  SELECT orderId, orderDate, vendorId
+  FROM (
+    SELECT
+      s.order_id   AS orderId,
+      s.order_date AS orderDate,
+      s.vendor_id  AS vendorId,
+      ROW_NUMBER() OVER (ORDER BY s.order_date DESC) AS rn
+    FROM sales_order s
+    WHERE 1=1
+      <if test="dto.startDate != null and dto.endDate != null">
+        <![CDATA[
+          AND s.order_date >= TRUNC(#{dto.startDate}) - 1
+          AND s.order_date <  TRUNC(#{dto.endDate}) + 1
+        ]]>
+      </if>
+  )
+  WHERE rn <![CDATA[ > ]]> #{paging.offset}
+    AND rn <![CDATA[ <= ]]> #{paging.offset} + #{paging.size}
+</select>
+
+<select id="countApprovalByDate" resultType="int">
+  SELECT COUNT(*)
+  FROM sales_order s
+  WHERE 1=1
+    <if test="dto.startDate != null and dto.endDate != null">
+      <![CDATA[
+        AND s.order_date >= TRUNC(#{dto.startDate}) - 1
+        AND s.order_date <  TRUNC(#{dto.endDate}) + 2
+      ]]>
+    </if>
+</select>
+
+
+
 <!-- ✅ 판매처 모달 -->
 
 <select id="selectApprovalVendorModal" resultType="com.yedam.scm.vo.VendorVO">
@@ -542,7 +590,7 @@
           v.company_name AS companyName,
           ROW_NUMBER() OVER (ORDER BY v.company_name) AS rn
         FROM vendor v
-       WHERE v.type IN (0, 2)
+       <!-- WHERE v.type IN (0, 2) -->
          <if test="condition != null and condition != ''">
            AND (v.company_name LIKE '%' || #{condition} || '%'
             OR v.vendor_id LIKE '%' || #{condition} || '%')
@@ -610,8 +658,8 @@
     FROM return r   <!-- ✅ 여기 수정 -->
     WHERE 1=1
       <if test="dto.startDate != null and dto.endDate != null">
-        AND r.return_date <![CDATA[ >= ]]> TRUNC(#{dto.startDate})
-        AND r.return_date <![CDATA[ < ]]>  TRUNC(#{dto.endDate}) + 1
+        AND r.return_date <![CDATA[ >= ]]> TRUNC(#{dto.startDate}) - 1
+        AND r.return_date <![CDATA[ < ]]>  TRUNC(#{dto.endDate}) + 2
       </if>
   )
   WHERE rn <![CDATA[ > ]]> #{paging.offset}
@@ -624,8 +672,8 @@
   FROM sales_return r
   WHERE 1=1
     <if test="dto.startDate != null and dto.endDate != null">
-      AND r.return_date <![CDATA[ >= ]]> TRUNC(#{dto.startDate})
-      AND r.return_date <![CDATA[ < ]]>  TRUNC(#{dto.endDate}) + 1
+      AND r.return_date <![CDATA[ >= ]]> TRUNC(#{dto.startDate}) - 1
+      AND r.return_date <![CDATA[ < ]]>  TRUNC(#{dto.endDate}) + 2
     </if>
 </select>
 
@@ -668,6 +716,7 @@
       ROW_NUMBER() OVER (ORDER BY r.return_date DESC) AS rn
     FROM return  r
     WHERE 1=1
+    AND r.return_status IN ('대기', '처리중')
       <if test="condition != null and condition != ''">
         AND LOWER(r.return_id) LIKE '%' || LOWER(#{condition}) || '%'
       </if>
@@ -680,6 +729,9 @@
   SELECT COUNT(*)
   FROM return r
   WHERE 1=1
+    <![CDATA[
+      AND r.return_status IN ('대기', '처리중')
+    ]]>
     <if test="condition != null and condition != ''">
       AND LOWER(r.return_id) LIKE '%' || LOWER(#{condition}) || '%'
     </if>

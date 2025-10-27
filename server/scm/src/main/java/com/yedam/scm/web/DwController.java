@@ -147,10 +147,27 @@ public class DwController {
 
     /* ===================== 반품승인 ===================== */
 
+    // @GetMapping("/return-list")
+    // public List<ReturnVO> getReturnList() {
+    //     return service.getReturnList();
+    // }
     @GetMapping("/return-list")
-    public List<ReturnVO> getReturnList() {
-        return service.getReturnList();
-    }
+    public List<ReturnVO> getReturnList(
+        @RequestParam(required = false) String returnId,
+        @RequestParam(required = false) String vendorName,
+        @RequestParam(required = false) String prodName,
+        @RequestParam(required = false) String fromDate,
+        @RequestParam(required = false) String toDate) {
+
+    Map<String, Object> params = new HashMap<>();
+    params.put("returnId", returnId);
+    params.put("vendorName", vendorName);
+    params.put("prodName", prodName);
+    params.put("fromDate", fromDate);
+    params.put("toDate", toDate);
+
+    return service.getReturnList(params);
+}
 
     @GetMapping("/return-details")
     public Map<String, Object> getReturnDetails(@RequestParam String returnId) {
@@ -288,6 +305,14 @@ public class DwController {
             @RequestParam(defaultValue = "10") int size) {
         return service.getApprovalOrderModal(condition, page, size);
     }
+
+    // ===================== 주문승인 날짜 모달 =====================
+@GetMapping("/approval/modal/searchByDate")
+public Map<String, Object> searchApprovalByDate(AccountLedgerSearchDTO dto, PageDTO paging) {
+    return service.searchApprovalByDate(dto, paging);
+}
+
+
 
 
 

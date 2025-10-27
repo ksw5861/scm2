@@ -90,5 +90,10 @@ public class SupplierController {
     public Map<String, Object> getVendorDashboard(@PathVariable String vendorId) {
         return service.getVendorDashboard(vendorId);
     }
+    //주문내역조회
+    @GetMapping("/requestResult/{vendorId}")
+    public List<PurchaseMatVO> getRequestResultList(@PathVariable String vendorId, matSupplySearchDTO searchDTO) {
+        return service.getRequestResultList(vendorId, searchDTO);
+    }
 }
 

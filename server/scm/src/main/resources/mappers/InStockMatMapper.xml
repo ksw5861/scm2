@@ -88,7 +88,7 @@ SELECT * FROM (
             AND i.vendor_out_date &gt;= #{search.startDate}
           </if>
           <if test="search.endDate != null">
-            AND i.vendor_out_date &lt;= #{search.endDate}
+            AND i.vendor_out_date &lt;= #{search.endDate} + 1
           </if>
           <if test="search.vendorName != null and search.vendorName != ''">
             AND v.company_name LIKE '%' || #{search.vendorName} || '%'
@@ -112,7 +112,7 @@ WHERE 1=1
     AND .vendor_out_date &gt;= #{search.startDate}
   </if>
   <if test="search.endDate != null">
-    AND i.vendor_out_date &lt;= #{search.endDate}
+    AND i.vendor_out_date &lt;= #{search.endDate} + 1
   </if>
   <if test="search.vendorName != null and search.vendorName != ''">
     AND v.company_name LIKE '%' || #{search.vendorName} || '%'
@@ -167,10 +167,10 @@ SELECT * FROM (
     WHERE 1=1
       AND i.inbound_status IN ('app', 'm2')
       <if test="search.startDate != null">
-        AND i.unload_date &gt;= TO_DATE(#{search.startDate}, 'YYYY-MM-DD')
+        AND i.unload_date &gt;= #{search.startDate}
       </if>
       <if test="search.endDate != null">
-        AND i.unload_date &lt;= TO_DATE(#{search.endDate}, 'YYYY-MM-DD')
+        AND i.unload_date &lt;= #{search.endDate} + 1
       </if>
       <if test="search.vendorName != null and search.vendorName != ''">
         AND v.company_name LIKE '%' || #{search.vendorName} || '%'
@@ -184,6 +184,7 @@ SELECT * FROM (
 )
 WHERE rnum &gt;= #{page.startRow}
 </select>
+
 <!--입고대기목록데이터 수-->
 <select id="getApproveUnloadListCount" resultType="long">
 SELECT count(DISTINCT inbound_id)
@@ -192,10 +193,10 @@ JOIN vendor v ON i.vendor_id = v.vendor_id
 WHERE 1=1
 AND i.inbound_status IN ('app', 'm2')
 <if test="search.startDate != null">
-  AND i.unload_date &gt;= TO_DATE(#{search.startDate}, 'YYYY-MM-DD')
+  AND i.unload_date &gt;= #{search.startDate}
 </if>
 <if test="search.endDate != null">
-  AND i.unload_date &lt;= TO_DATE(#{search.endDate}, 'YYYY-MM-DD')
+  AND i.unload_date &lt;= #{search.endDate} + 1
 </if>
 <if test="search.vendorName != null and search.vendorName != ''">
   AND v.company_name LIKE '%' || #{search.vendorName} || '%'

@@ -1,17 +1,20 @@
 <!-- ======================================================
-📄 주문승인.vue (모달 포함 완전체)
+📄 주문승인.vue (모달 포함 + 브레드크럼 추가 완전체)
 ====================================================== -->
 <script setup>
-import { ref, onMounted } from 'vue';
 import axios from 'axios';
-import InputText from 'primevue/inputtext';
-import InputGroup from 'primevue/inputgroup';
-import Calendar from 'primevue/calendar';
 import Button from 'primevue/button';
-import DataTable from 'primevue/datatable';
+import Calendar from 'primevue/calendar';
 import Column from 'primevue/column';
+import DataTable from 'primevue/datatable';
 import Dialog from 'primevue/dialog';
+import InputGroup from 'primevue/inputgroup';
+import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
+import { onMounted, ref, computed } from 'vue';
+import Breadcrumb from 'primevue/breadcrumb';
+import { useRoute } from 'vue-router';
+import { useIcon } from '@/composables/useIcon';
 
 /* ------------------ 상태 ------------------ */
 const search = ref({ fromDate: null, toDate: null, vendorId: '', orderId: '' });
@@ -41,13 +44,46 @@ const orderPage = ref(1);
 const orderRows = ref(10);
 const orderTotal = ref(0);
 
+/* ------------------ 날짜 모달 ------------------ */
+const dateDialog = ref(false);
+const dateList = ref([]);
+const datePage = ref(1);
+const dateRows = ref(10);
+const dateTotal = ref(0);
+
+async function openDateModal() {
+  dateDialog.value = true;
+  datePage.value = 1;
+  await loadDateList();
+}
+async function loadDateList() {
+  const { data } = await axios.get('/api/approval/modal/searchByDate', {
+    params: {
+      startDate: search.value.fromDate ? fmtDate(search.value.fromDate) : '',
+      endDate: search.value.toDate ? fmtDate(search.value.toDate) : '',
+      page: datePage.value,
+      size: dateRows.value
+    }
+  });
+  dateList.value = data.items ?? data.data ?? [];
+  dateTotal.value = data.totalCount ?? 0;
+}
+function onDatePageChange(e) {
+  datePage.value = e.page + 1;
+  dateRows.value = e.rows;
+  loadDateList();
+}
+function selectDateRow(e) {
+  const row = e.data;
+  search.value.orderId = row.orderId;
+  dateDialog.value = false;
+}
+
 /* ------------------ 유틸 ------------------ */
-function fmtDate(value) {
-  if (!value) return '';
-  const date = new Date(value);
-  if (isNaN(date.getTime())) return '';
-  const local = new Date(date.getTime() + date.getTimezoneOffset() * 60000);
-  return `${local.getFullYear()}-${String(local.getMonth() + 1).padStart(2, '0')}-${String(local.getDate()).padStart(2, '0')}`;
+function fmtDate(d) {
+  if (!d) return '';
+  const dt = typeof d === 'string' ? new Date(d) : d;
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
 }
 function toNumber(n) {
   if (n === null || n === undefined) return 0;
@@ -204,11 +240,26 @@ async function confirmReject() {
   } else alert('반려 실패');
 }
 onMounted(() => applySearch());
+
+/* ------------------ 브레드크럼 ------------------ */
+const route = useRoute();
+const breadcrumbHome = { icon: useIcon('home'), to: '/' };
+const breadcrumbItems = computed(() => {
+  const matched = route.matched.filter((r) => r.meta);
+  if (!matched.length) return [];
+  const current = matched[matched.length - 1];
+  const parentLabel = current.meta?.breadcrumb?.parent || '';
+  const currentLabel = current.name || '';
+  return [{ label: parentLabel }, { label: currentLabel, to: route.fullPath }];
+});
 </script>
 
 <template>
   <div class="page-wrap">
-    <div class="page-title">주문 승인</div>
+    <!-- ✅ 브레드크럼 -->
+    <Breadcrumb class="rounded-lg mb-3" :home="breadcrumbHome" :model="breadcrumbItems" />
+
+    <div class="page-title"></div>
 
     <!-- 검색폼 -->
     <div class="box">
@@ -220,6 +271,7 @@ onMounted(() => applySearch());
             <Calendar v-model="search.fromDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
             <span>~</span>
             <Calendar v-model="search.toDate" dateFormat="yy-mm-dd" showIcon class="w-full" />
+            <!-- <Button icon="pi pi-search" class="p-button-text" @click="openDateModal" /> -->
           </div>
         </div>
         <div class="field">
@@ -251,12 +303,7 @@ onMounted(() => applySearch());
           <Column headerStyle="width:3rem; text-align:center;">
             <template #body="{ data }">
               <div class="p-checkbox p-component custom-checkbox">
-                <input
-                  type="checkbox"
-                  class="p-checkbox-box"
-                  :checked="selectedOrders.some(o => o.orderId === data.orderId)"
-                  @change="() => toggleSingleSelect(data)"
-                />
+                <input type="checkbox" class="p-checkbox-box" :checked="selectedOrders.some((o) => o.orderId === data.orderId)" @change="() => toggleSingleSelect(data)" />
               </div>
             </template>
           </Column>
@@ -276,16 +323,7 @@ onMounted(() => applySearch());
             <Button label="부분 반려" icon="pi pi-times" class="p-button-danger" @click="openRejectDialog" :disabled="!selectedDetailRows.length" />
           </div>
         </div>
-        <DataTable
-          :value="detailRows"
-          dataKey="odetailId"
-          v-model:selection="selectedDetailRows"
-          selectionMode="multiple"
-          :metaKeySelection="false"
-          @row-click="toggleDetailSelection($event.data)"
-          paginator
-          :rows="10"
-        >
+        <DataTable :value="detailRows" dataKey="odetailId" v-model:selection="selectedDetailRows" selectionMode="multiple" :metaKeySelection="false" @row-click="toggleDetailSelection($event.data)" paginator :rows="10">
           <Column selectionMode="multiple" />
           <Column field="prodId" header="제품 번호" />
           <Column field="prodName" header="제품명" />
@@ -303,6 +341,8 @@ onMounted(() => applySearch());
       </div>
     </div>
 
+    <!-- 날짜 모달 -->
+
     <!-- 반려 모달 -->
     <Dialog v-model:visible="rejectDialog" modal header="반려 사유 입력" :style="{ width: '400px' }">
       <Textarea v-model="rejectReason" rows="5" class="w-full" placeholder="반려 사유를 입력해 주세요" />
@@ -318,16 +358,7 @@ onMounted(() => applySearch());
         <InputText v-model="vendorKeyword" placeholder="판매처명 검색" @keyup.enter="loadVendorList" />
         <Button icon="pi pi-search" @click.stop="loadVendorList" />
       </div>
-      <DataTable
-        :value="vendorList"
-        dataKey="vendorId"
-        selectionMode="single"
-        @row-dblclick="selectVendor"
-        paginator
-        :rows="vendorRows"
-        :totalRecords="vendorTotal"
-        @page="onVendorPageChange"
-      >
+      <DataTable :value="vendorList" dataKey="vendorId" selectionMode="single" @row-dblclick="selectVendor" paginator :rows="vendorRows" :totalRecords="vendorTotal" @page="onVendorPageChange">
         <Column field="companyName" header="판매처명" />
       </DataTable>
     </Dialog>
@@ -338,16 +369,7 @@ onMounted(() => applySearch());
         <InputText v-model="orderKeyword" placeholder="주문번호 검색" @keyup.enter="loadOrderList" />
         <Button icon="pi pi-search" @click.stop="loadOrderList" />
       </div>
-      <DataTable
-        :value="orderListModal"
-        dataKey="orderId"
-        selectionMode="single"
-        @row-dblclick="selectOrder"
-        paginator
-        :rows="orderRows"
-        :totalRecords="orderTotal"
-        @page="onOrderPageChange"
-      >
+      <DataTable :value="orderListModal" dataKey="orderId" selectionMode="single" @row-dblclick="selectOrder" paginator :rows="orderRows" :totalRecords="orderTotal" @page="onOrderPageChange">
         <Column field="orderId" header="주문번호" />
       </DataTable>
     </Dialog>
@@ -444,16 +466,18 @@ onMounted(() => applySearch());
   border-radius: 3px;
   background: #fff;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
   appearance: none;
   outline: none;
 }
 :deep(.custom-checkbox .p-checkbox-box:checked) {
-  background: #16a34a; /* ✅ 상세와 동일 (green-600) */
+  background: #16a34a;
   border-color: #16a34a;
 }
 :deep(.custom-checkbox .p-checkbox-box:checked::after) {
-  content: "";
+  content: '';
   position: absolute;
   width: 4px;
   height: 9px;

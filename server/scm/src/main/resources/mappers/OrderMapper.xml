@@ -6,8 +6,6 @@
 
 <!-- ========================================================== -->
 <!-- 1. 주문 등록 (여신잔액 실시간 검증 완전체 버전) -->
-<!-- ========================================================== -->
-<!-- ========================================================== -->
 <!-- 순수 INSERT: WHERE 조건 제거 (검증은 Service에서만 처리) -->
 <!-- ========================================================== -->
 <insert id="insertOrder" parameterType="SalesOrderVO">
@@ -255,6 +253,39 @@
         WHERE d.order_id = #{orderId}
         ORDER BY d.odetail_id
     </select>
+
+<!-- 대시보드 진행중인 주문건 -->
+<select id="selectOngoingOrders" resultType="SalesOrderVO">
+    SELECT 
+        ORDER_ID     AS orderId,
+        TOTAL_PRICE  AS totalPrice,
+        SEND_DATE    AS sendDate,
+        STATUS       AS status,
+        PAYDUE_DATE  AS paydueDate
+    FROM 
+        SALES_ORDER
+    WHERE 
+        VENDOR_ID = #{vendorId}
+    <if test="excludedStatuses != null and excludedStatuses.size() > 0">
+        AND STATUS NOT IN
+        <foreach collection="excludedStatuses" item="status" open="(" separator="," close=")">
+            #{status}
+        </foreach>
+    </if>
+    ORDER BY ORDER_ID DESC
+</select>
+
+<!-- 대시보드 연체중인 주문건(건수, 금액) -->
+<select id="selectOverdueSummary" resultType="map">
+    SELECT 
+        COUNT(*) AS count,
+        NVL(SUM(TOTAL_PRICE), 0) AS amount
+    FROM SALES_ORDER
+    WHERE VENDOR_ID = #{vendorId}
+      AND PAY_STATUS = '대기'
+      AND <![CDATA[ PAYDUE_DATE < SYSDATE ]]>   
+</select>
+
 
 
 </mapper>

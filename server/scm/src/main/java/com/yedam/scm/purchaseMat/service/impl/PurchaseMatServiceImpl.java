@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.yedam.scm.dto.PageDTO;
 import com.yedam.scm.dto.PurchaseListSearchDTO;
+import com.yedam.scm.dto.prodPlanForAccoDTO;
+import com.yedam.scm.dto.purchaseOrderDTO;
 import com.yedam.scm.purchaseMat.mapper.PurchaseMatMapper;
 import com.yedam.scm.purchaseMat.service.PurchaseMatService;
 import com.yedam.scm.vo.MatStatusVO;
@@ -86,6 +88,18 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
         }
     }
 
+    //발주취소
+    @Override
+    public void purchseCancel(Map<String, Object> data) {
+        List<Integer> idList  = (List<Integer>) data.get("purId");
+        String empName = (String) data.get("empName");
+
+        for(Integer purId : idList){
+            mapper.updatePurchaseCancel(purId);
+            mapper.insertCancelLog(purId, empName);
+        }
+    }
+
     //자재주문목록
     @Override
     public Map<String, Object> getPurchaseList(PurchaseListSearchDTO searchDTO, PageDTO pageDTO) {
@@ -108,8 +122,29 @@ public class PurchaseMatServiceImpl implements PurchaseMatService{
        return mapper.getPurchaseStatus(purId);
     }
 
+    //발주내역
+    @Override
+    public List<PurchaseMatVO> getPurchaseOrderList(purchaseOrderDTO searchDTO) {
+         return mapper.getPurchaseOrderList(searchDTO);
+    }
 
+   //생산계획리스트 for accodion
+    @Override
+    public List<ProductionPlanVO> getPlanlistforAcco(prodPlanForAccoDTO searchDTO) {
+        return mapper.getPlanlistforAcco(searchDTO);
+    }
+    //생산계획상세(제품 + MPR) for accodion
+    @Override
+    public Map<String, Object> getPlanDetailforAcco(Long plId) {
+        List<PrdPlanDetailVO> prodList =  mapper.selectPlanDetailList(plId);
+        List<MrpDetailVO> mrpList = mapper.getMrpCalList(plId);
 
+        Map<String, Object> result = new HashMap<>();
+        result.put("prodList", prodList);
+        result.put("mrpList", mrpList);
+
+        return result;
+    }
     /*==========================
      * 드롭다운/모달용
      ===========================*/

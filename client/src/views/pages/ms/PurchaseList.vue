@@ -49,10 +49,21 @@ const searchFilter = ref({
 const formatDate = (date) => {
   if (!date) return '';
   const d = new Date(date);
-  return d.toISOString().slice(0, 10); // '2025-10-18'
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const pageLoad = async () => {
+  //검색필터 기간 유효성검사
+  if (searchFilter.value.startDate && searchFilter.value.endDate) {
+    if (new Date(searchFilter.value.startDate) > new Date(searchFilter.value.endDate)) {
+      toast('warn', '기간 오류', '시작일은 종료일보다 이전이어야 합니다.', '3000');
+      return;
+    }
+  }
+
   const params = {
     page: page.value.page,
     size: page.value.size,
@@ -126,13 +137,13 @@ const loadStatusCodes = async () => {
   }
 };
 
-const resetSearch = () => {
+const resetSearch = async () => {
   searchFilter.value = {
     startDate: '',
     endDate: '',
     vendorName: ''
   };
-  pageLoad();
+  await pageLoad();
 };
 
 onMounted(() => {
@@ -144,16 +155,16 @@ const purchaseListColumn = [
   { label: '주문등록일', field: 'regDate' },
   { label: '주문번호', field: 'purNo' },
   { label: '자재명', field: 'matName' },
-  { label: '주문수량', field: 'reqQty' },
+  { label: '주문수량', field: 'reqQty', style: 'text-align: right' },
   { label: '단위', field: 'unit' },
-  { label: '공급처', field: 'companyName' },
-  { label: '발주 담당자', field: 'empName' }
+  { label: '공급처', field: 'companyName' }
+  // { label: '발주 담당자', field: 'empName' }
 ];
 
 const statusColumn = [
   { label: '변경일', field: 'updateDate' },
   { label: '상태', field: 'status' },
-  { label: '공급처 출고수량', field: 'supOutQty' },
+  { label: '공급처 출고수량', field: 'supOutQty', style: 'text-align: right' },
   { label: '출고예정일', field: 'expectDate' },
   { label: '공급처 담당자', field: 'chargeName' }
 ];
@@ -164,7 +175,7 @@ const statusColumn = [
     <Breadcrumb class="rounded-lg" :home="breadcrumbHome" :model="breadcrumbItems" />
     <!--검색영역-->
     <div class="card flex flex-col gap-4 mt-4">
-      <SearchCard title="발주 조회" @search="pageLoad" @reset="resetSearch">
+      <SearchCard title="현황 검색" @search="pageLoad" @reset="resetSearch">
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <InputGroup>
             <InputGroupAddon><i :class="useIcon('calendar')" /></InputGroupAddon>
@@ -183,7 +194,7 @@ const statusColumn = [
           </InputGroup>
 
           <InputGroup>
-            <InputGroupAddon><i :class="useIcon('box')" /></InputGroupAddon>
+            <InputGroupAddon><i :class="useIcon('vendor')" /></InputGroupAddon>
             <IftaLabel>
               <InputText v-model="searchFilter.vendorName" inputId="searchVendor" />
               <label for="searchVendor">공급처</label>
@@ -198,7 +209,9 @@ const statusColumn = [
         <div class="card flex flex-col gap-4 h-full">
           <!-- h-full 고정 -->
           <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">자재주문 목록</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 자재주문 목록</div>
+            </div>
             <Divider />
             <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="purchaseListColumn" :data="purchaseList" :paginator="true" :showCheckbox="false" @row-select="detailInfo" @page-change="onPage" :page="page" />
           </div>
@@ -209,7 +222,9 @@ const statusColumn = [
         <div class="card flex flex-col gap-4 h-full">
           <!-- 타이틀 -->
           <div class="card flex flex-col gap-4">
-            <div class="font-semibold text-m">상세정보</div>
+            <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
+              <div class="flex items-center gap-4"><span :class="useIcon('forward')"></span>진행현황</div>
+            </div>
             <Divider />
             <!--타임라인-->
             <div class="card">

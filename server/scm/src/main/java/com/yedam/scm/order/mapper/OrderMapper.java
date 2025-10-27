@@ -70,4 +70,13 @@ public interface OrderMapper {
     // 주문조회페이지 PDF
     // =============================================================
     List<SalesOrderDetailVO> findOrderDetails(String orderId);
+
+    //대시보드에 진행중인 주문건
+    List<SalesOrderVO> selectOngoingOrders(
+        @Param("vendorId") String vendorId,
+        @Param("excludedStatuses") List<String> excludedStatuses
+    );
+    //대시보드에 연체중인 주문건(건수, 금액)
+    Map<String, Object> selectOverdueSummary(@Param("vendorId") String vendorId);
+
 }
