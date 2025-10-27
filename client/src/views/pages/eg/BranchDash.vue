@@ -29,8 +29,8 @@
         <template #content>이번 달 납부 내역 등록.</template>
       </Card>
 
-      <Card>
-        <template #title><i class="pi pi-exclamation-triangle mr-2"></i>연체 주문</template>
+      <Card class="danger-card">
+        <template #title><i class="pi pi-exclamation-triangle mr-2"></i>연체 주문건</template>
         <template #content>
           {{ overdue.count }}건 | {{ asKRW(overdue.amount) }}
         </template>
@@ -79,17 +79,16 @@
           <div class="kpi-sub"><i class="pi pi-clock"></i> 기준일: {{ formatDate(kpi.nextDueDate) }}</div>
         </template>
       </Card>
-
       <Card class="kpi">
-      <template #title>여신한도 잔액</template>
-      <template #content>
-        <div class="kpi-value">{{ asKRW(kpi.remainCredit) }}</div>  
-        <div class="kpi-sub">
-          <i class="pi pi-truck"></i>
-          여신한도: {{ asKRW(kpi.creditLimit) }}
-        </div> 
-      </template>
-    </Card>
+        <template #title>여신한도 잔액</template>
+        <template #content>
+          <div class="kpi-value">{{ asKRW(kpi.remainCredit) }}</div>
+          <div class="kpi-sub align-fix">
+            <i class="pi pi-wallet"></i> 
+            여신한도: {{ asKRW(kpi.creditLimit) }}
+          </div> 
+        </template>
+      </Card>
   </div>
 
     <Card class="chart-card">
@@ -730,10 +729,23 @@ onMounted(() => {
 .kpi :deep(.p-card-title){ color:#6b7280; font-weight:600; }
 .kpi-value { font-size:22px; font-weight:800; margin-top:2px; }
 .kpi-sub { color:#6b7280; font-size:12px; margin-top:4px; display:flex; align-items:center; gap:6px; }
-
+.kpi-sub.align-fix {
+  margin-top: 4px;        
+  display: flex;
+  align-items: center;    
+  gap: 6px;
+}
 .quick-card { transition: all 0.2s ease; cursor: pointer; }
 .quick-card:hover { transform: translateY(-4px); box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1); }
 .quick-card:active { transform: scale(0.97); box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08); }
+.danger-card {
+  color: #c62828;           
+  border: 1px solid #ef9a9a; 
+}
+
+.danger-card i {
+  color: #c62828;
+}
 
 /* 차트 카드 */
 .chart-card { margin-bottom: 16px; }
