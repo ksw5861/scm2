@@ -328,9 +328,20 @@ const moveDown = (i: number) => {
 
 const onDelete = async (row: Row) => {
   if (!confirm(`"${row.name}" 삭제하시겠습니까?`)) return
-  await axios.delete(`/api/sales/margin/${row.id}`) // ← /api 붙임
+
+  await axios.delete(`/api/sales/margin/${row.id}`, {
+    params: {
+      vendorId: vendorId 
+    }
+  })
+
   rows.value = rows.value.filter((r) => r.id !== row.id)
-  toast.add({ severity: 'warn', summary: '삭제됨', detail: `"${row.name}"가 삭제되었습니다.`, life: 2000 })
+  toast.add({
+    severity: 'warn',
+    summary: '삭제됨',
+    detail: `"${row.name}"가 삭제되었습니다.`,
+    life: 2000
+  })
 }
 
 
