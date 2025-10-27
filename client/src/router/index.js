@@ -29,7 +29,7 @@ const router = createRouter({
             const userStore = useUserStore();
             const role = userStore.role;
 
-            if (role.includes('admin', 'employee')) {
+            if (role.includes('admin') || role.includes('employee')) {
                 return import('@/views/pages/dw/LedgerDashboard.vue');
             } else if (role.includes('customer')) {
                 return import('@/views/pages/eg/BranchDash.vue');

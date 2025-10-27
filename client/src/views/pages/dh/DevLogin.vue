@@ -129,6 +129,14 @@ onMounted(() => {
           :loading="isDisabled"
           :disabled="isDisabled"
         />
+
+        <div class="flex items-center justify-between mt-2 mb-8 gap-8">
+          <a href="https://jenkins.yedam-scm.store" target="_blank" rel="noopener noreferrer"
+            class="font-medium no-underline ml-2 text-right text-secondary cursor-pointer">
+            Jenkins 바로가기
+          </a>
+        </div>
+        
       </form>
 
     </div>
