@@ -207,7 +207,7 @@ const matOrderColumns = [
   { label: '단위', field: 'unit' },
   { label: '도착지', field: 'toWarehouse' },
   { label: '총 금액', field: 'total', style: 'text-align: right', sortable: true },
-  { label: '구매처 담당자', field: 'buyerName', sortable: true }
+  { label: '구매처 담당자', field: 'buyerName' }
 ];
 </script>
 

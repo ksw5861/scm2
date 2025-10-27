@@ -31,7 +31,6 @@ const breadcrumbItems = computed(() => {
 
 const shipedListData = ref();
 const selectedRows = ref();
-const selectedDeRow = ref();
 const shipDetailListData = ref([{ matId: '', matName: '', ortQty: null, unit: '' }]);
 //모달
 const returnModal = ref(false);
@@ -264,7 +263,7 @@ const shipDetailColumn = [
         <div class="card flex flex-col gap-4" style="height: 800px">
           <div class="flex items-center justify-between my-3">
             <div class="font-semibold text-xl flex items-center justify-between gap-4 h-10">
-              <div class="flex items-center gap-4"><span :class="useIcon('openfolder')"></span> 상세정보</div>
+              <div class="flex items-center gap-4"><span :class="useIcon('info')"></span> 상세정보</div>
             </div>
             <div class="flex gap-2">
               <btn color="warn" icon="cancel" label="반송" @click="openRetrunModal" class="whitespace-nowrap" outlined />

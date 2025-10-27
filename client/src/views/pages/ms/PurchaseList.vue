@@ -236,7 +236,7 @@ const statusColumn = [
               </Timeline>
             </div>
             <div>
-              <selectTable :columns="statusColumn" :data="statusList" :paginator="false" :showCheckbox="false" />
+              <selectTable v-model:selection="selectedStstus" :columns="statusColumn" :data="statusList" :paginator="false" :showCheckbox="false" />
             </div>
           </div>
         </div>
