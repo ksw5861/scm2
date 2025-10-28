@@ -310,10 +310,9 @@ const loadStatusCodes = async () => {
 };
 
 const onPage = (event) => {
-  const startRow = event.page * event.rows + 1;
-  const endRow = (event.page + 1) * event.rows;
-
-  pageLoad({ startRow, endRow }); // 여기서 axios 호출
+  page.value.page = event.page + 1;
+  page.value.size = event.rows;
+  pageLoad();
 };
 
 const resetSearch = () => {
@@ -424,7 +423,7 @@ const approveUnloadDetaiColumn = [
               <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 입고대기 목록</div>
             </div>
             <Divider />
-            <selectTable v-model:selection="selectedMaster" :selectionMode="'single'" :columns="approveUnloadColumn" :data="approveUnloadList" :paginator="true" :showCheckbox="false" :page="page" @row-select="detailInfo" @page-change="onPage" />
+            <selectTable v-model:selection="selectedMaster" :selectionMode="'single'" :columns="approveUnloadColumn" :data="approveUnloadList" :paginator="true" :showCheckbox="false" :page="page" @row-select="detailInfo" :lazy="true" @page="onPage"  />
           </div>
         </div>
       </div>

@@ -118,10 +118,9 @@ const detailInfo = async () => {
 };
 
 const onPage = (event) => {
-  const startRow = event.page * event.rows + 1;
-  const endRow = (event.page + 1) * event.rows;
-
-  pageLoad({ startRow, endRow }); // 여기서 axios 호출
+  page.value.page = event.page + 1;
+  page.value.size = event.rows;
+  pageLoad();
 };
 
 const loadStatusCodes = async () => {
@@ -213,7 +212,7 @@ const statusColumn = [
               <div class="flex items-center gap-4"><span :class="useIcon('list')"></span> 자재주문 목록</div>
             </div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="purchaseListColumn" :data="purchaseList" :paginator="true" :showCheckbox="false" @row-select="detailInfo" @page-change="onPage" :page="page" />
+            <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="purchaseListColumn" :data="purchaseList" :lazy="true"  :paginator="true" :showCheckbox="false" @row-select="detailInfo" @page="onPage" :page="page" />
           </div>
         </div>
       </div>

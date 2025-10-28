@@ -258,9 +258,9 @@ const resetSearch = () => {
 };
 
 const onPage = (event) => {
-  const startRow = event.page * event.rows + 1;
-  const endRow = (event.page + 1) * event.rows;
-  fetchMatList({ startRow, endRow });
+  page.value.page = event.page + 1;
+  page.value.size = event.rows;
+  fetchMatList();
 };
 
 onMounted(async () => {
@@ -342,7 +342,7 @@ const adjustHistoryColumns = [
               <div class="flex items-center gap-4"><span :class="useIcon('list')"></span>목록</div>
             </div>
             <Divider />
-            <selectTable v-model:selection="selectedRows" selectionMode="single" :columns="matStock" :data="matStockList" :paginator="true" :page="page" :showCheckbox="false" @page-change="onPage" @row-select="detailInfo" />
+            <selectTable v-model:selection="selectedRows" selectionMode="single" :columns="matStock" :data="matStockList" :paginator="true" :page="page" :showCheckbox="false" :lazy="true" @page="onPage" @row-select="detailInfo" />
           </div>
         </div>
       </div>

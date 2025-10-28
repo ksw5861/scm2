@@ -8,7 +8,7 @@ import purchaseOrder from "./ms/purchaseOrder";
 
 const customerOrder = {
   label: '주문 관리',
-  items: [purchase, purchaseList, orderApproval, returnProcess, accountLedger]
+  items: [purchase, purchaseOrder, purchaseList, orderApproval, returnProcess, accountLedger]
 };
 
 export default customerOrder;
