@@ -48,7 +48,7 @@ const searchProdSuggestions = async (event) => {
     return;
   }
   try {
-    const { data } = await axios.get(`http://localhost:8080/api/product/autocomplete?keyword=${keyword}`);
+    const { data } = await axios.get(`http://43.201.78.169/api/product/autocomplete?keyword=${keyword}`);
     suggestions.value = Array.isArray(data) ? data : [];
   } catch {
     suggestions.value = [];

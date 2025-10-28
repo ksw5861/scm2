@@ -47,7 +47,7 @@ const searchMatSuggestions = async (event) => {
   }
 
   try {
-    const { data } = await axios.get(`http://13.124.12.49/api/material/autocomplete?keyword=${keyword}`);
+    const { data } = await axios.get(`http://43.201.78.169/api/material/autocomplete?keyword=${keyword}`);
     suggestions.value = data;
   } catch (e) {
     suggestions.value = [];
@@ -217,7 +217,7 @@ const addMaterial = async () => {
   if (isDuplicateName(form.matName)) return toast('warn', '중복', '이미 존재하는 자재명입니다.');
 
   try {
-    // ✨ InputNumber 사용으로 sanitizeNumber 호출 모두 제거
+    // InputNumber 사용으로 sanitizeNumber 호출 모두 제거
     const payload = {
       ...form,
       matUnitConv: form.matUnitConv,
@@ -247,7 +247,7 @@ const modifyMaterial = async () => {
   if (isDuplicateName(form.matName)) return toast('warn', '중복', '이미 존재하는 자재명입니다.');
 
   try {
-    // ✨ InputNumber 사용으로 sanitizeNumber 호출 모두 제거
+    // InputNumber 사용으로 sanitizeNumber 호출 모두 제거
     const payload = {
       ...form,
       matUnitConv: form.matUnitConv,
@@ -338,7 +338,7 @@ const vendorLoading = ref(false);
 const vendorPage = ref({ page: 1, size: 10, totalElements: 0 });
 const vendorColumns = [
   { label: '거래처ID', field: 'vendorId' },
-  { label: '거래처명', field: 'companyName' },
+  { label: '거래처명', field: 'vendorName' },
   { label: '계약단가', field: 'contractPrice' },
   { label: '상태', field: 'status' }
 ];
@@ -471,7 +471,7 @@ const selectVendorFromModal = (vendor) => {
   showVendorSelectModal.value = false;
 };
 
-// ✨ displayPrice computed 속성 제거됨 (InputNumber 사용)
+// displayPrice computed 속성 제거됨 (InputNumber 사용)
 
 onMounted(() => fetchList());
 </script>
@@ -605,7 +605,6 @@ onMounted(() => fetchList());
                     <div class="flex items-center justify-between mb-2">
                       <div class="font-semibold">거래처 목록</div>
                     </div>
-
                     <DTable
                       :columns="vendorColumns"
                       :data="vendors || []"

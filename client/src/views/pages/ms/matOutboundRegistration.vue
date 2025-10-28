@@ -461,7 +461,7 @@ const submitIssueViaProc = async () => {
             </div>
 
             <!-- 요청 상세 테이블 (우측 2건 페이지네이션 적용)
-                 ✅ 우측은 selection 비활성화: selection-mode 를 null 로 명시 -->
+                 우측은 selection 비활성화: selection-mode 를 null 로 명시 -->
             <div class="mt-2">
               <selectTable :columns="detailColumns" :data="pagedDetailRows" :scrollable="true" :paginator="false" :showCheckbox="false" :selection-mode="null" editable />
             </div>
