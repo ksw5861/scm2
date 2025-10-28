@@ -37,11 +37,19 @@
                         :emptyMessage="'반품 가능한 주문이 없습니다.'"
                     >
                         <Column field="orderId" header="주문번호" style="width:180px" />
-                        <Column field="orderDate" header="주문일자" style="width:160px" >
+                        <Column field="orderDate" header="주문일자" style="width:160px">
                             <template #body="{ data }">
                                 {{ useDateFormat(data.orderDate) }}
                             </template>
                         </Column>
+
+                        <!-- ✅ 여기 추가 -->
+                        <Column field="deliveryDate" header="배송일자" style="width:160px">
+                            <template #body="{ data }">
+                                {{ useDateFormat(data.deliveryDate) }}
+                            </template>
+                        </Column>
+
                         <Column field="totalPrice" header="총금액" style="width:120px">
                             <template #body="{ data }">
                             {{ formatCurrency(data.totalPrice) }} 원
@@ -204,6 +212,7 @@ const fetchReturnableOrders = async () => {
     const { data } = await axios.get('/api/returnableproducts', {
       params: { vendorId: userStore.code }
     })
+    console.log(data)
     if (data.status === 'success') {
       orderList.value = data.items || []
     } else {

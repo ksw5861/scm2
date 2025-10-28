@@ -2,7 +2,7 @@
   <div class="go-del">
     <!-- 헤더 -->
     <div class="header">
-      <h2>출하지시 등록 (goDel)</h2>
+      <h2>출하지시 등록</h2>
       <div class="header-actions">
         <Button 
           label="출하지시 등록" 

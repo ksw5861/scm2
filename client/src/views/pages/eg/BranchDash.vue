@@ -199,8 +199,8 @@
         </div>
         <DataTable :value="filteredOrders" paginator :rows="7" dataKey="orderId" :rowHover="true" class="p-datatable-sm">
           <Column field="orderId" header="주문코드" style="width:160px" />
-          <Column field="prodName" header="제품명" />
-          <Column header="총합계금액" style="width:140px; text-align:right">
+        
+          <Column header="총합계금액" style="width:140px; text-align:center">
             <template #body="{ data }">{{ asKRW(data.totalPrice) }}</template>
           </Column>
           <Column header="출고일자" style="width:130px">
@@ -522,7 +522,7 @@ const openNoticeModal = async (event) => {
     // 상세 정보로 selectedNotice 업데이트
     selectedNotice.value = {
         noticeNo: detail.noticeNo || noticeNo,
-        title: detail.title || '제목 없음',
+        title: detail.title || '',
         content: detail.content || '내용 없음',
         author: detail.author || '관리자',
         createdAt: detail.createdAt || new Date().toISOString()

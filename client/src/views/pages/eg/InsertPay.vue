@@ -47,19 +47,22 @@
                 </div>
             </div>
             <div class="card h-30" style="margin-bottom: 0;">
-                <div class="flex justify-between mb-4">
-                    <div>
-                        <span class="block text-muted-color font-medium mb-4">다음 납부 예정 금액</span>
-                        <div class="dark:text-surface-0 font-bold text-xl text-yellow-500">{{ formatCurrency(summaryComputed.upcomingAmount) }}<span class="font-medium text-gray-700">원</span></div>
-                    </div>
-                    <div
-                        class="flex items-center justify-center bg-yellow-100 dark:bg-yellow-100/10 rounded-border"
-                        style="width:2.5rem;height:2.5rem;"
-                    >
-                        <i class="text-yellow-500 ,!text-xl" :class="icons.calendar "></i>
-                    </div>
-                </div>
-            </div>
+              <div class="flex justify-between mb-4">
+                  <div>
+                      <span class="block text-muted-color font-medium mb-4">연체 주문건</span>
+                      <div class="dark:text-surface-0 font-bold text-xl text-red-500">
+                          {{ overdue.count }}건 | {{ formatCurrency(overdue.amount) }}<span class="font-medium text-gray-700">원</span>
+                      </div>
+                  </div>
+                  <div
+                      class="flex items-center justify-center bg-red-100 dark:bg-red-100/10 rounded-border"
+                      style="width:2.5rem;height:2.5rem;"
+                  >
+                      <i class="text-red-500 ,!text-xl pi pi-exclamation-triangle"></i>
+                  </div>
+              </div>
+          </div>
+
         </div>
 
         <div class="w-full xl:w-3/4">
@@ -202,6 +205,7 @@ const orders = ref([])
 const selectedOrders = ref([])
 const searchQuery = ref('')
 
+
 /* ───────────────────────────────
  *  아이콘 세트
  * ─────────────────────────────── */
@@ -227,6 +231,31 @@ const breadcrumbItems = computed(() => {
     { label: '대금 납부' }
   ];
 });
+
+// -----------------------------
+// 상태 관리 (전역 reactive)
+// -----------------------------
+const overdue = ref({
+  count: 0,
+  amount: 0
+})
+
+// ✅ 독립 fetchOverdue 함수 (computed 안 X 절대 금지!)
+const fetchOverdue = async () => {
+  try {
+    const { data } = await axios.get('/api/orders/overdue-summary', {
+      params: { vendorId: vendorId.value }
+    })
+    const obj = Array.isArray(data) ? data[0] : data
+
+    overdue.value = {
+      count: obj.COUNT || 0,
+      amount: obj.AMOUNT || 0
+    }
+  } catch (err) {
+    console.error('연체 요약 조회 오류:', err)
+  }
+}
 
 // -----------------------------
 // 계산 속성
@@ -258,19 +287,10 @@ const summaryComputed = computed(() => {
   )
   const currentPayable = totalUnpaid - thisMonthReturnAmount
 
-  const upcomingAmount = orders.value
-    .filter((order) => {
-      const sendDate = new Date(order.sendDate)
-      const now = new Date()
-      return sendDate.getMonth() > now.getMonth()
-    })
-    .reduce((sum, order) => sum + (order.finalAmount || 0), 0)
-
   return {
     totalUnpaid,
     thisMonthReturnAmount,
-    currentPayable,
-    upcomingAmount
+    currentPayable
   }
 })
 
@@ -386,6 +406,7 @@ onMounted(() => {
   IMP.init('imp62556076')
   fetchOrders()
   vendorId.value = userStore.code
+  fetchOverdue()
 })
 </script>
 

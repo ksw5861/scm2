@@ -103,7 +103,7 @@
       <DataTable
         :value="filteredProducts"
         paginator
-        :rows="20"
+        :rows="15"
         responsiveLayout="scroll"
         selectionMode="single"
         v-model:selection="selectedProduct"

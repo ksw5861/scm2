@@ -104,28 +104,30 @@
         LEFT JOIN sales_order_detail d 
             ON so.order_id = d.order_id
         WHERE so.vendor_id = #{vendorId}
-          <if test="startDate != null and startDate != ''">
+        AND NOT (so.status = '배송완료' AND so.pay_status = '결제완료')
+        <if test="startDate != null and startDate != ''">
             AND so.order_date &gt;= TO_DATE(#{startDate}, 'YYYY-MM-DD')
-          </if>
-          <if test="endDate != null and endDate != ''">
+        </if>
+        <if test="endDate != null and endDate != ''">
             AND so.order_date &lt;= TO_DATE(#{endDate}, 'YYYY-MM-DD')
-          </if>
-          <if test="status != null and status != ''">
+        </if>
+        <if test="status != null and status != ''">
             AND so.status = #{status}
-          </if>
-          <if test="prodName != null and prodName != ''">
+        </if>
+        <if test="prodName != null and prodName != ''">
             AND EXISTS (
-              SELECT 1 
-              FROM sales_order_detail sod3
-              WHERE sod3.order_id = so.order_id
+            SELECT 1 
+            FROM sales_order_detail sod3
+            WHERE sod3.order_id = so.order_id
                 AND sod3.prod_name LIKE '%' || #{prodName} || '%'
             )
-          </if>
-          <if test="orderId != null and orderId != ''">
-              AND so.order_id LIKE '%' || #{orderId} || '%'
-          </if>
+        </if>
+        <if test="orderId != null and orderId != ''">
+            AND so.order_id LIKE '%' || #{orderId} || '%'
+        </if>
         GROUP BY so.order_id, so.order_date, so.delivery_date, so.status, so.pay_status
         ORDER BY so.order_date DESC
+
     </select>
 
     <!-- ========================================================== -->
