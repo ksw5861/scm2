@@ -51,7 +51,7 @@ const searchWhSuggestions = async (event) => {
   }
 
   try {
-    const { data } = await axios.get(`http://13.124.12.49/api/warehouse1/autocomplete?keyword=${keyword}`);
+    const { data } = await axios.get(`http://43.201.78.169/api/warehouse1/autocomplete?keyword=${keyword}`);
     suggestions.value = data;
   } catch {
     suggestions.value = [];
