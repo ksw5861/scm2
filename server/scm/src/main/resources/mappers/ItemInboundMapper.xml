@@ -498,8 +498,8 @@
   <!-- ===================== 거래처원장 대시보드  ===================== -->
 
 
-<!-- 거래처별 상세 리스트 -->
-<select id="selectDashboardList" resultType="SalesOrderVO">
+<!-- 거래처별 상세 리스트 이 쿼리는 음수로 뜸 잘못됐음-->
+ <!-- <select id="selectDashboardList" resultType="SalesOrderVO">
   SELECT v.vendor_id AS vendorId, v.company_name AS companyName,
          NVL(SUM(s.total_price),0) AS totalPrice,
          NVL(SUM(p.pay_amount),0) AS totalPayment,
@@ -508,6 +508,27 @@
   LEFT JOIN sales_order s ON v.vendor_id = s.vendor_id
   LEFT JOIN payment p ON v.vendor_id = p.vendor_id
   GROUP BY v.vendor_id, v.company_name
+</select>  -->
+
+<select id="selectDashboardList" resultType="SalesOrderVO">
+SELECT 
+    v.vendor_id AS vendorId,
+    v.company_name AS companyName,
+    NVL(SUM(s.total_price), 0) AS totalPrice,
+    NVL((
+        SELECT SUM(p2.pay_amount)
+        FROM payment p2
+        WHERE p2.vendor_id = v.vendor_id
+    ), 0) AS totalPayment,
+    NVL(SUM(s.total_price), 0)
+      - NVL((
+          SELECT SUM(p2.pay_amount)
+          FROM payment p2
+          WHERE p2.vendor_id = v.vendor_id
+      ), 0) AS totalAr
+FROM vendor v
+LEFT JOIN sales_order s ON v.vendor_id = s.vendor_id
+GROUP BY v.vendor_id, v.company_name
 </select>
 
 

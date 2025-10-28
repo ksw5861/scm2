@@ -42,7 +42,7 @@
     <update id="registerShipment" parameterType="string">
         UPDATE SALES_ORDER
         SET status = '출고완료'
-        WHERE order_id = #{orderId};
+        WHERE order_id = #{orderId}
     </update>
 
     <!-- ====================================================== -->
