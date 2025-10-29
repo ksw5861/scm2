@@ -172,10 +172,9 @@ const openShipmentReport = () => {
 };
 
 const onPage = (event) => {
-  const startRow = event.page * event.rows + 1;
-  const endRow = (event.page + 1) * event.rows;
-
-  pageLoad({ startRow, endRow }); // 여기서 axios 호출
+  page.value.page = event.page + 1;
+  page.value.size = event.rows;
+  pageLoad();
 };
 
 const resetSearch = () => {
@@ -254,7 +253,7 @@ const shipDetailColumn = [
             </div>
           </div>
           <Divider />
-          <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" :page="page" @page-change="onPage" />
+          <selectTable v-model:selection="selectedRows" :selectionMode="'single'" :columns="shipedColumn" :data="shipedListData" :paginator="true" :rows="15" @row-select="detailInfo" :page="page" :lazy="true" @page="onPage" />
         </div>
       </div>
 
