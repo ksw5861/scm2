@@ -125,7 +125,7 @@ SELECT id.inbound_det_id,
        id.pur_id,
        id.mat_id,
        m.mat_name,
-       m.unit,
+       m.stock_unit,
        id.out_qty,
        id.pur_status_id
 FROM inbound_detail id
