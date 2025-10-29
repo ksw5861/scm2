@@ -111,7 +111,7 @@ const detailInfo = async () => {
       matId: item.matId,
       matName: item.materialVO.matName,
       outQty: item.outQty,
-      unit: item.materialVO.unit,
+      unit: item.materialVO.stockUnitssss,
       purStatusId: item.purStatusId,
       purId: item.purId
     }));
