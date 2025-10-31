@@ -4,6 +4,36 @@
 <br />
 <br />
 
+## 프로젝트 실행 방법
+### 프로젝트 실행 전 유의 사항
+Redis를 별도로 설치하거나 Docker를 통하여 아래 명령어 실행
+```
+docker run -d --name redis -p 6379:6379 -v redis-data:/data redis
+```
+
+### 클라이언트 실행
+```
+cd client
+npm i
+```
+이후
+```
+npm run dev
+```
+
+### 서버 실행
+
+Spring Boot Dashboard를 사용하여 실행
+(server 폴더 내부 pom.xml 프로젝트 리로드)
+
+root 폴더 내에 .vscode 폴더 내부에 launch.json
+```
+"vmArgs": "-Djasypt.encryptor.password=복호화키"
+```
+추가 후 다시 실행
+<br />
+<br />
+
 ## 프로젝트 개요
 본사 주도로 각 프랜차이즈 가맹점 (판매처)의
 커피 원두 발주 및 재고 / 출하 관리를 효율적으로 운영하기 위한 SCM
